@@ -25,37 +25,123 @@ Based on plan.md project structure:
 
 ## Phase 0: Planning
 
-### P001: Task Analysis & Executor Assignment
-**Description**: Analyze tasks, assign executors (MAIN for trivial only, existing if 100% match, FUTURE otherwise)
+### P001: Task Analysis & Executor Assignment ✅ **COMPLETED (REVISED)**
+**Description**: Досконально проанализировать все существующие субагенты и определить необходимые новые
 **Executor**: MAIN
 **Dependencies**: None
 **Rules**:
-- [EXECUTOR: MAIN] - ONLY trivial (1-2 line fixes, simple imports, single npm install)
-- Existing subagents - ONLY if 100% match (thorough examination)
-- [EXECUTOR: future-agent-name] - If no 100% match (preferred)
-**Output**:
-- All tasks annotated with [EXECUTOR: name] or [EXECUTOR: future-agent-name]
-- All tasks marked [SEQUENTIAL] or [PARALLEL-GROUP-X]
-- List of FUTURE agents to create
-**Artifacts**: Updated tasks.md
+- [EXECUTOR: MAIN] - ТОЛЬКО тривиальные задачи (1 команда: mkdir, 1 npm install, prisma generate)
+- Existing subagents - ТОЛЬКО если 100% match после тщательной проверки
+- [EXECUTOR: new-agent-name] - Если существующий НЕ покрывает задачу на 100%
 
-### P002: Research Task Resolution
+**Результат после пересмотра**:
+- ✅ 3 существующих субагента подходят: database-architect, api-builder, technical-writer
+- 🆕 8 новых субагентов СОЗДАНЫ через meta-agent-v3 (параллельно):
+  1. docker-compose-specialist
+  2. nginx-ssl-specialist
+  3. monitoring-stack-specialist
+  4. nodejs-backend-initializer
+  5. nextjs-frontend-initializer
+  6. github-actions-specialist
+  7. bash-scripts-specialist
+  8. telegraf-bot-middleware-specialist
+
+**Artifacts**:
+- Updated tasks.md (this file)
+- 8 новых файлов агентов в `.claude/agents/infrastructure/workers/`
+
+### P002: Research Task Resolution ✅ **COMPLETED**
 **Description**: Identify and resolve research questions (simple: solve now, complex: create prompts)
 **Executor**: MAIN
 **Dependencies**: P001
 **Output**:
 - Simple research: documented findings (already complete in research.md)
 - Complex research: prompts in research/ directory (none needed - all decisions resolved)
-**Artifacts**: research/*.md (not needed - research.md complete)
+**Status**: All research complete in research.md (13 technical decisions resolved)
+**Artifacts**: research.md (already exists, no changes needed)
 
-### P003: Meta-Agent Subagent Creation (if needed)
+### P003: Meta-Agent Subagent Creation ✅ **COMPLETED**
 **Description**: Create FUTURE agents using meta-agent-v3, then ask user to restart claude-code
-**Executor**: meta-agent-v3
+**Executor**: meta-agent-v3 (8 параллельных вызовов)
 **Dependencies**: P001
-**Execution**: Launch N meta-agent-v3 calls in single message (1 FUTURE agent = 1 call)
-**Tasks**: [List FUTURE agents from P001]
-**Post-Creation**: Ask user to restart claude-code
-**Artifacts**: .claude/agents/{domain}/{type}/{name}.md
+**Execution**: Launched 8 meta-agent-v3 calls in single message (parallel creation)
+**Status**: ✅ **COMPLETED** - 8 новых субагентов успешно созданы
+**Artifacts**:
+- `.claude/agents/infrastructure/workers/docker-compose-specialist.md`
+- `.claude/agents/infrastructure/workers/nginx-ssl-specialist.md`
+- `.claude/agents/infrastructure/workers/monitoring-stack-specialist.md`
+- `.claude/agents/infrastructure/workers/nodejs-backend-initializer.md`
+- `.claude/agents/infrastructure/workers/nextjs-frontend-initializer.md`
+- `.claude/agents/infrastructure/workers/github-actions-specialist.md`
+- `.claude/agents/infrastructure/workers/bash-scripts-specialist.md`
+- `.claude/agents/infrastructure/workers/telegraf-bot-middleware-specialist.md`
+
+**⚠️ ВАЖНО**: Рекомендуется перезапустить claude-code для полной загрузки новых агентов
+
+---
+
+## Executor Assignments (Complete Mapping)
+
+### ✅ Существующие субагенты:
+
+#### database-architect
+- T010: Prisma schema template
+- T018-T023: 6 Supabase SQL migrations
+
+#### api-builder
+- T016: tRPC context
+- T017: tRPC routers
+
+#### technical-writer
+- T026, T046, T058, T067, T074, T080, T086, T087, T091, T092: Документация
+
+### 🆕 Новые субагенты (созданы):
+
+#### docker-compose-specialist
+- T028-T033: Dockerfiles, docker-compose configs
+- T041-T043: Health/metrics endpoints
+- T047: VDS deployment verification
+
+#### nginx-ssl-specialist
+- T034: Nginx config
+- T048-T049: Let's Encrypt scripts
+- T051: Rate limiting
+- T054: Firewall
+
+#### monitoring-stack-specialist
+- T035-T040: Prometheus/Grafana configs
+- T060-T068: Alerts, dashboards, Uptime Kuma
+
+#### nodejs-backend-initializer
+- T002: Backend init
+- T008: Backend dependencies
+- T011: Backend structure
+- T013-T014: Logger, env config
+
+#### nextjs-frontend-initializer
+- T003: Frontend init
+- T009: Frontend dependencies
+- T012: Frontend structure
+- T015: Supabase client
+
+#### github-actions-specialist
+- T077-T079: CI/CD workflows
+- T081-T084: GitHub config, deployment
+
+#### bash-scripts-specialist
+- T044-T045: Bootstrap, deploy scripts
+- T053, T057: Security audit, RLS tests
+- T069-T076: Backup/restore scripts
+
+#### telegraf-bot-middleware-specialist
+- T050: Webhook validation
+- T052: Rate limiting
+- T065: Alert handler
+
+### 🎯 MAIN (ТОЛЬКО 1-команда):
+- T001, T004-T007: mkdir, configs
+- T024-T025: prisma commands
+- T027, T055-T056, T059, T068, T076, T084, T088-T090: Verification
 
 ---
 
@@ -63,13 +149,13 @@ Based on plan.md project structure:
 
 **Purpose**: Project initialization and repository structure creation
 
-- [ ] T001 Create project directory structure per plan.md: backend/, frontend/, infrastructure/, docs/infrastructure/
-- [ ] T002 Initialize backend Node.js project with TypeScript in backend/ (package.json, tsconfig.json)
-- [ ] T003 [P] Initialize frontend Next.js 14 project in frontend/ (npx create-next-app with App Router, TypeScript, Tailwind)
-- [ ] T004 [P] Create infrastructure directory structure: infrastructure/docker-compose.yml, infrastructure/nginx/, infrastructure/monitoring/, infrastructure/supabase/, infrastructure/scripts/
-- [ ] T005 [P] Configure ESLint and Prettier for backend and frontend (shared config)
-- [ ] T006 [P] Create .gitignore covering .env files, node_modules, Docker volumes, build artifacts
-- [ ] T007 [P] Create .env.example files in backend/ and frontend/ with placeholder credentials (no secrets)
+- [ ] T001 [EXECUTOR: MAIN] [SEQUENTIAL] Create project directory structure per plan.md: backend/, frontend/, infrastructure/, docs/infrastructure/
+- [ ] T002 [EXECUTOR: infrastructure-specialist] [SEQUENTIAL] Initialize backend Node.js project with TypeScript in backend/ (package.json, tsconfig.json)
+- [ ] T003 [EXECUTOR: infrastructure-specialist] [PARALLEL-GROUP-1] Initialize frontend Next.js 14 project in frontend/ (npx create-next-app with App Router, TypeScript, Tailwind)
+- [ ] T004 [EXECUTOR: MAIN] [PARALLEL-GROUP-1] Create infrastructure directory structure: infrastructure/docker-compose.yml, infrastructure/nginx/, infrastructure/monitoring/, infrastructure/supabase/, infrastructure/scripts/
+- [ ] T005 [EXECUTOR: MAIN] [PARALLEL-GROUP-1] Configure ESLint and Prettier for backend and frontend (shared config)
+- [ ] T006 [EXECUTOR: MAIN] [PARALLEL-GROUP-1] Create .gitignore covering .env files, node_modules, Docker volumes, build artifacts
+- [ ] T007 [EXECUTOR: MAIN] [PARALLEL-GROUP-1] Create .env.example files in backend/ and frontend/ with placeholder credentials (no secrets)
 
 **Checkpoint**: Project structure ready, dependencies installable, linting/formatting configured
 
@@ -81,16 +167,16 @@ Based on plan.md project structure:
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Install backend dependencies: express, telegraf, prisma, @prisma/client, bullmq, ioredis, zod, prom-client, winston
-- [ ] T009 [P] Install frontend dependencies: @supabase/supabase-js, @trpc/client, @trpc/server, @trpc/react-query, shadcn/ui components
-- [ ] T010 [P] Configure Prisma schema template in backend/prisma/schema.prisma (datasource pointing to Supabase, generator for Prisma Client)
-- [ ] T011 [P] Create backend base structure: src/bot/, src/services/, src/db/, src/queue/, src/api/, src/middleware/, src/utils/
-- [ ] T012 [P] Create frontend base structure: src/app/, src/components/, src/lib/, src/types/
-- [ ] T013 [P] Create backend logger utility using Winston in backend/src/utils/logger.ts
-- [ ] T014 [P] Create backend environment config loader in backend/src/config/env.ts (validate required vars at startup)
-- [ ] T015 [P] Create frontend Supabase client singleton in frontend/src/lib/supabase.ts
-- [ ] T016 [P] Create tRPC context with Supabase session validation in backend/src/api/trpc/context.ts
-- [ ] T017 [P] Create tRPC router structure in backend/src/api/trpc/routers/ (auth.ts, chats.ts, requests.ts, alerts.ts, analytics.ts, templates.ts, faq.ts)
+- [ ] T008 [EXECUTOR: MAIN] [SEQUENTIAL] Install backend dependencies: express, telegraf, prisma, @prisma/client, bullmq, ioredis, zod, prom-client, winston
+- [ ] T009 [EXECUTOR: MAIN] [PARALLEL-GROUP-2] Install frontend dependencies: @supabase/supabase-js, @trpc/client, @trpc/server, @trpc/react-query, shadcn/ui components
+- [ ] T010 [EXECUTOR: database-architect] [PARALLEL-GROUP-2] Configure Prisma schema template in backend/prisma/schema.prisma (datasource pointing to Supabase, generator for Prisma Client)
+- [ ] T011 [EXECUTOR: MAIN] [PARALLEL-GROUP-2] Create backend base structure: src/bot/, src/services/, src/db/, src/queue/, src/api/, src/middleware/, src/utils/
+- [ ] T012 [EXECUTOR: MAIN] [PARALLEL-GROUP-2] Create frontend base structure: src/app/, src/components/, src/lib/, src/types/
+- [ ] T013 [EXECUTOR: infrastructure-specialist] [PARALLEL-GROUP-2] Create backend logger utility using Winston in backend/src/utils/logger.ts
+- [ ] T014 [EXECUTOR: infrastructure-specialist] [PARALLEL-GROUP-2] Create backend environment config loader in backend/src/config/env.ts (validate required vars at startup)
+- [ ] T015 [EXECUTOR: infrastructure-specialist] [PARALLEL-GROUP-2] Create frontend Supabase client singleton in frontend/src/lib/supabase.ts
+- [ ] T016 [EXECUTOR: api-builder] [PARALLEL-GROUP-2] Create tRPC context with Supabase session validation in backend/src/api/trpc/context.ts
+- [ ] T017 [EXECUTOR: api-builder] [PARALLEL-GROUP-2] Create tRPC router structure in backend/src/api/trpc/routers/ (auth.ts, chats.ts, requests.ts, alerts.ts, analytics.ts, templates.ts, faq.ts)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -104,16 +190,16 @@ Based on plan.md project structure:
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Create Supabase migration 00001_initial_schema.sql in infrastructure/supabase/migrations/ (8 tables: users, chats, client_requests, sla_alerts, feedback_responses, working_schedules, templates, faq_items)
-- [ ] T019 [P] [US1] Create Supabase migration 00002_rls_policies.sql in infrastructure/supabase/migrations/ (enable RLS, create policies for admin/manager/observer roles)
-- [ ] T020 [P] [US1] Create Supabase migration 00003_functions.sql in infrastructure/supabase/migrations/ (update_updated_at_column, calculate_working_minutes, increment_template_usage, increment_faq_usage)
-- [ ] T021 [P] [US1] Create Supabase migration 00004_triggers.sql in infrastructure/supabase/migrations/ (updated_at triggers on all tables)
-- [ ] T022 [P] [US1] Create Supabase migration 00005_indexes.sql in infrastructure/supabase/migrations/ (indexes on all foreign keys, frequently queried columns per data-model.md)
-- [ ] T023 [P] [US1] Create seed data migration 00006_seed_data.sql in infrastructure/supabase/migrations/ (default admin user, sample working schedules, sample templates)
-- [ ] T024 [US1] Generate Prisma schema from Supabase migrations using introspection: prisma db pull (update backend/prisma/schema.prisma)
-- [ ] T025 [US1] Generate Prisma Client: prisma generate
-- [ ] T026 [P] [US1] Create documentation in docs/infrastructure/supabase-setup.md (project creation steps, migration execution, RLS policy verification)
-- [ ] T027 [US1] Verify Supabase setup: query all tables in SQL editor, test RLS policies with different roles, verify Auth email/password provider enabled, create test user and verify JWT token contains required claims (user_id, role, exp), test token expiration behavior
+- [ ] T018 [EXECUTOR: database-architect] [SEQUENTIAL] [US1] Create Supabase migration 00001_initial_schema.sql in infrastructure/supabase/migrations/ (8 tables: users, chats, client_requests, sla_alerts, feedback_responses, working_schedules, templates, faq_items)
+- [ ] T019 [EXECUTOR: database-architect] [PARALLEL-GROUP-3] [US1] Create Supabase migration 00002_rls_policies.sql in infrastructure/supabase/migrations/ (enable RLS, create policies for admin/manager/observer roles)
+- [ ] T020 [EXECUTOR: database-architect] [PARALLEL-GROUP-3] [US1] Create Supabase migration 00003_functions.sql in infrastructure/supabase/migrations/ (update_updated_at_column, calculate_working_minutes, increment_template_usage, increment_faq_usage)
+- [ ] T021 [EXECUTOR: database-architect] [PARALLEL-GROUP-3] [US1] Create Supabase migration 00004_triggers.sql in infrastructure/supabase/migrations/ (updated_at triggers on all tables)
+- [ ] T022 [EXECUTOR: database-architect] [PARALLEL-GROUP-3] [US1] Create Supabase migration 00005_indexes.sql in infrastructure/supabase/migrations/ (indexes on all foreign keys, frequently queried columns per data-model.md)
+- [ ] T023 [EXECUTOR: database-architect] [PARALLEL-GROUP-3] [US1] Create seed data migration 00006_seed_data.sql in infrastructure/supabase/migrations/ (default admin user, sample working schedules, sample templates)
+- [ ] T024 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Generate Prisma schema from Supabase migrations using introspection: prisma db pull (update backend/prisma/schema.prisma)
+- [ ] T025 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Generate Prisma Client: prisma generate
+- [ ] T026 [EXECUTOR: MAIN] [PARALLEL-GROUP-4] [US1] Create documentation in docs/infrastructure/supabase-setup.md (project creation steps, migration execution, RLS policy verification)
+- [ ] T027 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Verify Supabase setup: query all tables in SQL editor, test RLS policies with different roles, verify Auth email/password provider enabled, create test user and verify JWT token contains required claims (user_id, role, exp), test token expiration behavior
 
 **Checkpoint**: Supabase database fully configured, RLS policies active, Auth working, Storage buckets created. Acceptance criteria from spec.md verified.
 

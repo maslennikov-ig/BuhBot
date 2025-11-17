@@ -31,6 +31,8 @@
   "private": true,
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.81.1",
+    "@trpc/server": "^11.7.1",
     "bullmq": "^5.34.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

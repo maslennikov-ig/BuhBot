@@ -64,3 +64,6 @@ prisma/dev.db-journal
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# MCP Configuration (contains access tokens)
+.mcp.json

@@ -1,0 +1,234 @@
+// BuhBot Prisma Schema
+// Database: PostgreSQL 15+ (Supabase Cloud)
+// Connection: Supabase Supavisor pooler for connection pooling
+// Generated from: specs/001-infrastructure-setup/data-model.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase connection pooler uses PgBouncer in transaction mode
+  // directUrl is used for migrations (bypasses pooler), url is used for queries
+  // Optional: Only required when using connection pooler (pgbouncer=true in DATABASE_URL)
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  admin
+  manager
+  observer
+}
+
+enum ChatType {
+  private
+  group
+  supergroup
+}
+
+enum RequestStatus {
+  pending
+  in_progress
+  answered
+  escalated
+}
+
+enum AlertType {
+  warning
+  breach
+}
+
+enum TemplateCategory {
+  greeting
+  status
+  document_request
+  reminder
+  closing
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+/// Admin panel users (synchronized with Supabase Auth)
+/// References auth.users.id from Supabase Auth
+model User {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  fullName  String   @map("full_name")
+  role      UserRole
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  assignedChats      Chat[]          @relation("AssignedAccountant")
+  assignedRequests   ClientRequest[] @relation("AssignedTo")
+  acknowledgedAlerts SlaAlert[]      @relation("AcknowledgedBy")
+  createdTemplates   Template[]      @relation("TemplateCreator")
+  createdFaqItems    FaqItem[]       @relation("FaqCreator")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+/// Telegram chat metadata for SLA tracking and accountant assignments
+model Chat {
+  id                   BigInt   @id @db.BigInt
+  chatType             ChatType @map("chat_type")
+  title                String?
+  accountantUsername   String?  @map("accountant_username")
+  assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
+  slaEnabled           Boolean  @default(true) @map("sla_enabled")
+  slaResponseMinutes   Int      @default(60) @map("sla_response_minutes")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id])
+  clientRequests     ClientRequest[]
+  feedbackResponses  FeedbackResponse[]
+  workingSchedules   WorkingSchedule[]
+
+  @@index([assignedAccountantId])
+  @@index([slaEnabled], map: "idx_chats_sla_enabled")
+  @@map("chats")
+}
+
+/// Incoming client messages for SLA monitoring and analytics
+model ClientRequest {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId              BigInt        @map("chat_id") @db.BigInt
+  messageId           BigInt        @map("message_id") @db.BigInt
+  messageText         String        @map("message_text")
+  clientUsername      String?       @map("client_username")
+  receivedAt          DateTime      @default(now()) @map("received_at") @db.Timestamptz(6)
+  assignedTo          String?       @map("assigned_to") @db.Uuid
+  responseAt          DateTime?     @map("response_at") @db.Timestamptz(6)
+  responseTimeMinutes Int?          @map("response_time_minutes")
+  status              RequestStatus @default(pending)
+  isSpam              Boolean       @default(false) @map("is_spam")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  chat              Chat               @relation(fields: [chatId], references: [id])
+  assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
+  slaAlerts         SlaAlert[]
+  feedbackResponses FeedbackResponse[]
+
+  @@index([chatId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([receivedAt])
+  @@index([isSpam], map: "idx_client_requests_is_spam")
+  @@map("client_requests")
+}
+
+/// SLA warnings and breaches for monitoring and compliance reporting
+model SlaAlert {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId       String    @map("request_id") @db.Uuid
+  alertType       AlertType @map("alert_type")
+  minutesElapsed  Int       @map("minutes_elapsed")
+  alertSentAt     DateTime  @default(now()) @map("alert_sent_at") @db.Timestamptz(6)
+  acknowledgedAt  DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  acknowledgedBy  String?   @map("acknowledged_by") @db.Uuid
+  resolutionNotes String?   @map("resolution_notes")
+
+  // Relations
+  request          ClientRequest @relation(fields: [requestId], references: [id])
+  acknowledgedUser User?         @relation("AcknowledgedBy", fields: [acknowledgedBy], references: [id])
+
+  @@index([requestId])
+  @@index([alertType])
+  @@index([alertSentAt])
+  @@map("sla_alerts")
+}
+
+/// Client satisfaction ratings and feedback comments
+model FeedbackResponse {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId      BigInt   @map("chat_id") @db.BigInt
+  requestId   String?  @map("request_id") @db.Uuid
+  rating      Int // 1-5 stars (validated by CHECK constraint at DB level)
+  comment     String?
+  submittedAt DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
+
+  // Relations
+  chat    Chat           @relation(fields: [chatId], references: [id])
+  request ClientRequest? @relation(fields: [requestId], references: [id])
+
+  @@index([chatId])
+  @@index([rating])
+  @@index([submittedAt])
+  @@map("feedback_responses")
+}
+
+/// Working hours per chat for accurate SLA calculation
+/// Excludes weekends and off-hours from SLA tracking
+model WorkingSchedule {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId    BigInt   @map("chat_id") @db.BigInt
+  dayOfWeek Int      @map("day_of_week") // 1=Monday, 7=Sunday (validated by CHECK constraint at DB level)
+  startTime DateTime @map("start_time") @db.Time(6)
+  endTime   DateTime @map("end_time") @db.Time(6)
+  isActive  Boolean  @default(true) @map("is_active")
+
+  // Relations
+  chat Chat @relation(fields: [chatId], references: [id])
+
+  @@unique([chatId, dayOfWeek], name: "unique_chat_day")
+  @@index([chatId])
+  @@index([dayOfWeek])
+  @@map("working_schedules")
+}
+
+/// Reusable message templates for quick responses
+/// Supports variable substitution with {{variable}} syntax
+model Template {
+  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String
+  content    String
+  category   TemplateCategory
+  createdBy  String           @map("created_by") @db.Uuid
+  usageCount Int              @default(0) @map("usage_count")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  creator User @relation("TemplateCreator", fields: [createdBy], references: [id])
+
+  @@index([category])
+  @@index([usageCount(sort: Desc)])
+  @@index([createdBy])
+  @@map("templates")
+}
+
+/// Frequently asked questions and answers for inline button quick replies
+/// Keywords array enables fast full-text search
+model FaqItem {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question   String
+  answer     String
+  keywords   String[] @default([])
+  usageCount Int      @default(0) @map("usage_count")
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  creator User @relation("FaqCreator", fields: [createdBy], references: [id])
+
+  // Note: GIN index on keywords[] is created at DB level via migration
+  // Prisma doesn't support GIN index syntax in schema
+  @@index([usageCount(sort: Desc)])
+  @@index([createdBy])
+  @@map("faq_items")
+}

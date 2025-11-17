@@ -137,3 +137,9 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 - Architecture: `docs/Agents Ecosystem/ARCHITECTURE.md`
 - Quality gates: `docs/Agents Ecosystem/QUALITY-GATES-SPECIFICATION.md`
 - Report templates: `docs/Agents Ecosystem/REPORT-TEMPLATE-STANDARD.md`
+
+## Active Technologies
+- Node.js 18+ with TypeScript (strict mode) (001-infrastructure-setup)
+
+## Recent Changes
+- 001-infrastructure-setup: Added Node.js 18+ with TypeScript (strict mode)

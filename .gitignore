@@ -119,6 +119,25 @@ $RECYCLE.BIN/
 *.tgz
 
 # ===================================================================
+# Docker & Infrastructure
+# ===================================================================
+# Docker volumes
+docker-volumes/
+*.dockerignore
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+infrastructure/nginx/ssl/
+!infrastructure/nginx/ssl/.gitkeep
+
+# Backup files
+*.tar.gz
+*.sql.gz
+/var/backups/
+
+# ===================================================================
 # Articles & Writing
 # ===================================================================
 # Article drafts and master prompts (not for publication)

@@ -288,12 +288,26 @@ Based on plan.md project structure:
   → Artifacts: [backend/src/api/metrics.ts](../../backend/src/api/metrics.ts)
 - [X] T043 [P] [US2] Implement Prometheus metrics collection in backend/src/utils/metrics.ts (bot_messages_received_total, bot_message_processing_duration, redis_queue_length, supabase_query_duration, etc.)
   → Artifacts: [backend/src/utils/metrics.ts](../../backend/src/utils/metrics.ts), [backend/HEALTH_METRICS_README.md](../../backend/HEALTH_METRICS_README.md)
-- [ ] T044 [US2] Create VDS bootstrap script in infrastructure/scripts/bootstrap-vds.sh (update system, install Docker, configure firewall with ufw, create buhbot user)
-- [ ] T045 [US2] Create deployment script in infrastructure/scripts/deploy.sh (pull images, run docker compose up -d with health checks, rollback on failure)
-- [ ] T046 [P] [US2] Create documentation in docs/infrastructure/vds-setup.md (VDS provisioning, SSH setup, Docker installation, docker compose deployment)
+- [X] T044 [US2] Create VDS bootstrap script in infrastructure/scripts/bootstrap-vds.sh (update system, install Docker, configure firewall with ufw, create buhbot user)
+  → Artifacts: [infrastructure/scripts/bootstrap-vds.sh](../../infrastructure/scripts/bootstrap-vds.sh)
+- [X] T045 [US2] Create deployment script in infrastructure/scripts/deploy.sh (pull images, run docker compose up -d with health checks, rollback on failure)
+  → Artifacts: [infrastructure/scripts/deploy.sh](../../infrastructure/scripts/deploy.sh), [infrastructure/scripts/README.md](../../infrastructure/scripts/README.md)
+- [X] T046 [P] [US2] Create documentation in docs/infrastructure/vds-setup.md (VDS provisioning, SSH setup, Docker installation, docker compose deployment)
+  → Artifacts: [docs/infrastructure/vds-setup.md](../../docs/infrastructure/vds-setup.md)
 - [ ] T047 [US2] Verify VDS deployment: SSH to VDS, run docker compose ps to verify all containers Up, curl http://localhost:3000/health returns healthy, check docker logs bot for errors
+  → Status: PENDING (manual verification required on actual VDS)
 
-**Checkpoint**: VDS fully deployed, all containers running, health checks passing. Acceptance criteria from spec.md verified.
+**Checkpoint**: ⚠️ **IMPLEMENTATION COMPLETE** - All Phase 4 tasks (T028-T046) completed. Ready for VDS deployment testing (T047 requires actual VDS server).
+**Artifacts Summary**:
+- Dockerfiles: backend, frontend, monitoring-stack (3 files)
+- Docker Compose: base + production overrides (2 files)
+- Nginx: reverse proxy configuration with HTTPS/SSL (1 file)
+- Monitoring: Prometheus config, alert rules, Grafana datasources + 3 dashboards (6 files)
+- Backend endpoints: /health, /metrics, Prometheus metrics collection (3 files)
+- Scripts: VDS bootstrap, deployment automation (2 files)
+- Documentation: VDS setup guide (1 file)
+**Total artifacts**: 18 configuration files + dependencies (Prisma client, Redis client)
+**Release**: v0.1.9 (2025-11-20)
 
 ---
 

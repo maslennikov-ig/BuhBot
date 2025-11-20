@@ -256,10 +256,14 @@ Based on plan.md project structure:
 
 ### Implementation for User Story 2
 
-- [ ] T028 [P] [US2] Create backend Dockerfile in backend/Dockerfile (multi-stage: build + runtime, node:20-alpine base, non-root user)
-- [ ] T029 [P] [US2] Create frontend Dockerfile in frontend/Dockerfile (multi-stage: build Next.js + runtime, node:20-alpine base)
-- [ ] T030 [P] [US2] Create monitoring-stack Dockerfile in infrastructure/monitoring/Dockerfile (ubuntu:22.04 base, supervisord, install Prometheus + Grafana + Uptime Kuma, configure ports: 9090 Prometheus internal, 3000 Grafana exposed, 3001 Uptime Kuma exposed, shared volumes for data persistence)
-- [ ] T031 [P] [US2] Create monitoring-stack supervisord config in infrastructure/monitoring/supervisord.conf (3 programs: prometheus on :9090, grafana on :3000, uptime-kuma on :3001, log routing to stdout for docker logs, shared /data volume for persistence)
+- [X] T028 [P] [US2] Create backend Dockerfile in backend/Dockerfile (multi-stage: build + runtime, node:20-alpine base, non-root user)
+  → Artifacts: [backend/Dockerfile](../../backend/Dockerfile), [backend/.dockerignore](../../backend/.dockerignore)
+- [X] T029 [P] [US2] Create frontend Dockerfile in frontend/Dockerfile (multi-stage: build Next.js + runtime, node:20-alpine base)
+  → Artifacts: [frontend/Dockerfile](../../frontend/Dockerfile), [frontend/.dockerignore](../../frontend/.dockerignore), [frontend/src/app/api/health/route.ts](../../frontend/src/app/api/health/route.ts)
+- [X] T030 [P] [US2] Create monitoring-stack Dockerfile in infrastructure/monitoring/Dockerfile (ubuntu:22.04 base, supervisord, install Prometheus + Grafana + Uptime Kuma, configure ports: 9090 Prometheus internal, 3000 Grafana exposed, 3001 Uptime Kuma exposed, shared volumes for data persistence)
+  → Artifacts: [infrastructure/monitoring/Dockerfile](../../infrastructure/monitoring/Dockerfile), [infrastructure/monitoring/prometheus.yml](../../infrastructure/monitoring/prometheus.yml), [infrastructure/monitoring/grafana.ini](../../infrastructure/monitoring/grafana.ini)
+- [X] T031 [P] [US2] Create monitoring-stack supervisord config in infrastructure/monitoring/supervisord.conf (3 programs: prometheus on :9090, grafana on :3000, uptime-kuma on :3001, log routing to stdout for docker logs, shared /data volume for persistence)
+  → Artifacts: [infrastructure/monitoring/supervisord.conf](../../infrastructure/monitoring/supervisord.conf)
 - [ ] T032 [US2] Create docker compose file in infrastructure/docker-compose.yml (services: bot, redis, nginx, monitoring-stack with health checks, volumes, restart policies)
 - [ ] T033 [P] [US2] Create docker compose production overrides in infrastructure/docker-compose.prod.yml (resource limits, production env vars)
 - [ ] T034 [P] [US2] Create Nginx configuration in infrastructure/nginx/nginx.conf (HTTPS redirect, reverse proxy for /webhook/telegram, /grafana, /uptime, SSL cert paths)

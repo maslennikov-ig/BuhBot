@@ -1,0 +1,43 @@
+# Prometheus Configuration
+# This file will be mounted as a volume in docker-compose.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'buhbot-production'
+    environment: 'production'
+
+# Alertmanager configuration (optional - can be added later)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - localhost:9093
+
+# Load rules (optional - can be added later)
+# rule_files:
+#   - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Bot backend metrics (to be configured after backend deployment)
+  - job_name: 'bot-backend'
+    static_configs:
+      - targets: ['bot-backend:9100']
+    metrics_path: '/metrics'
+
+  # Redis exporter (if deployed)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # Node exporter (if deployed)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']

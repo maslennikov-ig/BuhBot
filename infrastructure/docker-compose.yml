@@ -1,0 +1,238 @@
+version: '3.8'
+
+# ============================================================================
+# BuhBot Production Docker Compose Configuration
+# ============================================================================
+# Services: bot-backend, frontend, redis, monitoring-stack, nginx
+# Network: buhbot-network (bridge)
+# Volumes: redis-data, prometheus-data, grafana-data, uptime-kuma-data, certbot-data
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # Bot Backend Service
+  # ==========================================================================
+  # Telegram bot + tRPC API server
+  # Port 3000: Webhook endpoint + API (internal, proxied via nginx)
+  # ==========================================================================
+  bot-backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: buhbot-bot-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      redis:
+        condition: service_healthy
+      monitoring-stack:
+        condition: service_started
+    volumes:
+      - ../backend/logs:/app/logs
+    networks:
+      - buhbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    labels:
+      - "com.buhbot.service=bot-backend"
+      - "com.buhbot.description=Telegram bot and tRPC API server"
+
+  # ==========================================================================
+  # Frontend Service
+  # ==========================================================================
+  # Next.js admin panel
+  # Port 3001: Internal web server (proxied via nginx)
+  # Build args: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+  # ==========================================================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    container_name: buhbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - ../frontend/.env.local
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      bot-backend:
+        condition: service_healthy
+    networks:
+      - buhbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\" || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 40s
+      retries: 3
+    labels:
+      - "com.buhbot.service=frontend"
+      - "com.buhbot.description=Next.js admin panel"
+
+  # ==========================================================================
+  # Redis Service
+  # ==========================================================================
+  # Redis cache and queue (Bull MQ)
+  # Port 6379: Internal only (not exposed to host)
+  # Volume: redis-data (persistent storage with AOF)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: buhbot-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - buhbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    labels:
+      - "com.buhbot.service=redis"
+      - "com.buhbot.description=Redis cache and queue (Bull MQ)"
+
+  # ==========================================================================
+  # Monitoring Stack Service
+  # ==========================================================================
+  # Prometheus + Grafana + Uptime Kuma (supervisord-managed)
+  # Port 9090: Prometheus (internal, proxied via nginx at /prometheus)
+  # Port 3000: Grafana (internal, proxied via nginx at /grafana)
+  # Port 3001: Uptime Kuma (internal, proxied via nginx at /uptime)
+  # ==========================================================================
+  monitoring-stack:
+    build:
+      context: ./monitoring
+      dockerfile: Dockerfile
+    container_name: buhbot-monitoring-stack
+    restart: unless-stopped
+    ports:
+      - "9090:9090"  # Prometheus
+      - "3002:3000"  # Grafana (mapped to 3002 on host to avoid conflict)
+      - "3003:3001"  # Uptime Kuma (mapped to 3003 on host)
+    volumes:
+      - prometheus-data:/prometheus
+      - grafana-data:/var/lib/grafana
+      - uptime-kuma-data:/app/data
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/grafana.ini:/etc/grafana/grafana.ini:ro
+    networks:
+      - buhbot-network
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    labels:
+      - "com.buhbot.service=monitoring-stack"
+      - "com.buhbot.description=Prometheus + Grafana + Uptime Kuma"
+
+  # ==========================================================================
+  # Nginx Service
+  # ==========================================================================
+  # Reverse proxy with HTTPS termination
+  # Port 80: HTTP (redirect to HTTPS)
+  # Port 443: HTTPS
+  # Proxies: /api -> bot-backend:3000, / -> frontend:3000
+  #          /grafana -> monitoring-stack:3000, /uptime -> monitoring-stack:3001
+  # ==========================================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: buhbot-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      bot-backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      monitoring-stack:
+        condition: service_started
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - certbot-data:/var/www/certbot:ro
+    networks:
+      - buhbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || wget -q --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    labels:
+      - "com.buhbot.service=nginx"
+      - "com.buhbot.description=Reverse proxy with HTTPS termination"
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  buhbot-network:
+    driver: bridge
+    name: buhbot-network
+    labels:
+      - "com.buhbot.network=main"
+      - "com.buhbot.description=Main bridge network for BuhBot services"
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  redis-data:
+    driver: local
+    name: buhbot-redis-data
+    labels:
+      - "com.buhbot.volume=redis-data"
+      - "com.buhbot.description=Redis persistent storage (AOF)"
+
+  prometheus-data:
+    driver: local
+    name: buhbot-prometheus-data
+    labels:
+      - "com.buhbot.volume=prometheus-data"
+      - "com.buhbot.description=Prometheus metrics storage (TSDB)"
+
+  grafana-data:
+    driver: local
+    name: buhbot-grafana-data
+    labels:
+      - "com.buhbot.volume=grafana-data"
+      - "com.buhbot.description=Grafana database and dashboards"
+
+  uptime-kuma-data:
+    driver: local
+    name: buhbot-uptime-kuma-data
+    labels:
+      - "com.buhbot.volume=uptime-kuma-data"
+      - "com.buhbot.description=Uptime Kuma monitors database"
+
+  certbot-data:
+    driver: local
+    name: buhbot-certbot-data
+    labels:
+      - "com.buhbot.volume=certbot-data"
+      - "com.buhbot.description=Let's Encrypt SSL certificates"

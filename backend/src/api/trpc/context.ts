@@ -22,10 +22,8 @@
 
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { PrismaClient } from '@prisma/client';
-import { supabase } from '../../lib/supabase';
-
-// Initialize Prisma Client singleton
-const prisma = new PrismaClient();
+import { supabase } from '../../lib/supabase.js';
+import { prisma } from '../../lib/prisma.js';
 
 /**
  * User information extracted from session and database

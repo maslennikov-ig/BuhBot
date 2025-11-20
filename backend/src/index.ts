@@ -1,6 +1,10 @@
 import express from 'express';
 import logger from './utils/logger.js';
 import env, { isProduction, isDevelopment } from './config/env.js';
+import { healthHandler } from './api/health.js';
+import { metricsHandler } from './api/metrics.js';
+import { disconnectPrisma } from './lib/prisma.js';
+import { disconnectRedis } from './lib/redis.js';
 
 /**
  * BuhBot Backend Server
@@ -25,20 +29,15 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    environment: env.NODE_ENV,
-    service: 'buhbot-backend',
-    version: '0.1.0'
-  });
-});
+// Health check endpoint with database and Redis checks
+app.get('/health', healthHandler);
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', metricsHandler);
 
 // Ready check endpoint (for Kubernetes readiness probes)
+// Simplified check - use /health for detailed status
 app.get('/ready', (_req, res) => {
-  // TODO: Add actual readiness checks (database, redis, etc.)
   res.json({
     status: 'ready',
     timestamp: new Date().toISOString()
@@ -53,6 +52,7 @@ app.get('/', (_req, res) => {
     description: 'Платформа автоматизации коммуникаций для бухгалтерских фирм',
     endpoints: {
       health: '/health',
+      metrics: '/metrics',
       ready: '/ready',
       api: '/api'
     }
@@ -101,18 +101,27 @@ const server = app.listen(PORT, () => {
 });
 
 // Graceful shutdown handler
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   logger.info(`${signal} received, shutting down gracefully`);
 
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed');
 
-    // TODO: Close database connections, Redis, etc.
-    // await prisma.$disconnect();
-    // await redis.quit();
+    try {
+      // Close database connections
+      await disconnectPrisma();
 
-    logger.info('Shutdown complete');
-    process.exit(0);
+      // Close Redis connection
+      await disconnectRedis();
+
+      logger.info('Shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Error during shutdown:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      process.exit(1);
+    }
   });
 
   // Force shutdown after 10 seconds

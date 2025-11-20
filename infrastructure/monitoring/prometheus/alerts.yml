@@ -1,0 +1,173 @@
+# Prometheus Alert Rules for BuhBot
+# Alerts for system resources, bot health, and Supabase connectivity
+
+groups:
+  # System resource alerts
+  - name: system_resources
+    interval: 30s
+    rules:
+      # High CPU usage warning
+      - alert: HighCPU
+        expr: |
+          100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: |
+            CPU usage is {{ $value | humanize }}% (threshold: 80%).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check top processes, consider scaling resources.
+
+      # High memory usage warning
+      - alert: HighMemory
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: |
+            Memory usage is {{ $value | humanize }}% (threshold: 80%).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check memory-intensive processes, investigate memory leaks.
+
+      # High disk usage critical
+      - alert: HighDisk
+        expr: |
+          (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_avail_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 85
+        for: 10m
+        labels:
+          severity: critical
+          service: system
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: |
+            Disk usage is {{ $value | humanize }}% (threshold: 85%).
+            Instance: {{ $labels.instance }}
+            Mountpoint: /
+            Duration: 10 minutes
+            Action: Clean up logs, old data, or expand disk capacity immediately.
+
+  # Bot service health alerts
+  - name: bot_health
+    interval: 30s
+    rules:
+      # Bot service down critical
+      - alert: BotDown
+        expr: |
+          up{job="bot-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: bot-backend
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "Bot backend is down"
+          description: |
+            Bot backend health check is failing.
+            Instance: {{ $labels.instance }}
+            Duration: 1 minute
+            Action: Check container status, logs, and restart service if needed.
+
+      # High message processing latency
+      - alert: HighMessageLatency
+        expr: |
+          histogram_quantile(0.95, rate(bot_message_processing_duration_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: bot-backend
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "High message processing latency"
+          description: |
+            P95 message processing time is {{ $value | humanize }}s (threshold: 5s).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check bot logs, database queries, and external API calls.
+
+  # Supabase connectivity alerts
+  - name: supabase_connectivity
+    interval: 30s
+    rules:
+      # Supabase connection errors warning
+      - alert: SupabaseErrors
+        expr: |
+          rate(supabase_connection_errors_total[5m]) * 300 > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: supabase
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "High rate of Supabase connection errors"
+          description: |
+            Supabase connection errors: {{ $value | humanize }} in last 5 minutes (threshold: 10).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check network connectivity, Supabase service status, and credentials.
+
+      # Supabase query latency warning
+      - alert: HighSupabaseLatency
+        expr: |
+          histogram_quantile(0.95, rate(supabase_query_duration_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: supabase
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "High Supabase query latency"
+          description: |
+            P95 Supabase query time is {{ $value | humanize }}s (threshold: 0.5s).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check query performance, add indexes, or optimize queries.
+
+  # Redis cache alerts
+  - name: redis_cache
+    interval: 30s
+    rules:
+      # Redis high memory usage
+      - alert: RedisHighMemory
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "Redis high memory usage"
+          description: |
+            Redis memory usage is {{ $value | humanize }}% (threshold: 80%).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check cache eviction policy, clear old sessions, or increase memory.
+
+      # Redis connection pool saturation
+      - alert: RedisConnectionPoolSaturated
+        expr: |
+          redis_connected_clients / redis_config_maxclients * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+          instance: '{{ $labels.instance }}'
+        annotations:
+          summary: "Redis connection pool near saturation"
+          description: |
+            Redis connection pool usage is {{ $value | humanize }}% (threshold: 80%).
+            Instance: {{ $labels.instance }}
+            Duration: 5 minutes
+            Action: Check for connection leaks or increase max_clients configuration.

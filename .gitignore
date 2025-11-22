@@ -74,6 +74,9 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
+# WSL Zone.Identifier files
+*:Zone.Identifier
+
 # Linux
 *~
 .directory

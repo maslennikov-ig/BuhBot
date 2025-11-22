@@ -650,20 +650,20 @@ All modifications logged for transparency and rollback capability.
 - **Type Definitions**: @types/node, @types/express ✓
 
 ### Cloud & Compliance
-- **Hosting**: Yandex Cloud (152-ФЗ compliance) - ready for deployment
-- **Database**: Supabase PostgreSQL - configuration ready
-- **AI/LLM**: Yandex GPT - configuration ready
+- **Hosting**: VDS (FirstVDS.ru, 152-ФЗ compliance) - deployed
+- **Database**: Supabase Cloud PostgreSQL - configured
+- **AI/LLM**: Yandex GPT - configuration ready (optional)
 
 ---
 
 ## Project Architecture Notes
 
 ### Deployment Strategy
-- **Target Environment**: Yandex Cloud (152-ФЗ compliance required)
-- **Database**: Yandex Managed PostgreSQL or Supabase (both 152-ФЗ compliant)
-- **Redis**: Yandex Managed Redis
-- **Container**: Docker-ready (Dockerfile needed)
-- **Orchestration**: Kubernetes-ready (health/ready probes implemented)
+- **Target Environment**: VDS (FirstVDS.ru, 152-ФЗ compliance)
+- **Database**: Supabase Cloud PostgreSQL
+- **Redis**: Docker container on VDS
+- **Container**: Docker + Docker Compose (deployed)
+- **Orchestration**: Docker Compose (health probes implemented)
 
 ### Scaling Considerations
 - **Horizontal Scaling**: Stateless server design, ready for multiple instances

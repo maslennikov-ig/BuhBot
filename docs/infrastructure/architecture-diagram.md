@@ -2,7 +2,7 @@
 
 **Version**: 1.0.0
 **Last Updated**: 2025-11-22
-**Target Environment**: Hybrid Supabase Cloud + VDS (Yandex Cloud)
+**Target Environment**: Hybrid Supabase Cloud + VDS (FirstVDS.ru)
 
 ---
 
@@ -25,7 +25,7 @@
 BuhBot uses a hybrid deployment model that combines:
 
 - **Supabase Cloud**: Managed PostgreSQL database, authentication, and connection pooling
-- **VDS (Yandex Cloud)**: Application containers, caching, and monitoring infrastructure
+- **VDS (FirstVDS.ru)**: Application containers, caching, and monitoring infrastructure
 
 This architecture ensures compliance with 152-FZ (Russian data protection law) while leveraging managed services for database operations.
 
@@ -59,7 +59,7 @@ flowchart TB
         RLS --> PG
     end
 
-    subgraph VDS["VDS (Yandex Cloud)"]
+    subgraph VDS["VDS (FirstVDS.ru)"]
         direction TB
         NGINX["Nginx<br/>(Reverse Proxy + SSL)"]
         BOT["Bot Backend<br/>(Node.js + tRPC)"]

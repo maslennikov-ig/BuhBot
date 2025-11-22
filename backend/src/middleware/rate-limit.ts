@@ -244,7 +244,7 @@ export function createRateLimiter(
  * Pre-configured rate limiter with default settings
  * Ready to use: bot.use(rateLimiter)
  */
-export const rateLimiter = createRateLimiter();
+export const rateLimiter: Middleware<Context> = createRateLimiter();
 
 /**
  * Get current rate limit store size (for monitoring)

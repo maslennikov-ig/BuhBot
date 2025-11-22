@@ -1,0 +1,124 @@
+# Prometheus Alertmanager Configuration for BuhBot
+# Routes alerts to Telegram webhook via bot-backend alert handler
+# Reference: https://prometheus.io/docs/alerting/latest/configuration/
+
+# =============================================================================
+# Global Configuration
+# =============================================================================
+global:
+  # Time to wait before declaring an alert as resolved if it has not been updated
+  resolve_timeout: 5m
+
+  # Slack API URL (optional - placeholder for future integration)
+  # slack_api_url: 'https://hooks.slack.com/services/PLACEHOLDER'
+
+  # HTTP configuration for webhook receivers
+  http_config:
+    follow_redirects: true
+
+# =============================================================================
+# Route Configuration
+# =============================================================================
+# The root route defines the default receiver and grouping behavior
+route:
+  # Default receiver for all alerts
+  receiver: 'telegram'
+
+  # Group alerts by these labels
+  # - alertname: Group by alert type (e.g., all HighCPU alerts together)
+  # - severity: Group by severity level (critical, warning)
+  group_by: ['alertname', 'severity']
+
+  # Time to wait before sending the initial notification for a new group
+  group_wait: 30s
+
+  # Time to wait before sending notifications about new alerts
+  # added to an existing group of alerts
+  group_interval: 5m
+
+  # Time to wait before resending a notification about an alert group
+  # that has already been sent
+  repeat_interval: 4h
+
+  # Child routes for specific alert routing
+  routes:
+    # Critical alerts - shorter repeat interval for urgent attention
+    - match:
+        severity: critical
+      receiver: 'telegram'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+      continue: false
+
+    # Warning alerts - standard intervals
+    - match:
+        severity: warning
+      receiver: 'telegram'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      continue: false
+
+# =============================================================================
+# Inhibition Rules
+# =============================================================================
+# Inhibit rules allow you to mute a set of alerts when certain other alerts
+# are firing. This prevents alert flooding during major incidents.
+inhibit_rules:
+  # Critical alerts suppress warning alerts for the same service
+  # When a critical alert fires, corresponding warnings are silenced
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    # Inhibit if alertname and service match between source and target
+    equal: ['alertname', 'service']
+
+  # BotDown (critical) suppresses all other bot-backend alerts
+  # When the bot is completely down, no need for latency/error alerts
+  - source_match:
+      alertname: 'BotDown'
+    target_match:
+      service: 'bot-backend'
+    equal: ['instance']
+
+  # High disk critical suppresses high memory and CPU warnings
+  # Disk issues often cause cascading resource problems
+  - source_match:
+      alertname: 'HighDisk'
+      severity: 'critical'
+    target_match_re:
+      alertname: 'High(Memory|CPU)'
+    equal: ['instance']
+
+# =============================================================================
+# Receivers Configuration
+# =============================================================================
+# Receivers define how alerts are sent to notification systems
+receivers:
+  # Telegram receiver - sends alerts to bot-backend webhook handler
+  - name: 'telegram'
+    webhook_configs:
+      # Webhook URL pointing to bot-backend alert handler
+      # The backend processes alerts and forwards to Telegram
+      - url: 'http://bot-backend:3000/api/alerts/webhook'
+
+        # Send resolved notifications when alert is no longer firing
+        send_resolved: true
+
+        # HTTP method for the webhook
+        http_config:
+          follow_redirects: true
+
+        # Maximum number of alerts to include in a single webhook request
+        max_alerts: 10
+
+  # Null receiver - for silencing specific alerts if needed
+  - name: 'null'
+
+# =============================================================================
+# Templates (optional - for custom notification formatting)
+# =============================================================================
+# templates:
+#   - '/etc/alertmanager/templates/*.tmpl'

@@ -64,6 +64,10 @@ const envSchema = z.object({
     .min(32)
     .optional()
     .describe('Secret token for webhook signature validation (min 32 chars)'),
+  TELEGRAM_ADMIN_CHAT_ID: z
+    .string()
+    .optional()
+    .describe('Telegram chat ID for admin alerts and notifications'),
 
   // Logging
   LOG_LEVEL: z

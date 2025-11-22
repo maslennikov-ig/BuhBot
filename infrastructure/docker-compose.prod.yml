@@ -97,13 +97,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    cap_drop:
-      - ALL
-    tmpfs:
-      - /tmp:size=64M,mode=1777
 
   # ==========================================================================
   # Monitoring Stack Service - LOWEST PRIORITY
@@ -126,10 +119,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
 
   # ==========================================================================
   # Nginx Service - LIGHTWEIGHT
@@ -152,16 +141,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    tmpfs:
-      - /var/cache/nginx:size=128M,mode=0755
-      - /var/run:size=16M,mode=0755
 
 # ============================================================================
 # Resource Summary

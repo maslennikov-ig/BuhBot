@@ -1,6 +1,6 @@
 {
   "name": "buhbot-backend",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "BuhBot Backend - Платформа автоматизации коммуникаций для бухгалтерских фирм",
   "main": "dist/index.js",
   "type": "module",

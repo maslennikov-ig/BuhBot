@@ -59,8 +59,8 @@ export const templatesRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
-      // Build where clause
-      const where = input.category ? { category: input.category } : undefined;
+      // Build where clause (empty object means no filter)
+      const where = input.category ? { category: input.category } : {};
 
       // Build order by clause
       const orderBy =

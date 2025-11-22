@@ -92,7 +92,7 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats,
+        chats: chats.map((chat) => ({ ...chat, id: Number(chat.id) })),
         total,
       };
     }),
@@ -147,7 +147,7 @@ export const chatsRouter = router({
         });
       }
 
-      return chat;
+      return { ...chat, id: Number(chat.id) };
     }),
 
   /**
@@ -222,7 +222,7 @@ export const chatsRouter = router({
 
       return {
         success: true,
-        chat: updatedChat,
+        chat: { ...updatedChat, id: Number(updatedChat.id) },
       };
     }),
 });

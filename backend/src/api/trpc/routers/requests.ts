@@ -139,7 +139,11 @@ export const requestsRouter = router({
       ]);
 
       return {
-        requests,
+        requests: requests.map((req) => ({
+          ...req,
+          chatId: Number(req.chatId),
+          messageId: Number(req.messageId),
+        })),
         total,
       };
     }),
@@ -220,8 +224,8 @@ export const requestsRouter = router({
       return {
         request: {
           id: request.id,
-          chatId: request.chatId,
-          messageId: request.messageId,
+          chatId: Number(request.chatId),
+          messageId: Number(request.messageId),
           messageText: request.messageText,
           clientUsername: request.clientUsername,
           receivedAt: request.receivedAt,

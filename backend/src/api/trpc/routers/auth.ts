@@ -94,7 +94,7 @@ export const authRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build where clause based on optional role filter
-      const where = input.role ? { role: input.role } : undefined;
+      const where = input.role ? { role: input.role } : {};
 
       // Fetch users from database
       const users = await ctx.prisma.user.findMany({

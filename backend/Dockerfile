@@ -1,11 +1,13 @@
 # ============================================================================
 # Build Stage
 # ============================================================================
-# Using Node 18 Alpine for OpenSSL 1.1 compatibility with Prisma
-FROM node:18-alpine AS builder
+# Using Node 18 Debian Slim for OpenSSL 1.1 compatibility with Prisma
+FROM node:18-slim AS builder
 
 # Install build dependencies (Python for native modules like bcrypt)
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -32,15 +34,17 @@ RUN npm run build
 # ============================================================================
 # Runtime Stage (Production)
 # ============================================================================
-# Using Node 18 Alpine for OpenSSL 1.1 compatibility with Prisma
-FROM node:18-alpine AS runtime
+# Using Node 18 Debian Slim for OpenSSL 1.1 compatibility with Prisma
+FROM node:18-slim AS runtime
 
 # Install dumb-init for proper signal handling (PID 1 problem)
-RUN apk add --no-cache dumb-init curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    dumb-init curl openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs nodejs
 
 # Set working directory
 WORKDIR /app

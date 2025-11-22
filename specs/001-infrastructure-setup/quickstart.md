@@ -1,8 +1,18 @@
 # BuhBot Infrastructure Quickstart Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-17
+**Version**: 1.0.1
+**Last Updated**: 2025-11-22
 **Target**: Production deployment on First VDS with Supabase Cloud
+
+---
+
+> **Note**: This guide contains placeholder values that you must replace with your actual production values before deployment:
+> - `YOUR_VDS_IP` - Your VDS server IP address (e.g., `123.45.67.89`)
+> - `YOUR_DOMAIN` or `bot.example.com` - Your actual domain name
+> - `YOUR_PROJECT.supabase.co` or `[PROJECT-REF]` - Your Supabase project reference
+> - `[PASSWORD]`, `[BOT_TOKEN]`, `[API_KEY]`, etc. - Your actual credentials
+>
+> **Never commit actual credentials to version control.**
 
 ---
 
@@ -86,9 +96,9 @@ Before starting, ensure you have:
    - **Pricing Plan**: **Free** (with upgrade path to Pro when PITR needed)
 4. Wait ~2 minutes for project provisioning
 5. Save credentials:
-   - **Project URL**: `https://[PROJECT-REF].supabase.co`
+   - **Project URL**: `https://YOUR_PROJECT.supabase.co` (replace `YOUR_PROJECT` with your actual project reference)
    - **Anon Key**: Found in Settings → API → `anon public`
-   - **Service Role Key**: Found in Settings → API → `service_role` (⚠️ KEEP SECRET)
+   - **Service Role Key**: Found in Settings → API → `service_role` (KEEP SECRET)
 
 ### 1.2 Deploy Database Schema
 
@@ -119,16 +129,16 @@ Before starting, ensure you have:
 1. Navigate to **Authentication → Users** in Supabase dashboard
 2. Click **"Add User"** → **"Create New User"**
 3. Fill in:
-   - **Email**: `admin@buhbot.example.com` (replace with real email)
+   - **Email**: `YOUR_ADMIN_EMAIL` (replace with your actual admin email)
    - **Password**: Generate strong password
-   - **Auto Confirm**: ✅ Enabled
+   - **Auto Confirm**: Enabled
 4. Note the **User UUID** from user list
 5. Go to **SQL Editor** and insert into `users` table:
    ```sql
    INSERT INTO users (id, email, full_name, role)
    VALUES (
-     '[USER_UUID_FROM_STEP_4]'::uuid,
-     'admin@buhbot.example.com',
+     'YOUR_USER_UUID'::uuid,  -- Replace with the UUID from step 4
+     'YOUR_ADMIN_EMAIL',      -- Replace with your actual admin email
      'System Administrator',
      'admin'
    );
@@ -176,14 +186,14 @@ Before starting, ensure you have:
    - **Location**: Moscow or St. Petersburg data center
 4. Complete order and wait for provisioning (~5-10 minutes)
 5. Note server credentials:
-   - **IP Address**: `123.45.67.89` (example)
+   - **IP Address**: `YOUR_VDS_IP` (replace with actual IP, e.g., `123.45.67.89`)
    - **Root Password**: Sent to email (change immediately)
 
 ### 2.2 Initial Server Configuration
 
 SSH into server:
 ```bash
-ssh root@123.45.67.89
+ssh root@YOUR_VDS_IP
 ```
 
 Update system packages:
@@ -213,7 +223,7 @@ Configure SSH key authentication:
 ssh-keygen -t ed25519 -C "buhbot-deploy"
 
 # Copy public key to server:
-ssh-copy-id -i ~/.ssh/id_ed25519.pub buhbot@123.45.67.89
+ssh-copy-id -i ~/.ssh/id_ed25519.pub buhbot@YOUR_VDS_IP
 
 # Disable password authentication (optional but recommended):
 sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
@@ -274,27 +284,27 @@ cp .env.example .env.production
 nano .env.production
 ```
 
-Fill in credentials (replace placeholders):
+Fill in credentials (replace all `YOUR_*` placeholders with your actual values):
 ```bash
-# Supabase
-DATABASE_URL="postgresql://postgres:[PASSWORD]@[PROJECT-REF].supabase.co:5432/postgres?pgbouncer=true&connection_limit=10"
-SUPABASE_URL="https://[PROJECT-REF].supabase.co"
-SUPABASE_ANON_KEY="[ANON_KEY]"
-SUPABASE_SERVICE_ROLE_KEY="[SERVICE_ROLE_KEY]"
+# Supabase (replace YOUR_PROJECT with your Supabase project reference)
+DATABASE_URL="postgresql://postgres:YOUR_DB_PASSWORD@YOUR_PROJECT.supabase.co:5432/postgres?pgbouncer=true&connection_limit=10"
+SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+SUPABASE_ANON_KEY="YOUR_ANON_KEY"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"
 
 # Telegram Bot
-TELEGRAM_BOT_TOKEN="[BOT_TOKEN_FROM_BOTFATHER]"
-TELEGRAM_WEBHOOK_SECRET="[GENERATE_RANDOM_32_CHAR_STRING]"
-TELEGRAM_WEBHOOK_URL="https://bot.example.com/webhook/telegram"
+TELEGRAM_BOT_TOKEN="YOUR_BOT_TOKEN"
+TELEGRAM_WEBHOOK_SECRET="YOUR_WEBHOOK_SECRET"  # Generate with: openssl rand -hex 16
+TELEGRAM_WEBHOOK_URL="https://YOUR_DOMAIN/webhook/telegram"
 
 # Redis
 REDIS_URL="redis://redis:6379"
 
 # OpenRouter (for Phase 1 Module 1.1 - can be added later)
-OPENROUTER_API_KEY="[YOUR_API_KEY]"
+OPENROUTER_API_KEY="YOUR_OPENROUTER_API_KEY"
 
 # Monitoring
-GRAFANA_ADMIN_PASSWORD="[GENERATE_SECURE_PASSWORD]"
+GRAFANA_ADMIN_PASSWORD="YOUR_GRAFANA_PASSWORD"  # Generate a secure password
 
 # Application
 NODE_ENV="production"
@@ -356,18 +366,18 @@ Add A record in DNS provider:
 ```
 Type: A
 Name: bot (or @)
-Value: 123.45.67.89 (VDS IP address)
+Value: YOUR_VDS_IP (replace with your actual VDS IP address)
 TTL: 300
 ```
 
 Wait for DNS propagation (~5-15 minutes):
 ```bash
-dig bot.example.com +short
+dig YOUR_DOMAIN +short
 ```
 
 ### 4.2 Obtain Let's Encrypt Certificate
 
-Run Certbot in Docker:
+Run Certbot in Docker (replace `YOUR_DOMAIN` and `YOUR_EMAIL` with actual values):
 ```bash
 docker run -it --rm --name certbot \
   -v "/opt/BuhBot/infrastructure/nginx/ssl:/etc/letsencrypt" \
@@ -375,23 +385,23 @@ docker run -it --rm --name certbot \
   certbot/certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
-  --email admin@buhbot.example.com \
+  --email YOUR_EMAIL \
   --agree-tos \
   --no-eff-email \
-  -d bot.example.com
+  -d YOUR_DOMAIN
 ```
 
 Certificate will be saved to:
-- `/opt/BuhBot/infrastructure/nginx/ssl/live/bot.example.com/fullchain.pem`
-- `/opt/BuhBot/infrastructure/nginx/ssl/live/bot.example.com/privkey.pem`
+- `/opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/fullchain.pem`
+- `/opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/privkey.pem`
 
 ### 4.3 Configure Nginx
 
-Edit `infrastructure/nginx/nginx.conf` (already configured in repo, verify paths):
+Edit `infrastructure/nginx/nginx.conf` (replace `YOUR_DOMAIN` with your actual domain):
 ```nginx
 server {
     listen 80;
-    server_name bot.example.com;
+    server_name YOUR_DOMAIN;
 
     # Redirect HTTP to HTTPS
     return 301 https://$server_name$request_uri;
@@ -399,10 +409,10 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name bot.example.com;
+    server_name YOUR_DOMAIN;
 
-    ssl_certificate /etc/letsencrypt/live/bot.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/bot.example.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
 
@@ -446,10 +456,12 @@ Add cron job:
 sudo crontab -e
 ```
 
-Add line:
+Add line (certificate renewal runs automatically twice daily):
 ```cron
 0 0,12 * * * docker run --rm --name certbot -v "/opt/BuhBot/infrastructure/nginx/ssl:/etc/letsencrypt" -v "/opt/BuhBot/infrastructure/nginx/certbot:/var/www/certbot" certbot/certbot renew --quiet && docker compose -f /opt/BuhBot/infrastructure/docker-compose.yml restart nginx
 ```
+
+> **Note**: This cron job handles automatic SSL certificate renewal. No placeholder replacement needed here.
 
 ---
 
@@ -457,12 +469,12 @@ Add line:
 
 ### 5.1 Set Webhook URL
 
-Use Telegram Bot API:
+Use Telegram Bot API (replace placeholders with your actual values):
 ```bash
-curl -F "url=https://bot.example.com/webhook/telegram" \
-     -F "secret_token=[TELEGRAM_WEBHOOK_SECRET_FROM_ENV]" \
+curl -F "url=https://YOUR_DOMAIN/webhook/telegram" \
+     -F "secret_token=YOUR_WEBHOOK_SECRET" \
      -F "allowed_updates=[\"message\",\"callback_query\"]" \
-     https://api.telegram.org/bot[BOT_TOKEN]/setWebhook
+     https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook
 ```
 
 Expected response:
@@ -472,9 +484,9 @@ Expected response:
 
 ### 5.2 Verify Webhook
 
-Check webhook info:
+Check webhook info (replace `YOUR_BOT_TOKEN` with your actual token):
 ```bash
-curl https://api.telegram.org/bot[BOT_TOKEN]/getWebhookInfo
+curl https://api.telegram.org/botYOUR_BOT_TOKEN/getWebhookInfo
 ```
 
 Expected response:
@@ -482,7 +494,7 @@ Expected response:
 {
   "ok": true,
   "result": {
-    "url": "https://bot.example.com/webhook/telegram",
+    "url": "https://YOUR_DOMAIN/webhook/telegram",
     "has_custom_certificate": false,
     "pending_update_count": 0,
     "last_error_date": 0,
@@ -514,11 +526,11 @@ Expected output:
 
 ### 6.1 Access Grafana
 
-Open browser: `https://bot.example.com/grafana`
+Open browser: `https://YOUR_DOMAIN/grafana`
 
 Default credentials:
 - **Username**: `admin`
-- **Password**: `[GRAFANA_ADMIN_PASSWORD from .env]`
+- **Password**: `YOUR_GRAFANA_PASSWORD` (the value you set in `.env.production`)
 
 Change password on first login.
 
@@ -534,18 +546,18 @@ Change password on first login.
 
 ### 6.3 Configure Uptime Kuma
 
-Open browser: `https://bot.example.com/uptime`
+Open browser: `https://YOUR_DOMAIN/uptime`
 
 1. Create admin account (first visit)
 2. Add monitor:
    - **Monitor Type**: HTTP(s)
    - **Friendly Name**: BuhBot Webhook
-   - **URL**: `https://bot.example.com/health`
+   - **URL**: `https://YOUR_DOMAIN/health`
    - **Heartbeat Interval**: 300 seconds (5 minutes)
 3. Add notification (Telegram):
    - **Notification Type**: Telegram
-   - **Bot Token**: `[TELEGRAM_BOT_TOKEN]`
-   - **Chat ID**: `[ADMIN_CHAT_ID]` (get via @userinfobot)
+   - **Bot Token**: `YOUR_BOT_TOKEN`
+   - **Chat ID**: `YOUR_ADMIN_CHAT_ID` (get your chat ID via @userinfobot on Telegram)
 
 ### 6.4 Test Alerting
 
@@ -607,12 +619,12 @@ Add line:
 
 Navigate to GitHub repository → Settings → Secrets and variables → Actions
 
-Add secrets:
-- **VDS_HOST**: `123.45.67.89`
+Add secrets (replace placeholders with your actual values):
+- **VDS_HOST**: `YOUR_VDS_IP`
 - **VDS_USER**: `buhbot`
-- **VDS_SSH_KEY**: (private key content from `~/.ssh/id_ed25519`)
-- **DOCKER_USERNAME**: (if using Docker Hub)
-- **DOCKER_PASSWORD**: (if using Docker Hub)
+- **VDS_SSH_KEY**: (your private SSH key content from `~/.ssh/id_ed25519`)
+- **DOCKER_USERNAME**: `YOUR_DOCKER_USERNAME` (if using Docker Hub)
+- **DOCKER_PASSWORD**: `YOUR_DOCKER_PASSWORD` (if using Docker Hub)
 
 ### 8.2 Configure GitHub Environment
 
@@ -636,14 +648,14 @@ Navigate to **Actions** tab → verify workflow runs → approve deployment when
 
 ## Verification Checklist
 
-After completing all steps, verify:
+After completing all steps, verify (replace `YOUR_DOMAIN` with your actual domain):
 
 - [ ] **Supabase**: Database tables exist, RLS policies enabled, admin user created
 - [ ] **VDS**: Docker containers running (`docker compose ps` shows all `Up`)
-- [ ] **HTTPS**: `https://bot.example.com/health` returns `{"status":"healthy"}`
+- [ ] **HTTPS**: `https://YOUR_DOMAIN/health` returns `{"status":"healthy"}`
 - [ ] **Telegram Bot**: `/start` command receives response
 - [ ] **Webhook**: `getWebhookInfo` shows correct URL and no errors
-- [ ] **Grafana**: Dashboards display metrics at `https://bot.example.com/grafana`
+- [ ] **Grafana**: Dashboards display metrics at `https://YOUR_DOMAIN/grafana`
 - [ ] **Uptime Kuma**: Bot monitor shows "Up" status
 - [ ] **Backups**: `/var/backups/buhbot/` contains backup archive
 - [ ] **CI/CD**: GitHub Actions workflow succeeds with manual approval
@@ -666,9 +678,9 @@ Common issues:
 
 ### SSL Certificate Issues
 
-Verify certificate paths:
+Verify certificate paths (replace `YOUR_DOMAIN` with your actual domain):
 ```bash
-ls -la /opt/BuhBot/infrastructure/nginx/ssl/live/bot.example.com/
+ls -la /opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/
 ```
 
 If missing, re-run Certbot (Step 4.2).
@@ -726,7 +738,7 @@ global:
 For issues or questions:
 - **Documentation**: `docs/infrastructure/`
 - **GitHub Issues**: https://github.com/maslennikov-ig/BuhBot/issues
-- **Email**: admin@buhbot.example.com
+- **Email**: Contact your system administrator
 
 ---
 

@@ -3,7 +3,7 @@
 **Платформа автоматизации коммуникаций для бухгалтерских фирм**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Status: Planning](https://img.shields.io/badge/Status-Planning-yellow.svg)]()
+[![Status: Phase 1 Infrastructure](https://img.shields.io/badge/Status-Phase%201%20Infrastructure-green.svg)]()
 
 ---
 
@@ -119,6 +119,19 @@ cp .env.example .env.local
 - [Архитектура агентной системы](docs/Agents%20Ecosystem/ARCHITECTURE.md)
 - [Правила оркестрации](CLAUDE.md)
 
+### Infrastructure Documentation
+
+Phase 1 Infrastructure Foundation completed. Technology stack: Supabase (PostgreSQL), Docker, Yandex Cloud VDS.
+
+- [Quick Start Deployment Guide](docs/infrastructure/quickstart.md) - Get started with deployment
+- [Architecture Overview](docs/infrastructure/architecture-diagram.md) - System architecture and components
+- [CI/CD Pipeline Setup](docs/infrastructure/ci-cd-setup.md) - GitHub Actions automation
+- [Security Checklist](docs/infrastructure/security-checklist.md) - Security hardening guide
+- [Monitoring & Alerting Guide](docs/infrastructure/monitoring-guide.md) - Observability setup
+- [Backup & Disaster Recovery](docs/infrastructure/disaster-recovery.md) - Data protection strategy
+- [Troubleshooting Guide](docs/infrastructure/troubleshooting.md) - Common issues and solutions
+- [Project Specification](specs/001-infrastructure-setup/) - Detailed infrastructure specs
+
 ---
 
 ## 🛠️ Технологический стек
@@ -152,9 +165,10 @@ cp .env.example .env.local
 ### Q1 2025
 - [x] Исследование и анализ требований
 - [x] Техническое задание
-- [ ] Инициализация репозитория
-- [ ] Настройка CI/CD
-- [ ] Начало Фазы 1
+- [x] Инициализация репозитория
+- [x] Настройка CI/CD
+- [x] Phase 1: Infrastructure Foundation (Supabase, Docker, Yandex Cloud)
+- [ ] Начало Фазы 1: Core Features
 
 ### Q2 2025
 - [ ] Завершение Фазы 1 (CORE + QUICK WINS)

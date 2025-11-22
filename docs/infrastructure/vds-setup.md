@@ -1,9 +1,19 @@
 # BuhBot VDS Setup Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-20
+**Version**: 1.0.1
+**Last Updated**: 2025-11-22
 **Target Environment**: FirstVDS.ru production deployment
 **Estimated Time**: 2.5 hours (initial setup) | 15 minutes (subsequent updates)
+
+---
+
+> **Note**: This guide contains placeholder values that you must replace with your actual production values before deployment:
+> - `YOUR_VDS_IP` - Your VDS server IP address (e.g., `123.45.67.89`)
+> - `YOUR_DOMAIN` or `bot.example.com` - Your actual domain name
+> - `YOUR_PROJECT.supabase.co` - Your Supabase project reference
+> - `YOUR_*` placeholders - Your actual credentials and configuration values
+>
+> **Never commit actual credentials to version control.**
 
 ---
 
@@ -120,7 +130,7 @@ The BuhBot application runs on a single VDS server with the following containeri
 
 5. **Save server credentials** (sent to email):
    ```
-   IP Address: 123.45.67.89
+   IP Address: YOUR_VDS_IP (replace with your actual VDS IP)
    Root Password: [AUTO_GENERATED_PASSWORD]
    ```
 
@@ -194,7 +204,7 @@ SHA256:abc123... buhbot-production-deploy
 From your **local machine**, copy the public key to the VDS:
 
 ```bash
-ssh-copy-id root@123.45.67.89
+ssh-copy-id root@YOUR_VDS_IP
 ```
 
 **Prompt**: Enter root password (from Step 1.1)
@@ -209,7 +219,7 @@ Number of key(s) added: 1
 Test passwordless SSH login:
 
 ```bash
-ssh root@123.45.67.89
+ssh root@YOUR_VDS_IP
 ```
 
 ✅ **Success**: You should be logged in **without** entering a password
@@ -254,18 +264,18 @@ cd BuhBot
 
 ### Step 3.2: Copy Bootstrap Script to VDS
 
-From your **local machine**:
+From your **local machine** (replace `YOUR_VDS_IP` with your actual VDS IP):
 
 ```bash
-scp infrastructure/scripts/bootstrap-vds.sh root@123.45.67.89:/tmp/
+scp infrastructure/scripts/bootstrap-vds.sh root@YOUR_VDS_IP:/tmp/
 ```
 
 ### Step 3.3: Run Bootstrap Script on VDS
 
-SSH into VDS and execute:
+SSH into VDS and execute (replace `YOUR_VDS_IP` with your actual VDS IP):
 
 ```bash
-ssh root@123.45.67.89
+ssh root@YOUR_VDS_IP
 cd /tmp
 chmod +x bootstrap-vds.sh
 sudo ./bootstrap-vds.sh
@@ -338,7 +348,7 @@ ls -la /home/buhbot/
 ⚠️ **CRITICAL**: Before closing root session, test SSH as `buhbot` user from **another terminal**:
 
 ```bash
-ssh buhbot@123.45.67.89
+ssh buhbot@YOUR_VDS_IP
 ```
 
 ✅ **Success**: Passwordless login works (using same SSH key)
@@ -377,7 +387,7 @@ The deployment script (`infrastructure/scripts/deploy.sh`) automates:
 SSH as `buhbot` user:
 
 ```bash
-ssh buhbot@123.45.67.89
+ssh buhbot@YOUR_VDS_IP
 ```
 
 Clone repository:
@@ -407,13 +417,13 @@ nano backend/.env
 NODE_ENV=production
 PORT=3000
 
-# Supabase Configuration
-SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+# Supabase Configuration (replace YOUR_PROJECT with your Supabase project reference)
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
 
-# Database Configuration
-DATABASE_URL=postgresql://postgres.YOUR-PROJECT-REF:YOUR_PASSWORD@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR-PROJECT-REF.supabase.co:5432/postgres
+# Database Configuration (replace YOUR_PROJECT and YOUR_DB_PASSWORD with actual values)
+DATABASE_URL=postgresql://postgres.YOUR_PROJECT:YOUR_DB_PASSWORD@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres:YOUR_DB_PASSWORD@db.YOUR_PROJECT.supabase.co:5432/postgres
 
 # Redis Configuration
 REDIS_HOST=redis
@@ -422,14 +432,14 @@ REDIS_PASSWORD=
 REDIS_DB=0
 
 # Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_FROM_BOTFATHER
+TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN
 
 # Logging
 LOG_LEVEL=warn
 
 # Security (generate with: openssl rand -base64 32)
-JWT_SECRET=GENERATE_RANDOM_32_CHARS
-ENCRYPTION_KEY=GENERATE_RANDOM_32_CHARS
+JWT_SECRET=YOUR_JWT_SECRET
+ENCRYPTION_KEY=YOUR_ENCRYPTION_KEY
 
 # Metrics & Monitoring
 PROMETHEUS_PORT=9090
@@ -447,9 +457,9 @@ nano frontend/.env.local
 **Fill in frontend/.env.local**:
 
 ```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+# Supabase Configuration (replace YOUR_PROJECT with your Supabase project reference)
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
 
 # API Configuration (points to backend service)
 NEXT_PUBLIC_API_URL=http://bot-backend:3000
@@ -594,18 +604,18 @@ Before obtaining SSL certificate, configure DNS A record:
 2. **Add A record**:
    - **Type**: A
    - **Name**: `bot` (or `@` for root domain)
-   - **Value**: `123.45.67.89` (your VDS IP)
+   - **Value**: `YOUR_VDS_IP` (replace with your actual VDS IP)
    - **TTL**: 300 (5 minutes)
 
 3. **Wait for DNS propagation** (5-15 minutes)
 
-**Verify DNS propagation**:
+**Verify DNS propagation** (replace `YOUR_DOMAIN` with your actual domain):
 
 ```bash
-dig bot.example.com +short
+dig YOUR_DOMAIN +short
 ```
 
-✅ **Expected output**: Your VDS IP address (`123.45.67.89`)
+✅ **Expected output**: Your VDS IP address
 
 Alternatively, use online tool: https://dnschecker.org
 
@@ -627,21 +637,21 @@ Expected: `certbot 1.21.0` or higher
 
 ### Step 5.3: Generate SSL Certificate
 
-Run Certbot with webroot plugin:
+Run Certbot with webroot plugin (replace placeholders with your actual values):
 
 ```bash
 sudo certbot certonly \
   --webroot \
   -w /var/www/certbot \
-  -d bot.example.com \
-  --email admin@example.com \
+  -d YOUR_DOMAIN \
+  --email YOUR_EMAIL \
   --agree-tos \
   --no-eff-email
 ```
 
 **Replace**:
-- `bot.example.com` → your actual domain
-- `admin@example.com` → your email for renewal notifications
+- `YOUR_DOMAIN` - your actual domain (e.g., `bot.example.com`)
+- `YOUR_EMAIL` - your email for renewal notifications
 
 **Prompts**:
 - **Terms of Service**: Accept
@@ -652,8 +662,8 @@ sudo certbot certonly \
 ✅ **Expected output**:
 ```
 Successfully received certificate.
-Certificate is saved at: /etc/letsencrypt/live/bot.example.com/fullchain.pem
-Key is saved at:         /etc/letsencrypt/live/bot.example.com/privkey.pem
+Certificate is saved at: /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem
 This certificate expires on YYYY-MM-DD.
 ```
 
@@ -665,13 +675,13 @@ Create SSL directory structure:
 sudo mkdir -p /home/buhbot/BuhBot/infrastructure/nginx/ssl
 ```
 
-Copy certificates:
+Copy certificates (replace `YOUR_DOMAIN` with your actual domain):
 
 ```bash
-sudo cp /etc/letsencrypt/live/bot.example.com/fullchain.pem \
+sudo cp /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem \
         /home/buhbot/BuhBot/infrastructure/nginx/ssl/fullchain.pem
 
-sudo cp /etc/letsencrypt/live/bot.example.com/privkey.pem \
+sudo cp /etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem \
         /home/buhbot/BuhBot/infrastructure/nginx/ssl/privkey.pem
 ```
 
@@ -736,10 +746,10 @@ docker logs buhbot-nginx --tail=20
 
 ### Step 5.7: Test HTTPS Access
 
-From your **local machine** (or any external browser):
+From your **local machine** (or any external browser, replace `YOUR_DOMAIN`):
 
 ```bash
-curl -I https://bot.example.com/health
+curl -I https://YOUR_DOMAIN/health
 ```
 
 ✅ **Expected output**:
@@ -750,7 +760,7 @@ content-type: application/json
 strict-transport-security: max-age=31536000; includeSubDomains; preload
 ```
 
-**Browser test**: Open `https://bot.example.com` in browser
+**Browser test**: Open `https://YOUR_DOMAIN` in browser
 
 ✅ **Expected**: Valid SSL certificate (green padlock icon)
 
@@ -773,10 +783,11 @@ sudo nano /usr/local/bin/renew-letsencrypt.sh
 certbot renew --quiet --webroot -w /var/www/certbot
 
 # Copy renewed certificates to Nginx directory
-cp /etc/letsencrypt/live/bot.example.com/fullchain.pem \
+# NOTE: Replace YOUR_DOMAIN with your actual domain in this script
+cp /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem \
    /home/buhbot/BuhBot/infrastructure/nginx/ssl/fullchain.pem
 
-cp /etc/letsencrypt/live/bot.example.com/privkey.pem \
+cp /etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem \
    /home/buhbot/BuhBot/infrastructure/nginx/ssl/privkey.pem
 
 # Fix permissions
@@ -856,27 +867,27 @@ From **external network** (local machine or browser):
 
 **Health endpoint**:
 ```bash
-curl https://bot.example.com/health
+curl https://YOUR_DOMAIN/health
 ```
 
 ✅ **Expected**: `{"status":"healthy"}` with HTTP 200
 
 **Frontend (admin panel)**:
 ```bash
-curl -I https://bot.example.com/
+curl -I https://YOUR_DOMAIN/
 ```
 
 ✅ **Expected**: HTTP 200 response with HTML content
 
 **Grafana dashboard**:
 
-Open browser: `https://bot.example.com/grafana`
+Open browser: `https://YOUR_DOMAIN/grafana`
 
 ✅ **Expected**: Grafana login page
 
 **Uptime Kuma**:
 
-Open browser: `https://bot.example.com/uptime`
+Open browser: `https://YOUR_DOMAIN/uptime`
 
 ✅ **Expected**: Uptime Kuma dashboard
 
@@ -1200,7 +1211,7 @@ docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-com
 **Steps**:
 
 ```bash
-ssh buhbot@123.45.67.89
+ssh buhbot@YOUR_VDS_IP
 cd /home/buhbot/BuhBot
 
 # Pull latest code
@@ -1264,7 +1275,7 @@ sudo certbot certificates
 
 ✅ **Expected output**:
 ```
-Certificate Name: bot.example.com
+Certificate Name: YOUR_DOMAIN
   Expiry Date: YYYY-MM-DD (VALID: XX days)
 ```
 
@@ -1409,6 +1420,6 @@ You have successfully deployed BuhBot on a FirstVDS production server with:
 
 ---
 
-**Document Version**: 1.0.0
+**Document Version**: 1.0.1
 **Tested on**: Ubuntu 22.04 LTS, Docker 24.0+, Docker Compose v2.20+
-**Last Updated**: 2025-11-20
+**Last Updated**: 2025-11-22

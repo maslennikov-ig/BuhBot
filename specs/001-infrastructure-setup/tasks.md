@@ -294,10 +294,16 @@ Based on plan.md project structure:
   → Artifacts: [infrastructure/scripts/deploy.sh](../../infrastructure/scripts/deploy.sh), [infrastructure/scripts/README.md](../../infrastructure/scripts/README.md)
 - [X] T046 [P] [US2] Create documentation in docs/infrastructure/vds-setup.md (VDS provisioning, SSH setup, Docker installation, docker compose deployment)
   → Artifacts: [docs/infrastructure/vds-setup.md](../../docs/infrastructure/vds-setup.md)
-- [ ] T047 [US2] Verify VDS deployment: SSH to VDS, run docker compose ps to verify all containers Up, curl http://localhost:3000/health returns healthy, check docker logs bot for errors
-  → Status: PENDING (manual verification required on actual VDS)
+- [X] T047 [US2] Verify VDS deployment: SSH to VDS, run docker compose ps to verify all containers Up, curl http://localhost:3000/health returns healthy, check docker logs bot for errors
+  → Artifacts: [.tmp/current/vds-credentials.md](../../.tmp/current/vds-credentials.md) (deployment status + fixes applied)
+  → Fixed issues:
+    - DATABASE_URL region: `aws-0-eu-central-1` → `aws-1-eu-west-1` (Supabase pooler)
+    - [infrastructure/nginx/nginx.conf](../../infrastructure/nginx/nginx.conf) - Added Docker DNS resolver, variables for runtime resolution
+    - [infrastructure/monitoring/prometheus.yml](../../infrastructure/monitoring/prometheus.yml) - Removed invalid `storage:` YAML section
+  → All containers healthy: bot-backend ✅, frontend ✅, nginx ✅, redis ✅, monitoring-stack ✅
+  → Access: http://185.200.177.180/ (frontend), http://185.200.177.180/health (API), http://185.200.177.180:3002/ (Grafana), http://185.200.177.180:9090/ (Prometheus)
 
-**Checkpoint**: ⚠️ **IMPLEMENTATION COMPLETE** - All Phase 4 tasks (T028-T046) completed. Ready for VDS deployment testing (T047 requires actual VDS server).
+**Checkpoint**: ✅ **PHASE 4 COMPLETE** - All Phase 4 tasks (T028-T047) completed. VDS deployment verified and all services healthy.
 **Artifacts Summary**:
 - Dockerfiles: backend, frontend, monitoring-stack (3 files)
 - Docker Compose: base + production overrides (2 files)

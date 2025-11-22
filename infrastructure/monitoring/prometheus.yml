@@ -59,16 +59,9 @@ scrape_configs:
   #   scrape_interval: 15s
 
 # Storage configuration
-storage:
-  tsdb:
-    # Data retention period: 15 days (Free tier constraint)
-    retention.time: 15d
-
-    # No size-based retention (use time-based only)
-    # retention.size: 0
-
-    # Data directory (mounted volume in container)
-    path: /prometheus/data
+# NOTE: Storage options are CLI flags, not YAML config!
+# Set via: --storage.tsdb.retention.time=15d --storage.tsdb.path=/prometheus/data
+# Configured in supervisord or docker-compose command
 
 # Remote write/read: Not configured (local storage only for Free tier)
 # Future enhancement: Add remote write to Yandex Monitoring if needed

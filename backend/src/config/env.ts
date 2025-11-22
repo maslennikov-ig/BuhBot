@@ -59,6 +59,11 @@ const envSchema = z.object({
     .string()
     .min(1)
     .describe('Telegram Bot Token from @BotFather'),
+  TELEGRAM_WEBHOOK_SECRET: z
+    .string()
+    .min(32)
+    .optional()
+    .describe('Secret token for webhook signature validation (min 32 chars)'),
 
   // Logging
   LOG_LEVEL: z

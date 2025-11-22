@@ -5,6 +5,9 @@
 **Duration:** 6-8 weeks
 **Budget:** ₽1,420,000 (~$15,000 USD)
 
+**Last Updated:** 2025-11-17
+**Architecture Version:** Hybrid Deployment (Supabase Cloud + First VDS)
+
 ---
 
 ## 🎯 Mission Statement
@@ -28,28 +31,48 @@ Build a Telegram-based automation platform for accounting firms to monitor servi
 3. Intelligent spam filtering (distinguish real requests from "Thanks!" messages)
 4. Quick-response system (buttons, FAQ auto-responses, templates)
 5. Unified admin panel for management and analytics
-6. 152-ФЗ compliance (Russian data localization law)
+6. Secure data handling with industry-standard encryption and authentication
 
 ---
 
 ## 🏗️ Architecture Requirements
 
 ### Stack Constraints
-- **Backend:** Node.js 18+ (TypeScript preferred)
-- **Database:** PostgreSQL 14+ (Yandex Managed Database)
-- **Cache/Queue:** Redis + BullMQ for job scheduling
-- **Bot Framework:** node-telegram-bot-api or Telegraf
-- **Frontend:** Next.js 14+ / React for admin panel
-- **AI/NLP:** Yandex GPT Lite (for spam filtering, Russian language)
-- **Hosting:** Yandex Cloud (MANDATORY for 152-ФЗ compliance)
-- **Encryption:** AES-256 at rest, TLS 1.3 in transit
+- **Backend:** Node.js 18+ (TypeScript strict mode)
+- **Database:** Supabase (cloud-hosted PostgreSQL 15+ with Auth, Storage, Realtime)
+- **Cache/Queue:** Redis + BullMQ for job scheduling (self-hosted on VDS)
+- **Bot Framework:** Telegraf (recommended) or node-telegram-bot-api
+- **Frontend:** Next.js 14+ App Router / React for admin panel
+- **AI/NLP:** OpenRouter or OpenAI (GPT-4, Claude, or Russian LLMs)
+- **Bot Hosting:** First VDS (Russian VDS provider)
+- **Security:** HTTPS/TLS for all connections, Supabase RLS policies for data isolation
 
-### Infrastructure
-- Yandex Compute Cloud VMs
-- Yandex Managed PostgreSQL with daily backups
-- Yandex Object Storage for file handling
-- Yandex Cloud Monitoring for alerting
-- 3 months hosting included in budget
+### Infrastructure (Hybrid Deployment)
+
+**Supabase Cloud (EU region recommended):**
+- PostgreSQL 15+ database (managed with automatic backups)
+- Supabase Auth (email/password, magic links, optional social)
+- Supabase Storage (document uploads, invoices, files)
+- Realtime Subscriptions (WebSocket for live dashboard updates)
+- Row Level Security (RLS) policies for role-based access control
+
+**First VDS Server:**
+- Node.js Telegram Bot application
+- BullMQ workers (background jobs: alerts, surveys, reminders)
+- Redis (queue management, conversation state)
+- Nginx reverse proxy (SSL termination with Let's Encrypt)
+- Prometheus + Grafana (monitoring bot metrics)
+- Docker Compose for deployment
+
+**External Services:**
+- UptimeRobot or Pingdom (uptime monitoring)
+- OpenRouter/OpenAI API (spam filtering, NLP)
+
+**Estimated Costs (3 months):**
+- First VDS: ~₽3,000-5,000/month (₽9,000-15,000 total)
+- Supabase: Free tier for MVP (₽0), Pro tier ~$25/month if needed (₽7,500 total)
+- OpenRouter API: ~₽5,000-10,000 for Phase 1 usage
+- **Total infrastructure:** ~₽21,000-32,500 (included in ₽1,420,000 budget)
 
 ---
 
@@ -99,9 +122,10 @@ interface ClientRequest {
 **Objective:** Use AI to filter out non-request messages
 
 **Functional Requirements:**
-- Integration with Yandex GPT Lite API
-- Keyword-based rules as fallback (if API fails)
-- Train on real accounting firm chat data (50-100 examples)
+- Integration with OpenRouter or OpenAI API
+- Recommended models: GPT-4 Turbo, Claude 3.5 Sonnet, or specialized Russian LLMs via OpenRouter
+- Keyword-based rules as fallback (if API fails or rate limited)
+- Train/test on real accounting firm chat data (50-100 examples)
 - Classify messages: REQUEST | SPAM | GRATITUDE | CLARIFICATION
 
 **Technical Specs:**
@@ -111,15 +135,24 @@ interface SpamFilterResult {
   confidence: number; // 0-1
   category: 'REQUEST' | 'SPAM' | 'GRATITUDE' | 'CLARIFICATION';
   reasoning?: string;
+  model_used: 'openrouter' | 'openai' | 'keyword-fallback';
 }
 
 async function filterSpam(message: string): Promise<SpamFilterResult>
 ```
 
+**API Integration:**
+- Primary: OpenRouter API (access to multiple models including Russian LLMs)
+- Alternative: OpenAI API (GPT-4 Turbo with Russian language support)
+- Fallback: Keyword-based classification (hardcoded rules)
+- API key management: environment variables only
+- Cost optimization: cache results for identical messages
+
 **Acceptance Criteria:**
 - ✅ 90%+ accuracy on test dataset
-- ✅ Response time <2 seconds per message
-- ✅ Fallback to keyword matching if API unavailable
+- ✅ Response time <2 seconds per message (including API call)
+- ✅ Fallback to keyword matching if API unavailable or rate limited
+- ✅ Cost per message <₽0.50 (track API usage)
 
 ---
 
@@ -234,16 +267,29 @@ interface SLAAlert {
    - Holiday calendar editor
 
 **Technical Specs:**
-- Next.js 14+ App Router
-- tRPC for type-safe API
-- Authentication: simple admin login (email + password)
-- Responsive design (Tailwind CSS)
+- Next.js 14+ App Router (React Server Components)
+- Supabase JS Client for data operations (direct DB queries with RLS)
+- Supabase Auth for authentication (email + password)
+- Supabase Realtime for live dashboard updates (WebSocket)
+- Responsive design (Tailwind CSS + shadcn/ui components)
+
+**Authentication Flow:**
+1. User logs in via Supabase Auth (email + password)
+2. Supabase returns JWT token (stored in httpOnly cookie)
+3. All DB queries automatically filtered by RLS policies based on user role
+4. No custom auth middleware needed
+
+**Data Fetching Strategy:**
+- Server Components: Direct Supabase queries (server-side)
+- Client Components: Supabase client with RLS enforcement
+- Real-time: Supabase Realtime subscriptions for live metrics
 
 **Acceptance Criteria:**
-- ✅ All CRUD operations work
-- ✅ Real-time updates (WebSocket or polling every 30s)
+- ✅ All CRUD operations work with RLS policy enforcement
+- ✅ Real-time updates via Supabase Realtime (no polling needed)
 - ✅ Mobile-responsive
 - ✅ No UI bugs on Chrome/Safari/Firefox
+- ✅ Role-based access: Admin sees all, Manager sees limited, Observer read-only
 
 ---
 
@@ -533,8 +579,8 @@ interface RequestUpdate {
 **Technical Specs:**
 - Telegram file API integration
 - Extract metadata: filename, size, mime type
-- Store file reference in database
-- Optional: Upload to Yandex Object Storage (Phase 3: integrate with Yandex.Disk)
+- Store file reference in Supabase database
+- Upload to Supabase Storage (with public URL generation)
 
 **Acceptance Criteria:**
 - ✅ Confirmation sent within 5 seconds
@@ -623,18 +669,36 @@ function renderTemplate(template: Template, variables: Record<string, string>): 
 #### 1.4.1 Authentication & Roles (16 hours)
 
 **Roles:**
-1. **Admin:** Full access
+1. **Admin:** Full access (CRUD all tables, user management, system settings)
 2. **Manager:** View all data, configure settings, no user management
-3. **Observer:** Read-only access
+3. **Observer:** Read-only access (view dashboards, reports only)
 
 **Technical Specs:**
-- Email + password authentication
-- JWT tokens
-- Role-based access control (RBAC)
+- Supabase Auth for authentication (email + password, bcrypt handled automatically)
+- JWT tokens managed by Supabase (httpOnly cookies)
+- Row Level Security (RLS) policies in PostgreSQL for role-based access control
+- User roles stored in `auth.users` metadata or separate `user_roles` table
+
+**RLS Policy Examples:**
+```sql
+-- Admin: full access to all tables
+CREATE POLICY admin_all_access ON client_requests
+  FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+
+-- Manager: view all, modify settings
+CREATE POLICY manager_view ON client_requests
+  FOR SELECT USING (auth.jwt() ->> 'role' IN ('admin', 'manager'));
+
+-- Observer: read-only
+CREATE POLICY observer_readonly ON client_requests
+  FOR SELECT USING (auth.jwt() ->> 'role' IN ('admin', 'manager', 'observer'));
+```
 
 **Acceptance Criteria:**
-- ✅ Each role has correct permissions
-- ✅ Secure (no JWT leaks, passwords hashed with bcrypt)
+- ✅ Each role has correct permissions enforced by RLS policies
+- ✅ Secure (passwords hashed by Supabase Auth, JWT httpOnly cookies)
+- ✅ Role assignment via Supabase dashboard or admin panel
+- ✅ Unauthorized access attempts blocked at database level
 
 ---
 
@@ -746,59 +810,129 @@ function renderTemplate(template: Template, variables: Record<string, string>): 
 
 ### Requirements
 
-#### 1.5.1 Yandex Cloud Deployment (24 hours)
+#### 1.5.1 Hybrid Deployment Setup (24 hours)
+
+**Objective:** Deploy bot application on First VDS + configure Supabase cloud database
 
 **Components:**
-1. **Compute Cloud VM:**
-   - 2 vCPU, 4 GB RAM
-   - Ubuntu 22.04 LTS
-   - Docker + Docker Compose
 
-2. **Managed PostgreSQL:**
-   - Standard configuration
-   - Daily backups (retain 7 days)
+**1. Supabase Cloud Setup (4 hours):**
+   - Create Supabase project (EU region recommended for latency)
+   - Configure database schema (tables, indexes, relationships)
+   - Set up RLS policies for role-based access control
+   - Configure Supabase Auth (email/password providers)
+   - Set up Supabase Storage buckets (invoices, documents, files)
+   - Configure automatic backups (Point-in-Time Recovery enabled)
 
-3. **Redis:**
-   - For BullMQ job queue
-   - For session storage
+**2. First VDS Server (12 hours):**
+   - Rent VDS: 2-4 vCPU, 4-8 GB RAM, 50-100 GB SSD
+   - OS: Ubuntu 22.04 LTS
+   - Docker + Docker Compose installation
+   - Deploy services:
+     - Node.js Telegram Bot application
+     - Redis (BullMQ queue + conversation state)
+     - Nginx reverse proxy (SSL termination)
+     - Prometheus + Grafana (monitoring)
 
-4. **Object Storage:**
-   - For file uploads (invoices, documents)
-   - Bucket with lifecycle rules
+**3. Networking & Security (4 hours):**
+   - Configure VDS firewall (allow 443, 80, SSH only)
+   - Set up Nginx reverse proxy with Let's Encrypt SSL
+   - Configure Supabase connection from VDS (connection pooling)
+   - Environment variables management (.env.production)
 
-5. **Monitoring:**
-   - Yandex Cloud Monitoring
-   - Alerts for:
-     - High CPU (>80%)
-     - Disk full (>90%)
+**4. Monitoring & Alerts (4 hours):**
+   - Prometheus metrics collection (bot metrics, Redis, CPU, RAM)
+   - Grafana dashboards (SLA metrics, bot performance, system health)
+   - UptimeRobot or Pingdom for external uptime monitoring
+   - Alerts:
      - Bot downtime
-     - Database connection errors
+     - High CPU (>80%)
+     - High memory (>80%)
+     - Disk full (>85%)
+     - Supabase connection errors
 
 **Technical Specs:**
-- Infrastructure as Code (Terraform recommended)
-- Nginx reverse proxy
-- SSL certificate (Let's Encrypt)
-- PM2 or systemd for process management
+- Docker Compose for orchestration
+- Nginx reverse proxy for HTTPS (Let's Encrypt)
+- PM2 inside Docker for Node.js process management
+- GitHub Actions for CI/CD deployment to VDS
+
+**Deployment Architecture:**
+```
+┌─────────────────────────────────────┐
+│      Supabase Cloud (EU)            │
+│  ┌──────────────────────────────┐   │
+│  │ PostgreSQL 15+               │   │
+│  │ Supabase Auth                │   │
+│  │ Supabase Storage             │   │
+│  │ Realtime Subscriptions       │   │
+│  └──────────────────────────────┘   │
+└─────────────────┬───────────────────┘
+                  │ HTTPS/WSS
+                  │
+┌─────────────────┴───────────────────┐
+│      First VDS Server               │
+│  ┌──────────────────────────────┐   │
+│  │ Nginx (Reverse Proxy + SSL)  │   │
+│  └──────────────┬───────────────┘   │
+│  ┌──────────────┴───────────────┐   │
+│  │ Node.js Telegram Bot         │   │
+│  │ BullMQ Workers               │   │
+│  └──────────────┬───────────────┘   │
+│  ┌──────────────┴───────────────┐   │
+│  │ Redis (Queue + State)        │   │
+│  └──────────────────────────────┘   │
+│  ┌──────────────────────────────┐   │
+│  │ Prometheus + Grafana         │   │
+│  └──────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
 
 **Acceptance Criteria:**
-- ✅ All services running in Yandex Cloud
-- ✅ Monitoring alerts work
-- ✅ SSL enabled
-- ✅ Automated backups configured
+- ✅ Supabase project created and configured (database, auth, storage)
+- ✅ VDS server provisioned and secured
+- ✅ Bot application deployed and running via Docker Compose
+- ✅ HTTPS enabled with Let's Encrypt SSL
+- ✅ Monitoring dashboards operational (Grafana + UptimeRobot)
+- ✅ Automated backups configured (Supabase PITR enabled)
+- ✅ CI/CD pipeline working (GitHub Actions → VDS deployment)
 
 ---
 
-#### 1.5.2 Data Localization & Encryption (16 hours)
+#### 1.5.2 Security & Data Protection (16 hours)
 
-**152-ФЗ Compliance Requirements:**
-1. All servers physically in Russia (Yandex Cloud guarantees this)
-2. Data stored encrypted at rest (AES-256)
-3. Data transmitted encrypted (TLS 1.3)
-4. Prepared documents for Roskomnadzor registration
+**Objective:** Implement industry-standard security practices for data protection
 
-**Technical Specs:**
+**Security Requirements:**
+1. **Transport Security:**
+   - HTTPS/TLS for all connections (Let's Encrypt SSL on Nginx)
+   - Supabase connections over TLS
+   - Telegram Bot API uses HTTPS
+
+2. **Data Protection:**
+   - Supabase Auth password hashing (bcrypt automatically)
+   - RLS policies enforce data isolation by role
+   - Environment variables for all secrets (no hardcoded credentials)
+   - Sensitive data fields in Supabase (client emails, phone numbers, feedback comments)
+
+3. **API Security:**
+   - Telegram webhook signature validation
+   - Supabase JWT token validation (httpOnly cookies)
+   - Rate limiting on bot endpoints (prevent abuse)
+   - Input validation with Zod schemas
+
+4. **Secrets Management:**
+   - Environment variables for:
+     - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+     - `TELEGRAM_BOT_TOKEN`
+     - `OPENROUTER_API_KEY` or `OPENAI_API_KEY`
+     - `REDIS_URL`
+   - Never commit secrets to git (.env in .gitignore)
+   - Use GitHub Secrets for CI/CD
+
+**Optional Encryption (if required later):**
 ```typescript
-// Encrypt sensitive data before storing
+// Encrypt sensitive data at application level (optional)
 import crypto from 'crypto';
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // 32-byte key
@@ -812,58 +946,66 @@ function encrypt(text: string): string {
   const authTag = cipher.getAuthTag();
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
-
-function decrypt(encryptedText: string): string {
-  const [ivHex, authTagHex, encrypted] = encryptedText.split(':');
-  const iv = Buffer.from(ivHex, 'hex');
-  const authTag = Buffer.from(authTagHex, 'hex');
-  const decipher = crypto.createDecipheriv(algorithm, ENCRYPTION_KEY, iv);
-  decipher.setAuthTag(authTag);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
 ```
 
-**Encrypted Fields:**
-- Client personal data (name, email, phone)
-- Feedback comments
-- Chat message content (if stored)
-
 **Acceptance Criteria:**
-- ✅ All data at rest encrypted
-- ✅ TLS 1.3 enabled for all connections
-- ✅ Encryption keys stored in env variables (not in code)
-- ✅ Roskomnadzor document template prepared
+- ✅ All connections use HTTPS/TLS
+- ✅ No hardcoded secrets in code (all in environment variables)
+- ✅ Telegram webhook signature validation working
+- ✅ Supabase RLS policies enforced
+- ✅ Password authentication secure (Supabase Auth bcrypt)
+- ✅ API rate limiting implemented
 
 ---
 
 #### 1.5.3 Backup & Disaster Recovery (12 hours)
 
+**Objective:** Ensure data recoverability and minimize downtime risk
+
 **Requirements:**
-1. **Database backups:**
-   - Daily automated backups (PostgreSQL)
-   - Retain 30 days
-   - Test restore monthly (automated script)
 
-2. **Snapshot strategy:**
-   - Weekly VM snapshots
+1. **Supabase Automatic Backups:**
+   - Point-in-Time Recovery (PITR) enabled (Pro plan feature)
+   - Automatic daily backups retained for 7-30 days (depending on plan)
+   - Manual backup export capability via Supabase dashboard
+   - Test restore procedure documented
+
+2. **VDS Backup Strategy:**
+   - Weekly manual snapshots of VDS (Docker volumes, configs)
+   - Store locally + offsite (optional: S3-compatible storage)
    - Retain 4 weeks
+   - Automate with cron job
 
-3. **Recovery procedure:**
-   - Documented step-by-step guide
+3. **Application-Level Backups:**
+   - Export critical configuration tables weekly (settings, templates, FAQ)
+   - Store as JSON/SQL dumps in git repository (encrypted)
+   - Version control for audit trail
+
+4. **Recovery Procedures:**
+   - Documented step-by-step recovery guide
    - Recovery Time Objective (RTO): 4 hours
-   - Recovery Point Objective (RPO): 24 hours
+   - Recovery Point Objective (RPO): 24 hours (Supabase daily backups)
+   - Disaster recovery runbook in docs/
 
 **Technical Specs:**
-- Backup script using `pg_dump`
-- Upload backups to Yandex Object Storage
-- Monitoring: alert if backup fails
+```bash
+# Example backup script for VDS
+#!/bin/bash
+# Backup Docker volumes
+docker compose -f docker-compose.prod.yml down
+tar -czf backup-$(date +%Y%m%d).tar.gz /var/lib/docker/volumes
+docker compose -f docker-compose.prod.yml up -d
+
+# Upload to storage (optional)
+# rclone copy backup-*.tar.gz remote:backups/
+```
 
 **Acceptance Criteria:**
-- ✅ Automated backups run daily
-- ✅ Test restore succeeds
-- ✅ RTO/RPO documented and achievable
+- ✅ Supabase PITR enabled and tested
+- ✅ VDS backup script running weekly
+- ✅ Manual restore test successful
+- ✅ Recovery procedure documented
+- ✅ RTO/RPO targets achievable
 
 ---
 
@@ -980,35 +1122,35 @@ function decrypt(encryptedText: string): string {
 ## 🚨 Critical Constraints & Risks
 
 ### Must-Have Constraints
-1. **152-ФЗ Compliance:**
-   - MUST use Yandex Cloud (or other Russian cloud)
-   - MUST encrypt data at rest and in transit
-   - MUST prepare Roskomnadzor registration docs
-
-2. **Performance:**
+1. **Performance:**
    - Bot response time <2 seconds
    - Admin panel loads <3 seconds
    - No downtime during working hours (99.5% uptime target)
+   - Supabase queries <100ms (95th percentile)
 
-3. **Security:**
-   - No hardcoded credentials
-   - All API endpoints authenticated
-   - Role-based access control enforced
+2. **Security:**
+   - No hardcoded credentials (environment variables only)
+   - All API endpoints authenticated (Supabase Auth + RLS)
+   - Role-based access control enforced (RLS policies)
+   - HTTPS/TLS for all connections
 
-4. **Scalability:**
+3. **Scalability:**
    - Support 100+ chats simultaneously
    - Handle 1000+ requests/day
-   - Database optimized for growth
+   - Database optimized for growth (Supabase auto-scaling)
+   - VDS resources monitored (CPU, RAM, disk)
 
 ### Risks & Mitigation
 
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
-| AI spam filter inaccurate | Medium | Medium | Keyword fallback + manual override |
-| Telegram API rate limits | High | Low | Queue system, respect rate limits |
-| Manager alert fatigue | Medium | High | Configurable escalation, digest mode |
-| Accountants ignore bot | High | Medium | Training, gamification (Phase 2) |
-| Client privacy concerns | High | Low | Clear anonymity policy, 152-ФЗ compliance |
+| AI spam filter inaccurate | Medium | Medium | Keyword fallback + manual override + continuous training |
+| Telegram API rate limits | High | Low | Queue system with BullMQ, respect rate limits (30 msg/s) |
+| Manager alert fatigue | Medium | High | Configurable escalation, digest mode, smart grouping |
+| Accountants ignore bot | High | Medium | Training, gamification (Phase 2), usage analytics |
+| Client privacy concerns | High | Low | Clear anonymity policy, RLS data isolation, secure auth |
+| Supabase service outage | High | Low | Monitor uptime, fallback to read-only mode, VDS cache |
+| VDS resource exhaustion | Medium | Medium | Prometheus alerts, auto-restart on OOM, plan VDS upgrade |
 
 ---
 
@@ -1037,11 +1179,12 @@ function decrypt(encryptedText: string): string {
 - ✅ Team trained
 - ✅ Deployment guide tested (infrastructure can be replicated)
 
-### Compliance Acceptance
-- ✅ 152-ФЗ checklist completed
-- ✅ Data encryption verified
-- ✅ Roskomnadzor registration docs prepared
+### Security Acceptance
 - ✅ Security audit passed (basic checklist)
+- ✅ HTTPS/TLS enabled for all connections
+- ✅ No hardcoded secrets (all in environment variables)
+- ✅ Supabase RLS policies tested and working
+- ✅ Telegram webhook signature validation implemented
 
 ---
 
@@ -1049,9 +1192,10 @@ function decrypt(encryptedText: string): string {
 
 ### Week 1-2: Requirements & Setup
 - ✅ Finalize requirements
-- ✅ Yandex Cloud setup
-- ✅ Database schema designed
-- ✅ Bot token obtained
+- ✅ Supabase project setup (database, auth, storage)
+- ✅ First VDS provisioning
+- ✅ Database schema designed with RLS policies
+- ✅ Telegram Bot token obtained
 - ✅ Development environment ready
 
 ### Week 3-4: Core Development
@@ -1102,46 +1246,63 @@ function decrypt(encryptedText: string): string {
 
 ## 🛠️ Tech Stack Summary
 
-### Backend
-- **Runtime:** Node.js 18+ (TypeScript)
+### Backend (Node.js on First VDS)
+- **Runtime:** Node.js 18+ (TypeScript strict mode)
 - **Framework:** Express.js or Fastify
-- **ORM:** Prisma or TypeORM
-- **Queue:** BullMQ
-- **Validation:** Zod
+- **Database Client:** Supabase JS SDK (@supabase/supabase-js)
+- **Queue:** BullMQ with Redis
+- **Validation:** Zod for input schemas
 - **Testing:** Vitest + Supertest
+- **Logging:** Pino (structured logs)
 
-### Frontend (Admin Panel)
-- **Framework:** Next.js 14+ (App Router)
-- **UI:** Tailwind CSS + shadcn/ui
-- **API:** tRPC (type-safe)
-- **Charts:** Recharts or Chart.js
-- **Auth:** NextAuth.js
+### Frontend (Admin Panel - Next.js)
+- **Framework:** Next.js 14+ (App Router with React Server Components)
+- **UI:** Tailwind CSS + shadcn/ui components
+- **Database:** Supabase JS Client (direct queries with RLS enforcement)
+- **Auth:** Supabase Auth (email/password, httpOnly cookies)
+- **Realtime:** Supabase Realtime subscriptions (WebSocket)
+- **Charts:** Recharts or Chart.js for analytics dashboards
+- **API:** Supabase client (primary), optional tRPC for complex logic
 
-### Bot
-- **Library:** node-telegram-bot-api or Telegraf
-- **State Management:** Redis (for conversation state)
+### Bot (Telegram)
+- **Library:** Telegraf (recommended) or node-telegram-bot-api
+- **State Management:** Redis for conversation state
+- **Database:** Supabase JS Client (server-side)
+- **Queue:** BullMQ for background jobs (alerts, surveys, reminders)
 
-### Database
-- **Primary:** PostgreSQL 14+
-- **Cache:** Redis
-- **Search:** PostgreSQL Full-Text Search (or Typesense for Phase 2)
+### Database & Auth (Supabase Cloud)
+- **Database:** Supabase PostgreSQL 15+ (cloud-hosted, EU region)
+- **Auth:** Supabase Auth (built-in, bcrypt password hashing)
+- **Storage:** Supabase Storage (document uploads, invoices, files)
+- **Realtime:** Supabase Realtime (WebSocket subscriptions for live updates)
+- **RLS:** Row Level Security policies for role-based data isolation
+- **Backups:** Point-in-Time Recovery (PITR) enabled
+
+### Cache & Queue (Self-hosted on VDS)
+- **Cache:** Redis 7+ (for BullMQ and bot conversation state)
+- **Queue:** BullMQ (background job processing)
 
 ### AI/NLP
-- **Provider:** Yandex GPT Lite (Russian language)
-- **Fallback:** Keyword matching
+- **Provider:** OpenRouter or OpenAI API
+- **Recommended Models:** GPT-4 Turbo, Claude 3.5 Sonnet, or Russian LLMs via OpenRouter
+- **Fallback:** Keyword-based classification (hardcoded rules)
+- **Cost Optimization:** Result caching for identical messages
 
-### Hosting
-- **Cloud:** Yandex Cloud (MANDATORY)
-- **VM:** Yandex Compute Cloud
-- **Database:** Yandex Managed PostgreSQL
-- **Storage:** Yandex Object Storage
-- **Monitoring:** Yandex Cloud Monitoring
+### Hosting (Hybrid Deployment)
+- **Bot & Workers:** First VDS (Russian VDS provider)
+  - VDS Specs: 2-4 vCPU, 4-8 GB RAM, 50-100 GB SSD
+  - OS: Ubuntu 22.04 LTS
+  - Components: Node.js app, Redis, Nginx, Prometheus, Grafana
+- **Database & Auth:** Supabase Cloud (EU region, auto-scaling)
+- **Monitoring:** Prometheus + Grafana (VDS) + Supabase Dashboard + UptimeRobot
+- **SSL:** Let's Encrypt via Nginx
 
 ### DevOps
-- **CI/CD:** GitHub Actions
-- **Containers:** Docker + Docker Compose
-- **IaC:** Terraform (optional but recommended)
-- **Process Manager:** PM2 or systemd
+- **CI/CD:** GitHub Actions (deploy to VDS via SSH)
+- **Containers:** Docker + Docker Compose (multi-service orchestration)
+- **Process Manager:** PM2 inside Docker containers
+- **Reverse Proxy:** Nginx (HTTPS termination, rate limiting)
+- **Secrets:** Environment variables (.env.production, GitHub Secrets)
 
 ---
 
@@ -1259,8 +1420,8 @@ This prompt provides complete specifications for **Phase 1 of BuhBot**. All requ
 **Next Steps:**
 1. Review this document with team
 2. Set up project repository
-3. Initialize infrastructure (Yandex Cloud)
-4. Begin sprint 1: Database schema + SLA monitoring core
+3. Initialize infrastructure (Supabase project + First VDS)
+4. Begin sprint 1: Database schema with RLS policies + SLA monitoring core
 5. Ship Phase 1 in 6-8 weeks 🚀
 
 **Questions?** Refer to:

@@ -74,6 +74,9 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
+# WSL Zone.Identifier files
+*:Zone.Identifier
+
 # Linux
 *~
 .directory
@@ -117,6 +120,25 @@ $RECYCLE.BIN/
 # yarn.lock
 # pnpm-lock.yaml
 *.tgz
+
+# ===================================================================
+# Docker & Infrastructure
+# ===================================================================
+# Docker volumes
+docker-volumes/
+*.dockerignore
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+infrastructure/nginx/ssl/
+!infrastructure/nginx/ssl/.gitkeep
+
+# Backup files
+*.tar.gz
+*.sql.gz
+/var/backups/
 
 # ===================================================================
 # Articles & Writing

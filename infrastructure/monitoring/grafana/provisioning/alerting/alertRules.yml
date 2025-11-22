@@ -1,0 +1,547 @@
+# Grafana Unified Alerting Rules Provisioning
+# BuhBot Monitoring - Alert Rules Configuration
+#
+# This file defines alert rules for:
+# - Bot Performance (webhook signature failures)
+# - System Health (CPU, Memory, Disk)
+# - SLA Metrics (Supabase connection errors)
+
+apiVersion: 1
+
+groups:
+  # =============================================================================
+  # BOT PERFORMANCE ALERTS
+  # Dashboard: BuhBot - Bot Performance (buhbot-bot-performance)
+  # =============================================================================
+  - orgId: 1
+    name: BuhBot - Bot Performance Alerts
+    folder: BuhBot Alerts
+    interval: 1m
+    rules:
+      # T061: Webhook Signature Failures Alert
+      - uid: bot-webhook-signature-failures
+        title: High Webhook Signature Failures
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: increase(bot_webhook_signature_failures_total[5m])
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 10
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: High number of webhook signature failures detected
+          description: "More than 10 webhook signature failures in the last 5 minutes. Current value: {{ $values.B.Value }}. This may indicate an attack attempt or misconfigured webhook secret."
+          runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/webhook-signature-failures
+        labels:
+          severity: critical
+          component: bot
+          dashboard: buhbot-bot-performance
+        isPaused: false
+
+  # =============================================================================
+  # SYSTEM HEALTH ALERTS
+  # Dashboard: BuhBot - System Health (buhbot-system-health)
+  # =============================================================================
+  - orgId: 1
+    name: BuhBot - System Health Alerts
+    folder: BuhBot Alerts
+    interval: 1m
+    rules:
+      # T062: CPU Usage Alert (>80% for 5m)
+      - uid: system-cpu-high
+        title: High CPU Usage
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: CPU usage is critically high
+          description: "CPU usage has been above 80% for more than 5 minutes. Current value: {{ $values.B.Value | printf \"%.1f\" }}%. Consider scaling up or investigating resource-intensive processes."
+          runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/high-cpu-usage
+        labels:
+          severity: warning
+          component: system
+          dashboard: buhbot-system-health
+        isPaused: false
+
+      # T062: Memory Usage Alert (>80% for 5m)
+      - uid: system-memory-high
+        title: High Memory Usage
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Memory usage is critically high
+          description: "Memory usage has been above 80% for more than 5 minutes. Current value: {{ $values.B.Value | printf \"%.1f\" }}%. Consider scaling up or investigating memory leaks."
+          runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/high-memory-usage
+        labels:
+          severity: warning
+          component: system
+          dashboard: buhbot-system-health
+        isPaused: false
+
+      # T062: Disk Usage Alert (>85% for 5m)
+      - uid: system-disk-high
+        title: High Disk Usage
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_avail_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 85
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Disk usage is critically high
+          description: "Disk usage has been above 85% for more than 5 minutes. Current value: {{ $values.B.Value | printf \"%.1f\" }}%. Consider cleaning up logs or expanding storage."
+          runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/high-disk-usage
+        labels:
+          severity: critical
+          component: system
+          dashboard: buhbot-system-health
+        isPaused: false
+
+  # =============================================================================
+  # SLA METRICS ALERTS
+  # Dashboard: BuhBot - SLA Metrics (buhbot-sla-metrics)
+  # =============================================================================
+  - orgId: 1
+    name: BuhBot - SLA Metrics Alerts
+    folder: BuhBot Alerts
+    interval: 1m
+    rules:
+      # T063: Supabase Connection Errors Alert
+      - uid: sla-supabase-connection-errors
+        title: Supabase Connection Errors
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: increase(supabase_connection_errors_total[5m])
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: Supabase connection errors detected
+          description: "More than 5 Supabase connection errors in the last 5 minutes. Current value: {{ $values.B.Value }}. This may indicate database connectivity issues or Supabase service degradation."
+          runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/supabase-connection-errors
+        labels:
+          severity: critical
+          component: database
+          dashboard: buhbot-sla-metrics
+        isPaused: false
+
+      # Additional SLA Alert: Service Uptime Below Target
+      - uid: sla-uptime-below-target
+        title: Service Uptime Below SLA Target
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 604800
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: avg_over_time(up{job="bot-backend"}[7d]) * 100
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 604800
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            relativeTimeRange:
+              from: 604800
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 99.5
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: Service uptime is below SLA target of 99.5%
+          description: "7-day rolling uptime is below the SLA target of 99.5%. Current value: {{ $values.B.Value | printf \"%.3f\" }}%. Immediate investigation required."
+          runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/sla-breach
+        labels:
+          severity: critical
+          component: sla
+          dashboard: buhbot-sla-metrics
+        isPaused: false

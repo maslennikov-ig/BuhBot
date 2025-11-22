@@ -121,8 +121,8 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 **BuhBot Specific**:
 - Project: BuhBot - автоматизация коммуникаций для бухгалтерских фирм
 - Repository: https://github.com/maslennikov-ig/BuhBot
-- Hosting: Yandex Cloud (152-ФЗ compliance)
-- Database: PostgreSQL (Yandex Managed Database)
+- Hosting: VDS (FirstVDS.ru, 152-ФЗ compliance)
+- Database: PostgreSQL (Supabase Cloud)
 
 **MCP Configuration**:
 - BASE (`.mcp.base.json`): context7 + sequential-thinking (~600 tokens)
@@ -137,3 +137,41 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 - Architecture: `docs/Agents Ecosystem/ARCHITECTURE.md`
 - Quality gates: `docs/Agents Ecosystem/QUALITY-GATES-SPECIFICATION.md`
 - Report templates: `docs/Agents Ecosystem/REPORT-TEMPLATE-STANDARD.md`
+
+## Active Technologies
+
+**Runtime & Language:**
+- Node.js 20.19.0+ (required by Prisma 7)
+- TypeScript 5.x (strict mode)
+
+**Backend:**
+- Express 5.1.0
+- Prisma 7.0.0 (with @prisma/adapter-pg)
+- tRPC (type-safe API)
+- Telegraf (Telegram bot)
+- BullMQ + Redis (queues)
+- Zod 3.x (validation)
+
+**Frontend:**
+- Next.js 15 (App Router)
+- React 19
+- Tailwind CSS
+- shadcn/ui
+
+**Database:**
+- PostgreSQL 15+ (Supabase Cloud)
+- Supabase Auth (JWT)
+- Row Level Security (RLS)
+
+**Infrastructure:**
+- Docker + Docker Compose
+- Nginx (reverse proxy, SSL)
+- Prometheus + Grafana + Uptime Kuma (monitoring)
+- GitHub Actions (CI/CD)
+- Let's Encrypt (SSL certificates)
+
+## Recent Changes
+- 2025-11-22: Migrated Prisma 5.22 → 7.0.0 (driver adapter pattern)
+- 2025-11-22: Updated dependencies (dotenv 17, express 5, supabase-js 2.84)
+- 2025-11-22: Removed unused frontend dependencies
+- 2025-11-22: Infrastructure Phase 1 complete (v0.1.16)

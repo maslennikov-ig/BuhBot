@@ -1,0 +1,87 @@
+# Grafana Alert Notification Channels Provisioning
+# BuhBot Monitoring - Telegram Alerts Configuration
+#
+# Environment Variables Required:
+#   TELEGRAM_BOT_TOKEN - Bot token from @BotFather
+#   TELEGRAM_ADMIN_CHAT_ID - Chat ID for admin notifications
+#
+# Note: For Grafana 9+ Unified Alerting, contact points are defined here
+
+apiVersion: 1
+
+# Delete existing contact points before creating
+deleteContactPoints:
+  - orgId: 1
+    uid: telegram-critical
+
+# Contact Points Configuration
+contactPoints:
+  - orgId: 1
+    name: telegram-critical-alerts
+    receivers:
+      - uid: telegram-critical
+        type: telegram
+        settings:
+          bottoken: ${TELEGRAM_BOT_TOKEN}
+          chatid: ${TELEGRAM_ADMIN_CHAT_ID}
+          parse_mode: HTML
+          disable_web_page_preview: true
+          message: |
+            <b>BuhBot Alert</b>
+
+            <b>Status:</b> {{ .Status }}
+            <b>Alert:</b> {{ .CommonLabels.alertname }}
+            <b>Severity:</b> {{ .CommonLabels.severity }}
+
+            {{ range .Alerts }}
+            <b>Summary:</b> {{ .Annotations.summary }}
+            <b>Description:</b> {{ .Annotations.description }}
+            {{ if .Annotations.runbook_url }}<b>Runbook:</b> {{ .Annotations.runbook_url }}{{ end }}
+
+            <b>Labels:</b>
+            {{ range .Labels.SortedPairs }}  - {{ .Name }}: {{ .Value }}
+            {{ end }}
+            {{ end }}
+
+            <i>Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}</i>
+        disableResolveMessage: false
+
+# Notification Policies Configuration
+policies:
+  - orgId: 1
+    receiver: telegram-critical-alerts
+    group_by:
+      - alertname
+      - severity
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      # Critical alerts - immediate notification
+      - receiver: telegram-critical-alerts
+        matchers:
+          - severity = critical
+        group_wait: 10s
+        group_interval: 1m
+        repeat_interval: 1h
+        continue: false
+      # Warning alerts - standard notification
+      - receiver: telegram-critical-alerts
+        matchers:
+          - severity = warning
+        group_wait: 1m
+        group_interval: 5m
+        repeat_interval: 4h
+        continue: false
+
+# Mute Timings (optional - for maintenance windows)
+muteTimes:
+  - orgId: 1
+    name: maintenance-window
+    time_intervals:
+      - times:
+          - start_time: '02:00'
+            end_time: '04:00'
+        weekdays:
+          - sunday
+        location: Europe/Moscow

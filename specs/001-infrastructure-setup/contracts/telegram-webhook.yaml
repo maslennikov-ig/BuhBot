@@ -1,0 +1,385 @@
+# Telegram Bot Webhook API Contract
+# OpenAPI 3.0 Specification for BuhBot Telegram Webhook Endpoint
+
+openapi: 3.0.3
+info:
+  title: BuhBot Telegram Webhook API
+  description: Telegram Bot API webhook endpoint for receiving updates from Telegram
+  version: 1.0.0
+  contact:
+    name: BuhBot Infrastructure
+    email: admin@buhbot.example.com
+
+servers:
+  - url: https://bot.example.com
+    description: Production VDS server
+  - url: http://localhost:3000
+    description: Local development server
+
+security:
+  - TelegramSignature: []
+
+paths:
+  /webhook/telegram:
+    post:
+      summary: Receive Telegram webhook updates
+      description: |
+        Telegram Bot API sends updates to this endpoint when configured in webhook mode.
+        All requests MUST include X-Telegram-Bot-Api-Secret-Token header for validation.
+      operationId: receiveTelegramUpdate
+      tags:
+        - Telegram Webhook
+      security:
+        - TelegramSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Update'
+            examples:
+              messageUpdate:
+                summary: Text message from client
+                value:
+                  update_id: 123456789
+                  message:
+                    message_id: 987654
+                    from:
+                      id: 111222333
+                      is_bot: false
+                      first_name: Иван
+                      username: ivan_client
+                      language_code: ru
+                    chat:
+                      id: 111222333
+                      first_name: Иван
+                      username: ivan_client
+                      type: private
+                    date: 1700000000
+                    text: Здравствуйте, у меня вопрос по декларации
+              callbackQueryUpdate:
+                summary: Inline button callback
+                value:
+                  update_id: 123456790
+                  callback_query:
+                    id: callback_123
+                    from:
+                      id: 111222333
+                      is_bot: false
+                      first_name: Иван
+                      username: ivan_client
+                      language_code: ru
+                    message:
+                      message_id: 987655
+                      from:
+                        id: 999888777
+                        is_bot: true
+                        first_name: BuhBot
+                        username: buhbot
+                      chat:
+                        id: 111222333
+                        first_name: Иван
+                        username: ivan_client
+                        type: private
+                      date: 1700000100
+                      text: "Выберите вопрос:"
+                    chat_instance: instance_123
+                    data: faq_001
+
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                required:
+                  - ok
+        '400':
+          description: Invalid request body or signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing or invalid X-Telegram-Bot-Api-Secret-Token header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns health status for monitoring (Uptime Kuma, Prometheus)
+      operationId: healthCheck
+      tags:
+        - Monitoring
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                    description: Uptime in seconds
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [ok, error]
+                      redis:
+                        type: string
+                        enum: [ok, error]
+                required:
+                  - status
+                  - timestamp
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [unhealthy]
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [ok, error]
+                      redis:
+                        type: string
+                        enum: [ok, error]
+
+  /metrics:
+    get:
+      summary: Prometheus metrics endpoint
+      description: Exposes Prometheus-compatible metrics for monitoring
+      operationId: getMetrics
+      tags:
+        - Monitoring
+      security: []
+      responses:
+        '200':
+          description: Metrics in Prometheus exposition format
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP bot_messages_received_total Total messages received from Telegram
+                  # TYPE bot_messages_received_total counter
+                  bot_messages_received_total 1234
+
+                  # HELP bot_message_processing_duration Message processing duration in seconds
+                  # TYPE bot_message_processing_duration histogram
+                  bot_message_processing_duration_bucket{le="0.1"} 500
+                  bot_message_processing_duration_bucket{le="0.5"} 950
+                  bot_message_processing_duration_bucket{le="1"} 1200
+                  bot_message_processing_duration_sum 350
+                  bot_message_processing_duration_count 1234
+
+components:
+  securitySchemes:
+    TelegramSignature:
+      type: apiKey
+      in: header
+      name: X-Telegram-Bot-Api-Secret-Token
+      description: |
+        Secret token configured when setting webhook URL.
+        Telegram includes this header in every webhook request.
+        Bot MUST validate this token matches configured value.
+
+  schemas:
+    Update:
+      type: object
+      description: Telegram Bot API Update object
+      required:
+        - update_id
+      properties:
+        update_id:
+          type: integer
+          description: Unique update identifier
+        message:
+          $ref: '#/components/schemas/Message'
+        edited_message:
+          $ref: '#/components/schemas/Message'
+        callback_query:
+          $ref: '#/components/schemas/CallbackQuery'
+      oneOf:
+        - required: [message]
+        - required: [edited_message]
+        - required: [callback_query]
+
+    Message:
+      type: object
+      required:
+        - message_id
+        - date
+        - chat
+      properties:
+        message_id:
+          type: integer
+        from:
+          $ref: '#/components/schemas/User'
+        date:
+          type: integer
+          description: Unix timestamp
+        chat:
+          $ref: '#/components/schemas/Chat'
+        text:
+          type: string
+          description: Text content (for text messages)
+        document:
+          $ref: '#/components/schemas/Document'
+        reply_markup:
+          $ref: '#/components/schemas/InlineKeyboardMarkup'
+
+    User:
+      type: object
+      required:
+        - id
+        - is_bot
+        - first_name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Telegram user ID
+        is_bot:
+          type: boolean
+        first_name:
+          type: string
+        last_name:
+          type: string
+        username:
+          type: string
+        language_code:
+          type: string
+
+    Chat:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Telegram chat ID
+        type:
+          type: string
+          enum: [private, group, supergroup, channel]
+        title:
+          type: string
+          description: Title (for groups/supergroups)
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+
+    Document:
+      type: object
+      required:
+        - file_id
+        - file_unique_id
+      properties:
+        file_id:
+          type: string
+          description: Telegram file identifier
+        file_unique_id:
+          type: string
+        file_name:
+          type: string
+        mime_type:
+          type: string
+        file_size:
+          type: integer
+
+    CallbackQuery:
+      type: object
+      required:
+        - id
+        - from
+        - chat_instance
+      properties:
+        id:
+          type: string
+          description: Unique callback query identifier
+        from:
+          $ref: '#/components/schemas/User'
+        message:
+          $ref: '#/components/schemas/Message'
+        chat_instance:
+          type: string
+        data:
+          type: string
+          description: Callback data (e.g., "faq_001", "template_greeting_01")
+
+    InlineKeyboardMarkup:
+      type: object
+      properties:
+        inline_keyboard:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/InlineKeyboardButton'
+
+    InlineKeyboardButton:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        callback_data:
+          type: string
+        url:
+          type: string
+
+    Error:
+      type: object
+      required:
+        - ok
+        - error
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: Invalid signature
+
+tags:
+  - name: Telegram Webhook
+    description: Telegram Bot API webhook endpoint
+  - name: Monitoring
+    description: Health checks and metrics for infrastructure monitoring

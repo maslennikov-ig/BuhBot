@@ -1,0 +1,67 @@
+# Prometheus Configuration for BuhBot
+# Monitoring stack for bot-backend, Redis, and infrastructure metrics
+
+global:
+  # Scrape targets every 15 seconds (per spec PM-006)
+  scrape_interval: 15s
+
+  # Evaluate rules every 15 seconds
+  evaluation_interval: 15s
+
+  # External labels for this Prometheus instance
+  external_labels:
+    cluster: 'buhbot-production'
+    environment: 'production'
+    project: 'buhbot'
+
+# Alertmanager configuration (optional - configure when Alertmanager is deployed)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - localhost:9093
+
+# Load alert rules from alerts.yml
+rule_files:
+  - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          component: 'monitoring'
+
+  # Bot Backend metrics (main application)
+  - job_name: 'bot-backend'
+    static_configs:
+      - targets: ['bot-backend:9100']
+        labels:
+          service: 'bot-backend'
+          component: 'application'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Redis metrics (via redis_exporter)
+  # Note: Requires redis_exporter sidecar container
+  # Enable this when redis_exporter is deployed
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+  #         component: 'cache'
+  #   metrics_path: '/metrics'
+  #   scrape_interval: 15s
+
+# Storage configuration
+# NOTE: Storage options are CLI flags, not YAML config!
+# Set via: --storage.tsdb.retention.time=15d --storage.tsdb.path=/prometheus/data
+# Configured in supervisord or docker-compose command
+
+# Remote write/read: Not configured (local storage only for Free tier)
+# Future enhancement: Add remote write to Yandex Monitoring if needed

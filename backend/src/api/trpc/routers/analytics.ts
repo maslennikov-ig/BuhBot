@@ -354,6 +354,6 @@ export const analyticsRouter = router({
       );
 
       // Filter out accountants with no requests
-      return performance.filter((p) => p.totalRequests > 0);
+      return performance.filter((p: { totalRequests: number }) => p.totalRequests > 0);
     }),
 });

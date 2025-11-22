@@ -92,7 +92,7 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats: chats.map((chat) => ({ ...chat, id: Number(chat.id) })),
+        chats: chats.map((chat: { id: bigint; chatType: 'private' | 'group' | 'supergroup'; title: string | null; accountantUsername: string | null; assignedAccountantId: string | null; slaEnabled: boolean; slaResponseMinutes: number; createdAt: Date }) => ({ ...chat, id: Number(chat.id) })),
         total,
       };
     }),

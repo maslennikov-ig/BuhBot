@@ -139,7 +139,7 @@ export const requestsRouter = router({
       ]);
 
       return {
-        requests: requests.map((req) => ({
+        requests: requests.map((req: { id: string; chatId: bigint; messageId: bigint; messageText: string; clientUsername: string | null; receivedAt: Date; assignedTo: string | null; responseAt: Date | null; responseTimeMinutes: number | null; status: 'pending' | 'in_progress' | 'answered' | 'escalated'; isSpam: boolean; createdAt: Date }) => ({
           ...req,
           chatId: Number(req.chatId),
           messageId: Number(req.messageId),

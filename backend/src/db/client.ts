@@ -2,7 +2,7 @@
  * Supabase Connection Pooling Client
  *
  * Configures Prisma connection pooling for Supabase PostgreSQL.
- * Uses Supabase's Supavisor (PgBouncer) for connection pooling.
+ * Uses pg Pool for connection pooling with Prisma 7 driver adapter.
  *
  * Connection Configuration (per constitution):
  * - Max connections: 10 (connection_limit=10)
@@ -12,8 +12,12 @@
  * @module db/client
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../node_modules/.prisma/client/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 import logger from '../utils/logger.js';
+
+const { Pool } = pg;
 
 /**
  * Connection pool configuration
@@ -26,6 +30,8 @@ export const POOL_CONFIG = {
   CONNECTION_TIMEOUT: 5000,
   /** Query timeout in milliseconds */
   QUERY_TIMEOUT: 30000,
+  /** Idle timeout in milliseconds */
+  IDLE_TIMEOUT: 30000,
 } as const;
 
 /**
@@ -97,7 +103,23 @@ export function buildPooledDatabaseUrl(baseUrl: string | undefined): string {
 }
 
 /**
+ * Create PostgreSQL connection pool
+ *
+ * @param connectionString - Database connection string
+ * @returns Configured pg Pool instance
+ */
+export function createPool(connectionString: string): pg.Pool {
+  return new Pool({
+    connectionString,
+    max: POOL_CONFIG.MAX_CONNECTIONS,
+    idleTimeoutMillis: POOL_CONFIG.IDLE_TIMEOUT,
+    connectionTimeoutMillis: POOL_CONFIG.CONNECTION_TIMEOUT,
+  });
+}
+
+/**
  * Create Prisma Client with connection pooling configuration
+ * Uses Prisma 7 driver adapter pattern
  *
  * @returns Configured PrismaClient instance
  */
@@ -115,12 +137,14 @@ export function createPooledPrismaClient(): PrismaClient {
   const safeUrl = pooledUrl.replace(/:[^@]+@/, ':****@');
   logger.info('Creating pooled Prisma client', { url: safeUrl });
 
+  // Create pg pool
+  const pool = createPool(pooledUrl);
+
+  // Create Prisma adapter
+  const adapter = new PrismaPg(pool);
+
   return new PrismaClient({
-    datasources: {
-      db: {
-        url: pooledUrl,
-      },
-    },
+    adapter,
     log: process.env['NODE_ENV'] === 'development'
       ? ['query', 'error', 'warn']
       : ['error'],
@@ -151,6 +175,7 @@ export default {
   POOL_CONFIG,
   validateDatabaseUrl,
   buildPooledDatabaseUrl,
+  createPool,
   createPooledPrismaClient,
   getPoolStats,
 };

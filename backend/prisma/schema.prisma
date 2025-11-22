@@ -4,16 +4,14 @@
 // Generated from: specs/001-infrastructure-setup/data-model.md
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // Supabase connection pooler uses PgBouncer in transaction mode
-  // directUrl is used for migrations (bypasses pooler), url is used for queries
-  // Optional: Only required when using connection pooler (pgbouncer=true in DATABASE_URL)
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  // Connection URLs moved to prisma.config.ts for Prisma 7
+  // url and directUrl are configured there for migrations
 }
 
 // ============================================================================

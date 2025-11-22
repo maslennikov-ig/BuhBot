@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2025-11-22
+
+### Fixed
+- **docker**: switch to node:18-slim for Prisma OpenSSL compatibility (fbcb551)
+- **docker**: use Node 18 Alpine for Prisma OpenSSL compatibility (f2365cd)
+- **infra**: remove security restrictions causing container crashes (639514d)
+- **types**: convert Prisma bigint to number in tRPC routers (a87406a)
+- **docker**: add package-lock.json for npm ci builds (347430f)
+
 ## [0.1.10] - 2025-11-20
 
 ## [0.1.9] - 2025-11-20

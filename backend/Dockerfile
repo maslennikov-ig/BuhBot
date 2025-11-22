@@ -1,7 +1,8 @@
 # ============================================================================
 # Build Stage
 # ============================================================================
-FROM node:20-alpine AS builder
+# Using Node 18 Alpine for OpenSSL 1.1 compatibility with Prisma
+FROM node:18-alpine AS builder
 
 # Install build dependencies (Python for native modules like bcrypt)
 RUN apk add --no-cache python3 make g++
@@ -31,7 +32,8 @@ RUN npm run build
 # ============================================================================
 # Runtime Stage (Production)
 # ============================================================================
-FROM node:20-alpine AS runtime
+# Using Node 18 Alpine for OpenSSL 1.1 compatibility with Prisma
+FROM node:18-alpine AS runtime
 
 # Install dumb-init for proper signal handling (PID 1 problem)
 RUN apk add --no-cache dumb-init curl

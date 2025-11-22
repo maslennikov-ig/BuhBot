@@ -100,40 +100,85 @@ const server = app.listen(PORT, () => {
   }
 });
 
+// Graceful shutdown configuration
+const SHUTDOWN_TIMEOUT_MS = 30000; // 30 seconds as per PM-009 spec
+
+// Track shutdown state to prevent multiple shutdown attempts
+let isShuttingDown = false;
+
 // Graceful shutdown handler
-const shutdown = async (signal: string) => {
-  logger.info(`${signal} received, shutting down gracefully`);
+const gracefulShutdown = async (signal: string): Promise<void> => {
+  // Prevent multiple shutdown attempts
+  if (isShuttingDown) {
+    logger.warn(`Shutdown already in progress, ignoring ${signal}`);
+    return;
+  }
+  isShuttingDown = true;
 
-  server.close(async () => {
-    logger.info('HTTP server closed');
-
-    try {
-      // Close database connections
-      await disconnectPrisma();
-
-      // Close Redis connection
-      await disconnectRedis();
-
-      logger.info('Shutdown complete');
-      process.exit(0);
-    } catch (error) {
-      logger.error('Error during shutdown:', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      process.exit(1);
-    }
+  logger.info(`Received ${signal}, starting graceful shutdown...`, {
+    signal,
+    timeoutMs: SHUTDOWN_TIMEOUT_MS
   });
 
-  // Force shutdown after 10 seconds
-  setTimeout(() => {
-    logger.error('Forced shutdown due to timeout');
+  // Set up force exit timeout
+  const forceExitTimer = setTimeout(() => {
+    logger.warn('Graceful shutdown timed out, forcing exit', {
+      timeoutMs: SHUTDOWN_TIMEOUT_MS
+    });
     process.exit(1);
-  }, 10000);
+  }, SHUTDOWN_TIMEOUT_MS);
+
+  // Ensure timeout doesn't prevent process from exiting
+  forceExitTimer.unref();
+
+  try {
+    // Stop accepting new connections
+    await new Promise<void>((resolve, reject) => {
+      server.close((err) => {
+        if (err) {
+          logger.error('Error closing HTTP server:', {
+            error: err.message
+          });
+          reject(err);
+        } else {
+          logger.info('HTTP server stopped accepting new connections');
+          resolve();
+        }
+      });
+    });
+
+    // Close Redis connections
+    logger.info('Closing Redis connections...');
+    await disconnectRedis();
+    logger.info('Redis connections closed');
+
+    // Disconnect Prisma
+    logger.info('Disconnecting from database...');
+    await disconnectPrisma();
+    logger.info('Database disconnected');
+
+    // Clear the force exit timer since we're done
+    clearTimeout(forceExitTimer);
+
+    logger.info('Graceful shutdown completed successfully', {
+      signal,
+      duration: 'completed before timeout'
+    });
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during graceful shutdown:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    // Clear the force exit timer
+    clearTimeout(forceExitTimer);
+    process.exit(1);
+  }
 };
 
 // Handle shutdown signals
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {

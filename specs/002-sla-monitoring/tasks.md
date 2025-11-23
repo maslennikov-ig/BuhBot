@@ -180,13 +180,19 @@
 
 ### Implementation for User Story 4
 
-- [ ] T052 [P] [US4] Create settings page layout in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
-- [ ] T053 [P] [US4] Create working hours form component in frontend/src/components/settings/WorkingHoursForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
-- [ ] T054 [P] [US4] Create holiday calendar component in frontend/src/components/settings/HolidayCalendar.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+- [X] T052 [P] [US4] Create settings page layout in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+  → Artifacts: [page.tsx](frontend/src/app/settings/page.tsx), [settings-page-content.tsx](frontend/src/app/settings/settings-page-content.tsx)
+- [X] T053 [P] [US4] Create working hours form component in frontend/src/components/settings/WorkingHoursForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+  → Artifacts: [WorkingHoursForm.tsx](frontend/src/components/settings/WorkingHoursForm.tsx)
+- [X] T054 [P] [US4] Create holiday calendar component in frontend/src/components/settings/HolidayCalendar.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+  → Artifacts: [HolidayCalendar.tsx](frontend/src/components/settings/HolidayCalendar.tsx)
 - [ ] T055 [US4] Implement chat.router updateWorkingSchedule in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T056 [US4] Implement settings.router updateGlobalSettings in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T057 [US4] Implement settings.router addGlobalHoliday in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T058 [US4] Wire frontend settings page to tRPC in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+- [X] T056 [US4] Implement settings.router updateGlobalSettings in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
+- [X] T057 [US4] Implement settings.router addGlobalHoliday in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
+- [X] T058 [US4] Wire frontend settings page to tRPC in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+  → Artifacts: [trpc.d.ts](frontend/types/trpc.d.ts), [tsconfig.json](frontend/tsconfig.json) - added @backend path alias
 
 **Checkpoint**: Admin can configure working hours, holidays respected (FR-011 to FR-015)
 

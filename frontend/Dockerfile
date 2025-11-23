@@ -3,18 +3,18 @@
 # ================================
 FROM node:20-alpine AS build
 
-# Install build dependencies (needed for some npm packages)
-RUN apk add --no-cache libc6-compat
+# Install pnpm and build dependencies
+RUN npm install -g pnpm@9 && \
+    apk add --no-cache libc6-compat
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies (including devDependencies for build)
-# Use npm ci for reproducible builds
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copy source code and configuration files
 COPY . .
@@ -30,7 +30,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js application with standalone output
-RUN npm run build
+RUN pnpm build
 
 # ================================
 # Runtime Stage

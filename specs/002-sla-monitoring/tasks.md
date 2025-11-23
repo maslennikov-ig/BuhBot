@@ -102,16 +102,19 @@
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] Create Telegraf bot instance in backend/src/bot/bot.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T026 [US1] Implement message handler in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T027 [US1] Create SLA timer service in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T028 [US1] Create SLA timer BullMQ queue in backend/src/queues/sla-timer.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T029 [US1] Create SLA timer worker in backend/src/queues/sla-timer.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T030 [US1] Implement sla.router createRequest procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T031 [US1] Implement sla.router classifyMessage procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T032 [US1] Implement sla.router startTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T033 [US1] Add webhook setup for Telegram bot in backend/src/bot/webhook.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T034 [US1] Wire message flow: receive → classify → create request → start timer in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T025 [US1] Create Telegraf bot instance in backend/src/bot/bot.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T026 [US1] Implement message handler in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T027 [US1] Create SLA timer service in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T028 [US1] Create SLA timer BullMQ queue in backend/src/queues/sla-timer.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T029 [US1] Create SLA timer worker in backend/src/queues/sla-timer.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  → Artifacts: [bot/](backend/src/bot/), [timer.service.ts](backend/src/services/sla/timer.service.ts), [sla-timer.worker.ts](backend/src/queues/sla-timer.worker.ts)
+- [X] T030 [US1] Implement sla.router createRequest procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T031 [US1] Implement sla.router classifyMessage procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T032 [US1] Implement sla.router startTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [sla.ts](backend/src/api/trpc/routers/sla.ts)
+- [X] T033 [US1] Add webhook setup for Telegram bot in backend/src/bot/webhook.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T034 [US1] Wire message flow: receive → classify → create request → start timer in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  → Artifacts: [webhook.ts](backend/src/bot/webhook.ts), [message.handler.ts](backend/src/bot/handlers/message.handler.ts)
 
 **Checkpoint**: Client can send message, system classifies and starts SLA timer (FR-001 to FR-010)
 

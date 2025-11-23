@@ -406,14 +406,16 @@ export async function closeQueues(timeout: number = 10000): Promise<void> {
  * @param requestId - Unique identifier for the client request
  * @param chatId - Telegram chat ID
  * @param thresholdMinutes - SLA threshold in minutes
+ * @param delayMs - Delay in milliseconds (optional, calculated from threshold if not provided)
  * @returns The created job
  */
 export async function scheduleSlaCheck(
   requestId: string,
   chatId: string,
-  thresholdMinutes: number
+  thresholdMinutes: number,
+  delayMs?: number
 ) {
-  const delayMs = thresholdMinutes * 60 * 1000;
+  const actualDelayMs = delayMs ?? thresholdMinutes * 60 * 1000;
   const jobId = `sla-${requestId}`;
 
   const job = await slaTimerQueue.add(
@@ -424,7 +426,7 @@ export async function scheduleSlaCheck(
       threshold: thresholdMinutes,
     },
     {
-      delay: delayMs,
+      delay: actualDelayMs,
       jobId, // Enables job removal by ID
     }
   );
@@ -433,7 +435,7 @@ export async function scheduleSlaCheck(
     requestId,
     chatId,
     thresholdMinutes,
-    delayMs,
+    delayMs: actualDelayMs,
     jobId: job.id,
   });
 

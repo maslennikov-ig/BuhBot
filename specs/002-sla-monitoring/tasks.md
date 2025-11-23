@@ -225,7 +225,8 @@
   → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
 - [X] T067 [US5] Implement analytics.router exportReport in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
   → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
-- [ ] T068 [US5] Add real-time updates with Supabase Realtime in frontend/src/app/dashboard/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+- [X] T068 [US5] Add real-time updates with polling in frontend/src/app/dashboard/dashboard-content.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+  → Artifacts: [dashboard-content.tsx](frontend/src/app/dashboard/dashboard-content.tsx) - tRPC query with 30s polling
 
 **Checkpoint**: Dashboard shows all metrics with real-time updates (FR-021, FR-023, FR-024, FR-026)
 

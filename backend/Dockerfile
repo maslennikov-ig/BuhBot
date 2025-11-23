@@ -1,11 +1,12 @@
 # ============================================================================
 # Build Stage
 # ============================================================================
-# Using Node 18 Debian Slim for OpenSSL 1.1 compatibility with Prisma
-FROM node:18-slim AS builder
+# Using Node 20 for Prisma 7 compatibility
+FROM node:20-slim AS builder
 
-# Install build dependencies (Python for native modules like bcrypt)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install pnpm and build dependencies
+RUN npm install -g pnpm@9 && \
+    apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ openssl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -13,32 +14,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install ALL dependencies (including devDependencies for build)
-RUN npm ci --prefer-offline --no-audit
+RUN pnpm install --frozen-lockfile
 
 # Copy Prisma schema for code generation
 COPY prisma ./prisma
 
 # Generate Prisma Client (required before TypeScript compilation)
-RUN npx prisma generate
+RUN pnpm prisma generate
 
 # Copy TypeScript configuration and source code
 COPY tsconfig.json ./
+COPY eslint.config.mjs ./
 COPY src ./src
 
-# Build TypeScript → JavaScript (output to dist/)
-RUN npm run build
+# Build TypeScript -> JavaScript (output to dist/)
+RUN pnpm build
 
 # ============================================================================
 # Runtime Stage (Production)
 # ============================================================================
-# Using Node 18 Debian Slim for OpenSSL 1.1 compatibility with Prisma
-FROM node:18-slim AS runtime
+# Using Node 20 for Prisma 7 compatibility
+FROM node:20-slim AS runtime
 
-# Install dumb-init for proper signal handling (PID 1 problem)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install pnpm, dumb-init and runtime dependencies
+RUN npm install -g pnpm@9 && \
+    apt-get update && apt-get install -y --no-install-recommends \
     dumb-init curl openssl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -50,17 +53,16 @@ RUN groupadd -g 1001 nodejs && \
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install ONLY production dependencies (no devDependencies)
-RUN npm ci --only=production --prefer-offline --no-audit && \
-    npm cache clean --force
+RUN pnpm install --frozen-lockfile --prod && \
+    pnpm store prune
 
-# Copy Prisma schema and generated client from builder stage
+# Copy Prisma schema from builder stage
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Copy compiled JavaScript from builder stage
+# Copy compiled JavaScript (including generated Prisma client) from builder
 COPY --from=builder /app/dist ./dist
 
 # Create logs directory with proper permissions
@@ -74,7 +76,6 @@ USER nodejs
 EXPOSE 3000
 
 # Health check configuration
-# Checks /health endpoint every 30s, timeout 3s, start after 10s, 3 retries
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 

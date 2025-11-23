@@ -21,7 +21,7 @@
  */
 
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import { PrismaClient } from '../../../node_modules/.prisma/client/client.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
 import { supabase } from '../../lib/supabase.js';
 import { prisma } from '../../lib/prisma.js';
 

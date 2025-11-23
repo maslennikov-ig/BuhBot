@@ -80,7 +80,7 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
     // If chat has custom schedules, use them
     if (chat.workingSchedules.length > 0) {
       // Convert database schedules to WorkingSchedule format
-      const workingDays = chat.workingSchedules.map((s) => s.dayOfWeek);
+      const workingDays = chat.workingSchedules.map((s: { dayOfWeek: number }) => s.dayOfWeek);
       const firstSchedule = chat.workingSchedules[0];
 
       // Use the timezone from the first schedule, or default

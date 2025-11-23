@@ -14,7 +14,7 @@
  */
 
 import crypto from 'crypto';
-import type { PrismaClient, MessageClassification } from '../../../node_modules/.prisma/client/client.js';
+import type { PrismaClient, MessageClassification } from '../../generated/prisma/client.js';
 import type { ClassificationResult, ClassificationSource } from './types.js';
 import logger from '../../utils/logger.js';
 

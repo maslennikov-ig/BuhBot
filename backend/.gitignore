@@ -67,3 +67,6 @@ prisma/dev.db-journal
 
 # MCP Configuration (contains access tokens)
 .mcp.json
+
+# Prisma generated client
+src/generated/

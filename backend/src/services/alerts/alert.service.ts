@@ -13,7 +13,7 @@
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import { queueAlert, scheduleEscalation } from '../../queues/setup.js';
-import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '../../../node_modules/.prisma/client/client.js';
+import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '../../generated/prisma/client.js';
 
 // Re-export types for consumers
 export type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus };

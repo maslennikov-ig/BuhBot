@@ -129,7 +129,7 @@ async function deleteOldClientRequests(cutoffDate: Date): Promise<number> {
       break;
     }
 
-    const idsToDelete = recordsToDelete.map((r) => r.id);
+    const idsToDelete = recordsToDelete.map((r: { id: string }) => r.id);
 
     // Delete SLA alerts first (if not cascaded)
     await prisma.slaAlert.deleteMany({

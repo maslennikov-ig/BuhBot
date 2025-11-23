@@ -240,10 +240,14 @@
 
 ### Implementation for User Story 6
 
-- [ ] T069 [P] [US6] Create chats list page in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-- [ ] T070 [P] [US6] Create chat details page in frontend/src/app/chats/[id]/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-- [ ] T071 [P] [US6] Create chat settings form in frontend/src/components/chats/ChatSettingsForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-- [ ] T072 [P] [US6] Create accountant assignment dropdown in frontend/src/components/chats/AccountantSelect.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+- [X] T069 [P] [US6] Create chats list page in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+  → Artifacts: [page.tsx](frontend/src/app/chats/page.tsx), [ChatsListContent.tsx](frontend/src/components/chats/ChatsListContent.tsx)
+- [X] T070 [P] [US6] Create chat details page in frontend/src/app/chats/[id]/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+  → Artifacts: [page.tsx](frontend/src/app/chats/[id]/page.tsx), [ChatDetailsContent.tsx](frontend/src/components/chats/ChatDetailsContent.tsx)
+- [X] T071 [P] [US6] Create chat settings form in frontend/src/components/chats/ChatSettingsForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+  → Artifacts: [ChatSettingsForm.tsx](frontend/src/components/chats/ChatSettingsForm.tsx)
+- [X] T072 [P] [US6] Create accountant assignment dropdown in frontend/src/components/chats/AccountantSelect.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+  → Artifacts: [AccountantSelect.tsx](frontend/src/components/chats/AccountantSelect.tsx)
 - [X] T073 [US6] Implement chat.router getChats in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
   → Artifacts: Already existed as `list` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
 - [X] T074 [US6] Implement chat.router getChatById in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
@@ -252,7 +256,8 @@
   → Artifacts: Already existed as `update` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
 - [X] T076 [US6] Implement chat.router registerChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
   → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts) - upsert with defaults
-- [ ] T077 [US6] Wire frontend chat pages to tRPC in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+- [X] T077 [US6] Wire frontend chat pages to tRPC in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+  → Artifacts: tRPC integrated in ChatsListContent, ChatDetailsContent, ChatSettingsForm
 
 **Checkpoint**: Admin can manage chats completely (FR-022, FR-025)
 

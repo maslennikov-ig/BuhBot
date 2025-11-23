@@ -23,6 +23,7 @@ import { alertsRouter } from './routers/alerts';
 import { analyticsRouter } from './routers/analytics';
 import { templatesRouter } from './routers/templates';
 import { faqRouter } from './routers/faq';
+import { settingsRouter } from './routers/settings';
 
 /**
  * App router combining all sub-routers
@@ -131,6 +132,23 @@ export const appRouter = router({
    * - delete: Delete FAQ item
    */
   faq: faqRouter,
+
+  /**
+   * Settings router - Global settings & holidays management
+   *
+   * Procedures:
+   * Queries:
+   * - getGlobalSettings: Get current global settings
+   * - getGlobalHolidays: Get list of holidays (optional year filter)
+   *
+   * Mutations (admin only):
+   * - updateGlobalSettings: Update global settings
+   * - addGlobalHoliday: Add a new holiday
+   * - removeGlobalHoliday: Remove a holiday by date
+   * - bulkAddHolidays: Add multiple holidays at once
+   * - seedRussianHolidays: Seed Russian federal holidays for a year
+   */
+  settings: settingsRouter,
 });
 
 /**

@@ -276,7 +276,7 @@ export const analyticsRouter = router({
                 gte: input.startDate,
                 lte: input.endDate,
               },
-              isSpam: false,
+              classification: 'REQUEST', // Only count actual requests, not SPAM/GRATITUDE/CLARIFICATION
             },
             select: {
               id: true,

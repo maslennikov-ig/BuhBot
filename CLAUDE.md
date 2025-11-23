@@ -140,30 +140,40 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 
 ## Active Technologies
 
+> **LTS Policy**: Используем только стабильные LTS-версии. Обновление major-версий — после 3+ месяцев стабильности.
+
 **Runtime & Language:**
-- Node.js 20.19.0+ (required by Prisma 7)
-- TypeScript 5.x (strict mode)
+- Node.js 20.x LTS (Active LTS до апреля 2026)
+- TypeScript 5.7.x (strict mode)
 
 **Backend:**
-- Express 5.1.0
-- Prisma 7.0.0 (with @prisma/adapter-pg)
-- tRPC (type-safe API)
-- Telegraf (Telegram bot)
-- BullMQ + Redis (queues)
-- Zod 3.x (validation)
+- Express 5.1.x (HTTP server)
+- Prisma 7.0.x (ORM, driver adapter pattern)
+- tRPC 11.x (type-safe API)
+- Telegraf 4.16.x (Telegram bot)
+- BullMQ 5.x + ioredis 5.x (job queues)
+- Zod 3.23.x (validation)
+- Winston 3.x (logging)
+- prom-client 15.x (Prometheus metrics)
 
 **Frontend:**
-- Next.js 15 (App Router)
-- React 19
-- Tailwind CSS
-- shadcn/ui
+- Next.js 16.x LTS (App Router, Turbopack)
+- React 19.x
+- Tailwind CSS 4.x
+- shadcn/ui (Radix primitives)
 
 **Database:**
-- PostgreSQL 15+ (Supabase Cloud)
+- PostgreSQL 15+ (Supabase Cloud, EU region)
 - Supabase Auth (JWT)
 - Row Level Security (RLS)
+- Redis 7.x (BullMQ, caching)
+
+**AI/Classification:**
+- OpenRouter API (primary, spam classification)
+- OpenAI API (fallback)
 
 **Infrastructure:**
+- VDS: FirstVDS.ru (152-ФЗ compliance)
 - Docker + Docker Compose
 - Nginx (reverse proxy, SSL)
 - Prometheus + Grafana + Uptime Kuma (monitoring)

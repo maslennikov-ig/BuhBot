@@ -57,31 +57,38 @@
 
 ### Database Schema Extension
 
-- [ ] T006 Add new enums (MessageClassification, AlertDeliveryStatus, AlertAction) to backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [ ] T007 Extend Chat model with SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [ ] T008 Extend ClientRequest model with classification and SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [ ] T009 Extend SlaAlert model with delivery and escalation fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [ ] T010 Extend WorkingSchedule model with timezone field in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [ ] T011 [P] Create GlobalSettings model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [ ] T012 [P] Create GlobalHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [ ] T013 [P] Create ChatHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [ ] T014 [P] Create ClassificationCache model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [ ] T015 Generate and run Prisma migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [SEQUENTIAL]
+- [X] T006 Add new enums (MessageClassification, AlertDeliveryStatus, AlertAction) to backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [X] T007 Extend Chat model with SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [X] T008 Extend ClientRequest model with classification and SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [X] T009 Extend SlaAlert model with delivery and escalation fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [X] T010 Extend WorkingSchedule model with timezone field in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [X] T011 [P] Create GlobalSettings model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [X] T012 [P] Create GlobalHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [X] T013 [P] Create ChatHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [X] T014 [P] Create ClassificationCache model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [X] T015 Generate and run Prisma migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [SEQUENTIAL]
+  → Artifacts: [schema.prisma](backend/prisma/schema.prisma), [migration](backend/prisma/migrations/20251122215631_add_sla_monitoring_schema/)
 
 ### Core Services Foundation
 
-- [ ] T016 Create working hours calculator in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T017 [P] Create keyword-based classifier (fallback) in backend/src/services/classifier/keyword-classifier.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
-- [ ] T018 [P] Create OpenRouter API client in backend/src/services/classifier/openrouter-client.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
-- [ ] T019 Create message classifier service in backend/src/services/classifier/classifier.service.ts (depends on T017, T018) [EXECUTOR: ai-classifier-specialist] [SEQUENTIAL]
-- [ ] T020 [P] Create classification cache service in backend/src/services/classifier/cache.service.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
-- [ ] T021 Create BullMQ queue setup in backend/src/queues/setup.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T016 Create working hours calculator in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  → Artifacts: [working-hours.service.ts](backend/src/services/sla/working-hours.service.ts)
+- [X] T017 [P] Create keyword-based classifier (fallback) in backend/src/services/classifier/keyword-classifier.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
+- [X] T018 [P] Create OpenRouter API client in backend/src/services/classifier/openrouter-client.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
+- [X] T019 Create message classifier service in backend/src/services/classifier/classifier.service.ts (depends on T017, T018) [EXECUTOR: ai-classifier-specialist] [SEQUENTIAL]
+- [X] T020 [P] Create classification cache service in backend/src/services/classifier/cache.service.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
+  → Artifacts: [classifier/](backend/src/services/classifier/)
+- [X] T021 Create BullMQ queue setup in backend/src/queues/setup.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  → Artifacts: [setup.ts](backend/src/queues/setup.ts)
 
 ### tRPC Infrastructure
 
-- [ ] T022 Create tRPC context and router base in backend/src/api/trpc.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T023 [P] Implement settings.router in backend/src/api/routers/settings.router.ts (from contracts/settings.router.ts) [EXECUTOR: api-builder] [PARALLEL-GROUP-4]
-- [ ] T024 [P] Seed GlobalSettings and Russian holidays in backend/prisma/seed.ts [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
+- [X] T022 Create tRPC context and router base in backend/src/api/trpc.ts [EXECUTOR: MAIN] [SEQUENTIAL]
+  → Artifacts: Already exists at [trpc.ts](backend/src/api/trpc/trpc.ts)
+- [X] T023 [P] Implement settings.router in backend/src/api/routers/settings.router.ts (from contracts/settings.router.ts) [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
+  → Artifacts: [settings.ts](backend/src/api/trpc/routers/settings.ts)
+- [X] T024 [P] Seed GlobalSettings and Russian holidays in backend/prisma/seed.ts [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
+  → Artifacts: [seed.ts](backend/prisma/seed.ts)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 

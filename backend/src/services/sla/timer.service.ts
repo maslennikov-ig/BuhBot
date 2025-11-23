@@ -216,23 +216,62 @@ export async function startSlaTimer(
 }
 
 /**
+ * Response details when stopping SLA timer
+ */
+export interface StopTimerOptions {
+  /** User ID of the responder (accountant) */
+  respondedBy?: string | null;
+  /** Telegram message ID of the response */
+  responseMessageId?: number | bigint | null;
+  /** Response timestamp (defaults to now) */
+  responseAt?: Date;
+}
+
+/**
+ * Result returned when stopping SLA timer
+ */
+export interface StopTimerResult {
+  /** Whether SLA was breached before response */
+  breached: boolean;
+  /** Calculated working minutes between request and response */
+  workingMinutes: number;
+  /** SLA threshold in minutes */
+  thresholdMinutes: number;
+  /** Request status after stopping */
+  status: string;
+}
+
+/**
  * Stop SLA timer for a client request
  *
  * Called when an accountant responds to the client.
  * Cancels the scheduled breach check job and updates the request
- * with resolution details.
+ * with resolution details including who responded and response message ID.
  *
  * @param requestId - UUID of the ClientRequest
+ * @param options - Optional response details (responder, message ID)
+ * @returns StopTimerResult with breach status and working minutes
  *
  * @example
  * ```typescript
  * // Stop timer when accountant responds
- * await stopSlaTimer('uuid-123');
+ * const result = await stopSlaTimer('uuid-123', {
+ *   respondedBy: 'user-uuid-456',
+ *   responseMessageId: 12345,
+ * });
+ * console.log('Breached:', result.breached, 'Minutes:', result.workingMinutes);
  * ```
  */
-export async function stopSlaTimer(requestId: string): Promise<void> {
+export async function stopSlaTimer(
+  requestId: string,
+  options: StopTimerOptions = {}
+): Promise<StopTimerResult> {
+  const responseAt = options.responseAt ?? new Date();
+
   logger.info('Stopping SLA timer', {
     requestId,
+    respondedBy: options.respondedBy,
+    responseMessageId: options.responseMessageId?.toString(),
     service: 'sla-timer',
   });
 
@@ -265,23 +304,42 @@ export async function stopSlaTimer(requestId: string): Promise<void> {
         requestId,
         service: 'sla-timer',
       });
-      return;
+      return {
+        breached: false,
+        workingMinutes: 0,
+        thresholdMinutes: 60,
+        status: 'not_found',
+      };
     }
 
     // Calculate elapsed working time
     const schedule = await getScheduleForChat(String(request.chatId));
     const elapsedMinutes = calculateWorkingMinutes(
       request.receivedAt,
-      new Date(),
+      responseAt,
       schedule
     );
+
+    // Get SLA threshold
+    const thresholdMinutes = request.chat?.slaThresholdMinutes ?? 60;
+
+    // Determine if SLA was breached
+    // Already breached flag takes precedence, otherwise check elapsed time
+    const breached = request.slaBreached || elapsedMinutes >= thresholdMinutes;
+
+    // Convert responseMessageId to bigint if provided
+    const responseMessageIdBigInt = options.responseMessageId != null
+      ? BigInt(options.responseMessageId)
+      : null;
 
     // Update request with response details
     await prisma.clientRequest.update({
       where: { id: requestId },
       data: {
         status: 'answered',
-        responseAt: new Date(),
+        responseAt,
+        respondedBy: options.respondedBy ?? null,
+        responseMessageId: responseMessageIdBigInt,
         responseTimeMinutes: elapsedMinutes,
         slaWorkingMinutes: elapsedMinutes,
       },
@@ -290,9 +348,18 @@ export async function stopSlaTimer(requestId: string): Promise<void> {
     logger.info('SLA timer stopped successfully', {
       requestId,
       elapsedMinutes,
-      breached: request.slaBreached,
+      thresholdMinutes,
+      breached,
+      respondedBy: options.respondedBy,
       service: 'sla-timer',
     });
+
+    return {
+      breached,
+      workingMinutes: elapsedMinutes,
+      thresholdMinutes,
+      status: 'answered',
+    };
   } catch (error) {
     logger.error('Failed to stop SLA timer', {
       requestId,

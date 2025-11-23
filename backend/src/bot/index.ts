@@ -30,6 +30,7 @@
 
 import { bot, stopBot, type BotContext } from './bot.js';
 import { registerMessageHandler } from './handlers/message.handler.js';
+import { registerResponseHandler } from './handlers/response.handler.js';
 import {
   setupWebhook,
   removeWebhook,
@@ -43,18 +44,28 @@ import logger from '../utils/logger.js';
  *
  * Must be called before launching the bot in any mode.
  * Registers:
- * - Message handler for SLA monitoring
- * - (Future) Response handler for accountant replies
+ * - Message handler for SLA monitoring (client messages)
+ * - Response handler for accountant replies (SLA timer stop)
  * - (Future) Alert callback handler for inline buttons
+ *
+ * Handler Order:
+ * 1. Message handler processes ALL text messages first
+ *    - Classifies and creates ClientRequest for client messages
+ *    - Skips if sender is accountant (no SLA tracking)
+ * 2. Response handler processes accountant messages
+ *    - Detects accountant replies
+ *    - Stops SLA timers
  */
 export function registerHandlers(): void {
   logger.info('Registering bot handlers...', { service: 'bot' });
 
-  // Register message handler for SLA monitoring
+  // Register message handler for SLA monitoring (processes client messages)
   registerMessageHandler();
 
+  // Register response handler for accountant replies (stops SLA timers)
+  registerResponseHandler();
+
   // TODO: Future handlers
-  // registerResponseHandler();
   // registerAlertCallbackHandler();
 
   logger.info('Bot handlers registered successfully', { service: 'bot' });
@@ -73,5 +84,6 @@ export {
 
 // Re-export individual handlers for testing
 export { registerMessageHandler };
+export { registerResponseHandler };
 
 export default bot;

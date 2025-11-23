@@ -7,7 +7,7 @@
  */
 
 export { registerMessageHandler } from './message.handler.js';
+export { registerResponseHandler } from './response.handler.js';
 
 // Future handlers
-// export { registerResponseHandler } from './response.handler.js';
 // export { registerAlertCallbackHandler } from './alert-callback.handler.js';

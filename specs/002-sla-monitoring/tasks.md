@@ -128,13 +128,20 @@
 
 ### Implementation for User Story 2
 
-- [ ] T035 [US2] Create response detection handler in backend/src/bot/handlers/response.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T036 [US2] Implement SLA timer stop logic in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T037 [US2] Calculate working hours response time in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T038 [US2] Create request management service in backend/src/services/sla/request.service.ts (CRUD operations for ClientRequest) [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T039 [US2] Implement sla.router stopTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T040 [US2] Update ClientRequest status on response in backend/src/services/sla/request.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T041 [US2] Handle edge case: response outside working hours in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T035 [US2] Create response detection handler in backend/src/bot/handlers/response.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  -> Artifacts: [response.handler.ts](backend/src/bot/handlers/response.handler.ts)
+- [X] T036 [US2] Implement SLA timer stop logic in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  -> Artifacts: [timer.service.ts](backend/src/services/sla/timer.service.ts) (enhanced with StopTimerOptions, StopTimerResult)
+- [X] T037 [US2] Calculate working hours response time in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  -> Artifacts: [working-hours.service.ts](backend/src/services/sla/working-hours.service.ts) (already implemented calculateWorkingMinutes)
+- [X] T038 [US2] Create request management service in backend/src/services/sla/request.service.ts (CRUD operations for ClientRequest) [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  -> Artifacts: [request.service.ts](backend/src/services/sla/request.service.ts)
+- [X] T039 [US2] Implement sla.router stopTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  -> Artifacts: [sla.ts](backend/src/api/trpc/routers/sla.ts) (already implemented in T032)
+- [X] T040 [US2] Update ClientRequest status on response in backend/src/services/sla/request.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  -> Artifacts: [request.service.ts](backend/src/services/sla/request.service.ts) (markRequestAsAnswered function)
+- [X] T041 [US2] Handle edge case: response outside working hours in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  -> Artifacts: [timer.service.ts](backend/src/services/sla/timer.service.ts) (calculateWorkingMinutes handles any response time)
 
 **Checkpoint**: Accountant response stops timer, calculates accurate response time (FR-014, FR-015)
 

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
  * Settings Page (Server Component)
  *
  * Renders the settings page with metadata.
- * Actual content is handled by the client component for interactivity.
+ * Uses AdminLayout for consistent premium admin UI.
  */
 export default function SettingsPage() {
   return <SettingsPageContent />;

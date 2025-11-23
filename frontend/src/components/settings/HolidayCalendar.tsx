@@ -3,18 +3,20 @@
 /**
  * HolidayCalendar Component
  *
- * Manages federal holidays for SLA calculations.
+ * Manages federal holidays for SLA calculations with premium BuhBot design.
  * Allows admins to view, add, remove holidays and seed Russian federal holidays.
  *
  * @module components/settings/HolidayCalendar
  */
 
 import { useState } from 'react';
+import { Calendar, Plus, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard } from '@/components/layout/GlassCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 /**
  * Holiday data structure from API
@@ -168,41 +170,72 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>Календарь праздников</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Year Selector */}
-        <div className="flex items-center gap-4">
-          <Label htmlFor="year-select">Год</Label>
-          <select
-            id="year-select"
-            value={selectedYear}
-            onChange={handleYearChange}
-            disabled={isAnyLoading}
-            className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {yearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+    <GlassCard variant="default" padding="lg" className={cn('buh-hover-lift', className)}>
+      {/* Header with icon */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--buh-accent-secondary)] to-[var(--buh-error)] shadow-lg">
+          <Calendar className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">
+            Календарь праздников
+          </h2>
+          <p className="text-sm text-[var(--buh-foreground-muted)]">
+            Федеральные праздники для расчета SLA
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {/* Year Selector & Seed Button */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Label htmlFor="year-select" className="text-[var(--buh-foreground-muted)]">
+              Год
+            </Label>
+            <select
+              id="year-select"
+              value={selectedYear}
+              onChange={handleYearChange}
+              disabled={isAnyLoading}
+              className={cn(
+                'h-10 w-28 rounded-lg border px-3 py-2 text-sm font-medium',
+                'bg-[var(--buh-surface)] border-[var(--buh-border)] text-[var(--buh-foreground)]',
+                'focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent)] focus:border-[var(--buh-accent)]',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                'transition-all duration-200'
+              )}
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Button
             type="button"
             variant="outline"
             onClick={handleSeedHolidays}
             disabled={isAnyLoading}
+            className={cn(
+              'gap-2 border-[var(--buh-accent-secondary)] text-[var(--buh-accent-secondary)]',
+              'hover:bg-[var(--buh-accent-secondary-glow)] hover:border-[var(--buh-accent-secondary)]',
+              'transition-all duration-200'
+            )}
           >
-            {isSeedingHolidays ? 'Загрузка...' : `Заполнить праздниками РФ ${selectedYear}`}
+            <Sparkles className="h-4 w-4" />
+            {isSeedingHolidays ? 'Загрузка...' : `Заполнить праздниками РФ`}
           </Button>
         </div>
 
         {/* Add Holiday Form */}
-        <form onSubmit={handleAddHoliday} className="flex items-end gap-4">
+        <form onSubmit={handleAddHoliday} className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="holiday-date">Дата</Label>
+            <Label htmlFor="holiday-date" className="text-[var(--buh-foreground)]">
+              Дата
+            </Label>
             <Input
               id="holiday-date"
               type="date"
@@ -210,11 +243,17 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
               onChange={(e) => setNewHolidayDate(e.target.value)}
               disabled={isAnyLoading}
               required
-              className="w-40"
+              className={cn(
+                'w-40',
+                'bg-[var(--buh-surface)] border-[var(--buh-border)]',
+                'focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]'
+              )}
             />
           </div>
-          <div className="flex flex-col gap-2 flex-1">
-            <Label htmlFor="holiday-name">Название</Label>
+          <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+            <Label htmlFor="holiday-name" className="text-[var(--buh-foreground)]">
+              Название
+            </Label>
             <Input
               id="holiday-name"
               type="text"
@@ -224,58 +263,112 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
               disabled={isAnyLoading}
               required
               maxLength={100}
+              className={cn(
+                'bg-[var(--buh-surface)] border-[var(--buh-border)]',
+                'focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]'
+              )}
             />
           </div>
-          <Button type="submit" disabled={isAnyLoading || !newHolidayDate || !newHolidayName.trim()}>
-            {isAddingHoliday ? 'Загрузка...' : 'Добавить'}
+          <Button
+            type="submit"
+            disabled={isAnyLoading || !newHolidayDate || !newHolidayName.trim()}
+            className={cn(
+              'gap-2',
+              'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]',
+              'hover:shadow-lg hover:shadow-[var(--buh-accent-glow)]',
+              'transition-all duration-200',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            <Plus className="h-4 w-4" />
+            {isAddingHoliday ? 'Добавление...' : 'Добавить'}
           </Button>
         </form>
 
         {/* Holidays Table */}
-        <div className="border rounded-md">
+        <div className="rounded-xl border border-[var(--buh-border)] overflow-hidden bg-[var(--buh-surface)]">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
+              <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-overlay)]">
+                <th className="h-12 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-subtle)]">
                   Дата
                 </th>
-                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
+                <th className="h-12 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-subtle)]">
                   Название
                 </th>
-                <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">
+                <th className="h-12 px-4 text-right align-middle text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-subtle)]">
                   Действия
                 </th>
               </tr>
             </thead>
             <tbody>
               {isLoadingHolidays ? (
-                <tr>
-                  <td colSpan={3} className="h-16 text-center text-muted-foreground">
-                    Загрузка...
-                  </td>
-                </tr>
+                // Loading skeleton
+                [...Array(3)].map((_, i) => (
+                  <tr key={i} className="border-b border-[var(--buh-border)] last:border-b-0">
+                    <td className="h-14 px-4">
+                      <div className="h-5 w-16 rounded buh-shimmer" />
+                    </td>
+                    <td className="h-14 px-4">
+                      <div className="h-5 w-48 rounded buh-shimmer" />
+                    </td>
+                    <td className="h-14 px-4">
+                      <div className="h-8 w-20 rounded buh-shimmer ml-auto" />
+                    </td>
+                  </tr>
+                ))
               ) : holidays.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="h-16 text-center text-muted-foreground">
-                    Праздников не найдено
+                  <td colSpan={3} className="h-32 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Calendar className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
+                      <p className="text-[var(--buh-foreground-muted)]">
+                        Праздников не найдено
+                      </p>
+                      <p className="text-sm text-[var(--buh-foreground-subtle)]">
+                        Добавьте праздник или заполните федеральными праздниками РФ
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                holidays.map((holiday) => (
-                  <tr key={holiday.id} className="border-b last:border-b-0">
-                    <td className="h-12 px-4 align-middle">
-                      {formatDateShort(holiday.date)}
+                holidays.map((holiday, index) => (
+                  <tr
+                    key={holiday.id}
+                    className={cn(
+                      'border-b border-[var(--buh-border)] last:border-b-0',
+                      'transition-colors duration-150',
+                      'hover:bg-[var(--buh-surface-overlay)]',
+                      'buh-animate-fade-in-up'
+                    )}
+                    style={{ animationDelay: `${index * 0.03}s` }}
+                  >
+                    <td className="h-14 px-4 align-middle">
+                      <span className="inline-flex items-center gap-2 font-mono text-sm font-medium text-[var(--buh-foreground)]">
+                        <span className="flex h-6 w-6 items-center justify-center rounded bg-[var(--buh-accent-glow)] text-xs text-[var(--buh-accent)]">
+                          {new Date(holiday.date).getDate()}
+                        </span>
+                        {formatDateShort(holiday.date)}
+                      </span>
                     </td>
-                    <td className="h-12 px-4 align-middle">{holiday.name}</td>
-                    <td className="h-12 px-4 align-middle text-right">
+                    <td className="h-14 px-4 align-middle">
+                      <span className="text-[var(--buh-foreground)]">{holiday.name}</span>
+                    </td>
+                    <td className="h-14 px-4 align-middle text-right">
                       <Button
                         type="button"
-                        variant="destructive"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveHoliday(holiday)}
                         disabled={isAnyLoading}
+                        className={cn(
+                          'gap-1.5 text-[var(--buh-foreground-muted)]',
+                          'hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]',
+                          'transition-all duration-200'
+                        )}
                       >
-                        {isRemovingHoliday ? 'Загрузка...' : 'Удалить'}
+                        <Trash2 className="h-4 w-4" />
+                        {isRemovingHoliday ? '...' : 'Удалить'}
                       </Button>
                     </td>
                   </tr>
@@ -287,11 +380,20 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
 
         {/* Summary */}
         {!isLoadingHolidays && holidays.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            Всего праздников в {selectedYear} году: {holidays.length}
-          </p>
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-[var(--buh-foreground-muted)]">
+              Всего праздников в {selectedYear} году:{' '}
+              <span className="font-semibold text-[var(--buh-accent)]">{holidays.length}</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[var(--buh-accent)] animate-pulse" />
+              <span className="text-xs text-[var(--buh-foreground-subtle)]">
+                Праздники исключаются из расчета SLA
+              </span>
+            </div>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </GlassCard>
   );
 }

@@ -186,7 +186,8 @@
   → Artifacts: [WorkingHoursForm.tsx](frontend/src/components/settings/WorkingHoursForm.tsx)
 - [X] T054 [P] [US4] Create holiday calendar component in frontend/src/components/settings/HolidayCalendar.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
   → Artifacts: [HolidayCalendar.tsx](frontend/src/components/settings/HolidayCalendar.tsx)
-- [ ] T055 [US4] Implement chat.router updateWorkingSchedule in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T055 [US4] Implement chat.router updateWorkingSchedule in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts)
 - [X] T056 [US4] Implement settings.router updateGlobalSettings in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
   → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
 - [X] T057 [US4] Implement settings.router addGlobalHoliday in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]

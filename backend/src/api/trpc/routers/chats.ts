@@ -225,4 +225,131 @@ export const chatsRouter = router({
         chat: { ...updatedChat, id: Number(updatedChat.id) },
       };
     }),
+
+  /**
+   * Update working schedule for a chat
+   *
+   * @param chatId - Chat ID (Telegram chat ID as string)
+   * @param schedules - Array of schedule entries for each day
+   * @param timezone - Timezone for the schedule (optional, defaults to Europe/Moscow)
+   * @returns Updated schedules with Russian day names
+   * @throws NOT_FOUND if chat doesn't exist
+   * @authorization Admins and managers only
+   */
+  updateWorkingSchedule: managerProcedure
+    .input(
+      z.object({
+        chatId: z.string(),
+        schedules: z.array(
+          z.object({
+            dayOfWeek: z.number().min(1).max(7),
+            startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
+            endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
+            isActive: z.boolean(),
+          })
+        ),
+        timezone: z.string().optional(),
+      })
+    )
+    .output(
+      z.object({
+        chatId: z.string(),
+        schedules: z.array(
+          z.object({
+            id: z.string().uuid(),
+            chatId: z.string(),
+            dayOfWeek: z.number(),
+            dayName: z.string(),
+            startTime: z.string(),
+            endTime: z.string(),
+            isActive: z.boolean(),
+            timezone: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Helper function for Russian day names
+      const DAY_NAMES_RU = [
+        'Понедельник',
+        'Вторник',
+        'Среда',
+        'Четверг',
+        'Пятница',
+        'Суббота',
+        'Воскресенье',
+      ];
+      const getDayName = (dayOfWeek: number) => DAY_NAMES_RU[dayOfWeek - 1] || 'Неизвестно';
+
+      // Parse chatId from string to BigInt
+      const chatIdBigInt = BigInt(input.chatId);
+
+      // Verify chat exists
+      const existingChat = await ctx.prisma.chat.findUnique({
+        where: { id: chatIdBigInt },
+      });
+
+      if (!existingChat) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Chat with ID ${input.chatId} not found`,
+        });
+      }
+
+      // Default timezone
+      const timezone = input.timezone || 'Europe/Moscow';
+
+      // Helper to convert HH:MM string to Date for Prisma Time field
+      const timeStringToDate = (time: string): Date => {
+        return new Date(`1970-01-01T${time}:00Z`);
+      };
+
+      // Use transaction to delete existing and create new schedules
+      const createdSchedules = await ctx.prisma.$transaction(async (tx) => {
+        // Delete existing schedules for this chat
+        await tx.workingSchedule.deleteMany({
+          where: { chatId: chatIdBigInt },
+        });
+
+        // Create new schedules
+        const schedules = await Promise.all(
+          input.schedules.map((schedule) =>
+            tx.workingSchedule.create({
+              data: {
+                chatId: chatIdBigInt,
+                dayOfWeek: schedule.dayOfWeek,
+                startTime: timeStringToDate(schedule.startTime),
+                endTime: timeStringToDate(schedule.endTime),
+                isActive: schedule.isActive,
+                timezone,
+              },
+            })
+          )
+        );
+
+        return schedules;
+      });
+
+      // Helper to format Date back to HH:MM string
+      const dateToTimeString = (date: Date): string => {
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+      };
+
+      // Format output with Russian day names
+      return {
+        chatId: input.chatId,
+        schedules: createdSchedules.map((schedule) => ({
+          id: schedule.id,
+          chatId: schedule.chatId.toString(),
+          dayOfWeek: schedule.dayOfWeek,
+          dayName: getDayName(schedule.dayOfWeek),
+          startTime: dateToTimeString(schedule.startTime),
+          endTime: dateToTimeString(schedule.endTime),
+          isActive: schedule.isActive,
+          timezone: schedule.timezone,
+        })),
+      };
+    }),
 });

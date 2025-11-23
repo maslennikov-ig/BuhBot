@@ -219,9 +219,12 @@
   → Artifacts: [ActiveAlertsWidget.tsx](frontend/src/components/dashboard/ActiveAlertsWidget.tsx) - Severity breakdown
 - [X] T064 [P] [US5] Create recent requests table in frontend/src/components/dashboard/RecentRequestsTable.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
   → Artifacts: [RecentRequestsTable.tsx](frontend/src/components/dashboard/RecentRequestsTable.tsx) - Status badges, hover effects
-- [ ] T065 [US5] Implement analytics.router getDashboard in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T066 [US5] Implement analytics.router getAccountantStats in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T067 [US5] Implement analytics.router exportReport in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T065 [US5] Implement analytics.router getDashboard in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
+- [X] T066 [US5] Implement analytics.router getAccountantStats in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
+- [X] T067 [US5] Implement analytics.router exportReport in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
 - [ ] T068 [US5] Add real-time updates with Supabase Realtime in frontend/src/app/dashboard/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
 
 **Checkpoint**: Dashboard shows all metrics with real-time updates (FR-021, FR-023, FR-024, FR-026)

@@ -54,8 +54,8 @@ export interface AlertJobData {
  * Used for scheduled cleanup of old data
  */
 export interface DataRetentionJobData {
-  /** Number of years to retain data */
-  retentionYears: number;
+  /** How the job was triggered */
+  triggeredBy: 'scheduler' | 'manual';
 }
 
 // ============================================================================
@@ -549,29 +549,32 @@ export async function cancelEscalation(
 /**
  * Schedule the daily data retention cleanup job
  *
- * @param retentionYears - Number of years to retain data
+ * Runs daily at midnight UTC (3:00 AM Moscow time).
+ * The job reads retention years from GlobalSettings.
+ *
  * @returns The created job
  */
-export async function scheduleDataRetention(retentionYears: number = 5) {
+export async function scheduleDataRetention() {
+  const repeatPattern = '0 0 * * *'; // Daily at midnight UTC (3 AM Moscow)
+
   // Remove any existing repeatable job first
   await dataRetentionQueue.removeRepeatable('cleanup', {
-    pattern: '0 3 * * *',
+    pattern: repeatPattern,
   });
 
   const job = await dataRetentionQueue.add(
     'cleanup',
-    { retentionYears },
+    { triggeredBy: 'scheduler' },
     {
       repeat: {
-        pattern: '0 3 * * *', // Run daily at 3 AM
+        pattern: repeatPattern,
       },
       jobId: 'data-retention-daily',
     }
   );
 
   logger.info('Data retention job scheduled', {
-    retentionYears,
-    schedule: '0 3 * * * (daily at 3 AM)',
+    schedule: '0 0 * * * (daily at 00:00 UTC / 03:00 Moscow)',
     jobId: job.id,
   });
 

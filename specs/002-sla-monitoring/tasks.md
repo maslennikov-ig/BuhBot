@@ -267,16 +267,24 @@
 
 **Purpose**: Integration, optimization, and hardening
 
-- [ ] T078 [P] Create app router root with tRPC routes in backend/src/api/index.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
-- [ ] T079 [P] Add RLS policies for new tables via migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [PARALLEL-GROUP-8]
-- [ ] T080 [P] Create health check endpoint in backend/src/api/health.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
-- [ ] T081 Add rate limiting middleware in backend/src/bot/middleware/rate-limit.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
-- [ ] T082 Add error handling middleware in backend/src/bot/middleware/error.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
-- [ ] T083 Configure Winston logging in backend/src/lib/logger.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T084 Create Docker entrypoint in backend/Dockerfile updates [EXECUTOR: docker-compose-specialist] [SEQUENTIAL]
+- [X] T078 [P] Create app router root with tRPC routes in backend/src/api/index.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
+  → Artifacts: Already existed in [trpc/index.ts](backend/src/api/trpc/index.ts), [router.ts](backend/src/api/trpc/router.ts)
+- [X] T079 [P] Add RLS policies for new tables via migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [PARALLEL-GROUP-8]
+  → Artifacts: [migration.sql](backend/prisma/migrations/20251123000001_add_rls_policies_sla_monitoring/migration.sql)
+- [X] T080 [P] Create health check endpoint in backend/src/api/health.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
+  → Artifacts: Already existed in [health.ts](backend/src/api/health.ts)
+- [X] T081 Add rate limiting middleware in backend/src/bot/middleware/rate-limit.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
+  → Artifacts: [rate-limit.ts](backend/src/bot/middleware/rate-limit.ts)
+- [X] T082 Add error handling middleware in backend/src/bot/middleware/error.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
+  → Artifacts: [error.ts](backend/src/bot/middleware/error.ts), [index.ts](backend/src/bot/middleware/index.ts)
+- [X] T083 Configure Winston logging in backend/src/lib/logger.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  → Artifacts: Already existed in [logger.ts](backend/src/utils/logger.ts)
+- [X] T084 Create Docker entrypoint in backend/Dockerfile updates [EXECUTOR: docker-compose-specialist] [SEQUENTIAL]
+  → Artifacts: Already existed in [Dockerfile](backend/Dockerfile)
 - [ ] T085 Run type-check and fix any errors [EXECUTOR: MAIN] [SEQUENTIAL]
 - [ ] T086 Run quickstart.md validation manually [EXECUTOR: MAIN] [SEQUENTIAL]
-- [ ] T087 [P] Create data retention job in backend/src/jobs/data-retention.job.ts (delete records older than 3 years, BullMQ repeatable daily 3:00 AM) [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-8]
+- [X] T087 [P] Create data retention job in backend/src/jobs/data-retention.job.ts (delete records older than 3 years, BullMQ repeatable daily 3:00 AM) [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-8]
+  → Artifacts: [data-retention.job.ts](backend/src/jobs/data-retention.job.ts)
 
 ---
 

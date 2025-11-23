@@ -78,6 +78,23 @@ If contradictions occur:
 - If truly ambiguous: ask user with specific options
 - Only ask when unable to determine best practice (rare, ~10%)
 
+**8. LIBRARY-FIRST APPROACH (MANDATORY)**
+
+Before writing new code (>20 lines), ALWAYS search for existing libraries:
+- WebSearch: "npm {functionality} library 2024" or "python {functionality} package"
+- Context7: documentation for candidate libraries
+- Check: weekly downloads >1000, commits in last 6 months, TypeScript/types support
+
+**Use library when**:
+- Covers >70% of required functionality
+- Actively maintained, no critical vulnerabilities
+- Reasonable bundle size (check bundlephobia.com)
+
+**Write custom code when**:
+- <20 lines of simple logic
+- All libraries abandoned or insecure
+- Core business logic requiring full control
+
 ### Planning Phase (ALWAYS First)
 
 Before implementing tasks:
@@ -180,7 +197,22 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 - GitHub Actions (CI/CD)
 - Let's Encrypt (SSL certificates)
 
+## Quick Access (For New Sessions)
+
+**VDS Server**: `.tmp/current/vds-credentials.md`
+- IP: `185.200.177.180`
+- Domain: `buhbot.aidevteam.ru`
+- SSH: Use `expect` script with root password (see credentials file)
+- Status: All containers deployed and healthy
+
+**Key Paths**:
+- Server credentials: `.tmp/current/vds-credentials.md`
+- Tasks: `docs/speckit/tasks.md`
+- Spec: `docs/speckit/spec.md`
+
 ## Recent Changes
+- 2025-11-23: Frontend Docker multi-stage build for tRPC types
+- 2025-11-23: CI fully passing (all jobs green)
 - 2025-11-22: Migrated Prisma 5.22 → 7.0.0 (driver adapter pattern)
 - 2025-11-22: Updated dependencies (dotenv 17, express 5, supabase-js 2.84)
 - 2025-11-22: Removed unused frontend dependencies

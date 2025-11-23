@@ -1,5 +1,32 @@
 # ================================
-# Build Stage
+# Backend Types Stage - Build backend to generate Prisma client types
+# ================================
+FROM node:20-alpine AS backend-types
+
+# Install pnpm and build dependencies
+RUN npm install -g pnpm@9 && \
+    apk add --no-cache libc6-compat openssl
+
+# Set working directory
+WORKDIR /backend
+
+# Copy backend package files
+COPY backend/package.json backend/pnpm-lock.yaml ./
+
+# Install backend dependencies (only for Prisma generation)
+RUN pnpm install --frozen-lockfile
+
+# Copy Prisma schema
+COPY backend/prisma ./prisma
+
+# Generate Prisma client (creates types in src/generated/prisma)
+RUN pnpm prisma generate
+
+# Copy backend source code (needed for tRPC type inference)
+COPY backend/src ./src
+
+# ================================
+# Build Stage - Build Next.js application
 # ================================
 FROM node:20-alpine AS build
 
@@ -10,8 +37,10 @@ RUN npm install -g pnpm@9 && \
 # Set working directory
 WORKDIR /app
 
-# Copy backend source for tRPC type imports
-COPY backend/src ../backend/src
+# Copy backend with generated Prisma client and all node_modules for tRPC type imports
+# TypeScript needs to resolve the full module graph including @supabase/supabase-js, @prisma/adapter-pg, etc.
+COPY --from=backend-types /backend/src ../backend/src
+COPY --from=backend-types /backend/node_modules ../backend/node_modules
 
 # Copy frontend package files for dependency installation
 COPY frontend/package.json frontend/pnpm-lock.yaml ./

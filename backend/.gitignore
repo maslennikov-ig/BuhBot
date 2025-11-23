@@ -1,8 +1,7 @@
 # Dependencies
 node_modules/
-# package-lock.json  # Needed for Docker builds with npm ci
+# Lock files are committed for reproducible builds
 yarn.lock
-pnpm-lock.yaml
 
 # Build output
 dist/

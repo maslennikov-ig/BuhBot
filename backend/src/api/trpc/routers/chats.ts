@@ -352,4 +352,80 @@ export const chatsRouter = router({
         })),
       };
     }),
+
+  /**
+   * Register a new chat or update existing one
+   *
+   * @param telegramChatId - Telegram chat ID as string
+   * @param chatType - Type of chat (private, group, supergroup)
+   * @param title - Chat title (optional)
+   * @param accountantUsername - Accountant username (optional)
+   * @returns Created or updated chat details
+   * @authorization Admins and managers only
+   */
+  registerChat: managerProcedure
+    .input(
+      z.object({
+        telegramChatId: z.string(),
+        chatType: ChatTypeSchema,
+        title: z.string().optional(),
+        accountantUsername: z.string().optional(),
+      })
+    )
+    .output(
+      z.object({
+        id: z.number(),
+        chatType: ChatTypeSchema,
+        title: z.string().nullable(),
+        accountantUsername: z.string().nullable(),
+        assignedAccountantId: z.string().uuid().nullable(),
+        slaEnabled: z.boolean(),
+        slaResponseMinutes: z.number().int(),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Parse telegramChatId to BigInt for the id field
+      const chatId = BigInt(input.telegramChatId);
+
+      // Upsert: create if not exists, update if exists
+      const chat = await ctx.prisma.chat.upsert({
+        where: { id: chatId },
+        update: {
+          // Update title and accountantUsername if provided
+          ...(input.title !== undefined && { title: input.title }),
+          ...(input.accountantUsername !== undefined && {
+            accountantUsername: input.accountantUsername,
+          }),
+          chatType: input.chatType,
+        },
+        create: {
+          id: chatId,
+          chatType: input.chatType,
+          title: input.title ?? null,
+          accountantUsername: input.accountantUsername ?? null,
+          // Defaults from Prisma schema
+          slaEnabled: true,
+          slaResponseMinutes: 60,
+          slaThresholdMinutes: 60,
+          monitoringEnabled: true,
+          is24x7Mode: false,
+          managerTelegramIds: [],
+        },
+        select: {
+          id: true,
+          chatType: true,
+          title: true,
+          accountantUsername: true,
+          assignedAccountantId: true,
+          slaEnabled: true,
+          slaResponseMinutes: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return { ...chat, id: Number(chat.id) };
+    }),
 });

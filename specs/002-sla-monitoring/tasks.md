@@ -244,10 +244,14 @@
 - [ ] T070 [P] [US6] Create chat details page in frontend/src/app/chats/[id]/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
 - [ ] T071 [P] [US6] Create chat settings form in frontend/src/components/chats/ChatSettingsForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
 - [ ] T072 [P] [US6] Create accountant assignment dropdown in frontend/src/components/chats/AccountantSelect.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-- [ ] T073 [US6] Implement chat.router getChats in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T074 [US6] Implement chat.router getChatById in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T075 [US6] Implement chat.router updateChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T076 [US6] Implement chat.router registerChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T073 [US6] Implement chat.router getChats in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: Already existed as `list` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [X] T074 [US6] Implement chat.router getChatById in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: Already existed as `getById` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [X] T075 [US6] Implement chat.router updateChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: Already existed as `update` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [X] T076 [US6] Implement chat.router registerChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts) - upsert with defaults
 - [ ] T077 [US6] Wire frontend chat pages to tRPC in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
 
 **Checkpoint**: Admin can manage chats completely (FR-022, FR-025)

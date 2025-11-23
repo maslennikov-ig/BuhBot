@@ -281,8 +281,10 @@
   → Artifacts: Already existed in [logger.ts](backend/src/utils/logger.ts)
 - [X] T084 Create Docker entrypoint in backend/Dockerfile updates [EXECUTOR: docker-compose-specialist] [SEQUENTIAL]
   → Artifacts: Already existed in [Dockerfile](backend/Dockerfile)
-- [ ] T085 Run type-check and fix any errors [EXECUTOR: MAIN] [SEQUENTIAL]
-- [ ] T086 Run quickstart.md validation manually [EXECUTOR: MAIN] [SEQUENTIAL]
+- [X] T085 Run type-check and fix any errors [EXECUTOR: MAIN] [SEQUENTIAL]
+  → Artifacts: Backend type-check PASSED, Frontend build PASSED
+- [X] T086 Run quickstart.md validation manually [EXECUTOR: MAIN] [SEQUENTIAL]
+  → Artifacts: All routes and procedures validated
 - [X] T087 [P] Create data retention job in backend/src/jobs/data-retention.job.ts (delete records older than 3 years, BullMQ repeatable daily 3:00 AM) [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-8]
   → Artifacts: [data-retention.job.ts](backend/src/jobs/data-retention.job.ts)
 

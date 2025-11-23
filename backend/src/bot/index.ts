@@ -31,6 +31,7 @@
 import { bot, stopBot, type BotContext } from './bot.js';
 import { registerMessageHandler } from './handlers/message.handler.js';
 import { registerResponseHandler } from './handlers/response.handler.js';
+import { registerAlertCallbackHandler } from './handlers/alert-callback.handler.js';
 import {
   setupWebhook,
   removeWebhook,
@@ -65,8 +66,8 @@ export function registerHandlers(): void {
   // Register response handler for accountant replies (stops SLA timers)
   registerResponseHandler();
 
-  // TODO: Future handlers
-  // registerAlertCallbackHandler();
+  // Register alert callback handler for inline keyboard buttons
+  registerAlertCallbackHandler();
 
   logger.info('Bot handlers registered successfully', { service: 'bot' });
 }
@@ -85,5 +86,6 @@ export {
 // Re-export individual handlers for testing
 export { registerMessageHandler };
 export { registerResponseHandler };
+export { registerAlertCallbackHandler };
 
 export default bot;

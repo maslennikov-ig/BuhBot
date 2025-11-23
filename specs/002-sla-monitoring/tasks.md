@@ -155,16 +155,18 @@
 
 ### Implementation for User Story 3
 
-- [ ] T042 [US3] Create alert service in backend/src/services/alerts/alert.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T043 [US3] Implement alert message formatting in backend/src/services/alerts/format.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T044 [US3] Create inline keyboard builder in backend/src/bot/keyboards/alert.keyboard.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T045 [US3] Implement alert BullMQ queue in backend/src/queues/alert.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T046 [US3] Implement alert worker (send to Telegram) in backend/src/queues/alert.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T047 [US3] Create escalation scheduler in backend/src/services/alerts/escalation.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T048 [US3] Implement alert callback handlers (Notify, Resolve) in backend/src/bot/handlers/alert-callback.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [ ] T049 [US3] Implement alert.router createAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T050 [US3] Implement alert.router resolveAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [ ] T051 [US3] Implement alert.router notifyAccountant in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T042 [US3] Create alert service in backend/src/services/alerts/alert.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T043 [US3] Implement alert message formatting in backend/src/services/alerts/format.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T044 [US3] Create inline keyboard builder in backend/src/bot/keyboards/alert.keyboard.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T045 [US3] Implement alert BullMQ queue in backend/src/queues/alert.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T046 [US3] Implement alert worker (send to Telegram) in backend/src/queues/alert.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T047 [US3] Create escalation scheduler in backend/src/services/alerts/escalation.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [X] T048 [US3] Implement alert callback handlers (Notify, Resolve) in backend/src/bot/handlers/alert-callback.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+  → Artifacts: [alerts/](backend/src/services/alerts/), [alert.worker.ts](backend/src/queues/alert.worker.ts), [alert-callback.handler.ts](backend/src/bot/handlers/alert-callback.handler.ts)
+- [X] T049 [US3] Implement alert.router createAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T050 [US3] Implement alert.router resolveAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [X] T051 [US3] Implement alert.router notifyAccountant in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+  → Artifacts: [alert.ts](backend/src/api/trpc/routers/alert.ts)
 
 **Checkpoint**: Manager receives breach alerts with working buttons (FR-016 to FR-020)
 

@@ -20,6 +20,7 @@ import { authRouter } from './routers/auth.js';
 import { chatsRouter } from './routers/chats.js';
 import { requestsRouter } from './routers/requests.js';
 import { alertsRouter } from './routers/alerts.js';
+import { alertRouter } from './routers/alert.js';
 import { analyticsRouter } from './routers/analytics.js';
 import { templatesRouter } from './routers/templates.js';
 import { faqRouter } from './routers/faq.js';
@@ -93,13 +94,31 @@ export const appRouter = router({
   requests: requestsRouter,
 
   /**
-   * Alerts router - SLA alert management
+   * Alerts router - SLA alert management (legacy)
    *
    * Procedures:
    * - listUnacknowledged: List unacknowledged alerts (dashboard widget)
    * - acknowledge: Acknowledge an SLA alert
    */
   alerts: alertsRouter,
+
+  /**
+   * Alert router - Full SLA alert management (T049-T051)
+   *
+   * Mutations:
+   * - createAlert: Create new SLA alert
+   * - resolveAlert: Resolve alert with action type
+   * - notifyAccountant: Send notification to accountant
+   * - updateDeliveryStatus: Update Telegram delivery status
+   *
+   * Queries:
+   * - getAlerts: List alerts with filters and pagination
+   * - getAlertById: Get alert details
+   * - getActiveAlerts: Get unresolved alerts
+   * - getActiveAlertCount: Dashboard metric
+   * - getAlertStats: Get alert statistics
+   */
+  alert: alertRouter,
 
   /**
    * Analytics router - Reports & dashboards

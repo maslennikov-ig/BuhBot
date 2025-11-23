@@ -10,14 +10,17 @@ RUN npm install -g pnpm@9 && \
 # Set working directory
 WORKDIR /app
 
-# Copy package files for dependency installation
-COPY package.json pnpm-lock.yaml ./
+# Copy backend source for tRPC type imports
+COPY backend/src ../backend/src
+
+# Copy frontend package files for dependency installation
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
 
 # Install dependencies (including devDependencies for build)
 RUN pnpm install --frozen-lockfile
 
-# Copy source code and configuration files
-COPY . .
+# Copy frontend source code and configuration files
+COPY frontend/. .
 
 # Build arguments for environment variables (required at build time)
 ARG NEXT_PUBLIC_SUPABASE_URL

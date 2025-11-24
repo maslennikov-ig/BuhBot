@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.17] - 2025-11-24
+
+### Added
+- SLA Monitoring System (MODULE 1.1) (#2) (f1f5a7a)
+- **deps**: migrate Prisma 5.22 to 7.0 (785e16e)
+
 ## [0.1.16] - 2025-11-22
 
 ## [0.1.15] - 2025-11-22

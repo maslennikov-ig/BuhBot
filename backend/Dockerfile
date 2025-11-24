@@ -4,9 +4,8 @@
 # Using Node 20 for Prisma 7 compatibility
 FROM node:20-slim AS builder
 
-# Install pnpm and build dependencies
-RUN npm install -g pnpm@9 && \
-    apt-get update && apt-get install -y --no-install-recommends \
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ openssl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -14,16 +13,16 @@ RUN npm install -g pnpm@9 && \
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 
 # Install ALL dependencies (including devDependencies for build)
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 # Copy Prisma schema for code generation
 COPY prisma ./prisma
 
 # Generate Prisma Client (required before TypeScript compilation)
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 # Copy TypeScript configuration and source code
 COPY tsconfig.json ./
@@ -31,7 +30,7 @@ COPY eslint.config.mjs ./
 COPY src ./src
 
 # Build TypeScript -> JavaScript (output to dist/)
-RUN pnpm build
+RUN npm run build
 
 # ============================================================================
 # Runtime Stage (Production)
@@ -39,9 +38,8 @@ RUN pnpm build
 # Using Node 20 for Prisma 7 compatibility
 FROM node:20-slim AS runtime
 
-# Install pnpm, dumb-init and runtime dependencies
-RUN npm install -g pnpm@9 && \
-    apt-get update && apt-get install -y --no-install-recommends \
+# Install dumb-init and runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     dumb-init curl openssl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -53,11 +51,10 @@ RUN groupadd -g 1001 nodejs && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 
 # Install ONLY production dependencies (no devDependencies)
-RUN pnpm install --frozen-lockfile --prod && \
-    pnpm store prune
+RUN npm ci --omit=dev
 
 # Copy Prisma schema from builder stage
 COPY --from=builder /app/prisma ./prisma

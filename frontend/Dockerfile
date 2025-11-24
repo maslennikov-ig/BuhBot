@@ -3,24 +3,23 @@
 # ================================
 FROM node:20-alpine AS backend-types
 
-# Install pnpm and build dependencies
-RUN npm install -g pnpm@9 && \
-    apk add --no-cache libc6-compat openssl
+# Install build dependencies
+RUN apk add --no-cache libc6-compat openssl
 
 # Set working directory
 WORKDIR /backend
 
 # Copy backend package files
-COPY backend/package.json backend/pnpm-lock.yaml ./
+COPY backend/package.json backend/package-lock.json ./
 
 # Install backend dependencies (only for Prisma generation)
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 # Copy Prisma schema
 COPY backend/prisma ./prisma
 
 # Generate Prisma client (creates types in src/generated/prisma)
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 # Copy backend source code (needed for tRPC type inference)
 COPY backend/src ./src
@@ -30,9 +29,8 @@ COPY backend/src ./src
 # ================================
 FROM node:20-alpine AS build
 
-# Install pnpm and build dependencies
-RUN npm install -g pnpm@9 && \
-    apk add --no-cache libc6-compat
+# Install build dependencies
+RUN apk add --no-cache libc6-compat
 
 # Set working directory
 WORKDIR /app
@@ -43,10 +41,10 @@ COPY --from=backend-types /backend/src ../backend/src
 COPY --from=backend-types /backend/node_modules ../backend/node_modules
 
 # Copy frontend package files for dependency installation
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+COPY frontend/package.json frontend/package-lock.json ./
 
 # Install dependencies (including devDependencies for build)
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 # Copy frontend source code and configuration files
 COPY frontend/. .
@@ -62,7 +60,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js application with standalone output
-RUN pnpm build
+RUN npm run build
 
 # ================================
 # Runtime Stage

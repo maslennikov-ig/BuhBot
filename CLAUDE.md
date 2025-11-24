@@ -202,7 +202,8 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 **VDS Server**: `.tmp/current/vds-credentials.md`
 - IP: `185.200.177.180`
 - Domain: `buhbot.aidevteam.ru`
-- SSH: Use `expect` script with root password (see credentials file)
+- SSH: `ssh buhbot@185.200.177.180` (key-based, password disabled)
+- Security: UFW + fail2ban + SSL/HTTPS
 - Status: All containers deployed and healthy
 
 **Key Paths**:

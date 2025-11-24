@@ -16,7 +16,9 @@ import {
   queueAlert,
   scheduleEscalation,
   cancelEscalation,
+  queueLowRatingAlert,
   type AlertJobData,
+  type LowRatingAlertJobData,
 } from './setup.js';
 import logger from '../utils/logger.js';
 
@@ -26,7 +28,9 @@ export {
   queueAlert,
   scheduleEscalation,
   cancelEscalation,
+  queueLowRatingAlert,
   type AlertJobData,
+  type LowRatingAlertJobData,
 };
 
 /**
@@ -155,6 +159,7 @@ export default {
   alertQueue,
   queueAlert,
   queueAlertWithFormat,
+  queueLowRatingAlert,
   scheduleEscalation,
   cancelEscalation,
   cancelAllEscalations,

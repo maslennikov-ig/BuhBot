@@ -147,10 +147,14 @@
 
 ### Implementation for User Story 3
 
-- [ ] T030 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Implement getAggregates procedure (all roles) in backend/src/api/trpc/routers/feedback.ts
-- [ ] T031 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Create FeedbackAggregates component for accountant view in frontend/src/components/feedback/FeedbackAggregates.tsx
-- [ ] T032 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Add role-based rendering logic to show accountant view in frontend/src/app/feedback/page.tsx
-- [ ] T033 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Add RLS policy comments and tRPC middleware for role enforcement in backend/src/api/trpc/routers/feedback.ts
+- [X] T030 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Implement getAggregates procedure (all roles) in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts) (implemented in Phase 2)
+- [X] T031 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Create FeedbackAggregates component for accountant view in frontend/src/components/feedback/FeedbackAggregates.tsx
+  → Artifacts: [NPSWidget.tsx](frontend/src/components/feedback/NPSWidget.tsx) (NPSWidget serves as aggregate view for all roles)
+- [X] T032 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Add role-based rendering logic to show accountant view in frontend/src/app/feedback/page.tsx
+  → Artifacts: [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx) (role-based rendering implemented in T029)
+- [X] T033 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Add RLS policy comments and tRPC middleware for role enforcement in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
 
 **Checkpoint**: Accountants see aggregate-only view, role enforcement prevents data leakage.
 
@@ -164,10 +168,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T034 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Extend alert service for low-rating alerts in backend/src/services/feedback/alert.service.ts
-- [ ] T035 [EXECUTOR: api-builder] [SEQUENTIAL] [US4] Add low-rating check in submitRating procedure in backend/src/api/trpc/routers/feedback.ts
-- [ ] T036 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Create alert keyboard with chat link in backend/src/bot/keyboards/alert.keyboard.ts (extend existing)
-- [ ] T037 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Queue low-rating alert job in backend/src/queues/alert.queue.ts
+- [X] T034 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Extend alert service for low-rating alerts in backend/src/services/feedback/alert.service.ts
+  → Artifacts: [alert.service.ts](backend/src/services/feedback/alert.service.ts)
+- [X] T035 [EXECUTOR: api-builder] [SEQUENTIAL] [US4] Add low-rating check in submitRating procedure in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [X] T036 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Create alert keyboard with chat link in backend/src/bot/keyboards/alert.keyboard.ts (extend existing)
+  → Artifacts: [alert.keyboard.ts](backend/src/bot/keyboards/alert.keyboard.ts)
+- [X] T037 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Queue low-rating alert job in backend/src/queues/alert.queue.ts
+  → Artifacts: [setup.ts](backend/src/queues/setup.ts), [alert.worker.ts](backend/src/queues/alert.worker.ts)
 
 **Checkpoint**: Low ratings trigger immediate manager alerts with chat link.
 

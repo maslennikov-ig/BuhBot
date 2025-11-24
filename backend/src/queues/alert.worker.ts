@@ -22,11 +22,12 @@ import { redis } from '../lib/redis.js';
 import { prisma } from '../lib/prisma.js';
 import { bot } from '../bot/bot.js';
 import { registerWorker } from './setup.js';
-import type { AlertJobData } from './setup.js';
+import type { AlertJobData, LowRatingAlertJobData } from './setup.js';
 import { formatAlertMessage, type AlertMessageData } from '../services/alerts/format.service.js';
 import { buildAlertKeyboard } from '../bot/keyboards/alert.keyboard.js';
 import { updateDeliveryStatus } from '../services/alerts/alert.service.js';
 import { scheduleNextEscalation } from '../services/alerts/escalation.service.js';
+import { sendLowRatingAlert } from '../services/feedback/alert.service.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -39,14 +40,61 @@ interface ExtendedAlertJobData extends AlertJobData {
 }
 
 /**
- * Process an alert job
+ * Union type for all alert job types
+ */
+type AlertWorkerJobData = ExtendedAlertJobData | LowRatingAlertJobData;
+
+/**
+ * Process a low-rating alert job
+ *
+ * @param job - BullMQ job with low-rating alert data
+ */
+async function processLowRatingAlertJob(job: Job<LowRatingAlertJobData>): Promise<void> {
+  const { feedbackId, chatId, rating, clientUsername, comment } = job.data;
+
+  logger.info('Processing low-rating alert job', {
+    jobId: job.id,
+    feedbackId,
+    chatId,
+    rating,
+    service: 'alert-worker',
+  });
+
+  try {
+    await sendLowRatingAlert({
+      feedbackId,
+      chatId: BigInt(chatId),
+      rating,
+      clientUsername,
+      comment,
+    });
+
+    logger.info('Low-rating alert job completed', {
+      jobId: job.id,
+      feedbackId,
+      service: 'alert-worker',
+    });
+  } catch (error) {
+    logger.error('Low-rating alert job failed', {
+      jobId: job.id,
+      feedbackId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      service: 'alert-worker',
+    });
+    throw error; // Re-throw to trigger retry
+  }
+}
+
+/**
+ * Process an SLA alert job
  *
  * @param job - BullMQ job with alert data
  */
-async function processAlertJob(job: Job<ExtendedAlertJobData>): Promise<void> {
+async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void> {
   const { requestId, alertType, managerIds, escalationLevel } = job.data;
 
-  logger.info('Processing alert job', {
+  logger.info('Processing SLA alert job', {
     jobId: job.id,
     jobName: job.name,
     requestId,
@@ -202,12 +250,26 @@ async function processAlertJob(job: Job<ExtendedAlertJobData>): Promise<void> {
 }
 
 /**
+ * Route alert jobs to the appropriate handler based on job name
+ *
+ * @param job - BullMQ job with alert data
+ */
+async function processAlertJob(job: Job<AlertWorkerJobData>): Promise<void> {
+  if (job.name === 'low-rating-alert') {
+    return processLowRatingAlertJob(job as Job<LowRatingAlertJobData>);
+  }
+
+  // Default to SLA alert processing for send-alert and escalation jobs
+  return processSlaAlertJob(job as Job<ExtendedAlertJobData>);
+}
+
+/**
  * Alert Worker Instance
  *
  * Processes jobs from the 'alerts' queue.
- * Handles both 'send-alert' and 'escalation' job types.
+ * Handles 'send-alert', 'escalation', and 'low-rating-alert' job types.
  */
-export const alertWorker = new Worker<ExtendedAlertJobData>(
+export const alertWorker = new Worker<AlertWorkerJobData>(
   'alerts',
   processAlertJob,
   {

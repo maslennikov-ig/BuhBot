@@ -9,6 +9,24 @@
  * - addComment: Add comment to existing feedback
  * - exportCsv: Export feedback data as CSV (manager only)
  *
+ * Role-Based Access Control (RBAC):
+ * ┌─────────────────────┬───────────┬─────────┬──────────┐
+ * │ Procedure           │ Admin     │ Manager │ Accountant│
+ * ├─────────────────────┼───────────┼─────────┼──────────┤
+ * │ getAggregates       │ ✓         │ ✓       │ ✓        │
+ * │ getAll              │ ✓         │ ✓       │ ✗        │
+ * │ getById             │ ✓         │ ✓       │ ✗        │
+ * │ exportCsv           │ ✓         │ ✓       │ ✗        │
+ * │ submitRating        │ public    │ public  │ public   │
+ * │ addComment          │ public    │ public  │ public   │
+ * └─────────────────────┴───────────┴─────────┴──────────┘
+ *
+ * Security Notes:
+ * - getAggregates: Returns only anonymized statistics without client identifiers
+ * - getAll/getById: Protected by managerProcedure middleware, returns full client data
+ * - submitRating/addComment: Public procedures for Telegram bot callbacks
+ * - RLS policies on feedback_responses table provide additional DB-level protection
+ *
  * @module api/trpc/routers/feedback
  */
 
@@ -23,6 +41,7 @@ import {
 } from '../../../services/feedback/analytics.service.js';
 import { recordResponse, getDeliveryById } from '../../../services/feedback/survey.service.js';
 import { prisma } from '../../../lib/prisma.js';
+import { queueLowRatingAlert } from '../../../queues/setup.js';
 
 /**
  * Feedback router for client satisfaction analytics
@@ -121,6 +140,21 @@ export const feedbackRouter = router({
 
       // Check if low rating (for alert trigger in T035)
       const shouldTriggerAlert = rating <= 3;
+
+      // Queue low-rating alert if needed (non-blocking)
+      if (shouldTriggerAlert) {
+        // Don't await - queue asynchronously to not block the response
+        queueLowRatingAlert({
+          feedbackId,
+          chatId: delivery.chatId.toString(),
+          rating,
+          clientUsername: telegramUsername,
+          comment: undefined, // Comment may be added later via addComment
+        }).catch((error) => {
+          // Log but don't fail the request
+          console.error('Failed to queue low-rating alert:', error);
+        });
+      }
 
       return {
         success: true,

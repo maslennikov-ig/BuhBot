@@ -50,6 +50,23 @@ export interface AlertJobData {
 }
 
 /**
+ * Low-rating alert job data
+ * Used for sending feedback alerts when clients submit low ratings
+ */
+export interface LowRatingAlertJobData {
+  /** UUID of the feedback response */
+  feedbackId: string;
+  /** Telegram chat ID as string */
+  chatId: string;
+  /** Rating value (1-3 for low ratings) */
+  rating: number;
+  /** Client's Telegram username (may be null or undefined) */
+  clientUsername?: string | null | undefined;
+  /** Client's comment (may be null or undefined) */
+  comment?: string | null | undefined;
+}
+
+/**
  * Data retention job data
  * Used for scheduled cleanup of old data
  */
@@ -576,6 +593,41 @@ export async function scheduleDataRetention() {
 
   logger.info('Data retention job scheduled', {
     schedule: '0 0 * * * (daily at 00:00 UTC / 03:00 Moscow)',
+    jobId: job.id,
+  });
+
+  return job;
+}
+
+/**
+ * Queue a low-rating alert for processing
+ *
+ * Used when a client submits a low rating (<=3 stars) on a survey.
+ * The alert worker will send notifications to managers.
+ *
+ * @param data - Low-rating alert job data
+ * @returns The created job
+ *
+ * @example
+ * ```typescript
+ * await queueLowRatingAlert({
+ *   feedbackId: 'uuid-123',
+ *   chatId: '-100123456789',
+ *   rating: 2,
+ *   clientUsername: 'john_doe',
+ *   comment: 'Slow response time',
+ * });
+ * ```
+ */
+export async function queueLowRatingAlert(data: LowRatingAlertJobData) {
+  // Cast to unknown first since alertQueue expects AlertJobData
+  // The worker handles both job types by checking job.name
+  const job = await alertQueue.add('low-rating-alert', data as unknown as AlertJobData);
+
+  logger.info('Low-rating alert queued', {
+    feedbackId: data.feedbackId,
+    chatId: data.chatId,
+    rating: data.rating,
     jobId: job.id,
   });
 

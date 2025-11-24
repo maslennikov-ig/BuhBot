@@ -195,8 +195,70 @@ export function buildAccountantNotificationKeyboard(
   ]);
 }
 
+/**
+ * Data required to build a low-rating alert keyboard
+ */
+export interface LowRatingAlertKeyboardData {
+  /** UUID of the FeedbackResponse */
+  feedbackId: string;
+  /** Telegram chat ID as string */
+  chatId: string;
+}
+
+/**
+ * Build inline keyboard for low-rating alert messages
+ *
+ * Creates a keyboard with action buttons for managers:
+ * 1. "Open chat" - URL button to navigate to the chat
+ * 2. "View feedback" - Callback to view feedback details
+ *
+ * @param data - Low-rating alert keyboard data
+ * @returns Telegraf Markup with inline keyboard
+ *
+ * @example
+ * ```typescript
+ * const keyboard = buildLowRatingAlertKeyboard({
+ *   feedbackId: 'uuid-feedback-123',
+ *   chatId: '-100123456789',
+ * });
+ *
+ * await bot.telegram.sendMessage(
+ *   managerId,
+ *   alertMessage,
+ *   {
+ *     parse_mode: 'HTML',
+ *     ...keyboard,
+ *   }
+ * );
+ * ```
+ */
+export function buildLowRatingAlertKeyboard(
+  data: LowRatingAlertKeyboardData
+): Markup.Markup<InlineKeyboardMarkup> {
+  const { feedbackId, chatId } = data;
+  const formattedChatId = formatChatIdForLink(chatId);
+
+  return Markup.inlineKeyboard([
+    // Row 1: Open chat
+    [
+      Markup.button.url(
+        '\uD83D\uDCAC Открыть чат', // Speech balloon
+        `https://t.me/c/${formattedChatId}`
+      ),
+    ],
+    // Row 2: View feedback details
+    [
+      Markup.button.callback(
+        '\uD83D\uDC41 Посмотреть отзыв', // Eye
+        `view_feedback_${feedbackId}`
+      ),
+    ],
+  ]);
+}
+
 export default {
   buildAlertKeyboard,
   buildResolvedKeyboard,
   buildAccountantNotificationKeyboard,
+  buildLowRatingAlertKeyboard,
 };

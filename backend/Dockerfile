@@ -59,14 +59,8 @@ RUN npm ci --omit=dev
 # Copy Prisma schema from builder stage
 COPY --from=builder /app/prisma ./prisma
 
-# Regenerate Prisma client for runtime (creates correct JS output)
-RUN npx prisma generate
-
-# Copy compiled JavaScript from builder (excluding generated prisma as we regenerated it)
+# Copy compiled JavaScript (Prisma client is compiled by tsc from src/generated/prisma)
 COPY --from=builder /app/dist ./dist
-
-# Copy the regenerated Prisma client to dist
-RUN cp -r src/generated/prisma dist/generated/
 
 # Create logs directory with proper permissions
 RUN mkdir -p logs && \

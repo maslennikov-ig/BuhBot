@@ -120,13 +120,20 @@
 
 ### Implementation for User Story 2
 
-- [ ] T023 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getAll procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
-- [ ] T024 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getById procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
-- [ ] T025 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement exportCsv procedure in backend/src/api/trpc/routers/feedback.ts
-- [ ] T026 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create FeedbackTable component for manager view in frontend/src/components/feedback/FeedbackTable.tsx
-- [ ] T027 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create NPSWidget component with trend charts in frontend/src/components/feedback/NPSWidget.tsx
-- [ ] T028 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create feedback dashboard page in frontend/src/app/feedback/page.tsx
-- [ ] T029 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Add role-based rendering logic to show manager view in frontend/src/app/feedback/page.tsx
+- [X] T023 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getAll procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [X] T024 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getById procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [X] T025 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement exportCsv procedure in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [X] T026 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create FeedbackTable component for manager view in frontend/src/components/feedback/FeedbackTable.tsx
+  → Artifacts: [FeedbackTable.tsx](frontend/src/components/feedback/FeedbackTable.tsx)
+- [X] T027 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create NPSWidget component with trend charts in frontend/src/components/feedback/NPSWidget.tsx
+  → Artifacts: [NPSWidget.tsx](frontend/src/components/feedback/NPSWidget.tsx)
+- [X] T028 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create feedback dashboard page in frontend/src/app/feedback/page.tsx
+  → Artifacts: [page.tsx](frontend/src/app/feedback/page.tsx), [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx)
+- [X] T029 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Add role-based rendering logic to show manager view in frontend/src/app/feedback/page.tsx
+  → Artifacts: [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx)
 
 **Checkpoint**: Managers can view full feedback details, filter, and export data.
 

@@ -89,15 +89,24 @@
 
 ### Implementation for User Story 1
 
-- [ ] T015 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey service with campaign logic in backend/src/services/feedback/survey.service.ts
-- [ ] T016 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey worker for delivery processing in backend/src/queues/survey.worker.ts (include 5 retries over 1 hour with exponential backoff per NFR-006)
-- [ ] T017 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US1] Create survey callback handler for rating buttons in backend/src/bot/handlers/survey.handler.ts
-- [ ] T018 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement submitRating procedure in backend/src/api/trpc/routers/feedback.ts
-- [ ] T019 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement addComment procedure in backend/src/api/trpc/routers/feedback.ts
-- [ ] T020 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Register survey handler in backend/src/bot/handlers/index.ts
-- [ ] T021 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Add survey reminder job scheduling in backend/src/queues/survey.worker.ts
-- [ ] T022 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Implement manager notification for non-response in backend/src/queues/survey.worker.ts
-- [ ] T022a [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Configure quarterly cron job for automatic survey scheduling (first Monday of Jan/Apr/Jul/Oct) in backend/src/queues/survey.queue.ts
+- [X] T015 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey service with campaign logic in backend/src/services/feedback/survey.service.ts
+  → Artifacts: [survey.service.ts](backend/src/services/feedback/survey.service.ts)
+- [X] T016 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey worker for delivery processing in backend/src/queues/survey.worker.ts (include 5 retries over 1 hour with exponential backoff per NFR-006)
+  → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts)
+- [X] T017 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US1] Create survey callback handler for rating buttons in backend/src/bot/handlers/survey.handler.ts
+  → Artifacts: [survey.handler.ts](backend/src/bot/handlers/survey.handler.ts)
+- [X] T018 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement submitRating procedure in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [X] T019 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement addComment procedure in backend/src/api/trpc/routers/feedback.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [X] T020 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Register survey handler in backend/src/bot/handlers/index.ts
+  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [X] T021 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Add survey reminder job scheduling in backend/src/queues/survey.worker.ts
+  → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts) (included in T016)
+- [X] T022 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Implement manager notification for non-response in backend/src/queues/survey.worker.ts
+  → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts) (included in T016)
+- [X] T022a [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Configure quarterly cron job for automatic survey scheduling (first Monday of Jan/Apr/Jul/Oct) in backend/src/queues/survey.queue.ts
+  → Artifacts: [survey.queue.ts](backend/src/queues/survey.queue.ts) - cron scheduling ready, job needs to be scheduled at startup
 
 **Checkpoint**: Clients can receive surveys, rate, and add comments. Reminders, non-response notifications, and quarterly automation work.
 

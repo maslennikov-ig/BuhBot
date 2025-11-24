@@ -32,6 +32,7 @@ import { bot, stopBot, type BotContext } from './bot.js';
 import { registerMessageHandler } from './handlers/message.handler.js';
 import { registerResponseHandler } from './handlers/response.handler.js';
 import { registerAlertCallbackHandler } from './handlers/alert-callback.handler.js';
+import { registerSurveyHandler } from './handlers/survey.handler.js';
 import {
   setupWebhook,
   removeWebhook,
@@ -56,6 +57,9 @@ import logger from '../utils/logger.js';
  * 2. Response handler processes accountant messages
  *    - Detects accountant replies
  *    - Stops SLA timers
+ * 3. Survey handler processes rating callbacks and comments
+ *    - Handles survey:rating:{deliveryId}:{rating} callbacks
+ *    - Collects optional comments after ratings
  */
 export function registerHandlers(): void {
   logger.info('Registering bot handlers...', { service: 'bot' });
@@ -68,6 +72,9 @@ export function registerHandlers(): void {
 
   // Register alert callback handler for inline keyboard buttons
   registerAlertCallbackHandler();
+
+  // Register survey handler for rating callbacks and comments
+  registerSurveyHandler();
 
   logger.info('Bot handlers registered successfully', { service: 'bot' });
 }
@@ -87,5 +94,6 @@ export {
 export { registerMessageHandler };
 export { registerResponseHandler };
 export { registerAlertCallbackHandler };
+export { registerSurveyHandler };
 
 export default bot;

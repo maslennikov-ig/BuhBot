@@ -133,6 +133,48 @@ export const supabaseConnectionPoolSize = new Gauge({
 });
 
 // ============================================================================
+// FEEDBACK SYSTEM METRICS
+// ============================================================================
+
+/**
+ * Counter: Total survey deliveries by status
+ * Labels:
+ * - status: 'delivered' | 'failed' | 'expired'
+ * Tracks how many surveys were successfully sent, failed, or expired
+ */
+export const surveyDeliveriesTotal = new Counter({
+  name: 'buhbot_survey_deliveries_total',
+  help: 'Total survey deliveries by status',
+  labelNames: ['status'],
+  registers: [register],
+});
+
+/**
+ * Counter: Total feedback responses by rating
+ * Labels:
+ * - rating: '1' | '2' | '3' | '4' | '5'
+ * Tracks customer satisfaction ratings distribution
+ */
+export const feedbackResponsesTotal = new Counter({
+  name: 'buhbot_feedback_responses_total',
+  help: 'Total feedback responses by rating',
+  labelNames: ['rating'],
+  registers: [register],
+});
+
+/**
+ * Gauge: Current NPS score
+ * Range: -100 to 100
+ * Updated whenever feedback responses are received
+ * Calculated as: (promoters - detractors) / (total responses) * 100
+ */
+export const feedbackNpsGauge = new Gauge({
+  name: 'buhbot_feedback_nps_gauge',
+  help: 'Current NPS score (-100 to 100)',
+  registers: [register],
+});
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
@@ -196,4 +238,49 @@ export async function getMetricsJson(): Promise<object> {
  */
 export function resetMetrics(): void {
   register.resetMetrics();
+}
+
+// ============================================================================
+// FEEDBACK SYSTEM HELPERS
+// ============================================================================
+
+/**
+ * Increment survey delivery counter by status
+ * @param status - 'delivered' | 'failed' | 'expired'
+ *
+ * @example
+ * incrementSurveyDelivery('delivered');
+ */
+export function incrementSurveyDelivery(status: 'delivered' | 'failed' | 'expired'): void {
+  incrementCounter(surveyDeliveriesTotal, { status });
+}
+
+/**
+ * Increment feedback response counter by rating
+ * @param rating - 1-5 star rating
+ *
+ * @example
+ * incrementFeedbackResponse(5);
+ */
+export function incrementFeedbackResponse(rating: number): void {
+  if (rating < 1 || rating > 5) {
+    console.error('[Metrics] Invalid feedback rating:', rating);
+    return;
+  }
+  incrementCounter(feedbackResponsesTotal, { rating: String(rating) });
+}
+
+/**
+ * Update NPS gauge with current NPS score
+ * @param npsScore - NPS score from -100 to 100
+ *
+ * @example
+ * updateNPSGauge(42);
+ */
+export function updateNPSGauge(npsScore: number): void {
+  if (npsScore < -100 || npsScore > 100) {
+    console.error('[Metrics] Invalid NPS score:', npsScore);
+    return;
+  }
+  setGauge(feedbackNpsGauge, npsScore);
 }

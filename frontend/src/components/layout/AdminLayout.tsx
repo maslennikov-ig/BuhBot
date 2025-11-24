@@ -20,6 +20,8 @@ import {
   X,
   LogOut,
   User,
+  Star,
+  ListChecks,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -87,6 +89,20 @@ const navigationItems: NavItem[] = [
     labelRu: 'Настройки',
     icon: Settings,
     href: '/settings',
+  },
+  {
+    id: 'feedback',
+    label: 'Feedback',
+    labelRu: 'Обратная связь',
+    icon: Star,
+    href: '/feedback',
+  },
+  {
+    id: 'survey',
+    label: 'Survey',
+    labelRu: 'Опросы',
+    icon: ListChecks,
+    href: '/settings/survey',
   },
 ];
 

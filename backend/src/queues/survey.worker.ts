@@ -32,7 +32,7 @@ import {
   SURVEY_MESSAGE_TEXT,
   SURVEY_REMINDER_TEXT,
 } from '../bot/keyboards/survey.keyboard.js';
-import type { DeliveryStatus } from '../generated/prisma/client.js';
+import type { DeliveryStatus } from '@prisma/client';
 
 // ============================================================================
 // CONSTANTS

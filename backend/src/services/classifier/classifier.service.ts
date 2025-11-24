@@ -15,7 +15,7 @@
  * @module services/classifier/classifier.service
  */
 
-import type { PrismaClient } from '../../generated/prisma/client.js';
+import type { PrismaClient } from '@prisma/client';
 import type { ClassificationResult, ClassifierConfig } from './types.js';
 import { DEFAULT_CLASSIFIER_CONFIG } from './types.js';
 import { classifyWithAI } from './openrouter-client.js';

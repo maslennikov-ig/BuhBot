@@ -16,7 +16,7 @@
 
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
-import type { SurveyStatus, DeliveryStatus } from '../../generated/prisma/client.js';
+import type { SurveyStatus, DeliveryStatus } from '@prisma/client';
 
 // ============================================================================
 // TYPES

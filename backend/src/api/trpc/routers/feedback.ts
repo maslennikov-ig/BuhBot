@@ -33,7 +33,7 @@
 import { router, authedProcedure, publicProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import type { Prisma } from '../../../generated/prisma/client.js';
+import type { Prisma } from '@prisma/client';
 import {
   getAggregates,
   getRecentComments,

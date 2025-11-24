@@ -137,7 +137,7 @@ interface ClientRequest {
 
 ---
 
-#### 1.1.2 AI Spam Filter (24 hours) [COMPLETED]
+#### 1.1.2 AI Spam Filter (24 hours)
 **Objective:** Use AI to filter out non-request messages
 
 **Functional Requirements:**
@@ -175,7 +175,7 @@ async function filterSpam(message: string): Promise<SpamFilterResult>
 
 ---
 
-#### 1.1.3 Working Hours Calendar (18 hours) [COMPLETED]
+#### 1.1.3 Working Hours Calendar (18 hours)
 **Objective:** Calculate SLA time accounting for working hours, weekends, holidays
 
 **Functional Requirements:**
@@ -210,7 +210,7 @@ function calculateSLATime(
 
 ---
 
-#### 1.1.4 Manager Alerts (32 hours) [COMPLETED]
+#### 1.1.4 Manager Alerts (32 hours)
 **Objective:** Notify manager when SLA violated
 
 **Functional Requirements:**
@@ -257,7 +257,7 @@ interface SLAAlert {
 
 ---
 
-#### 1.1.5 Admin Panel - SLA Configuration (52 hours) [COMPLETED]
+#### 1.1.5 Admin Panel - SLA Configuration (52 hours)
 **Objective:** Web interface to manage SLA settings
 
 **Functional Requirements:**
@@ -679,15 +679,13 @@ function renderTemplate(template: Template, variables: Record<string, string>): 
 
 ---
 
-## 📦 MODULE 1.4: Unified Admin Panel [PARTIALLY COMPLETED]
+## 📦 MODULE 1.4: Unified Admin Panel
 
 **Budget:** ₽200,000 | **Hours:** 104 | **Priority:** P0 (MUST-HAVE)
 
-**Note:** The foundational work for the admin panel, including authentication, roles, and the pages for SLA Configuration (1.1.5) and Chat Management, is complete. The remaining features are pending.
-
 ### Requirements
 
-#### 1.4.1 Authentication & Roles (16 hours) [COMPLETED]
+#### 1.4.1 Authentication & Roles (16 hours)
 
 **Roles:**
 1. **Admin:** Full access (CRUD all tables, user management, system settings)
@@ -723,7 +721,7 @@ CREATE POLICY observer_readonly ON client_requests
 
 ---
 
-#### 1.4.2 Main Dashboard (20 hours) [COMPLETED]
+#### 1.4.2 Main Dashboard (20 hours)
 
 **Widgets:**
 1. SLA Compliance (gauge: 92%)
@@ -810,7 +808,7 @@ CREATE POLICY observer_readonly ON client_requests
 
 ---
 
-#### 1.4.7 Global Settings (8 hours) [COMPLETED]
+#### 1.4.7 Global Settings (8 hours)
 
 **Features:**
 - Default working hours
@@ -825,13 +823,13 @@ CREATE POLICY observer_readonly ON client_requests
 
 ---
 
-## 📦 MODULE 1.5: Infrastructure & Security [COMPLETED]
+## 📦 MODULE 1.5: Infrastructure & Security
 
 **Budget:** ₽120,000 | **Hours:** 52 | **Priority:** P0 (MUST-HAVE)
 
 ### Requirements
 
-#### 1.5.1 Hybrid Deployment Setup (24 hours) [COMPLETED]
+#### 1.5.1 Hybrid Deployment Setup (24 hours)
 
 **Objective:** Deploy bot application on First VDS + configure Supabase cloud database
 
@@ -920,7 +918,7 @@ CREATE POLICY observer_readonly ON client_requests
 
 ---
 
-#### 1.5.2 Security & Data Protection (16 hours) [COMPLETED]
+#### 1.5.2 Security & Data Protection (16 hours)
 
 **Objective:** Implement industry-standard security practices for data protection
 
@@ -979,7 +977,7 @@ function encrypt(text: string): string {
 
 ---
 
-#### 1.5.3 Backup & Disaster Recovery (12 hours) [COMPLETED]
+#### 1.5.3 Backup & Disaster Recovery (12 hours)
 
 **Objective:** Ensure data recoverability and minimize downtime risk
 
@@ -1030,11 +1028,9 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 📦 MODULE 1.6: Documentation & Training [PARTIALLY COMPLETED]
+## 📦 MODULE 1.6: Documentation & Training
 
 **Budget:** ₽80,000 | **Hours:** 40 | **Priority:** P0 (MUST-HAVE)
-
-**Note:** Technical documentation for the infrastructure and deployment (1.6.1.4) is complete. User-facing documentation and training are pending.
 
 ### Requirements
 
@@ -1062,7 +1058,7 @@ docker compose -f docker-compose.prod.yml up -d
    - How to send surveys
    - How to respond to alerts
 
-4. **Technical Documentation:** [COMPLETED]
+4. **Technical Documentation:**
    - Architecture diagram
    - Database schema
    - API endpoints reference

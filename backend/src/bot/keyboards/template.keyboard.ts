@@ -15,7 +15,7 @@
 
 import { Markup } from 'telegraf';
 import type { InlineKeyboardMarkup } from 'telegraf/types';
-import type { TemplateCategory } from '../../generated/prisma/client.js';
+import type { TemplateCategory } from '@prisma/client';
 
 /**
  * Category emoji mapping for better UX

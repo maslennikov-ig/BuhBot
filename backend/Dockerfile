@@ -59,7 +59,10 @@ RUN npm ci --omit=dev
 # Copy Prisma schema from builder stage
 COPY --from=builder /app/prisma ./prisma
 
-# Copy compiled JavaScript (Prisma client is compiled by tsc from src/generated/prisma)
+# Copy generated Prisma client from builder stage (generated into node_modules/.prisma)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy compiled JavaScript
 COPY --from=builder /app/dist ./dist
 
 # Create logs directory with proper permissions

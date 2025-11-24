@@ -4,8 +4,8 @@
 // Generated from: specs/001-infrastructure-setup/data-model.md
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider   = "prisma-client-js"
+  engineType = "client"
 }
 
 datasource db {

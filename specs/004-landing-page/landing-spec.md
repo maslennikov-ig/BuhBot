@@ -1,8 +1,24 @@
 # BuhBot Landing Page — Technical Specification
 
-**Version**: 1.0 Draft
+**Version**: 1.0
 **Date**: 2025-11-24
-**Status**: Pending Approval
+**Status**: ✅ Approved
+**Branch**: `004-landing-page`
+
+---
+
+## Related Documents
+
+| Document | Purpose |
+|----------|---------|
+| [data-model.md](./data-model.md) | Prisma schema for `ContactRequest` model |
+| [contracts/contact.ts](./contracts/contact.ts) | tRPC router contract (input/output types) |
+| [quickstart.md](./quickstart.md) | Local development setup guide |
+| [tasks.md](./tasks.md) | Granular task breakdown (optional reference) |
+| [spec.md](./spec.md) | Original business requirements |
+| [research.md](./research.md) | Technical decisions and rationale |
+
+**Primary document for implementation: This file (`landing-spec.md`)**
 
 ---
 

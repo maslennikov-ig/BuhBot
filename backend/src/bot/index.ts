@@ -29,10 +29,14 @@
  */
 
 import { bot, stopBot, type BotContext } from './bot.js';
+import { registerFaqHandler } from './handlers/faq.handler.js';
 import { registerMessageHandler } from './handlers/message.handler.js';
 import { registerResponseHandler } from './handlers/response.handler.js';
 import { registerAlertCallbackHandler } from './handlers/alert-callback.handler.js';
 import { registerSurveyHandler } from './handlers/survey.handler.js';
+import { registerMenuHandler } from './handlers/menu.handler.js';
+import { registerFileHandler } from './handlers/file.handler.js';
+import { registerTemplateHandler } from './handlers/template.handler.js';
 import {
   setupWebhook,
   removeWebhook,
@@ -46,23 +50,30 @@ import logger from '../utils/logger.js';
  *
  * Must be called before launching the bot in any mode.
  * Registers:
+ * - FAQ handler for auto-responses (intercepts before SLA)
  * - Message handler for SLA monitoring (client messages)
  * - Response handler for accountant replies (SLA timer stop)
- * - (Future) Alert callback handler for inline buttons
+ * - Alert callback handler for inline buttons
+ * - Survey handler for rating callbacks and comments
+ * - Menu handler for client self-service
+ * - File handler for document/photo uploads
+ * - Template handler for /template command
  *
- * Handler Order:
- * 1. Message handler processes ALL text messages first
- *    - Classifies and creates ClientRequest for client messages
- *    - Skips if sender is accountant (no SLA tracking)
- * 2. Response handler processes accountant messages
- *    - Detects accountant replies
- *    - Stops SLA timers
- * 3. Survey handler processes rating callbacks and comments
- *    - Handles survey:rating:{deliveryId}:{rating} callbacks
- *    - Collects optional comments after ratings
+ * Handler Order (IMPORTANT - order matters for message handlers):
+ * 1. FAQ handler - auto-responds to FAQ matches, stops propagation
+ * 2. Message handler - classifies and tracks non-FAQ messages for SLA
+ * 3. Response handler - detects accountant replies, stops SLA timers
+ * 4. Alert callback handler - handles alert inline keyboard buttons
+ * 5. Survey handler - handles rating callbacks and comments
+ * 6. Menu handler - handles /menu command and self-service
+ * 7. File handler - auto-confirms document/photo uploads
+ * 8. Template handler - handles /template command for message templates
  */
 export function registerHandlers(): void {
   logger.info('Registering bot handlers...', { service: 'bot' });
+
+  // Register FAQ handler FIRST to intercept FAQ matches before SLA tracking
+  registerFaqHandler();
 
   // Register message handler for SLA monitoring (processes client messages)
   registerMessageHandler();
@@ -75,6 +86,15 @@ export function registerHandlers(): void {
 
   // Register survey handler for rating callbacks and comments
   registerSurveyHandler();
+
+  // Register menu handler for client self-service menu
+  registerMenuHandler();
+
+  // Register file handler for auto-confirmation of document/photo uploads
+  registerFileHandler();
+
+  // Register template handler for /template command
+  registerTemplateHandler();
 
   logger.info('Bot handlers registered successfully', { service: 'bot' });
 }
@@ -91,9 +111,13 @@ export {
 };
 
 // Re-export individual handlers for testing
+export { registerFaqHandler };
 export { registerMessageHandler };
 export { registerResponseHandler };
 export { registerAlertCallbackHandler };
 export { registerSurveyHandler };
+export { registerMenuHandler };
+export { registerFileHandler };
+export { registerTemplateHandler };
 
 export default bot;

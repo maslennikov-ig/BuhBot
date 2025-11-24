@@ -86,6 +86,12 @@ export async function setupWebhook(
       next();
     }, bot.webhookCallback(webhookPath));
 
+    // Set bot commands for menu button
+    await bot.telegram.setMyCommands([
+      { command: 'menu', description: 'Открыть меню' },
+    ]);
+    logger.debug('Bot commands set successfully', { service: 'webhook' });
+
     logger.info('Telegram webhook configured successfully', {
       webhookUrl: fullWebhookUrl,
       service: 'webhook',
@@ -173,6 +179,12 @@ export async function launchPolling(): Promise<void> {
   try {
     // Remove any existing webhook before starting polling
     await removeWebhook();
+
+    // Set bot commands for menu button
+    await bot.telegram.setMyCommands([
+      { command: 'menu', description: 'Открыть меню' },
+    ]);
+    logger.debug('Bot commands set successfully', { service: 'webhook' });
 
     // Start polling
     await bot.launch();

@@ -189,13 +189,20 @@
 
 ### Implementation for User Story 5
 
-- [ ] T038 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US5] Create client menu keyboard in backend/src/bot/keyboards/client-menu.keyboard.ts
-- [ ] T039 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Create menu command handler in backend/src/bot/handlers/menu.handler.ts
-- [ ] T040 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement document status callback in backend/src/bot/handlers/menu.handler.ts
-- [ ] T041 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement contact accountant callback in backend/src/bot/handlers/menu.handler.ts
-- [ ] T042 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement request service callback in backend/src/bot/handlers/menu.handler.ts
-- [ ] T043 [EXECUTOR: MAIN] [SEQUENTIAL] [US5] Register menu handler in backend/src/bot/handlers/index.ts
-- [ ] T044 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US5] Set persistent menu on bot startup in backend/src/bot/index.ts
+- [X] T038 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US5] Create client menu keyboard in backend/src/bot/keyboards/client-menu.keyboard.ts
+  → Artifacts: [client-menu.keyboard.ts](backend/src/bot/keyboards/client-menu.keyboard.ts)
+- [X] T039 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Create menu command handler in backend/src/bot/handlers/menu.handler.ts
+  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [X] T040 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement document status callback in backend/src/bot/handlers/menu.handler.ts
+  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [X] T041 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement contact accountant callback in backend/src/bot/handlers/menu.handler.ts
+  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [X] T042 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement request service callback in backend/src/bot/handlers/menu.handler.ts
+  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [X] T043 [EXECUTOR: MAIN] [SEQUENTIAL] [US5] Register menu handler in backend/src/bot/handlers/index.ts
+  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [X] T044 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US5] Set persistent menu on bot startup in backend/src/bot/index.ts
+  → Artifacts: [webhook.ts](backend/src/bot/webhook.ts)
 
 **Checkpoint**: Clients see persistent menu, all three buttons functional.
 
@@ -209,11 +216,16 @@
 
 ### Implementation for User Story 6
 
-- [ ] T045 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US6] Create variable substitution service in backend/src/services/templates/variable.service.ts
-- [ ] T046 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Create template command handler in backend/src/bot/handlers/template.handler.ts
-- [ ] T047 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement /template list response in backend/src/bot/handlers/template.handler.ts
-- [ ] T048 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement template send with variable substitution in backend/src/bot/handlers/template.handler.ts
-- [ ] T049 [EXECUTOR: MAIN] [SEQUENTIAL] [US6] Register template handler in backend/src/bot/handlers/index.ts
+- [X] T045 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US6] Create variable substitution service in backend/src/services/templates/variable.service.ts
+  → Artifacts: [variable.service.ts](backend/src/services/templates/variable.service.ts)
+- [X] T046 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Create template command handler in backend/src/bot/handlers/template.handler.ts
+  → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
+- [X] T047 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement /template list response in backend/src/bot/handlers/template.handler.ts
+  → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
+- [X] T048 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement template send with variable substitution in backend/src/bot/handlers/template.handler.ts
+  → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
+- [X] T049 [EXECUTOR: MAIN] [SEQUENTIAL] [US6] Register template handler in backend/src/bot/handlers/index.ts
+  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
 
 **Checkpoint**: /template command works, variables are substituted correctly.
 
@@ -227,10 +239,14 @@
 
 ### Implementation for User Story 7
 
-- [ ] T050 [EXECUTOR: telegraf-bot-middleware-specialist] [PARALLEL-GROUP-5] [US7] Create file handler for document/photo messages in backend/src/bot/handlers/file.handler.ts
-- [ ] T051 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Implement file metadata extraction (name, size, type) in backend/src/bot/handlers/file.handler.ts
-- [ ] T052 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Format confirmation message with Russian text in backend/src/bot/handlers/file.handler.ts
-- [ ] T053 [EXECUTOR: MAIN] [SEQUENTIAL] [US7] Register file handler in backend/src/bot/handlers/index.ts
+- [X] T050 [EXECUTOR: telegraf-bot-middleware-specialist] [PARALLEL-GROUP-5] [US7] Create file handler for document/photo messages in backend/src/bot/handlers/file.handler.ts
+  → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
+- [X] T051 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Implement file metadata extraction (name, size, type) in backend/src/bot/handlers/file.handler.ts
+  → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
+- [X] T052 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Format confirmation message with Russian text in backend/src/bot/handlers/file.handler.ts
+  → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
+- [X] T053 [EXECUTOR: MAIN] [SEQUENTIAL] [US7] Register file handler in backend/src/bot/handlers/index.ts
+  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
 
 **Checkpoint**: File uploads trigger immediate confirmation with metadata.
 
@@ -244,11 +260,16 @@
 
 ### Implementation for User Story 8
 
-- [ ] T054 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US8] Create FAQ matcher service with keyword search in backend/src/services/faq/matcher.service.ts
-- [ ] T055 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US8] Create FAQ handler for message interception in backend/src/bot/handlers/faq.handler.ts
-- [ ] T056 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Implement keyword matching with usage_count tiebreaker in backend/src/services/faq/matcher.service.ts
-- [ ] T057 [EXECUTOR: MAIN] [SEQUENTIAL] [US8] Register FAQ handler in backend/src/bot/handlers/index.ts (before message handler)
-- [ ] T058 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Increment FAQ usage count after match in backend/src/services/faq/matcher.service.ts
+- [X] T054 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US8] Create FAQ matcher service with keyword search in backend/src/services/faq/matcher.service.ts
+  → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
+- [X] T055 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US8] Create FAQ handler for message interception in backend/src/bot/handlers/faq.handler.ts
+  → Artifacts: [faq.handler.ts](backend/src/bot/handlers/faq.handler.ts)
+- [X] T056 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Implement keyword matching with usage_count tiebreaker in backend/src/services/faq/matcher.service.ts
+  → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
+- [X] T057 [EXECUTOR: MAIN] [SEQUENTIAL] [US8] Register FAQ handler in backend/src/bot/handlers/index.ts (before message handler)
+  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [X] T058 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Increment FAQ usage count after match in backend/src/services/faq/matcher.service.ts
+  → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
 
 **Checkpoint**: FAQ keywords trigger auto-responses, usage tracking works.
 

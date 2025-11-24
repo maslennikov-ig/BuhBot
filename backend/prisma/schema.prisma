@@ -53,25 +53,43 @@ enum TemplateCategory {
 // SLA Monitoring Enums (T006)
 // Classification result from AI/keyword-based message analysis
 enum MessageClassification {
-  REQUEST       // Client request requiring response (triggers SLA timer)
-  SPAM          // Spam/advertisement (ignored)
-  GRATITUDE     // Thank you messages (no response needed)
+  REQUEST // Client request requiring response (triggers SLA timer)
+  SPAM // Spam/advertisement (ignored)
+  GRATITUDE // Thank you messages (no response needed)
   CLARIFICATION // Follow-up to existing request
 }
 
 // Alert delivery status for Telegram notifications
 enum AlertDeliveryStatus {
-  pending   // Not yet sent
-  sent      // Sent to Telegram API
+  pending // Not yet sent
+  sent // Sent to Telegram API
   delivered // Confirmed delivery
-  failed    // Failed to deliver
+  failed // Failed to deliver
 }
 
 // Resolution action that closed the alert
 enum AlertAction {
-  mark_resolved        // Manager marked as resolved manually
+  mark_resolved // Manager marked as resolved manually
   accountant_responded // Accountant replied to client
-  auto_expired         // Auto-closed after max escalations
+  auto_expired // Auto-closed after max escalations
+}
+
+// Feedback Survey Enums (Module 1.2)
+enum SurveyStatus {
+  scheduled
+  sending
+  active
+  closed
+  expired
+}
+
+enum DeliveryStatus {
+  pending
+  delivered
+  reminded
+  expired
+  failed
+  responded
 }
 
 // ============================================================================
@@ -89,11 +107,12 @@ model User {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  assignedChats      Chat[]          @relation("AssignedAccountant")
-  assignedRequests   ClientRequest[] @relation("AssignedTo")
-  acknowledgedAlerts SlaAlert[]      @relation("AcknowledgedBy")
-  createdTemplates   Template[]      @relation("TemplateCreator")
-  createdFaqItems    FaqItem[]       @relation("FaqCreator")
+  assignedChats      Chat[]           @relation("AssignedAccountant")
+  assignedRequests   ClientRequest[]  @relation("AssignedTo")
+  acknowledgedAlerts SlaAlert[]       @relation("AcknowledgedBy")
+  createdTemplates   Template[]       @relation("TemplateCreator")
+  createdFaqItems    FaqItem[]        @relation("FaqCreator")
+  closedSurveys      FeedbackSurvey[] @relation("SurveyClosedBy")
 
   @@index([email])
   @@index([role])
@@ -113,10 +132,10 @@ model Chat {
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // SLA Configuration per chat (T007)
-  slaThresholdMinutes Int      @default(60) @map("sla_threshold_minutes")  // SLA breach threshold
-  monitoringEnabled   Boolean  @default(true) @map("monitoring_enabled")   // Enable/disable monitoring
-  is24x7Mode          Boolean  @default(false) @map("is_24x7_mode")        // Ignore working hours
-  managerTelegramIds  String[] @default([]) @map("manager_telegram_ids")   // Override global managers
+  slaThresholdMinutes Int      @default(60) @map("sla_threshold_minutes") // SLA breach threshold
+  monitoringEnabled   Boolean  @default(true) @map("monitoring_enabled") // Enable/disable monitoring
+  is24x7Mode          Boolean  @default(false) @map("is_24x7_mode") // Ignore working hours
+  managerTelegramIds  String[] @default([]) @map("manager_telegram_ids") // Override global managers
 
   // Relations
   assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id])
@@ -124,6 +143,7 @@ model Chat {
   feedbackResponses  FeedbackResponse[]
   workingSchedules   WorkingSchedule[]
   holidays           ChatHoliday[]
+  surveyDeliveries   SurveyDelivery[]
 
   @@index([assignedAccountantId])
   @@index([slaEnabled], map: "idx_chats_sla_enabled")
@@ -148,17 +168,17 @@ model ClientRequest {
 
   // AI Classification (T008) - replaces isSpam field
   classification      MessageClassification @default(REQUEST)
-  classificationScore Float?                @map("classification_score")  // 0.0-1.0 confidence
-  classificationModel String?               @map("classification_model")  // 'openrouter', 'keyword-fallback'
+  classificationScore Float?                @map("classification_score") // 0.0-1.0 confidence
+  classificationModel String?               @map("classification_model") // 'openrouter', 'keyword-fallback'
 
   // SLA Timer details (T008)
-  slaTimerStartedAt DateTime? @map("sla_timer_started_at") @db.Timestamptz(6)  // When timer started
-  slaTimerPausedAt  DateTime? @map("sla_timer_paused_at") @db.Timestamptz(6)   // When paused (off-hours)
-  slaWorkingMinutes Int?      @map("sla_working_minutes")                      // Calculated working minutes
-  slaBreached       Boolean   @default(false) @map("sla_breached")             // SLA violation flag
+  slaTimerStartedAt DateTime? @map("sla_timer_started_at") @db.Timestamptz(6) // When timer started
+  slaTimerPausedAt  DateTime? @map("sla_timer_paused_at") @db.Timestamptz(6) // When paused (off-hours)
+  slaWorkingMinutes Int?      @map("sla_working_minutes") // Calculated working minutes
+  slaBreached       Boolean   @default(false) @map("sla_breached") // SLA violation flag
 
   // Response tracking (T008)
-  respondedBy       String? @map("responded_by") @db.Uuid        // Who responded
+  respondedBy       String? @map("responded_by") @db.Uuid // Who responded
   responseMessageId BigInt? @map("response_message_id") @db.BigInt // Telegram message ID of response
 
   // Relations
@@ -194,7 +214,7 @@ model SlaAlert {
   deliveredAt       DateTime?           @map("delivered_at") @db.Timestamptz(6)
 
   // Escalation (T009)
-  escalationLevel  Int       @default(1) @map("escalation_level")       // 1-5 levels
+  escalationLevel  Int       @default(1) @map("escalation_level") // 1-5 levels
   nextEscalationAt DateTime? @map("next_escalation_at") @db.Timestamptz(6) // When to escalate next
 
   // Resolution (T009)
@@ -214,21 +234,80 @@ model SlaAlert {
 
 /// Client satisfaction ratings and feedback comments
 model FeedbackResponse {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  chatId      BigInt   @map("chat_id") @db.BigInt
-  requestId   String?  @map("request_id") @db.Uuid
-  rating      Int // 1-5 stars (validated by CHECK constraint at DB level)
-  comment     String?
-  submittedAt DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId         BigInt   @map("chat_id") @db.BigInt
+  requestId      String?  @map("request_id") @db.Uuid
+  surveyId       String?  @map("survey_id") @db.Uuid
+  deliveryId     String?  @unique @map("delivery_id") @db.Uuid
+  clientUsername String?  @map("client_username")
+  rating         Int // 1-5 stars (validated by CHECK constraint at DB level)
+  comment        String?
+  submittedAt    DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
 
   // Relations
-  chat    Chat           @relation(fields: [chatId], references: [id])
-  request ClientRequest? @relation(fields: [requestId], references: [id])
+  chat     Chat            @relation(fields: [chatId], references: [id])
+  request  ClientRequest?  @relation(fields: [requestId], references: [id])
+  survey   FeedbackSurvey? @relation(fields: [surveyId], references: [id])
+  delivery SurveyDelivery? @relation(fields: [deliveryId], references: [id])
 
   @@index([chatId])
   @@index([rating])
   @@index([submittedAt])
+  @@index([surveyId])
   @@map("feedback_responses")
+}
+
+/// Quarterly survey campaigns for client feedback collection
+model FeedbackSurvey {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quarter        String // "2025-Q1"
+  scheduledAt    DateTime     @map("scheduled_at") @db.Timestamptz(6)
+  sentAt         DateTime?    @map("sent_at") @db.Timestamptz(6)
+  expiresAt      DateTime     @map("expires_at") @db.Timestamptz(6)
+  closedAt       DateTime?    @map("closed_at") @db.Timestamptz(6)
+  closedBy       String?      @map("closed_by") @db.Uuid
+  status         SurveyStatus @default(scheduled)
+  totalClients   Int          @default(0) @map("total_clients")
+  deliveredCount Int          @default(0) @map("delivered_count")
+  responseCount  Int          @default(0) @map("response_count")
+  averageRating  Float?       @map("average_rating")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  closedByUser User?              @relation("SurveyClosedBy", fields: [closedBy], references: [id])
+  deliveries   SurveyDelivery[]
+  responses    FeedbackResponse[]
+
+  @@index([quarter])
+  @@index([status])
+  @@map("feedback_surveys")
+}
+
+/// Individual survey delivery tracking per client chat
+model SurveyDelivery {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  surveyId          String         @map("survey_id") @db.Uuid
+  chatId            BigInt         @map("chat_id") @db.BigInt
+  messageId         BigInt?        @map("message_id") @db.BigInt
+  status            DeliveryStatus @default(pending)
+  deliveredAt       DateTime?      @map("delivered_at") @db.Timestamptz(6)
+  reminderSentAt    DateTime?      @map("reminder_sent_at") @db.Timestamptz(6)
+  managerNotifiedAt DateTime?      @map("manager_notified_at") @db.Timestamptz(6)
+  retryCount        Int            @default(0) @map("retry_count")
+  errorMessage      String?        @map("error_message")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  survey   FeedbackSurvey    @relation(fields: [surveyId], references: [id])
+  chat     Chat              @relation(fields: [chatId], references: [id])
+  response FeedbackResponse?
+
+  @@unique([surveyId, chatId], name: "unique_survey_chat")
+  @@index([surveyId])
+  @@index([chatId])
+  @@index([status])
+  @@map("survey_deliveries")
 }
 
 /// Working hours per chat for accurate SLA calculation
@@ -301,28 +380,34 @@ model FaqItem {
 /// Global system settings singleton (T011)
 /// Single row with id="default" for system-wide configuration
 model GlobalSettings {
-  id                    String   @id @default("default")
+  id String @id @default("default")
 
   // Working Hours Defaults
-  defaultTimezone     String @default("Europe/Moscow") @map("default_timezone")
-  defaultWorkingDays  Int[]  @default([1, 2, 3, 4, 5]) @map("default_working_days") // 1=Mon..5=Fri
-  defaultStartTime    String @default("09:00") @map("default_start_time")           // HH:MM format
-  defaultEndTime      String @default("18:00") @map("default_end_time")             // HH:MM format
+  defaultTimezone    String @default("Europe/Moscow") @map("default_timezone")
+  defaultWorkingDays Int[]  @default([1, 2, 3, 4, 5]) @map("default_working_days") // 1=Mon..5=Fri
+  defaultStartTime   String @default("09:00") @map("default_start_time") // HH:MM format
+  defaultEndTime     String @default("18:00") @map("default_end_time") // HH:MM format
 
   // SLA Defaults
-  defaultSlaThreshold   Int @default(60) @map("default_sla_threshold")      // Minutes
-  maxEscalations        Int @default(5) @map("max_escalations")             // Max escalation levels
-  escalationIntervalMin Int @default(30) @map("escalation_interval_min")   // Minutes between escalations
+  defaultSlaThreshold   Int @default(60) @map("default_sla_threshold") // Minutes
+  maxEscalations        Int @default(5) @map("max_escalations") // Max escalation levels
+  escalationIntervalMin Int @default(30) @map("escalation_interval_min") // Minutes between escalations
 
   // Manager Alerts
   globalManagerIds String[] @default([]) @map("global_manager_ids") // Telegram IDs
 
   // AI Classification
   aiConfidenceThreshold Float @default(0.7) @map("ai_confidence_threshold") // 0.0-1.0
-  messagePreviewLength  Int   @default(500) @map("message_preview_length")  // Chars in alert preview
+  messagePreviewLength  Int   @default(500) @map("message_preview_length") // Chars in alert preview
 
   // Data Retention
   dataRetentionYears Int @default(3) @map("data_retention_years")
+
+  // Survey Configuration (Module 1.2)
+  surveyValidityDays Int @default(7) @map("survey_validity_days")
+  surveyReminderDay  Int @default(2) @map("survey_reminder_day")
+  lowRatingThreshold Int @default(3) @map("low_rating_threshold")
+  surveyQuarterDay   Int @default(1) @map("survey_quarter_day")
 
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 

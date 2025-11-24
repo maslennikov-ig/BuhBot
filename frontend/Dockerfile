@@ -44,7 +44,8 @@ COPY --from=backend-types /backend/node_modules ../backend/node_modules
 COPY frontend/package.json frontend/package-lock.json ./
 
 # Install dependencies (including devDependencies for build)
-RUN npm ci
+# Use --legacy-peer-deps for @tremor/react with React 19 compatibility
+RUN npm ci --legacy-peer-deps
 
 # Copy frontend source code and configuration files
 COPY frontend/. .

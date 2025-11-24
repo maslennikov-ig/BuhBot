@@ -13,7 +13,7 @@
  */
 
 import path from 'node:path';
-import { defineConfig } from 'prisma/config';
+import { defineConfig, env } from 'prisma/config';
 
 // Load environment variables
 import 'dotenv/config';
@@ -22,17 +22,14 @@ export default defineConfig({
   earlyAccess: true,
   schema: path.join(import.meta.dirname, 'schema.prisma'),
 
-  migrate: {
-    async resolveConnection() {
-      // Use DIRECT_URL for migrations (bypasses pooler)
-      // Falls back to DATABASE_URL if DIRECT_URL is not set
-      const url = process.env['DIRECT_URL'] || process.env['DATABASE_URL'];
+  // Migrations configuration
+  migrations: {
+    path: path.join(import.meta.dirname, 'migrations'),
+  },
 
-      if (!url) {
-        throw new Error('DATABASE_URL or DIRECT_URL environment variable is required for migrations');
-      }
-
-      return { url };
-    },
+  // Datasource configuration for migrations
+  // Uses DIRECT_URL for migrations (bypasses connection pooler)
+  datasource: {
+    url: env('DIRECT_URL') || env('DATABASE_URL'),
   },
 });

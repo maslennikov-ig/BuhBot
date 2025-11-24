@@ -78,6 +78,23 @@ If contradictions occur:
 - If truly ambiguous: ask user with specific options
 - Only ask when unable to determine best practice (rare, ~10%)
 
+**8. LIBRARY-FIRST APPROACH (MANDATORY)**
+
+Before writing new code (>20 lines), ALWAYS search for existing libraries:
+- WebSearch: "npm {functionality} library 2024" or "python {functionality} package"
+- Context7: documentation for candidate libraries
+- Check: weekly downloads >1000, commits in last 6 months, TypeScript/types support
+
+**Use library when**:
+- Covers >70% of required functionality
+- Actively maintained, no critical vulnerabilities
+- Reasonable bundle size (check bundlephobia.com)
+
+**Write custom code when**:
+- <20 lines of simple logic
+- All libraries abandoned or insecure
+- Core business logic requiring full control
+
 ### Planning Phase (ALWAYS First)
 
 Before implementing tasks:
@@ -140,37 +157,62 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 
 ## Active Technologies
 
+> **LTS Policy**: Используем только стабильные LTS-версии. Обновление major-версий — после 3+ месяцев стабильности.
+
 **Runtime & Language:**
-- Node.js 20.19.0+ (required by Prisma 7)
-- TypeScript 5.x (strict mode)
+- Node.js 20.x LTS (Active LTS до апреля 2026)
+- TypeScript 5.7.x (strict mode)
 
 **Backend:**
-- Express 5.1.0
-- Prisma 7.0.0 (with @prisma/adapter-pg)
-- tRPC (type-safe API)
-- Telegraf (Telegram bot)
-- BullMQ + Redis (queues)
-- Zod 3.x (validation)
+- Express 5.1.x (HTTP server)
+- Prisma 7.0.x (ORM, driver adapter pattern)
+- tRPC 11.x (type-safe API)
+- Telegraf 4.16.x (Telegram bot)
+- BullMQ 5.x + ioredis 5.x (job queues)
+- Zod 3.23.x (validation)
+- Winston 3.x (logging)
+- prom-client 15.x (Prometheus metrics)
 
 **Frontend:**
-- Next.js 15 (App Router)
-- React 19
-- Tailwind CSS
-- shadcn/ui
+- Next.js 16.x LTS (App Router, Turbopack)
+- React 19.x
+- Tailwind CSS 4.x
+- shadcn/ui (Radix primitives)
 
 **Database:**
-- PostgreSQL 15+ (Supabase Cloud)
+- PostgreSQL 15+ (Supabase Cloud, EU region)
 - Supabase Auth (JWT)
 - Row Level Security (RLS)
+- Redis 7.x (BullMQ, caching)
+
+**AI/Classification:**
+- OpenRouter API (primary, spam classification)
+- OpenAI API (fallback)
 
 **Infrastructure:**
+- VDS: FirstVDS.ru (152-ФЗ compliance)
 - Docker + Docker Compose
 - Nginx (reverse proxy, SSL)
 - Prometheus + Grafana + Uptime Kuma (monitoring)
 - GitHub Actions (CI/CD)
 - Let's Encrypt (SSL certificates)
 
+## Quick Access (For New Sessions)
+
+**VDS Server**: `.tmp/current/vds-credentials.md`
+- IP: `185.200.177.180`
+- Domain: `buhbot.aidevteam.ru`
+- SSH: Use `expect` script with root password (see credentials file)
+- Status: All containers deployed and healthy
+
+**Key Paths**:
+- Server credentials: `.tmp/current/vds-credentials.md`
+- Tasks: `docs/speckit/tasks.md`
+- Spec: `docs/speckit/spec.md`
+
 ## Recent Changes
+- 2025-11-23: Frontend Docker multi-stage build for tRPC types
+- 2025-11-23: CI fully passing (all jobs green)
 - 2025-11-22: Migrated Prisma 5.22 → 7.0.0 (driver adapter pattern)
 - 2025-11-22: Updated dependencies (dotenv 17, express 5, supabase-js 2.84)
 - 2025-11-22: Removed unused frontend dependencies

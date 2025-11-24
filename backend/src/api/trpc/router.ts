@@ -15,14 +15,17 @@
  * @module api/trpc/router
  */
 
-import { router } from './trpc';
-import { authRouter } from './routers/auth';
-import { chatsRouter } from './routers/chats';
-import { requestsRouter } from './routers/requests';
-import { alertsRouter } from './routers/alerts';
-import { analyticsRouter } from './routers/analytics';
-import { templatesRouter } from './routers/templates';
-import { faqRouter } from './routers/faq';
+import { router } from './trpc.js';
+import { authRouter } from './routers/auth.js';
+import { chatsRouter } from './routers/chats.js';
+import { requestsRouter } from './routers/requests.js';
+import { alertsRouter } from './routers/alerts.js';
+import { alertRouter } from './routers/alert.js';
+import { analyticsRouter } from './routers/analytics.js';
+import { templatesRouter } from './routers/templates.js';
+import { faqRouter } from './routers/faq.js';
+import { settingsRouter } from './routers/settings.js';
+import { slaRouter } from './routers/sla.js';
 
 /**
  * App router combining all sub-routers
@@ -91,13 +94,31 @@ export const appRouter = router({
   requests: requestsRouter,
 
   /**
-   * Alerts router - SLA alert management
+   * Alerts router - SLA alert management (legacy)
    *
    * Procedures:
    * - listUnacknowledged: List unacknowledged alerts (dashboard widget)
    * - acknowledge: Acknowledge an SLA alert
    */
   alerts: alertsRouter,
+
+  /**
+   * Alert router - Full SLA alert management (T049-T051)
+   *
+   * Mutations:
+   * - createAlert: Create new SLA alert
+   * - resolveAlert: Resolve alert with action type
+   * - notifyAccountant: Send notification to accountant
+   * - updateDeliveryStatus: Update Telegram delivery status
+   *
+   * Queries:
+   * - getAlerts: List alerts with filters and pagination
+   * - getAlertById: Get alert details
+   * - getActiveAlerts: Get unresolved alerts
+   * - getActiveAlertCount: Dashboard metric
+   * - getAlertStats: Get alert statistics
+   */
+  alert: alertRouter,
 
   /**
    * Analytics router - Reports & dashboards
@@ -131,6 +152,40 @@ export const appRouter = router({
    * - delete: Delete FAQ item
    */
   faq: faqRouter,
+
+  /**
+   * Settings router - Global settings & holidays management
+   *
+   * Procedures:
+   * Queries:
+   * - getGlobalSettings: Get current global settings
+   * - getGlobalHolidays: Get list of holidays (optional year filter)
+   *
+   * Mutations (admin only):
+   * - updateGlobalSettings: Update global settings
+   * - addGlobalHoliday: Add a new holiday
+   * - removeGlobalHoliday: Remove a holiday by date
+   * - bulkAddHolidays: Add multiple holidays at once
+   * - seedRussianHolidays: Seed Russian federal holidays for a year
+   */
+  settings: settingsRouter,
+
+  /**
+   * SLA router - SLA monitoring operations
+   *
+   * Procedures:
+   * Mutations:
+   * - createRequest: Create new client request from Telegram message
+   * - classifyMessage: Classify message (REQUEST/SPAM/GRATITUDE/CLARIFICATION)
+   * - startTimer: Start SLA timer for a request
+   * - stopTimer: Stop SLA timer when accountant responds
+   *
+   * Queries:
+   * - getRequests: List requests with filters and pagination
+   * - getRequestById: Get single request details
+   * - getActiveTimers: Get list of active SLA timers
+   */
+  sla: slaRouter,
 });
 
 /**

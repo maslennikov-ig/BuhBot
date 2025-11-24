@@ -1,18 +1,18 @@
 <!--
 Sync Impact Report
 ==================
-Version Change: INITIAL → 1.0.0
-Modified Principles: N/A (Initial version)
-Added Sections: All core sections (initial creation)
-Removed Sections: None
+Version Change: 1.0.0 → 1.1.0
+Modified Principles: Technology Standards (Core Stack)
+Added Sections: LTS Policy, AI/ML stack, Infrastructure stack
+Removed Sections: Vite, Netlify Functions (replaced with actual stack)
 
 Templates Requiring Updates:
 ✅ plan-template.md - Constitution Check section already references constitution file
 ✅ spec-template.md - Already aligned with user-centric requirements approach
 ✅ tasks-template.md - Already organized by user stories and testability principles
-✅ CLAUDE.md - Root orchestration rules reference constitution principles
+✅ CLAUDE.md - Updated with matching LTS versions
 
-Follow-up TODOs: None - all placeholders resolved
+Follow-up TODOs: None
 -->
 
 # Symancy Project Constitution
@@ -136,24 +136,46 @@ All API endpoints MUST enforce authentication via Supabase Auth.
 
 ## Technology Standards
 
+> **LTS Policy**: Используем только стабильные LTS-версии. Обновление major-версий — после 3+ месяцев стабильности.
+
 ### Core Stack
 
+**Runtime:**
+- Node.js 20.x LTS (Active LTS)
+- TypeScript 5.x (strict mode)
+
 **Frontend:**
-- React 19+ with TypeScript
-- Vite for build tooling
-- Tailwind CSS for styling
+- Next.js 16.x LTS (App Router, Turbopack)
+- React 19.x
+- Tailwind CSS 4.x
+- shadcn/ui (Radix primitives)
 - Supabase client for auth and data
 
 **Backend:**
-- Supabase PostgreSQL for primary database
-- Netlify Functions for serverless logic
-- n8n for workflow automation
-- Redis for caching (when needed)
+- Express 5.x (HTTP server)
+- Prisma 7.x (ORM, driver adapter pattern)
+- tRPC 11.x (type-safe API)
+- Telegraf 4.x (Telegram bot)
+- BullMQ 5.x + Redis 7.x (job queues)
+- Zod 3.x (validation)
+
+**Database:**
+- PostgreSQL 15+ (Supabase Cloud, EU region)
+- Supabase Auth (JWT)
+- Row Level Security (RLS)
+- Redis 7.x (caching, queues)
 
 **AI/ML:**
-- Google Gemini API (primary)
-- OpenRouter for alternative models
-- pgvector for semantic search
+- OpenRouter API (primary)
+- OpenAI API (fallback)
+- pgvector for semantic search (future)
+
+**Infrastructure:**
+- VDS: FirstVDS.ru (152-ФЗ compliance)
+- Docker + Docker Compose
+- Nginx + Let's Encrypt SSL
+- Prometheus + Grafana + Uptime Kuma (monitoring)
+- GitHub Actions (CI/CD)
 
 ### File Organization
 
@@ -205,4 +227,8 @@ Any violation of constitutional principles MUST be justified in the "Complexity 
 
 Development runtime guidance is maintained in `CLAUDE.md` at repository root. This file provides operational procedures that implement constitutional principles but may be updated more frequently than the constitution itself.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-10 | **Last Amended**: 2025-11-10
+**Version**: 1.1.0 | **Ratified**: 2025-11-10 | **Last Amended**: 2025-11-22
+
+### Changelog
+
+- **1.1.0** (2025-11-22): Updated Technology Standards to reflect actual BuhBot stack (Next.js + Express on VDS instead of Vite + Netlify). Added LTS policy. Added AI/ML and Infrastructure sections.

@@ -276,7 +276,7 @@ export const analyticsRouter = router({
                 gte: input.startDate,
                 lte: input.endDate,
               },
-              isSpam: false,
+              classification: 'REQUEST', // Only count actual requests, not SPAM/GRATITUDE/CLARIFICATION
             },
             select: {
               id: true,
@@ -355,5 +355,755 @@ export const analyticsRouter = router({
 
       // Filter out accountants with no requests
       return performance.filter((p: { totalRequests: number }) => p.totalRequests > 0);
+    }),
+
+  /**
+   * Get dashboard data with KPIs, trends, and recent activity
+   *
+   * Returns main KPIs (SLA compliance, response time, violations),
+   * trends vs previous period, recent requests, and accountant rankings.
+   *
+   * @param timezone - Timezone for date calculations (default: Europe/Moscow)
+   * @returns Dashboard data with KPIs, trends, and activity
+   * @authorization All authenticated users (read-only)
+   */
+  getDashboard: authedProcedure
+    .input(
+      z.object({
+        timezone: z.string().default('Europe/Moscow'),
+      })
+    )
+    .output(
+      z.object({
+        slaCompliancePercent: z.number(),
+        avgResponseTimeMinutes: z.number(),
+        totalViolationsToday: z.number(),
+        totalViolationsWeek: z.number(),
+        activeAlertsCount: z.number(),
+        slaComplianceTrend: z.number(),
+        responseTimeTrend: z.number(),
+        recentRequests: z.array(
+          z.object({
+            id: z.string().uuid(),
+            chatTitle: z.string().nullable(),
+            clientUsername: z.string().nullable(),
+            messagePreview: z.string(),
+            status: z.enum(['pending', 'in_progress', 'answered', 'escalated']),
+            receivedAt: z.date(),
+            responseMinutes: z.number().nullable(),
+            breached: z.boolean(),
+          })
+        ),
+        topAccountants: z.array(
+          z.object({
+            id: z.string().uuid(),
+            name: z.string(),
+            avgResponseMinutes: z.number(),
+            compliancePercent: z.number(),
+          })
+        ),
+        attentionNeeded: z.array(
+          z.object({
+            id: z.string().uuid(),
+            name: z.string(),
+            violationsCount: z.number(),
+            avgResponseMinutes: z.number(),
+          })
+        ),
+      })
+    )
+    .query(async ({ ctx }) => {
+      // Calculate date ranges (using UTC, adjust for timezone display on client)
+      const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+
+      const weekStart = new Date(now);
+      weekStart.setDate(weekStart.getDate() - 7);
+      weekStart.setHours(0, 0, 0, 0);
+
+      const prevWeekStart = new Date(weekStart);
+      prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+
+      // Get violations for today
+      const todayViolations = await ctx.prisma.clientRequest.count({
+        where: {
+          slaBreached: true,
+          classification: 'REQUEST',
+          receivedAt: { gte: todayStart },
+        },
+      });
+
+      // Get violations for this week
+      const weekViolations = await ctx.prisma.clientRequest.count({
+        where: {
+          slaBreached: true,
+          classification: 'REQUEST',
+          receivedAt: { gte: weekStart },
+        },
+      });
+
+      // Get active alerts (pending or sent)
+      const activeAlerts = await ctx.prisma.slaAlert.count({
+        where: {
+          deliveryStatus: { in: ['pending', 'sent'] },
+          acknowledgedAt: null,
+        },
+      });
+
+      // Get current week requests for SLA calculation
+      const currentWeekRequests = await ctx.prisma.clientRequest.findMany({
+        where: {
+          classification: 'REQUEST',
+          receivedAt: { gte: weekStart },
+        },
+        select: {
+          responseTimeMinutes: true,
+          slaBreached: true,
+        },
+      });
+
+      // Get previous week requests for trend calculation
+      const prevWeekRequests = await ctx.prisma.clientRequest.findMany({
+        where: {
+          classification: 'REQUEST',
+          receivedAt: { gte: prevWeekStart, lt: weekStart },
+        },
+        select: {
+          responseTimeMinutes: true,
+          slaBreached: true,
+        },
+      });
+
+      // Calculate current week SLA compliance
+      const currentTotal = currentWeekRequests.length;
+      const currentCompliant = currentWeekRequests.filter((r) => !r.slaBreached).length;
+      const currentCompliancePercent =
+        currentTotal > 0 ? (currentCompliant / currentTotal) * 100 : 100;
+
+      // Calculate current week avg response time
+      const currentResponseTimes = currentWeekRequests
+        .filter((r) => r.responseTimeMinutes !== null)
+        .map((r) => r.responseTimeMinutes as number);
+      const currentAvgResponseTime =
+        currentResponseTimes.length > 0
+          ? currentResponseTimes.reduce((a, b) => a + b, 0) / currentResponseTimes.length
+          : 0;
+
+      // Calculate previous week SLA compliance
+      const prevTotal = prevWeekRequests.length;
+      const prevCompliant = prevWeekRequests.filter((r) => !r.slaBreached).length;
+      const prevCompliancePercent = prevTotal > 0 ? (prevCompliant / prevTotal) * 100 : 100;
+
+      // Calculate previous week avg response time
+      const prevResponseTimes = prevWeekRequests
+        .filter((r) => r.responseTimeMinutes !== null)
+        .map((r) => r.responseTimeMinutes as number);
+      const prevAvgResponseTime =
+        prevResponseTimes.length > 0
+          ? prevResponseTimes.reduce((a, b) => a + b, 0) / prevResponseTimes.length
+          : 0;
+
+      // Calculate trends
+      const slaComplianceTrend = currentCompliancePercent - prevCompliancePercent;
+      const responseTimeTrend = currentAvgResponseTime - prevAvgResponseTime;
+
+      // Get recent 10 requests
+      const recentRequestsRaw = await ctx.prisma.clientRequest.findMany({
+        where: {
+          classification: 'REQUEST',
+        },
+        orderBy: { receivedAt: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          messageText: true,
+          clientUsername: true,
+          status: true,
+          receivedAt: true,
+          responseTimeMinutes: true,
+          slaBreached: true,
+          chat: {
+            select: {
+              title: true,
+            },
+          },
+        },
+      });
+
+      const recentRequests = recentRequestsRaw.map((r) => ({
+        id: r.id,
+        chatTitle: r.chat?.title ?? null,
+        clientUsername: r.clientUsername,
+        messagePreview: r.messageText.length > 100 ? r.messageText.slice(0, 100) + '...' : r.messageText,
+        status: r.status as 'pending' | 'in_progress' | 'answered' | 'escalated',
+        receivedAt: r.receivedAt,
+        responseMinutes: r.responseTimeMinutes,
+        breached: r.slaBreached,
+      }));
+
+      // Get accountants with their performance this week
+      const accountants = await ctx.prisma.user.findMany({
+        select: {
+          id: true,
+          fullName: true,
+        },
+      });
+
+      const accountantStats = await Promise.all(
+        accountants.map(async (acc) => {
+          const requests = await ctx.prisma.clientRequest.findMany({
+            where: {
+              assignedTo: acc.id,
+              classification: 'REQUEST',
+              receivedAt: { gte: weekStart },
+            },
+            select: {
+              responseTimeMinutes: true,
+              slaBreached: true,
+            },
+          });
+
+          const total = requests.length;
+          const violations = requests.filter((r) => r.slaBreached).length;
+          const compliant = total - violations;
+          const compliancePercent = total > 0 ? (compliant / total) * 100 : 100;
+
+          const responseTimes = requests
+            .filter((r) => r.responseTimeMinutes !== null)
+            .map((r) => r.responseTimeMinutes as number);
+          const avgResponseMinutes =
+            responseTimes.length > 0
+              ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+              : 0;
+
+          return {
+            id: acc.id,
+            name: acc.fullName,
+            totalRequests: total,
+            violations,
+            compliancePercent: Math.round(compliancePercent * 100) / 100,
+            avgResponseMinutes: Math.round(avgResponseMinutes * 100) / 100,
+          };
+        })
+      );
+
+      // Top 5 accountants by compliance (only those with requests)
+      const topAccountants = accountantStats
+        .filter((a) => a.totalRequests > 0)
+        .sort((a, b) => b.compliancePercent - a.compliancePercent || a.avgResponseMinutes - b.avgResponseMinutes)
+        .slice(0, 5)
+        .map((a) => ({
+          id: a.id,
+          name: a.name,
+          avgResponseMinutes: a.avgResponseMinutes,
+          compliancePercent: a.compliancePercent,
+        }));
+
+      // Accountants needing attention (violations > 0 this week)
+      const attentionNeeded = accountantStats
+        .filter((a) => a.violations > 0)
+        .sort((a, b) => b.violations - a.violations)
+        .map((a) => ({
+          id: a.id,
+          name: a.name,
+          violationsCount: a.violations,
+          avgResponseMinutes: a.avgResponseMinutes,
+        }));
+
+      return {
+        slaCompliancePercent: Math.round(currentCompliancePercent * 100) / 100,
+        avgResponseTimeMinutes: Math.round(currentAvgResponseTime * 100) / 100,
+        totalViolationsToday: todayViolations,
+        totalViolationsWeek: weekViolations,
+        activeAlertsCount: activeAlerts,
+        slaComplianceTrend: Math.round(slaComplianceTrend * 100) / 100,
+        responseTimeTrend: Math.round(responseTimeTrend * 100) / 100,
+        recentRequests,
+        topAccountants,
+        attentionNeeded,
+      };
+    }),
+
+  /**
+   * Get detailed accountant performance statistics
+   *
+   * Returns per-accountant metrics including requests, violations,
+   * response time stats (avg, min, max, median), and assigned chats.
+   *
+   * @param accountantId - Optional filter by specific accountant
+   * @param dateFrom - Optional start date filter
+   * @param dateTo - Optional end date filter
+   * @param sortBy - Sort field (responseTime, violations, compliance)
+   * @param sortOrder - Sort direction (asc, desc)
+   * @returns Accountant statistics with performance metrics
+   * @authorization Managers and admins only
+   */
+  getAccountantStats: managerProcedure
+    .input(
+      z.object({
+        accountantId: z.string().uuid().optional(),
+        dateFrom: z.date().optional(),
+        dateTo: z.date().optional(),
+        sortBy: z.enum(['responseTime', 'violations', 'compliance']).default('compliance'),
+        sortOrder: z.enum(['asc', 'desc']).default('desc'),
+      })
+    )
+    .output(
+      z.object({
+        items: z.array(
+          z.object({
+            accountantId: z.string().uuid(),
+            accountantName: z.string(),
+            email: z.string(),
+            totalRequests: z.number(),
+            answeredRequests: z.number(),
+            violations: z.number(),
+            compliancePercent: z.number(),
+            avgResponseMinutes: z.number(),
+            minResponseMinutes: z.number(),
+            maxResponseMinutes: z.number(),
+            medianResponseMinutes: z.number(),
+            assignedChats: z.number(),
+          })
+        ),
+        total: z.number(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Build user filter
+      const userWhere: any = {};
+      if (input.accountantId) {
+        userWhere.id = input.accountantId;
+      }
+
+      // Fetch accountants
+      const accountants = await ctx.prisma.user.findMany({
+        where: userWhere,
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+        },
+      });
+
+      // Build request date filter
+      const dateFilter: any = {};
+      if (input.dateFrom) {
+        dateFilter.gte = input.dateFrom;
+      }
+      if (input.dateTo) {
+        dateFilter.lte = input.dateTo;
+      }
+
+      // Get stats for each accountant
+      const stats = await Promise.all(
+        accountants.map(async (acc) => {
+          // Build where clause for requests
+          const requestWhere: any = {
+            assignedTo: acc.id,
+            classification: 'REQUEST',
+          };
+          if (Object.keys(dateFilter).length > 0) {
+            requestWhere.receivedAt = dateFilter;
+          }
+
+          // Get requests for this accountant
+          const requests = await ctx.prisma.clientRequest.findMany({
+            where: requestWhere,
+            select: {
+              status: true,
+              responseTimeMinutes: true,
+              slaBreached: true,
+            },
+          });
+
+          // Count assigned chats
+          const assignedChats = await ctx.prisma.chat.count({
+            where: {
+              assignedAccountantId: acc.id,
+            },
+          });
+
+          const totalRequests = requests.length;
+          const answeredRequests = requests.filter(
+            (r) => r.status === 'answered' || r.status === 'escalated'
+          ).length;
+          const violations = requests.filter((r) => r.slaBreached).length;
+          const compliancePercent =
+            totalRequests > 0 ? ((totalRequests - violations) / totalRequests) * 100 : 100;
+
+          // Calculate response time stats
+          const responseTimes = requests
+            .filter((r) => r.responseTimeMinutes !== null)
+            .map((r) => r.responseTimeMinutes as number)
+            .sort((a, b) => a - b);
+
+          let avgResponseMinutes = 0;
+          let minResponseMinutes = 0;
+          let maxResponseMinutes = 0;
+          let medianResponseMinutes = 0;
+
+          if (responseTimes.length > 0) {
+            avgResponseMinutes =
+              responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+            minResponseMinutes = responseTimes[0] ?? 0;
+            maxResponseMinutes = responseTimes[responseTimes.length - 1] ?? 0;
+            medianResponseMinutes =
+              responseTimes[Math.floor(responseTimes.length / 2)] ?? 0;
+          }
+
+          return {
+            accountantId: acc.id,
+            accountantName: acc.fullName,
+            email: acc.email,
+            totalRequests,
+            answeredRequests,
+            violations,
+            compliancePercent: Math.round(compliancePercent * 100) / 100,
+            avgResponseMinutes: Math.round(avgResponseMinutes * 100) / 100,
+            minResponseMinutes: Math.round(minResponseMinutes * 100) / 100,
+            maxResponseMinutes: Math.round(maxResponseMinutes * 100) / 100,
+            medianResponseMinutes: Math.round(medianResponseMinutes * 100) / 100,
+            assignedChats,
+          };
+        })
+      );
+
+      // Sort results
+      const sorted = [...stats].sort((a, b) => {
+        let comparison = 0;
+        switch (input.sortBy) {
+          case 'responseTime':
+            comparison = a.avgResponseMinutes - b.avgResponseMinutes;
+            break;
+          case 'violations':
+            comparison = a.violations - b.violations;
+            break;
+          case 'compliance':
+          default:
+            comparison = a.compliancePercent - b.compliancePercent;
+            break;
+        }
+        return input.sortOrder === 'asc' ? comparison : -comparison;
+      });
+
+      return {
+        items: sorted,
+        total: sorted.length,
+      };
+    }),
+
+  /**
+   * Export analytics report in CSV or JSON format
+   *
+   * Generates a downloadable report for SLA compliance,
+   * accountant performance, or violations data.
+   * Returns a data URL for MVP (no blob storage).
+   *
+   * @param reportType - Type of report (sla_compliance, accountant_performance, violations)
+   * @param dateFrom - Start date for report
+   * @param dateTo - End date for report
+   * @param chatId - Optional filter by chat
+   * @param accountantId - Optional filter by accountant
+   * @param format - Export format (csv, json)
+   * @returns Download URL, filename, expiration, and row count
+   * @authorization Managers and admins only
+   */
+  exportReport: managerProcedure
+    .input(
+      z.object({
+        reportType: z.enum(['sla_compliance', 'accountant_performance', 'violations']),
+        dateFrom: z.date(),
+        dateTo: z.date(),
+        chatId: z.string().optional(),
+        accountantId: z.string().uuid().optional(),
+        format: z.enum(['csv', 'json']).default('csv'),
+      })
+    )
+    .output(
+      z.object({
+        downloadUrl: z.string().url(),
+        filename: z.string(),
+        expiresAt: z.date(),
+        rowCount: z.number(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Build base where clause
+      const baseWhere: any = {
+        receivedAt: {
+          gte: input.dateFrom,
+          lte: input.dateTo,
+        },
+        classification: 'REQUEST',
+      };
+
+      if (input.chatId) {
+        baseWhere.chatId = BigInt(input.chatId);
+      }
+      if (input.accountantId) {
+        baseWhere.assignedTo = input.accountantId;
+      }
+
+      let data: any[] = [];
+      let headers: string[] = [];
+
+      switch (input.reportType) {
+        case 'sla_compliance': {
+          const requests = await ctx.prisma.clientRequest.findMany({
+            where: baseWhere,
+            select: {
+              id: true,
+              chatId: true,
+              clientUsername: true,
+              receivedAt: true,
+              responseAt: true,
+              responseTimeMinutes: true,
+              slaBreached: true,
+              status: true,
+              chat: {
+                select: {
+                  title: true,
+                  slaResponseMinutes: true,
+                },
+              },
+              assignedUser: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+            orderBy: { receivedAt: 'desc' },
+          });
+
+          headers = [
+            'request_id',
+            'chat_id',
+            'chat_title',
+            'client_username',
+            'accountant',
+            'received_at',
+            'response_at',
+            'response_time_minutes',
+            'sla_threshold_minutes',
+            'sla_breached',
+            'status',
+          ];
+
+          data = requests.map((r) => ({
+            request_id: r.id,
+            chat_id: r.chatId.toString(),
+            chat_title: r.chat?.title ?? '',
+            client_username: r.clientUsername ?? '',
+            accountant: r.assignedUser?.fullName ?? '',
+            received_at: r.receivedAt.toISOString(),
+            response_at: r.responseAt?.toISOString() ?? '',
+            response_time_minutes: r.responseTimeMinutes ?? '',
+            sla_threshold_minutes: r.chat?.slaResponseMinutes ?? '',
+            sla_breached: r.slaBreached ? 'Yes' : 'No',
+            status: r.status,
+          }));
+          break;
+        }
+
+        case 'accountant_performance': {
+          const accountantFilter: any = {};
+          if (input.accountantId) {
+            accountantFilter.id = input.accountantId;
+          }
+
+          const accountants = await ctx.prisma.user.findMany({
+            where: accountantFilter,
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          });
+
+          headers = [
+            'accountant_id',
+            'accountant_name',
+            'email',
+            'total_requests',
+            'answered_requests',
+            'violations',
+            'compliance_percent',
+            'avg_response_minutes',
+          ];
+
+          const statsPromises = accountants.map(async (acc) => {
+            const requests = await ctx.prisma.clientRequest.findMany({
+              where: {
+                ...baseWhere,
+                assignedTo: acc.id,
+              },
+              select: {
+                status: true,
+                slaBreached: true,
+                responseTimeMinutes: true,
+              },
+            });
+
+            const totalRequests = requests.length;
+            const answeredRequests = requests.filter(
+              (r) => r.status === 'answered' || r.status === 'escalated'
+            ).length;
+            const violations = requests.filter((r) => r.slaBreached).length;
+            const compliancePercent =
+              totalRequests > 0
+                ? Math.round(((totalRequests - violations) / totalRequests) * 10000) / 100
+                : 100;
+            const responseTimes = requests
+              .filter((r) => r.responseTimeMinutes !== null)
+              .map((r) => r.responseTimeMinutes as number);
+            const avgResponseMinutes =
+              responseTimes.length > 0
+                ? Math.round(
+                    (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length) * 100
+                  ) / 100
+                : 0;
+
+            return {
+              accountant_id: acc.id,
+              accountant_name: acc.fullName,
+              email: acc.email,
+              total_requests: totalRequests,
+              answered_requests: answeredRequests,
+              violations,
+              compliance_percent: compliancePercent,
+              avg_response_minutes: avgResponseMinutes,
+            };
+          });
+
+          data = await Promise.all(statsPromises);
+          break;
+        }
+
+        case 'violations': {
+          const violationRequests = await ctx.prisma.clientRequest.findMany({
+            where: {
+              ...baseWhere,
+              slaBreached: true,
+            },
+            select: {
+              id: true,
+              chatId: true,
+              clientUsername: true,
+              messageText: true,
+              receivedAt: true,
+              responseAt: true,
+              responseTimeMinutes: true,
+              status: true,
+              chat: {
+                select: {
+                  title: true,
+                  slaResponseMinutes: true,
+                },
+              },
+              assignedUser: {
+                select: {
+                  fullName: true,
+                },
+              },
+              slaAlerts: {
+                select: {
+                  alertType: true,
+                  alertSentAt: true,
+                },
+                orderBy: { alertSentAt: 'desc' },
+                take: 1,
+              },
+            },
+            orderBy: { receivedAt: 'desc' },
+          });
+
+          headers = [
+            'request_id',
+            'chat_id',
+            'chat_title',
+            'client_username',
+            'message_preview',
+            'accountant',
+            'received_at',
+            'response_at',
+            'response_time_minutes',
+            'sla_threshold_minutes',
+            'overtime_minutes',
+            'alert_type',
+            'alert_sent_at',
+            'status',
+          ];
+
+          data = violationRequests.map((r) => {
+            const slaThreshold = r.chat?.slaResponseMinutes ?? 60;
+            const overtime =
+              r.responseTimeMinutes !== null ? r.responseTimeMinutes - slaThreshold : 0;
+            const latestAlert = r.slaAlerts[0];
+
+            return {
+              request_id: r.id,
+              chat_id: r.chatId.toString(),
+              chat_title: r.chat?.title ?? '',
+              client_username: r.clientUsername ?? '',
+              message_preview:
+                r.messageText.length > 50 ? r.messageText.slice(0, 50) + '...' : r.messageText,
+              accountant: r.assignedUser?.fullName ?? '',
+              received_at: r.receivedAt.toISOString(),
+              response_at: r.responseAt?.toISOString() ?? '',
+              response_time_minutes: r.responseTimeMinutes ?? '',
+              sla_threshold_minutes: slaThreshold,
+              overtime_minutes: overtime > 0 ? overtime : 0,
+              alert_type: latestAlert?.alertType ?? '',
+              alert_sent_at: latestAlert?.alertSentAt?.toISOString() ?? '',
+              status: r.status,
+            };
+          });
+          break;
+        }
+      }
+
+      // Format dates for filename
+      const dateFromStr = input.dateFrom.toISOString().split('T')[0];
+      const dateToStr = input.dateTo.toISOString().split('T')[0];
+      const filename = `${input.reportType}-${dateFromStr}-${dateToStr}.${input.format}`;
+
+      // Generate content based on format
+      let content: string;
+      if (input.format === 'json') {
+        content = JSON.stringify(data, null, 2);
+      } else {
+        // CSV format
+        const csvRows = [headers.join(',')];
+        for (const row of data) {
+          const values = headers.map((h) => {
+            const val = row[h];
+            // Escape quotes and wrap in quotes if contains comma or newline
+            if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+              return `"${val.replace(/"/g, '""')}"`;
+            }
+            return String(val ?? '');
+          });
+          csvRows.push(values.join(','));
+        }
+        content = csvRows.join('\n');
+      }
+
+      // Create data URL (MVP solution without blob storage)
+      const mimeType = input.format === 'json' ? 'application/json' : 'text/csv';
+      const base64Content = Buffer.from(content, 'utf-8').toString('base64');
+      const downloadUrl = `data:${mimeType};base64,${base64Content}`;
+
+      // Set expiration to 1 hour from now
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
+      return {
+        downloadUrl,
+        filename,
+        expiresAt,
+        rowCount: data.length,
+      };
     }),
 });

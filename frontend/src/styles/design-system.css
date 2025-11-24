@@ -1,0 +1,803 @@
+/**
+ * BuhBot Premium Design System
+ *
+ * A distinctive, modern design system for accounting automation platform.
+ * Inspired by: Linear.app, Vercel Dashboard, Stripe Dashboard
+ *
+ * Features:
+ * - Deep ocean color palette with teal/emerald accents
+ * - Aurora mesh gradients and glassmorphism
+ * - Orchestrated animations and micro-interactions
+ * - Premium typography with Plus Jakarta Sans
+ */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES - LIGHT MODE
+   ============================================ */
+:root {
+  /* === Primary Colors === */
+  --buh-background: #fafbfc;
+  --buh-background-subtle: #f4f6f8;
+  --buh-foreground: #0c1222;
+  --buh-foreground-muted: #4a5568;
+  --buh-foreground-subtle: #718096;
+
+  /* === Surface Colors (Cards, Panels) === */
+  --buh-surface: #ffffff;
+  --buh-surface-elevated: #ffffff;
+  --buh-surface-overlay: rgba(255, 255, 255, 0.8);
+
+  /* === Brand Colors === */
+  --buh-primary: #0066cc;
+  --buh-primary-hover: #0052a3;
+  --buh-primary-muted: rgba(0, 102, 204, 0.1);
+
+  /* === Accent Colors (WOW factor) === */
+  --buh-accent: #00d4aa;
+  --buh-accent-hover: #00b894;
+  --buh-accent-glow: rgba(0, 212, 170, 0.3);
+  --buh-accent-secondary: #7c3aed;
+  --buh-accent-secondary-glow: rgba(124, 58, 237, 0.3);
+
+  /* === Semantic Colors === */
+  --buh-success: #10b981;
+  --buh-success-muted: rgba(16, 185, 129, 0.1);
+  --buh-warning: #f59e0b;
+  --buh-warning-muted: rgba(245, 158, 11, 0.1);
+  --buh-error: #ef4444;
+  --buh-error-muted: rgba(239, 68, 68, 0.1);
+  --buh-info: #3b82f6;
+  --buh-info-muted: rgba(59, 130, 246, 0.1);
+
+  /* === Border & Dividers === */
+  --buh-border: #e2e8f0;
+  --buh-border-subtle: #edf2f7;
+  --buh-border-focus: var(--buh-accent);
+
+  /* === Shadows === */
+  --buh-shadow-sm: 0 1px 2px rgba(12, 18, 34, 0.04);
+  --buh-shadow-md: 0 4px 6px -1px rgba(12, 18, 34, 0.06), 0 2px 4px -1px rgba(12, 18, 34, 0.04);
+  --buh-shadow-lg: 0 10px 15px -3px rgba(12, 18, 34, 0.08), 0 4px 6px -2px rgba(12, 18, 34, 0.04);
+  --buh-shadow-xl: 0 20px 25px -5px rgba(12, 18, 34, 0.1), 0 10px 10px -5px rgba(12, 18, 34, 0.04);
+  --buh-shadow-glow: 0 0 40px rgba(0, 212, 170, 0.15);
+  --buh-shadow-glow-accent: 0 0 60px rgba(124, 58, 237, 0.1);
+
+  /* === Gradients === */
+  --buh-gradient-primary: linear-gradient(135deg, var(--buh-accent) 0%, var(--buh-primary) 100%);
+  --buh-gradient-surface: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  --buh-gradient-aurora: linear-gradient(135deg,
+    rgba(0, 212, 170, 0.03) 0%,
+    rgba(124, 58, 237, 0.03) 50%,
+    rgba(0, 102, 204, 0.03) 100%
+  );
+
+  /* === Glass Effects === */
+  --buh-glass-background: rgba(255, 255, 255, 0.7);
+  --buh-glass-border: rgba(255, 255, 255, 0.3);
+  --buh-glass-blur: 12px;
+
+  /* === Sidebar === */
+  --buh-sidebar-width: 260px;
+  --buh-sidebar-collapsed-width: 72px;
+  --buh-sidebar-background: #ffffff;
+  --buh-sidebar-border: var(--buh-border);
+
+  /* === Header === */
+  --buh-header-height: 64px;
+  --buh-header-background: rgba(255, 255, 255, 0.8);
+
+  /* === Typography === */
+  --buh-font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --buh-font-serif: "Spectral", Georgia, serif;
+  --buh-font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* === Spacing Scale (8pt grid) === */
+  --buh-space-1: 4px;
+  --buh-space-2: 8px;
+  --buh-space-3: 12px;
+  --buh-space-4: 16px;
+  --buh-space-5: 20px;
+  --buh-space-6: 24px;
+  --buh-space-8: 32px;
+  --buh-space-10: 40px;
+  --buh-space-12: 48px;
+  --buh-space-16: 64px;
+  --buh-space-20: 80px;
+  --buh-space-24: 96px;
+
+  /* === Border Radius === */
+  --buh-radius-sm: 6px;
+  --buh-radius-md: 8px;
+  --buh-radius-lg: 12px;
+  --buh-radius-xl: 16px;
+  --buh-radius-2xl: 24px;
+  --buh-radius-full: 9999px;
+
+  /* === Transitions === */
+  --buh-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --buh-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --buh-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --buh-transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* === Z-Index Scale === */
+  --buh-z-dropdown: 1000;
+  --buh-z-sticky: 1100;
+  --buh-z-modal: 1200;
+  --buh-z-popover: 1300;
+  --buh-z-tooltip: 1400;
+}
+
+/* ============================================
+   CSS CUSTOM PROPERTIES - DARK MODE
+   ============================================ */
+.dark,
+[data-theme="dark"] {
+  /* === Primary Colors === */
+  --buh-background: #0c1222;
+  --buh-background-subtle: #111827;
+  --buh-foreground: #f1f5f9;
+  --buh-foreground-muted: #94a3b8;
+  --buh-foreground-subtle: #64748b;
+
+  /* === Surface Colors === */
+  --buh-surface: #1a2744;
+  --buh-surface-elevated: #1e3a5f;
+  --buh-surface-overlay: rgba(26, 39, 68, 0.9);
+
+  /* === Brand Colors === */
+  --buh-primary: #38bdf8;
+  --buh-primary-hover: #7dd3fc;
+  --buh-primary-muted: rgba(56, 189, 248, 0.15);
+
+  /* === Accent Colors === */
+  --buh-accent: #00d4aa;
+  --buh-accent-hover: #34eac5;
+  --buh-accent-glow: rgba(0, 212, 170, 0.4);
+  --buh-accent-secondary: #a78bfa;
+  --buh-accent-secondary-glow: rgba(167, 139, 250, 0.4);
+
+  /* === Semantic Colors === */
+  --buh-success: #34d399;
+  --buh-success-muted: rgba(52, 211, 153, 0.15);
+  --buh-warning: #fbbf24;
+  --buh-warning-muted: rgba(251, 191, 36, 0.15);
+  --buh-error: #f87171;
+  --buh-error-muted: rgba(248, 113, 113, 0.15);
+  --buh-info: #60a5fa;
+  --buh-info-muted: rgba(96, 165, 250, 0.15);
+
+  /* === Border & Dividers === */
+  --buh-border: #2d3f5f;
+  --buh-border-subtle: #1e3a5f;
+  --buh-border-focus: var(--buh-accent);
+
+  /* === Shadows === */
+  --buh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --buh-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --buh-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --buh-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --buh-shadow-glow: 0 0 60px rgba(0, 212, 170, 0.25);
+  --buh-shadow-glow-accent: 0 0 80px rgba(167, 139, 250, 0.2);
+
+  /* === Gradients === */
+  --buh-gradient-primary: linear-gradient(135deg, var(--buh-accent) 0%, var(--buh-primary) 100%);
+  --buh-gradient-surface: linear-gradient(180deg, #1a2744 0%, #0c1222 100%);
+  --buh-gradient-aurora: linear-gradient(135deg,
+    rgba(0, 212, 170, 0.08) 0%,
+    rgba(124, 58, 237, 0.08) 50%,
+    rgba(56, 189, 248, 0.08) 100%
+  );
+
+  /* === Glass Effects === */
+  --buh-glass-background: rgba(26, 39, 68, 0.7);
+  --buh-glass-border: rgba(45, 63, 95, 0.5);
+  --buh-glass-blur: 16px;
+
+  /* === Sidebar === */
+  --buh-sidebar-background: #111827;
+  --buh-sidebar-border: var(--buh-border);
+
+  /* === Header === */
+  --buh-header-background: rgba(12, 18, 34, 0.85);
+}
+
+/* ============================================
+   AURORA BACKGROUND EFFECTS
+   ============================================ */
+.buh-aurora {
+  position: relative;
+  overflow: hidden;
+}
+
+.buh-aurora::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(ellipse at 20% 30%, var(--buh-accent-glow) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, var(--buh-accent-secondary-glow) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.1) 0%, transparent 60%);
+  animation: aurora-shift 20s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes aurora-shift {
+  0% {
+    transform: translate(0%, 0%) rotate(0deg);
+  }
+  33% {
+    transform: translate(-5%, 5%) rotate(3deg);
+  }
+  66% {
+    transform: translate(5%, -5%) rotate(-3deg);
+  }
+  100% {
+    transform: translate(-2%, 2%) rotate(1deg);
+  }
+}
+
+/* Subtle aurora for light mode */
+:root .buh-aurora::before {
+  opacity: 0.5;
+}
+
+/* More visible aurora for dark mode */
+.dark .buh-aurora::before,
+[data-theme="dark"] .buh-aurora::before {
+  opacity: 1;
+}
+
+/* ============================================
+   MESH GRADIENT BACKGROUNDS
+   ============================================ */
+.buh-mesh-gradient {
+  background-color: var(--buh-background);
+  background-image:
+    radial-gradient(at 40% 20%, var(--buh-accent-glow) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, var(--buh-accent-secondary-glow) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, var(--buh-accent-glow) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, var(--buh-accent-secondary-glow) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* ============================================
+   GLASSMORPHISM CARDS
+   ============================================ */
+.buh-glass {
+  background: var(--buh-glass-background);
+  backdrop-filter: blur(var(--buh-glass-blur));
+  -webkit-backdrop-filter: blur(var(--buh-glass-blur));
+  border: 1px solid var(--buh-glass-border);
+  box-shadow: var(--buh-shadow-lg);
+}
+
+.buh-glass-elevated {
+  background: var(--buh-glass-background);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--buh-glass-border);
+  box-shadow:
+    var(--buh-shadow-xl),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   PREMIUM CARD STYLES
+   ============================================ */
+.buh-card {
+  background: var(--buh-surface);
+  border: 1px solid var(--buh-border);
+  border-radius: var(--buh-radius-lg);
+  box-shadow: var(--buh-shadow-sm);
+  transition:
+    transform var(--buh-transition-base),
+    box-shadow var(--buh-transition-base),
+    border-color var(--buh-transition-base);
+}
+
+.buh-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--buh-shadow-md);
+  border-color: var(--buh-border-focus);
+}
+
+.buh-card-interactive {
+  cursor: pointer;
+}
+
+.buh-card-interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--buh-shadow-lg), var(--buh-shadow-glow);
+}
+
+.buh-card-glow {
+  position: relative;
+}
+
+.buh-card-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--buh-gradient-primary);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity var(--buh-transition-base);
+}
+
+.buh-card-glow:hover::after {
+  opacity: 0.15;
+}
+
+/* ============================================
+   BUTTON ENHANCEMENTS
+   ============================================ */
+.buh-btn-primary {
+  background: var(--buh-gradient-primary);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--buh-radius-md);
+  padding: var(--buh-space-3) var(--buh-space-5);
+  transition:
+    transform var(--buh-transition-fast),
+    box-shadow var(--buh-transition-fast),
+    filter var(--buh-transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.buh-btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity var(--buh-transition-fast);
+}
+
+.buh-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--buh-shadow-md), var(--buh-shadow-glow);
+}
+
+.buh-btn-primary:hover::before {
+  opacity: 1;
+}
+
+.buh-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--buh-shadow-sm);
+}
+
+.buh-btn-ghost {
+  background: transparent;
+  color: var(--buh-foreground);
+  border: none;
+  border-radius: var(--buh-radius-md);
+  padding: var(--buh-space-2) var(--buh-space-4);
+  transition:
+    background-color var(--buh-transition-fast),
+    color var(--buh-transition-fast);
+}
+
+.buh-btn-ghost:hover {
+  background: var(--buh-primary-muted);
+  color: var(--buh-primary);
+}
+
+/* ============================================
+   ORCHESTRATED ANIMATIONS
+   ============================================ */
+
+/* Fade In Up - for staggered reveals */
+@keyframes buh-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.buh-animate-fade-in-up {
+  animation: buh-fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Stagger children */
+.buh-stagger > * {
+  animation: buh-fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.buh-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.buh-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.buh-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.buh-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.buh-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.buh-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.buh-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.buh-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+.buh-stagger > *:nth-child(9) { animation-delay: 0.45s; }
+.buh-stagger > *:nth-child(10) { animation-delay: 0.5s; }
+
+/* Fade In Scale - for modals and popovers */
+@keyframes buh-fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.buh-animate-fade-in-scale {
+  animation: buh-fade-in-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slide In Left - for sidebar */
+@keyframes buh-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.buh-animate-slide-in-left {
+  animation: buh-slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Pulse Glow - for attention */
+@keyframes buh-pulse-glow {
+  0%, 100% {
+    box-shadow: var(--buh-shadow-md);
+  }
+  50% {
+    box-shadow: var(--buh-shadow-md), var(--buh-shadow-glow);
+  }
+}
+
+.buh-animate-pulse-glow {
+  animation: buh-pulse-glow 2s ease-in-out infinite;
+}
+
+/* Counter Animation - for metrics */
+@keyframes buh-count-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.buh-animate-count {
+  animation: buh-count-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shimmer - for loading states */
+@keyframes buh-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.buh-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--buh-surface) 25%,
+    var(--buh-surface-elevated) 50%,
+    var(--buh-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: buh-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ============================================
+   MICRO-INTERACTIONS
+   ============================================ */
+
+/* Hover lift effect */
+.buh-hover-lift {
+  transition: transform var(--buh-transition-fast), box-shadow var(--buh-transition-fast);
+}
+
+.buh-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--buh-shadow-md);
+}
+
+/* Hover scale effect */
+.buh-hover-scale {
+  transition: transform var(--buh-transition-fast);
+}
+
+.buh-hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Focus ring */
+.buh-focus-ring {
+  outline: none;
+  transition: box-shadow var(--buh-transition-fast);
+}
+
+.buh-focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--buh-background), 0 0 0 4px var(--buh-accent);
+}
+
+/* Active press effect */
+.buh-active-press:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   TYPOGRAPHY UTILITIES
+   ============================================ */
+.buh-text-gradient {
+  background: var(--buh-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.buh-text-display {
+  font-family: var(--buh-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.buh-text-heading {
+  font-family: var(--buh-font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.buh-text-body {
+  font-family: var(--buh-font-sans);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.buh-text-mono {
+  font-family: var(--buh-font-mono);
+  font-size: 0.9em;
+}
+
+/* ============================================
+   SIDEBAR STYLES
+   ============================================ */
+.buh-sidebar {
+  width: var(--buh-sidebar-width);
+  background: var(--buh-sidebar-background);
+  border-right: 1px solid var(--buh-sidebar-border);
+  transition: width var(--buh-transition-slow);
+}
+
+.buh-sidebar-collapsed {
+  width: var(--buh-sidebar-collapsed-width);
+}
+
+.buh-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--buh-space-3);
+  padding: var(--buh-space-3) var(--buh-space-4);
+  border-radius: var(--buh-radius-md);
+  color: var(--buh-foreground-muted);
+  font-weight: 500;
+  transition:
+    background-color var(--buh-transition-fast),
+    color var(--buh-transition-fast),
+    transform var(--buh-transition-fast);
+  cursor: pointer;
+}
+
+.buh-sidebar-item:hover {
+  background: var(--buh-primary-muted);
+  color: var(--buh-foreground);
+  transform: translateX(2px);
+}
+
+.buh-sidebar-item-active {
+  background: var(--buh-primary-muted);
+  color: var(--buh-primary);
+  font-weight: 600;
+}
+
+.buh-sidebar-item-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: var(--buh-gradient-primary);
+  border-radius: 0 var(--buh-radius-sm) var(--buh-radius-sm) 0;
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+.buh-header {
+  height: var(--buh-header-height);
+  background: var(--buh-header-background);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--buh-border);
+  position: sticky;
+  top: 0;
+  z-index: var(--buh-z-sticky);
+}
+
+/* ============================================
+   STAT/METRIC CARDS
+   ============================================ */
+.buh-stat-card {
+  padding: var(--buh-space-6);
+  background: var(--buh-surface);
+  border: 1px solid var(--buh-border);
+  border-radius: var(--buh-radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.buh-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--buh-gradient-primary);
+  opacity: 0;
+  transition: opacity var(--buh-transition-base);
+}
+
+.buh-stat-card:hover::before {
+  opacity: 1;
+}
+
+.buh-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--buh-foreground);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.buh-stat-label {
+  font-size: 0.875rem;
+  color: var(--buh-foreground-muted);
+  margin-top: var(--buh-space-2);
+}
+
+.buh-stat-change {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--buh-space-1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: var(--buh-space-1) var(--buh-space-2);
+  border-radius: var(--buh-radius-full);
+  margin-top: var(--buh-space-3);
+}
+
+.buh-stat-change-positive {
+  background: var(--buh-success-muted);
+  color: var(--buh-success);
+}
+
+.buh-stat-change-negative {
+  background: var(--buh-error-muted);
+  color: var(--buh-error);
+}
+
+/* ============================================
+   NOISE TEXTURE OVERLAY
+   ============================================ */
+.buh-noise {
+  position: relative;
+}
+
+.buh-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.dark .buh-noise::after,
+[data-theme="dark"] .buh-noise::after {
+  opacity: 0.05;
+}
+
+/* ============================================
+   SCROLLBAR STYLES
+   ============================================ */
+.buh-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--buh-border) transparent;
+}
+
+.buh-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.buh-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.buh-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--buh-border);
+  border-radius: var(--buh-radius-full);
+}
+
+.buh-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--buh-foreground-subtle);
+}
+
+/* ============================================
+   BADGE STYLES
+   ============================================ */
+.buh-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--buh-space-1) var(--buh-space-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--buh-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.buh-badge-success {
+  background: var(--buh-success-muted);
+  color: var(--buh-success);
+}
+
+.buh-badge-warning {
+  background: var(--buh-warning-muted);
+  color: var(--buh-warning);
+}
+
+.buh-badge-error {
+  background: var(--buh-error-muted);
+  color: var(--buh-error);
+}
+
+.buh-badge-info {
+  background: var(--buh-info-muted);
+  color: var(--buh-info);
+}
+
+.buh-badge-accent {
+  background: var(--buh-accent-glow);
+  color: var(--buh-accent);
+}

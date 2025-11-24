@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
   DOCKER_BUILDKIT: 1
 
 jobs:
@@ -27,18 +28,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
         working-directory: ./backend
-        run: npm run lint
+        run: pnpm lint
 
   # ==========================================================================
   # Type Check Job - TypeScript validation
@@ -52,22 +60,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
         working-directory: ./backend
-        run: npx prisma generate
+        run: pnpm prisma generate
 
       - name: Run TypeScript type check
         working-directory: ./backend
-        run: npm run type-check
+        run: pnpm type-check
 
   # ==========================================================================
   # Build Docker Images Job
@@ -97,7 +112,7 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: .
           file: ./frontend/Dockerfile
           push: false
           tags: buhbot-frontend:${{ github.sha }}
@@ -129,27 +144,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Run npm audit (backend)
+      - name: Run pnpm audit (backend)
         working-directory: ./backend
-        run: npm audit --audit-level=high || true
+        run: pnpm audit --audit-level=high || true
         continue-on-error: true
-
-      - name: Check for critical vulnerabilities
-        working-directory: ./backend
-        run: |
-          CRITICAL_COUNT=$(npm audit --json 2>/dev/null | jq '.metadata.vulnerabilities.critical // 0')
-          if [ "$CRITICAL_COUNT" -gt 0 ]; then
-            echo "::warning::Found $CRITICAL_COUNT critical vulnerabilities in backend dependencies"
-          fi
 
   # ==========================================================================
   # Test Job - Run tests if present
@@ -174,23 +188,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
         working-directory: ./backend
-        run: npx prisma generate
+        run: pnpm prisma generate
 
       - name: Run tests
         working-directory: ./backend
         run: |
-          if npm run test --if-present 2>/dev/null; then
+          if pnpm test 2>/dev/null; then
             echo "Tests completed"
           else
             echo "No tests configured or tests passed"

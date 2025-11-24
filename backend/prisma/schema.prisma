@@ -5,7 +5,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../node_modules/.prisma/client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -50,6 +50,30 @@ enum TemplateCategory {
   closing
 }
 
+// SLA Monitoring Enums (T006)
+// Classification result from AI/keyword-based message analysis
+enum MessageClassification {
+  REQUEST       // Client request requiring response (triggers SLA timer)
+  SPAM          // Spam/advertisement (ignored)
+  GRATITUDE     // Thank you messages (no response needed)
+  CLARIFICATION // Follow-up to existing request
+}
+
+// Alert delivery status for Telegram notifications
+enum AlertDeliveryStatus {
+  pending   // Not yet sent
+  sent      // Sent to Telegram API
+  delivered // Confirmed delivery
+  failed    // Failed to deliver
+}
+
+// Resolution action that closed the alert
+enum AlertAction {
+  mark_resolved        // Manager marked as resolved manually
+  accountant_responded // Accountant replied to client
+  auto_expired         // Auto-closed after max escalations
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -88,14 +112,22 @@ model Chat {
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  // SLA Configuration per chat (T007)
+  slaThresholdMinutes Int      @default(60) @map("sla_threshold_minutes")  // SLA breach threshold
+  monitoringEnabled   Boolean  @default(true) @map("monitoring_enabled")   // Enable/disable monitoring
+  is24x7Mode          Boolean  @default(false) @map("is_24x7_mode")        // Ignore working hours
+  managerTelegramIds  String[] @default([]) @map("manager_telegram_ids")   // Override global managers
+
   // Relations
   assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id])
   clientRequests     ClientRequest[]
   feedbackResponses  FeedbackResponse[]
   workingSchedules   WorkingSchedule[]
+  holidays           ChatHoliday[]
 
   @@index([assignedAccountantId])
   @@index([slaEnabled], map: "idx_chats_sla_enabled")
+  @@index([monitoringEnabled])
   @@map("chats")
 }
 
@@ -111,9 +143,23 @@ model ClientRequest {
   responseAt          DateTime?     @map("response_at") @db.Timestamptz(6)
   responseTimeMinutes Int?          @map("response_time_minutes")
   status              RequestStatus @default(pending)
-  isSpam              Boolean       @default(false) @map("is_spam")
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // AI Classification (T008) - replaces isSpam field
+  classification      MessageClassification @default(REQUEST)
+  classificationScore Float?                @map("classification_score")  // 0.0-1.0 confidence
+  classificationModel String?               @map("classification_model")  // 'openrouter', 'keyword-fallback'
+
+  // SLA Timer details (T008)
+  slaTimerStartedAt DateTime? @map("sla_timer_started_at") @db.Timestamptz(6)  // When timer started
+  slaTimerPausedAt  DateTime? @map("sla_timer_paused_at") @db.Timestamptz(6)   // When paused (off-hours)
+  slaWorkingMinutes Int?      @map("sla_working_minutes")                      // Calculated working minutes
+  slaBreached       Boolean   @default(false) @map("sla_breached")             // SLA violation flag
+
+  // Response tracking (T008)
+  respondedBy       String? @map("responded_by") @db.Uuid        // Who responded
+  responseMessageId BigInt? @map("response_message_id") @db.BigInt // Telegram message ID of response
 
   // Relations
   chat              Chat               @relation(fields: [chatId], references: [id])
@@ -125,7 +171,9 @@ model ClientRequest {
   @@index([assignedTo])
   @@index([status])
   @@index([receivedAt])
-  @@index([isSpam], map: "idx_client_requests_is_spam")
+  @@index([classification])
+  @@index([slaBreached])
+  @@index([slaTimerStartedAt])
   @@map("client_requests")
 }
 
@@ -140,6 +188,18 @@ model SlaAlert {
   acknowledgedBy  String?   @map("acknowledged_by") @db.Uuid
   resolutionNotes String?   @map("resolution_notes")
 
+  // Alert delivery (T009)
+  telegramMessageId BigInt?             @map("telegram_message_id") @db.BigInt // Sent message ID
+  deliveryStatus    AlertDeliveryStatus @default(pending) @map("delivery_status")
+  deliveredAt       DateTime?           @map("delivered_at") @db.Timestamptz(6)
+
+  // Escalation (T009)
+  escalationLevel  Int       @default(1) @map("escalation_level")       // 1-5 levels
+  nextEscalationAt DateTime? @map("next_escalation_at") @db.Timestamptz(6) // When to escalate next
+
+  // Resolution (T009)
+  resolvedAction AlertAction? @map("resolved_action") // How alert was resolved
+
   // Relations
   request          ClientRequest @relation(fields: [requestId], references: [id])
   acknowledgedUser User?         @relation("AcknowledgedBy", fields: [acknowledgedBy], references: [id])
@@ -147,6 +207,8 @@ model SlaAlert {
   @@index([requestId])
   @@index([alertType])
   @@index([alertSentAt])
+  @@index([deliveryStatus])
+  @@index([nextEscalationAt])
   @@map("sla_alerts")
 }
 
@@ -178,6 +240,7 @@ model WorkingSchedule {
   startTime DateTime @map("start_time") @db.Time(6)
   endTime   DateTime @map("end_time") @db.Time(6)
   isActive  Boolean  @default(true) @map("is_active")
+  timezone  String   @default("Europe/Moscow") // IANA timezone (T010)
 
   // Relations
   chat Chat @relation(fields: [chatId], references: [id])
@@ -229,4 +292,88 @@ model FaqItem {
   @@index([usageCount(sort: Desc)])
   @@index([createdBy])
   @@map("faq_items")
+}
+
+// ============================================================================
+// SLA MONITORING MODELS (T011-T014)
+// ============================================================================
+
+/// Global system settings singleton (T011)
+/// Single row with id="default" for system-wide configuration
+model GlobalSettings {
+  id                    String   @id @default("default")
+
+  // Working Hours Defaults
+  defaultTimezone     String @default("Europe/Moscow") @map("default_timezone")
+  defaultWorkingDays  Int[]  @default([1, 2, 3, 4, 5]) @map("default_working_days") // 1=Mon..5=Fri
+  defaultStartTime    String @default("09:00") @map("default_start_time")           // HH:MM format
+  defaultEndTime      String @default("18:00") @map("default_end_time")             // HH:MM format
+
+  // SLA Defaults
+  defaultSlaThreshold   Int @default(60) @map("default_sla_threshold")      // Minutes
+  maxEscalations        Int @default(5) @map("max_escalations")             // Max escalation levels
+  escalationIntervalMin Int @default(30) @map("escalation_interval_min")   // Minutes between escalations
+
+  // Manager Alerts
+  globalManagerIds String[] @default([]) @map("global_manager_ids") // Telegram IDs
+
+  // AI Classification
+  aiConfidenceThreshold Float @default(0.7) @map("ai_confidence_threshold") // 0.0-1.0
+  messagePreviewLength  Int   @default(500) @map("message_preview_length")  // Chars in alert preview
+
+  // Data Retention
+  dataRetentionYears Int @default(3) @map("data_retention_years")
+
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("global_settings")
+}
+
+/// Global calendar of federal holidays (T012)
+/// Russian federal holidays for SLA calculation
+model GlobalHoliday {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  date      DateTime @unique @db.Date // Holiday date
+  name      String // Holiday name (e.g., "Новый год")
+  year      Int // Year for easier filtering
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([year])
+  @@index([date])
+  @@map("global_holidays")
+}
+
+/// Chat-specific holidays overriding global (T013)
+/// Custom non-working days per chat
+model ChatHoliday {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId      BigInt   @map("chat_id") @db.BigInt
+  date        DateTime @db.Date
+  description String? // Optional description
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, date], name: "unique_chat_holiday")
+  @@index([chatId])
+  @@index([date])
+  @@map("chat_holidays")
+}
+
+/// AI classification result cache (T014)
+/// Caches expensive AI classification calls by message hash
+model ClassificationCache {
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageHash    String                @unique @map("message_hash") // SHA256 of normalized text
+  classification MessageClassification
+  confidence     Float // 0.0-1.0
+  model          String // 'openrouter', 'keyword-fallback'
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime              @map("expires_at") @db.Timestamptz(6) // Cache TTL
+
+  @@index([messageHash])
+  @@index([expiresAt])
+  @@map("classification_cache")
 }

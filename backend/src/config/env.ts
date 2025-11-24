@@ -59,6 +59,11 @@ const envSchema = z.object({
     .string()
     .min(1)
     .describe('Telegram Bot Token from @BotFather'),
+  TELEGRAM_WEBHOOK_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe('Base URL for Telegram webhook (e.g., https://example.com)'),
   TELEGRAM_WEBHOOK_SECRET: z
     .string()
     .min(32)

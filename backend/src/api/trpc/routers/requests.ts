@@ -5,7 +5,7 @@
  * - list: List client requests with filtering and pagination
  * - getById: Get single request with related alerts
  * - update: Update request status or assignment
- * - markAsSpam: Mark request as spam
+ * - updateClassification: Update request classification (REQUEST, SPAM, GRATITUDE, CLARIFICATION)
  *
  * @module api/trpc/routers/requests
  */
@@ -25,6 +25,11 @@ const RequestStatusSchema = z.enum(['pending', 'in_progress', 'answered', 'escal
 const AlertTypeSchema = z.enum(['warning', 'breach']);
 
 /**
+ * Message classification schema (matches Prisma MessageClassification enum)
+ */
+const MessageClassificationSchema = z.enum(['REQUEST', 'SPAM', 'GRATITUDE', 'CLARIFICATION']);
+
+/**
  * Requests router for client request management
  */
 export const requestsRouter = router({
@@ -34,7 +39,7 @@ export const requestsRouter = router({
    * @param chatId - Filter by chat ID
    * @param assignedTo - Filter by assigned accountant UUID
    * @param status - Filter by request status
-   * @param isSpam - Filter spam/non-spam requests
+   * @param classification - Filter by message classification
    * @param startDate - Filter requests from date (inclusive)
    * @param endDate - Filter requests to date (inclusive)
    * @param limit - Page size (default: 50, max: 100)
@@ -50,7 +55,7 @@ export const requestsRouter = router({
         chatId: z.number().optional(),
         assignedTo: z.string().uuid().optional(),
         status: RequestStatusSchema.optional(),
-        isSpam: z.boolean().optional(),
+        classification: MessageClassificationSchema.optional(),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         limit: z.number().int().min(1).max(100).default(50),
@@ -73,7 +78,7 @@ export const requestsRouter = router({
             responseAt: z.date().nullable(),
             responseTimeMinutes: z.number().int().nullable(),
             status: RequestStatusSchema,
-            isSpam: z.boolean(),
+            classification: MessageClassificationSchema,
             createdAt: z.date(),
           })
         ),
@@ -92,8 +97,8 @@ export const requestsRouter = router({
       if (input.status !== undefined) {
         where.status = input.status;
       }
-      if (input.isSpam !== undefined) {
-        where.isSpam = input.isSpam;
+      if (input.classification !== undefined) {
+        where.classification = input.classification;
       }
       if (input.startDate || input.endDate) {
         where.receivedAt = {};
@@ -128,7 +133,7 @@ export const requestsRouter = router({
             responseAt: true,
             responseTimeMinutes: true,
             status: true,
-            isSpam: true,
+            classification: true,
             createdAt: true,
           },
           orderBy,
@@ -139,7 +144,7 @@ export const requestsRouter = router({
       ]);
 
       return {
-        requests: requests.map((req: { id: string; chatId: bigint; messageId: bigint; messageText: string; clientUsername: string | null; receivedAt: Date; assignedTo: string | null; responseAt: Date | null; responseTimeMinutes: number | null; status: 'pending' | 'in_progress' | 'answered' | 'escalated'; isSpam: boolean; createdAt: Date }) => ({
+        requests: requests.map((req) => ({
           ...req,
           chatId: Number(req.chatId),
           messageId: Number(req.messageId),
@@ -175,7 +180,7 @@ export const requestsRouter = router({
           responseAt: z.date().nullable(),
           responseTimeMinutes: z.number().int().nullable(),
           status: RequestStatusSchema,
-          isSpam: z.boolean(),
+          classification: MessageClassificationSchema,
           createdAt: z.date(),
           updatedAt: z.date(),
         }),
@@ -233,7 +238,7 @@ export const requestsRouter = router({
           responseAt: request.responseAt,
           responseTimeMinutes: request.responseTimeMinutes,
           status: request.status,
-          isSpam: request.isSpam,
+          classification: request.classification,
           createdAt: request.createdAt,
           updatedAt: request.updatedAt,
         },
@@ -311,19 +316,19 @@ export const requestsRouter = router({
     }),
 
   /**
-   * Mark request as spam
+   * Update request classification
    *
    * @param id - Request UUID
-   * @param isSpam - Spam status (true = spam, false = not spam)
+   * @param classification - Message classification (REQUEST, SPAM, GRATITUDE, CLARIFICATION)
    * @returns Success indicator
    * @throws NOT_FOUND if request doesn't exist
    * @authorization Admins and managers only
    */
-  markAsSpam: managerProcedure
+  updateClassification: managerProcedure
     .input(
       z.object({
         id: z.string().uuid(),
-        isSpam: z.boolean(),
+        classification: z.enum(['REQUEST', 'SPAM', 'GRATITUDE', 'CLARIFICATION']),
       })
     )
     .output(
@@ -344,11 +349,11 @@ export const requestsRouter = router({
         });
       }
 
-      // Update spam status
+      // Update classification
       await ctx.prisma.clientRequest.update({
         where: { id: input.id },
         data: {
-          isSpam: input.isSpam,
+          classification: input.classification,
         },
       });
 

@@ -1,0 +1,505 @@
+'use client';
+
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Users,
+  Timer,
+  BarChart3,
+  Settings,
+  Bell,
+  Search,
+  Moon,
+  Sun,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  LogOut,
+  User,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// ============================================
+// TYPES
+// ============================================
+
+type NavItem = {
+  id: string;
+  label: string;
+  labelRu: string;
+  icon: React.ElementType;
+  href: string;
+  badge?: string | number;
+};
+
+type AdminLayoutProps = {
+  children: React.ReactNode;
+};
+
+// ============================================
+// NAVIGATION CONFIG
+// ============================================
+
+const navigationItems: NavItem[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    labelRu: 'Панель управления',
+    icon: LayoutDashboard,
+    href: '/dashboard',
+  },
+  {
+    id: 'requests',
+    label: 'Requests',
+    labelRu: 'Запросы',
+    icon: MessageSquare,
+    href: '/requests',
+    badge: 12,
+  },
+  {
+    id: 'clients',
+    label: 'Clients',
+    labelRu: 'Клиенты',
+    icon: Users,
+    href: '/clients',
+  },
+  {
+    id: 'sla',
+    label: 'SLA Monitor',
+    labelRu: 'SLA Мониторинг',
+    icon: Timer,
+    href: '/sla',
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    labelRu: 'Отчеты',
+    icon: BarChart3,
+    href: '/reports',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    labelRu: 'Настройки',
+    icon: Settings,
+    href: '/settings',
+  },
+];
+
+// ============================================
+// THEME CONTEXT
+// ============================================
+
+type Theme = 'light' | 'dark';
+
+const ThemeContext = React.createContext<{
+  theme: Theme;
+  toggleTheme: () => void;
+}>({
+  theme: 'light',
+  toggleTheme: () => {},
+});
+
+export function useTheme() {
+  return React.useContext(ThemeContext);
+}
+
+function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = React.useState<Theme>('light');
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    const stored = localStorage.getItem('buh-theme') as Theme | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = stored || (prefersDark ? 'dark' : 'light');
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+  }, []);
+
+  const toggleTheme = React.useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('buh-theme', next);
+      document.documentElement.classList.add('theme-transition');
+      document.documentElement.classList.toggle('dark', next === 'dark');
+      setTimeout(() => {
+        document.documentElement.classList.remove('theme-transition');
+      }, 300);
+      return next;
+    });
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// ============================================
+// SIDEBAR COMPONENT
+// ============================================
+
+function Sidebar({
+  collapsed,
+  onToggleCollapse,
+  mobileOpen,
+  onCloseMobile,
+}: {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+}) {
+  const pathname = usePathname();
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 flex h-screen flex-col bg-[var(--buh-sidebar-background)] border-r border-[var(--buh-sidebar-border)]',
+          'transition-all duration-300 ease-out',
+          collapsed ? 'w-[72px]' : 'w-[260px]',
+          // Mobile styles
+          'lg:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
+      >
+        {/* Logo Section */}
+        <div className="flex h-16 items-center justify-between px-4 border-b border-[var(--buh-border)]">
+          <Link
+            href="/dashboard"
+            className={cn(
+              'flex items-center gap-3 transition-opacity duration-200',
+              collapsed && 'lg:justify-center'
+            )}
+          >
+            {/* Logo Icon */}
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)] shadow-lg">
+              <span className="text-lg font-bold text-white">B</span>
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-50 blur-lg" />
+            </div>
+
+            {/* Logo Text */}
+            {!collapsed && (
+              <span className="text-xl font-bold tracking-tight text-[var(--buh-foreground)]">
+                Buh<span className="gradient-text">Bot</span>
+              </span>
+            )}
+          </Link>
+
+          {/* Mobile close button */}
+          <button
+            onClick={onCloseMobile}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 buh-scrollbar">
+          <ul className="space-y-1">
+            {navigationItems.map((item, index) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+              return (
+                <li
+                  key={item.id}
+                  className="buh-animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <Link
+                    href={item.href}
+                    onClick={onCloseMobile}
+                    className={cn(
+                      'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium',
+                      'transition-all duration-200',
+                      collapsed && 'lg:justify-center lg:px-0',
+                      isActive
+                        ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]'
+                        : 'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]'
+                    )}
+                    title={collapsed ? item.labelRu : undefined}
+                  >
+                    {/* Active indicator */}
+                    {isActive && (
+                      <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[var(--buh-accent)] to-[var(--buh-primary)]" />
+                    )}
+
+                    <Icon className={cn('h-5 w-5 shrink-0', isActive && 'text-[var(--buh-primary)]')} />
+
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.labelRu}</span>
+
+                        {/* Badge */}
+                        {item.badge && (
+                          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--buh-accent)] px-1.5 text-xs font-semibold text-white">
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {/* Collapsed badge */}
+                    {collapsed && item.badge && (
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--buh-accent)] px-1 text-[10px] font-semibold text-white">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Collapse Toggle (Desktop only) */}
+        <div className="hidden border-t border-[var(--buh-border)] p-3 lg:block">
+          <button
+            onClick={onToggleCollapse}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium',
+              'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]',
+              'transition-all duration-200',
+              collapsed && 'justify-center px-0'
+            )}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-5 w-5" />
+            ) : (
+              <>
+                <ChevronLeft className="h-5 w-5" />
+                <span>Свернуть</span>
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+// ============================================
+// HEADER COMPONENT
+// ============================================
+
+function Header({
+  sidebarCollapsed,
+  onToggleMobileSidebar,
+}: {
+  sidebarCollapsed: boolean;
+  onToggleMobileSidebar: () => void;
+}) {
+  const { theme, toggleTheme } = useTheme();
+  const [searchOpen, setSearchOpen] = React.useState(false);
+
+  return (
+    <header
+      className={cn(
+        'sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-[var(--buh-border)]',
+        'bg-[var(--buh-header-background)] backdrop-blur-xl',
+        'px-4 lg:px-6',
+        'transition-[margin] duration-300',
+        sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+      )}
+    >
+      {/* Mobile menu button */}
+      <button
+        onClick={onToggleMobileSidebar}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] lg:hidden"
+        aria-label="Open sidebar"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Search */}
+      <div className="flex-1">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--buh-foreground-subtle)]" />
+          <input
+            type="text"
+            placeholder="Поиск..."
+            className={cn(
+              'h-9 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] pl-9 pr-4 text-sm',
+              'placeholder:text-[var(--buh-foreground-subtle)]',
+              'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]',
+              'transition-all duration-200'
+            )}
+          />
+          <kbd className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-[var(--buh-border)] bg-[var(--buh-surface-elevated)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--buh-foreground-subtle)] sm:inline-block">
+            /
+          </kbd>
+        </div>
+      </div>
+
+      {/* Right actions */}
+      <div className="flex items-center gap-2">
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className={cn(
+            'flex h-9 w-9 items-center justify-center rounded-lg',
+            'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]',
+            'transition-all duration-200'
+          )}
+          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        </button>
+
+        {/* Notifications */}
+        <button
+          className={cn(
+            'relative flex h-9 w-9 items-center justify-center rounded-lg',
+            'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]',
+            'transition-all duration-200'
+          )}
+          aria-label="Notifications"
+        >
+          <Bell className="h-5 w-5" />
+          {/* Notification dot */}
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--buh-accent)] ring-2 ring-[var(--buh-header-background)]" />
+        </button>
+
+        {/* User menu */}
+        <div className="relative ml-2">
+          <button
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-2 py-1.5',
+              'hover:bg-[var(--buh-surface-elevated)]',
+              'transition-all duration-200'
+            )}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-accent-secondary)]">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            <div className="hidden text-left md:block">
+              <p className="text-sm font-medium text-[var(--buh-foreground)]">Администратор</p>
+              <p className="text-xs text-[var(--buh-foreground-subtle)]">admin@buhbot.ru</p>
+            </div>
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ============================================
+// MAIN LAYOUT COMPONENT
+// ============================================
+
+function AdminLayoutContent({ children }: AdminLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+
+  // Handle escape key to close mobile sidebar
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  // Prevent body scroll when mobile sidebar is open
+  React.useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileSidebarOpen]);
+
+  return (
+    <div className="min-h-screen bg-[var(--buh-background)]">
+      {/* Aurora background effect */}
+      <div className="buh-aurora fixed inset-0 pointer-events-none" aria-hidden="true" />
+
+      {/* Sidebar */}
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
+
+      {/* Main content area */}
+      <div
+        className={cn(
+          'flex min-h-screen flex-col',
+          'transition-[margin] duration-300',
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+        )}
+      >
+        {/* Header */}
+        <Header
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
+        />
+
+        {/* Main content */}
+        <main className="flex-1 p-4 lg:p-6">
+          <div className="mx-auto max-w-7xl buh-stagger">
+            {children}
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-4 lg:px-6">
+          <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-2 sm:flex-row">
+            <p className="text-sm text-[var(--buh-foreground-subtle)]">
+              &copy; {new Date().getFullYear()} BuhBot. Все права защищены.
+            </p>
+            <p className="text-xs text-[var(--buh-foreground-subtle)]">
+              Версия 0.1.16
+            </p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// EXPORTED LAYOUT WITH THEME PROVIDER
+// ============================================
+
+export function AdminLayout({ children }: AdminLayoutProps) {
+  return (
+    <ThemeProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </ThemeProvider>
+  );
+}
+
+export default AdminLayout;

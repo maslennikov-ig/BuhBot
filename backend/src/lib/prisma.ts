@@ -18,7 +18,7 @@
  * @module lib/prisma
  */
 
-import { PrismaClient } from '../../node_modules/.prisma/client/client.js';
+import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import logger from '../utils/logger.js';

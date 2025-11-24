@@ -1,23 +1,55 @@
 # ================================
-# Build Stage
+# Backend Types Stage - Build backend to generate Prisma client types
+# ================================
+FROM node:20-alpine AS backend-types
+
+# Install pnpm and build dependencies
+RUN npm install -g pnpm@9 && \
+    apk add --no-cache libc6-compat openssl
+
+# Set working directory
+WORKDIR /backend
+
+# Copy backend package files
+COPY backend/package.json backend/pnpm-lock.yaml ./
+
+# Install backend dependencies (only for Prisma generation)
+RUN pnpm install --frozen-lockfile
+
+# Copy Prisma schema
+COPY backend/prisma ./prisma
+
+# Generate Prisma client (creates types in src/generated/prisma)
+RUN pnpm prisma generate
+
+# Copy backend source code (needed for tRPC type inference)
+COPY backend/src ./src
+
+# ================================
+# Build Stage - Build Next.js application
 # ================================
 FROM node:20-alpine AS build
 
-# Install build dependencies (needed for some npm packages)
-RUN apk add --no-cache libc6-compat
+# Install pnpm and build dependencies
+RUN npm install -g pnpm@9 && \
+    apk add --no-cache libc6-compat
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files for dependency installation
-COPY package.json package-lock.json ./
+# Copy backend with generated Prisma client and all node_modules for tRPC type imports
+# TypeScript needs to resolve the full module graph including @supabase/supabase-js, @prisma/adapter-pg, etc.
+COPY --from=backend-types /backend/src ../backend/src
+COPY --from=backend-types /backend/node_modules ../backend/node_modules
+
+# Copy frontend package files for dependency installation
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
 
 # Install dependencies (including devDependencies for build)
-# Use npm ci for reproducible builds
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
-# Copy source code and configuration files
-COPY . .
+# Copy frontend source code and configuration files
+COPY frontend/. .
 
 # Build arguments for environment variables (required at build time)
 ARG NEXT_PUBLIC_SUPABASE_URL
@@ -30,7 +62,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js application with standalone output
-RUN npm run build
+RUN pnpm build
 
 # ================================
 # Runtime Stage

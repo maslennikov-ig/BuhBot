@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-11-24
+
+### Fixed
+- **prisma**: switch to prisma-client-js for runtime compatibility (dbf7001)
+- **build**: include Prisma generated files in TypeScript compilation (2e3ecc3)
+- **docker**: regenerate Prisma client in runtime stage (24e607b)
+- **docker**: add --legacy-peer-deps for React 19 compatibility (efacfe7)
+- **docker**: change frontend build context to repo root (270d792)
+- **docker**: switch from pnpm to npm in Dockerfiles (819d938)
+
 ## [0.2.0] - 2025-11-24
 
 ## [0.1.22] - 2025-11-24

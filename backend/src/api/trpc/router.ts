@@ -26,6 +26,8 @@ import { templatesRouter } from './routers/templates.js';
 import { faqRouter } from './routers/faq.js';
 import { settingsRouter } from './routers/settings.js';
 import { slaRouter } from './routers/sla.js';
+import { feedbackRouter } from './routers/feedback.js';
+import { surveyRouter } from './routers/survey.js';
 
 /**
  * App router combining all sub-routers
@@ -186,6 +188,34 @@ export const appRouter = router({
    * - getActiveTimers: Get list of active SLA timers
    */
   sla: slaRouter,
+
+  /**
+   * Feedback router - Client satisfaction analytics
+   *
+   * Procedures:
+   * - getAggregates: Get aggregate feedback statistics (all roles)
+   * - getAll: Get full feedback details (manager only)
+   * - getById: Get single feedback entry (manager only)
+   * - submitRating: Record client rating from Telegram callback
+   * - addComment: Add comment to existing feedback
+   * - exportCsv: Export feedback data as CSV (manager only)
+   */
+  feedback: feedbackRouter,
+
+  /**
+   * Survey router - Survey campaign management
+   *
+   * Procedures (manager only):
+   * - list: List all survey campaigns
+   * - getById: Get detailed survey campaign info
+   * - create: Schedule a new survey campaign
+   * - close: Manually close an active survey
+   * - sendNow: Immediately start sending a scheduled survey
+   * - getDeliveries: List delivery status for a survey
+   * - getSettings: Get survey-related global settings
+   * - updateSettings: Update survey settings (admin only)
+   */
+  survey: surveyRouter,
 });
 
 /**

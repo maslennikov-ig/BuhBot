@@ -66,11 +66,16 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T010 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey queue configuration in backend/src/queues/survey.queue.ts
-- [ ] T011 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey keyboard builder in backend/src/bot/keyboards/survey.keyboard.ts
-- [ ] T012 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create analytics service for NPS calculation in backend/src/services/feedback/analytics.service.ts
-- [ ] T013 [EXECUTOR: MAIN] [SEQUENTIAL] Register survey queue in backend/src/queues/setup.ts (add to QUEUE_NAMES, create instance)
-- [ ] T014 [EXECUTOR: MAIN] [SEQUENTIAL] Add feedback and survey routers to backend/src/api/trpc/router.ts
+- [X] T010 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey queue configuration in backend/src/queues/survey.queue.ts
+  → Artifacts: [survey.queue.ts](backend/src/queues/survey.queue.ts)
+- [X] T011 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey keyboard builder in backend/src/bot/keyboards/survey.keyboard.ts
+  → Artifacts: [survey.keyboard.ts](backend/src/bot/keyboards/survey.keyboard.ts)
+- [X] T012 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create analytics service for NPS calculation in backend/src/services/feedback/analytics.service.ts
+  → Artifacts: [analytics.service.ts](backend/src/services/feedback/analytics.service.ts)
+- [X] T013 [EXECUTOR: MAIN] [SEQUENTIAL] Register survey queue in backend/src/queues/setup.ts (add to QUEUE_NAMES, create instance)
+  → Artifacts: [setup.ts](backend/src/queues/setup.ts)
+- [X] T014 [EXECUTOR: MAIN] [SEQUENTIAL] Add feedback and survey routers to backend/src/api/trpc/router.ts
+  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts), [survey.ts](backend/src/api/trpc/routers/survey.ts), [router.ts](backend/src/api/trpc/router.ts)
 
 **Checkpoint**: Foundation ready - user story implementation can begin
 

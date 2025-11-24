@@ -85,6 +85,7 @@ export const QUEUE_NAMES = {
   SLA_TIMERS: 'sla-timers',
   ALERTS: 'alerts',
   DATA_RETENTION: 'data-retention',
+  SURVEYS: 'surveys',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];

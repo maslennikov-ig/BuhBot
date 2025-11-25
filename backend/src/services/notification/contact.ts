@@ -20,7 +20,7 @@ export class ContactNotificationService {
 
     // 2. Combine DB IDs with env var fallback
     const dbIds = settings?.leadNotificationIds || [];
-    const envId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    const envId = process.env['TELEGRAM_ADMIN_CHAT_ID'];
     
     // Create unique set of IDs
     const chatIds = new Set<string>(dbIds);

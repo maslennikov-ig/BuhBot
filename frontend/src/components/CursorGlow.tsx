@@ -52,6 +52,8 @@ export function CursorGlow() {
     <motion.div
       className="pointer-events-none fixed z-[9999] w-64 h-64 rounded-full"
       style={{
+        left: 0,
+        top: 0,
         x: springX,
         y: springY,
         background: 'radial-gradient(circle, var(--buh-accent-glow) 0%, transparent 70%)',

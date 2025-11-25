@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2025-11-25
+
+### Fixed
+- **frontend**: correct cursor glow positioning using useMotionValue (962e65c)
+
 ## [0.2.4] - 2025-11-25
 
 ### Fixed

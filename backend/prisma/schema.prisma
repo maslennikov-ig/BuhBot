@@ -380,7 +380,7 @@ model FaqItem {
 /// Global system settings singleton (T011)
 /// Single row with id="default" for system-wide configuration
 model GlobalSettings {
-  id String @id @default("default")
+  id String @id
 
   // Working Hours Defaults
   defaultTimezone    String @default("Europe/Moscow") @map("default_timezone")

@@ -33,7 +33,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 bg-[var(--buh-background-subtle)]">
+    <section id="how-it-works" className="py-16 md:py-24 bg-[var(--buh-background-subtle)]">
       <div className="container px-4 md:px-6">
         <div className="text-center mb-20">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 buh-shimmer-text inline-block">

@@ -63,7 +63,7 @@ const itemVariants = {
 
 export function Features() {
   return (
-    <section id="features" className="py-24 relative overflow-hidden">
+    <section id="features" className="py-16 md:py-24 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--buh-border)] to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[var(--buh-primary-muted)] rounded-full blur-[120px] opacity-20 pointer-events-none" />

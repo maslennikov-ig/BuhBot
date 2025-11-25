@@ -51,7 +51,7 @@ export function ContactForm() {
 
   if (isSubmitted) {
     return (
-      <section id="contact" className="py-24 relative overflow-hidden">
+      <section id="contact" className="py-16 md:py-24 relative overflow-hidden">
         <div className="container px-4 md:px-6 max-w-xl">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -80,7 +80,7 @@ export function ContactForm() {
   }
 
   return (
-    <section id="contact" className="py-24 relative overflow-hidden">
+    <section id="contact" className="py-16 md:py-24 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-[var(--buh-accent-secondary-glow)] rounded-full blur-[120px] opacity-10 pointer-events-none" />
 
       <div className="container px-4 md:px-6 relative z-10">

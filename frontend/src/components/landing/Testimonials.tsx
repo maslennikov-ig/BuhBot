@@ -27,7 +27,7 @@ const testimonials = [
 
 export function Testimonials() {
   return (
-    <section className="py-24 bg-[var(--buh-surface-elevated)] border-y border-[var(--buh-border)]">
+    <section className="py-16 md:py-24 bg-[var(--buh-surface-elevated)] border-y border-[var(--buh-border)]">
       <div className="container px-4 md:px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 buh-shimmer-text inline-block">

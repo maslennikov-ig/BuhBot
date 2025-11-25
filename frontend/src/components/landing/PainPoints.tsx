@@ -46,7 +46,7 @@ export function PainPoints() {
       id="pain-points"
       ref={containerRef}
       style={{ opacity }}
-      className="py-24 relative bg-[var(--buh-background-subtle)]"
+      className="py-16 md:py-24 relative bg-[var(--buh-background-subtle)]"
     >
       {/* Add floating background element */}
       <motion.div

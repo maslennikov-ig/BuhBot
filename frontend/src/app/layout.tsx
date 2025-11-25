@@ -1,8 +1,27 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans, Spectral, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TRPCProvider } from "@/lib/trpc-provider";
 import { Toaster } from "sonner";
 import { ScrollProgress } from "@/components/ScrollProgress";
+
+const fontSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--buh-font-sans",
+  weight: ["400", "500", "600", "700"],
+});
+
+const fontSerif = Spectral({
+  subsets: ["latin", "cyrillic"],
+  variable: "--buh-font-serif",
+  weight: ["400", "500", "600"],
+});
+
+const fontMono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic"],
+  variable: "--buh-font-mono",
+  weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
   title: "BuhBot Admin",
@@ -16,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className={`antialiased ${fontSans.variable} ${fontSerif.variable} ${fontMono.variable}`}>
         <ScrollProgress />
         <TRPCProvider>{children}</TRPCProvider>
         <Toaster richColors />

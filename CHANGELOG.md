@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2025-11-25
+
+### Fixed
+- **frontend**: add layoutRoot for Yandex Browser compatibility (df92fcf)
+- **frontend**: add explicit left/top positioning for cursor glow (24effc1)
+
 ## [0.2.5] - 2025-11-25
 
 ### Fixed

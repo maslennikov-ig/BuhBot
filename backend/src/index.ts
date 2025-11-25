@@ -1,10 +1,12 @@
 import express from 'express';
+import * as trpcExpress from '@trpc/server/adapters/express';
 import logger from './utils/logger.js';
 import env, { isProduction, isDevelopment } from './config/env.js';
 import { healthHandler } from './api/health.js';
 import { metricsHandler } from './api/metrics.js';
 import { disconnectPrisma } from './lib/prisma.js';
 import { disconnectRedis } from './lib/redis.js';
+import { appRouter, createContext } from './api/trpc/index.js';
 
 /**
  * BuhBot Backend Server
@@ -44,6 +46,15 @@ app.get('/ready', (_req, res) => {
   });
 });
 
+// tRPC API endpoint
+app.use(
+  '/api/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
+
 // API root endpoint
 app.get('/', (_req, res) => {
   res.json({
@@ -54,7 +65,8 @@ app.get('/', (_req, res) => {
       health: '/health',
       metrics: '/metrics',
       ready: '/ready',
-      api: '/api'
+      api: '/api',
+      trpc: '/api/trpc'
     }
   });
 });

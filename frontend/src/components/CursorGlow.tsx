@@ -50,6 +50,7 @@ export function CursorGlow() {
 
   return (
     <motion.div
+      layoutRoot
       className="pointer-events-none fixed z-[9999] w-64 h-64 rounded-full"
       style={{
         left: 0,

@@ -8,10 +8,10 @@
  */
 
 // Export app router and type for frontend
-export { appRouter, type AppRouter } from './router';
+export { appRouter, type AppRouter } from './router.js';
 
 // Export context creator for Express middleware
-export { createContext, type Context } from './context';
+export { createContext, type Context } from './context.js';
 
 // Export procedure factories for custom routers (if needed)
-export { router, publicProcedure, authedProcedure, managerProcedure, adminProcedure } from './trpc';
+export { router, publicProcedure, authedProcedure, managerProcedure, adminProcedure } from './trpc.js';

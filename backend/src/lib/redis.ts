@@ -43,7 +43,7 @@ const redisOptions: RedisOptions = {
   },
 
   // Connection pool settings
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: null,
   enableReadyCheck: true,
 
   // Timeouts
@@ -54,7 +54,7 @@ const redisOptions: RedisOptions = {
 /**
  * Singleton Redis client
  */
-export const redis = new Redis(redisOptions);
+export const redis = new (Redis as any)(redisOptions);
 
 /**
  * Connection event handlers
@@ -119,7 +119,7 @@ export async function testRedisConnection(timeoutMs: number = 5000): Promise<boo
     });
 
     // Race ping against timeout
-    const pingPromise = redis.ping().then(result => result === 'PONG');
+    const pingPromise = redis.ping().then((result: string) => result === 'PONG');
 
     const result = await Promise.race([pingPromise, timeoutPromise]);
     return result;

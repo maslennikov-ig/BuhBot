@@ -21,7 +21,7 @@
 
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { router, authedProcedure, adminProcedure } from '../trpc';
+import { router, authedProcedure, adminProcedure } from '../trpc.js';
 
 // ============================================================================
 // INPUT SCHEMAS

@@ -9,7 +9,7 @@
  * @module api/trpc/routers/analytics
  */
 
-import { router, authedProcedure, managerProcedure } from '../trpc';
+import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 
 /**

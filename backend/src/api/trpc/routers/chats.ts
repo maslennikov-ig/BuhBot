@@ -9,7 +9,7 @@
  * @module api/trpc/routers/chats
  */
 
-import { router, authedProcedure, managerProcedure } from '../trpc';
+import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 

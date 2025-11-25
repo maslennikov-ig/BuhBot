@@ -10,7 +10,7 @@
  * @module api/trpc/routers/templates
  */
 
-import { router, authedProcedure, managerProcedure, adminProcedure } from '../trpc';
+import { router, authedProcedure, managerProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 

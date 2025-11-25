@@ -8,7 +8,7 @@
  * @module api/trpc/routers/auth
  */
 
-import { router, authedProcedure } from '../trpc';
+import { router, authedProcedure } from '../trpc.js';
 import { z } from 'zod';
 
 /**

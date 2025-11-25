@@ -52,7 +52,7 @@ export function createTRPCClient() {
   return trpc.createClient({
     links: [
       httpBatchLink({
-        url: `${getBaseUrl()}/trpc`,
+        url: `${getBaseUrl()}/api/trpc`,
         headers() {
           // Get JWT token from localStorage (client-side only)
           if (typeof window !== 'undefined') {

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2025-11-25
+
+### Fixed
+- **frontend**: correct tRPC API path from /trpc to /api/trpc (b819856)
+- **backend**: use raw SQL for contact insert as workaround for Prisma 7 UUID bug (1797ec7)
+- **backend**: remove @default from GlobalSettings.id to fix UUID parsing (c4afc01)
+
 ## [0.2.3] - 2025-11-25
 
 ### Added

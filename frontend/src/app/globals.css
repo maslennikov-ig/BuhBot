@@ -341,6 +341,11 @@ button:disabled {
   white-space: nowrap;
 }
 
+/* Perspective for 3D transforms */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
 /* ============================================
    DARK MODE TOGGLE TRANSITION
    ============================================ */
@@ -361,6 +366,41 @@ html.theme-transition *::after {
     background-color 0.3s ease,
     border-color 0.3s ease,
     color 0.3s ease !important;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes shimmer-text {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.buh-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--buh-foreground) 25%,
+    var(--buh-accent) 50%,
+    var(--buh-foreground) 75%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-text 3s linear infinite;
+}
+
+.will-animate {
+  will-change: transform, opacity;
+}
+
+.animation-complete {
+  will-change: auto;
 }
 
 /* ============================================

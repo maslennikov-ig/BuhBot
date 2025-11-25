@@ -25,10 +25,10 @@
 
 **Purpose**: Prepare for implementation by analyzing requirements, creating necessary agents, and assigning executors.
 
-- [ ] P001 Analyze all tasks and identify required agent types and capabilities
-- [ ] P002 Create missing agents using meta-agent-v3 (launch N calls in single message, 1 per agent), then ask user restart
-- [ ] P003 Assign executors to all tasks: MAIN (trivial only), existing agents (100% match), or specific agent names
-- [ ] P004 Resolve research tasks: simple (solve with tools now), complex (create prompts in research/)
+- [x] P001 Analyze all tasks and identify required agent types and capabilities
+- [x] P002 Create missing agents using meta-agent-v3 (launch N calls in single message, 1 per agent), then ask user restart
+- [x] P003 Assign executors to all tasks: MAIN (trivial only), existing agents (100% match), or specific agent names
+- [x] P004 Resolve research tasks: simple (solve with tools now), complex (create prompts in research/)
 
 **Rules**:
 - **MAIN executor**: ONLY for trivial tasks (1-2 line fixes, simple imports, single npm install)
@@ -47,12 +47,12 @@
 
 **Purpose**: Database migration and shared components that all user stories depend on
 
-- [ ] T001 Add ContactRequestStatus enum and ContactRequest model to backend/prisma/schema.prisma
-- [ ] T002 Run Prisma migration: `prisma migrate dev --name add_contact_requests` in backend/
-- [ ] T003 Regenerate Prisma client: `prisma generate` in backend/
-- [ ] T004 [P] Create landing components directory: frontend/src/components/landing/
-- [ ] T005 [P] Create login page directory: frontend/src/app/login/
-- [ ] T006-A [P] Install framer-motion dependency for animations: `npm install framer-motion` in frontend/
+- [x] T001 Add ContactRequestStatus enum and ContactRequest model to backend/prisma/schema.prisma
+- [x] T002 Run Prisma migration: `prisma migrate dev --name add_contact_requests` in backend/
+- [x] T003 Regenerate Prisma client: `prisma generate` in backend/
+- [x] T004 [P] Create landing components directory: frontend/src/components/landing/
+- [x] T005 [P] Create login page directory: frontend/src/app/login/
+- [x] T006-A [P] Install framer-motion dependency for animations: `npm install framer-motion` in frontend/
 
 ---
 
@@ -62,10 +62,10 @@
 
 **CRITICAL**: User Story 2 (Contact Form) cannot function until this phase is complete
 
-- [ ] T006 Create contact tRPC router with submit mutation in backend/src/api/trpc/routers/contact.ts
-- [ ] T007 Register contact router in backend/src/api/trpc/router.ts
-- [ ] T008 Implement Telegram notification for contact submissions in backend/src/services/notification/contact.ts
-- [ ] T009 Create shared types for contact form in frontend: copy Zod schema to frontend/src/lib/schemas/contact.ts
+- [x] T006 Create contact tRPC router with submit mutation in backend/src/api/trpc/routers/contact.ts
+- [x] T007 Register contact router in backend/src/api/trpc/router.ts
+- [x] T008 Implement Telegram notification for contact submissions in backend/src/services/notification/contact.ts
+- [x] T009 Create shared types for contact form in frontend: copy Zod schema to frontend/src/lib/schemas/contact.ts
 
 **Checkpoint**: Backend ready - form submissions can now be processed
 
@@ -79,15 +79,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Create Header component with logo and navigation in frontend/src/components/landing/Header.tsx
-- [ ] T011 [P] [US1] Create Hero section with headline, subheadline, CTAs in frontend/src/components/landing/Hero.tsx
-- [ ] T012 [P] [US1] Create Features section with 6 feature cards in frontend/src/components/landing/Features.tsx
-- [ ] T013 [P] [US1] Create HowItWorks section with 4 steps in frontend/src/components/landing/HowItWorks.tsx
-- [ ] T014 [P] [US1] Create Benefits section with 4 stats in frontend/src/components/landing/Benefits.tsx
-- [ ] T015 [P] [US1] Create Footer component with links and copyright in frontend/src/components/landing/Footer.tsx
-- [ ] T016 [US1] Create landing page barrel export in frontend/src/components/landing/index.ts
-- [ ] T017 [US1] Replace default page with landing page layout in frontend/src/app/page.tsx
-- [ ] T018 [US1] Add responsive styles and mobile breakpoints to all landing components
+- [x] T010 [P] [US1] Create Header component with logo and navigation in frontend/src/components/landing/Header.tsx
+- [x] T011 [P] [US1] Create Hero section with headline, subheadline, CTAs in frontend/src/components/landing/Hero.tsx
+- [x] T012 [P] [US1] Create Features section with 6 feature cards in frontend/src/components/landing/Features.tsx
+- [x] T013 [P] [US1] Create HowItWorks section with 4 steps in frontend/src/components/landing/HowItWorks.tsx
+- [x] T014 [P] [US1] Create Benefits section with 4 stats in frontend/src/components/landing/Benefits.tsx
+- [x] T015 [P] [US1] Create Footer component with links and copyright in frontend/src/components/landing/Footer.tsx
+- [x] T016 [US1] Create landing page barrel export in frontend/src/components/landing/index.ts
+- [x] T017 [US1] Replace default page with landing page layout in frontend/src/app/page.tsx
+- [x] T018 [US1] Add responsive styles and mobile breakpoints to all landing components
 
 **Checkpoint**: Landing page displays all sections, fully responsive - can be demoed
 
@@ -103,13 +103,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Create ContactForm component with React Hook Form in frontend/src/components/landing/ContactForm.tsx
-- [ ] T020 [US2] Implement form validation with Zod schema from frontend/src/lib/schemas/contact.ts
-- [ ] T021 [US2] Add honeypot field (hidden) for spam protection in ContactForm.tsx
-- [ ] T022 [US2] Implement tRPC mutation call for form submission in ContactForm.tsx
-- [ ] T023 [US2] Add success/error states and user feedback in Russian in ContactForm.tsx
-- [ ] T024 [US2] Add ContactForm to landing page between Benefits and Footer in frontend/src/app/page.tsx
-- [ ] T025 [US2] Add CTA button in Hero that scrolls to contact form section
+- [x] T019 [US2] Create ContactForm component with React Hook Form in frontend/src/components/landing/ContactForm.tsx
+- [x] T020 [US2] Implement form validation with Zod schema from frontend/src/lib/schemas/contact.ts
+- [x] T021 [US2] Add honeypot field (hidden) for spam protection in ContactForm.tsx
+- [x] T022 [US2] Implement tRPC mutation call for form submission in ContactForm.tsx
+- [x] T023 [US2] Add success/error states and user feedback in Russian in ContactForm.tsx
+- [x] T024 [US2] Add ContactForm to landing page between Benefits and Footer in frontend/src/app/page.tsx
+- [x] T025 [US2] Add CTA button in Hero that scrolls to contact form section
 
 **Checkpoint**: Contact form works end-to-end - form submits, Telegram notification received
 
@@ -123,10 +123,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create login page with Supabase auth redirect in frontend/src/app/login/page.tsx
-- [ ] T027 [US3] Add Login button to Header component with /login link in frontend/src/components/landing/Header.tsx
-- [ ] T028 [US3] Add Login link to mobile navigation menu in Header.tsx
-- [ ] T029 [US3] Ensure existing /dashboard route redirects unauthenticated users to /login
+- [x] T026 [P] [US3] Create login page with Supabase auth redirect in frontend/src/app/login/page.tsx
+- [x] T027 [US3] Add Login button to Header component with /login link in frontend/src/components/landing/Header.tsx
+- [x] T028 [US3] Add Login link to mobile navigation menu in Header.tsx
+- [x] T029 [US3] Ensure existing /dashboard route redirects unauthenticated users to /login
 
 **Checkpoint**: Login flow works - clicking Login navigates to auth page
 
@@ -140,11 +140,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] Add section IDs to all landing page sections (features, how-it-works, benefits, contact)
-- [ ] T031 [US4] Implement smooth scroll behavior for navigation links in Header.tsx
-- [ ] T032 [US4] Add sticky header behavior with scroll detection in Header.tsx
-- [ ] T033 [US4] Implement mobile hamburger menu with section links in Header.tsx
-- [ ] T034 [US4] Add close-on-click behavior for mobile menu when navigating to section
+- [x] T030 [US4] Add section IDs to all landing page sections (features, how-it-works, benefits, contact)
+- [x] T031 [US4] Implement smooth scroll behavior for navigation links in Header.tsx
+- [x] T032 [US4] Add sticky header behavior with scroll detection in Header.tsx
+- [x] T033 [US4] Implement mobile hamburger menu with section links in Header.tsx
+- [x] T034 [US4] Add close-on-click behavior for mobile menu when navigating to section
 
 **Checkpoint**: Navigation fully functional - all section links work, mobile menu works
 
@@ -154,15 +154,15 @@
 
 **Purpose**: Performance optimization, accessibility, and final validation
 
-- [ ] T035 [P] Optimize images with Next.js Image component in all landing sections
-- [ ] T036 [P] Add meta tags and SEO optimization in frontend/src/app/layout.tsx
-- [ ] T037 Add keyboard navigation support to all interactive elements
-- [ ] T038 Run Lighthouse audit and address performance issues
-- [ ] T039 Verify all content is in Russian language
-- [ ] T040 Run type-check and build verification
-- [ ] T041 Run quickstart.md validation checklist
-- [ ] T042 Verify existing authenticated routes work unchanged (/dashboard, /feedback, /settings/*) - FR-016
-- [ ] T043 Add robots.txt and sitemap.xml for SEO per TZ requirements
+- [x] T035 [P] Optimize images with Next.js Image component in all landing sections
+- [x] T036 [P] Add meta tags and SEO optimization in frontend/src/app/layout.tsx
+- [x] T037 Add keyboard navigation support to all interactive elements
+- [x] T038 Run Lighthouse audit and address performance issues
+- [x] T039 Verify all content is in Russian language
+- [x] T040 Run type-check and build verification
+- [x] T041 Run quickstart.md validation checklist
+- [x] T042 Verify existing authenticated routes work unchanged (/dashboard, /feedback, /settings/*) - FR-016
+- [x] T043 Add robots.txt and sitemap.xml for SEO per TZ requirements
 
 ---
 

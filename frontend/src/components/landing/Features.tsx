@@ -37,6 +37,30 @@ const features = [
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.6,
+      ease: [0.2, 0.65, 0.3, 0.9] as const,
+    },
+  },
+};
+
 export function Features() {
   return (
     <section id="features" className="py-24 relative overflow-hidden">
@@ -46,7 +70,7 @@ export function Features() {
 
       <div className="container px-4 md:px-6 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-[var(--buh-foreground)] mb-6">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 buh-shimmer-text inline-block">
             Возможности
           </h2>
           <p className="text-xl text-[var(--buh-foreground-muted)] max-w-2xl mx-auto">
@@ -54,22 +78,32 @@ export function Features() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.05, duration: 0.4 }}
+              variants={itemVariants}
               className="group relative bg-[var(--buh-surface)] p-8 rounded-3xl border border-[var(--buh-border)] hover:border-[var(--buh-primary)] transition-colors duration-300 overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--buh-primary-muted)]/0 to-[var(--buh-primary-muted)]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--buh-primary-muted)]/0 via-[var(--buh-accent-glow)] to-[var(--buh-primary-muted)]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
               
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl bg-[var(--buh-surface-elevated)] flex items-center justify-center mb-6 text-[var(--buh-primary)] group-hover:scale-110 transition-transform duration-300 shadow-sm border border-[var(--buh-border)]">
+                <motion.div
+                  className="w-14 h-14 rounded-2xl bg-[var(--buh-surface-elevated)] flex items-center justify-center mb-6 text-[var(--buh-primary)] shadow-sm border border-[var(--buh-border)]"
+                  whileHover={{
+                    scale: 1.15,
+                    rotate: [0, -5, 5, 0],
+                    transition: { duration: 0.5 }
+                  }}
+                >
                   <feature.icon size={28} strokeWidth={1.5} />
-                </div>
+                </motion.div>
                 <h3 className="text-xl font-bold text-[var(--buh-foreground)] mb-3 group-hover:text-[var(--buh-primary)] transition-colors">
                   {feature.title}
                 </h3>
@@ -79,7 +113,7 @@ export function Features() {
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowRight } from 'lucide-react';
 
 export function Hero() {
   const scrollToNext = () => {
@@ -11,6 +10,21 @@ export function Hero() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const ctaRef = useRef<HTMLButtonElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!ctaRef.current) return;
+    const rect = ctaRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    setMousePosition({ x: x * 0.15, y: y * 0.15 });
+  };
+
+  const handleMouseLeave = () => {
+    setMousePosition({ x: 0, y: 0 });
   };
 
   const containerVariants = {
@@ -41,6 +55,30 @@ export function Hero() {
       {/* Grid/Noise overlay for texture */}
       <div className="absolute inset-0 buh-noise z-0 pointer-events-none" />
 
+      {/* Floating particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-[var(--buh-accent)] rounded-full opacity-30"
+            initial={{
+              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
+              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+            }}
+            animate={{
+              y: [null, Math.random() * -100 - 50],
+              opacity: [0.3, 0, 0.3],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: 'linear',
+            }}
+          />
+        ))}
+      </div>
+
       <div className="container relative z-10 px-4 md:px-6 flex flex-col items-center text-center">
         <motion.div
           variants={containerVariants}
@@ -62,8 +100,11 @@ export function Hero() {
           >
             Клиенты ждут ответа.
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]">
-              Вы контролируете время.
+            <span className="relative">
+              <span className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)] blur-lg opacity-50 animate-pulse" />
+              <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)]">
+                Вы контролируете время.
+              </span>
             </span>
           </motion.h1>
 
@@ -82,15 +123,24 @@ export function Hero() {
             variants={itemVariants}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <button
+            <motion.button
+              ref={ctaRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              animate={{ x: mousePosition.x, y: mousePosition.y }}
+              transition={{ type: 'spring', stiffness: 150, damping: 15 }}
               onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-              aria-label="Запросить демонстрацию BuhBot"
-              className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-[var(--buh-primary)] rounded-full hover:bg-[var(--buh-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--buh-primary)] shadow-[0_0_20px_-5px_var(--buh-primary-muted)] hover:shadow-[0_0_30px_-5px_var(--buh-primary)] hover:-translate-y-1 overflow-hidden"
+              className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-[var(--buh-primary)] rounded-full hover:bg-[var(--buh-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--buh-primary)] shadow-[0_0_20px_-5px_var(--buh-primary-muted)] hover:shadow-[0_0_40px_-5px_var(--buh-primary),0_0_60px_-10px_var(--buh-accent)] overflow-hidden"
             >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
+              {/* Shimmer effect */}
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+
+              {/* Ripple effect */}
+              <span className="absolute inset-0 rounded-full bg-white/30 scale-0 group-active:scale-100 transition-transform duration-500" />
+
               <span>Запросить демо</span>
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </motion.button>
 
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
@@ -104,26 +154,32 @@ export function Hero() {
 
       {/* Scroll Indicator */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.5, duration: 1, type: 'spring' }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10"
       >
-        <button
+        <motion.button
           onClick={scrollToNext}
           className="flex flex-col items-center gap-2 text-[var(--buh-foreground-subtle)] hover:text-[var(--buh-primary)] transition-colors group"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
         >
-          <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+          <motion.span
+            className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity"
+            initial={{ y: 10 }}
+            whileHover={{ y: 0 }}
+          >
             Листайте вниз
-          </span>
-          <div className="w-6 h-10 border-2 border-[var(--buh-border)] rounded-full flex justify-center pt-2 group-hover:border-[var(--buh-primary)] transition-colors">
+          </motion.span>
+          <div className="relative w-6 h-10 border-2 border-[var(--buh-border)] rounded-full flex justify-center pt-2 group-hover:border-[var(--buh-primary)] transition-colors overflow-hidden">
             <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-              className="w-1 h-1 bg-[var(--buh-foreground-subtle)] rounded-full group-hover:bg-[var(--buh-primary)]"
+              animate={{ y: [0, 14, 0] }}
+              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+              className="w-1.5 h-1.5 bg-[var(--buh-foreground-subtle)] rounded-full group-hover:bg-[var(--buh-primary)] group-hover:shadow-[0_0_8px_var(--buh-primary)]"
             />
           </div>
-        </button>
+        </motion.button>
       </motion.div>
     </section>
   );

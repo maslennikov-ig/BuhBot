@@ -113,9 +113,11 @@ export function ContactForm() {
                 <label htmlFor="name" className="text-sm font-medium text-[var(--buh-foreground)]">
                   Имя *
                 </label>
-                <input
+                <motion.input
                   {...form.register('name')}
                   id="name"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--buh-border)] bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground)] focus:ring-2 focus:ring-[var(--buh-primary)] focus:border-transparent outline-none transition-all"
                   placeholder="Иван Петров"
                 />
@@ -131,10 +133,12 @@ export function ContactForm() {
                 <label htmlFor="email" className="text-sm font-medium text-[var(--buh-foreground)]">
                   Email *
                 </label>
-                <input
+                <motion.input
                   {...form.register('email')}
                   id="email"
                   type="email"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--buh-border)] bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground)] focus:ring-2 focus:ring-[var(--buh-primary)] focus:border-transparent outline-none transition-all"
                   placeholder="ivan@example.com"
                 />
@@ -150,9 +154,11 @@ export function ContactForm() {
                 <label htmlFor="company" className="text-sm font-medium text-[var(--buh-foreground)]">
                   Компания
                 </label>
-                <input
+                <motion.input
                   {...form.register('company')}
                   id="company"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--buh-border)] bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground)] focus:ring-2 focus:ring-[var(--buh-primary)] focus:border-transparent outline-none transition-all"
                   placeholder="ООО Бухгалтерия"
                 />
@@ -163,10 +169,12 @@ export function ContactForm() {
                 <label htmlFor="message" className="text-sm font-medium text-[var(--buh-foreground)]">
                   Сообщение (необязательно)
                 </label>
-                <textarea
+                <motion.textarea
                   {...form.register('message')}
                   id="message"
                   rows={3}
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--buh-border)] bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground)] focus:ring-2 focus:ring-[var(--buh-primary)] focus:border-transparent outline-none transition-all resize-none"
                   placeholder="Хочу узнать подробнее про..."
                 />
@@ -207,19 +215,32 @@ export function ContactForm() {
               )}
 
               {/* Submit Button */}
-              <button
+              <motion.button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 rounded-xl bg-[var(--buh-primary)] text-white font-bold text-lg shadow-[0_4px_14px_0_var(--buh-primary-muted)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.23)] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                className="w-full py-4 rounded-xl bg-[var(--buh-primary)] text-white font-bold text-lg shadow-[0_4px_14px_0_var(--buh-primary-muted)] hover:shadow-[0_6px_20px_var(--buh-primary-muted),0_0_40px_-10px_var(--buh-accent)] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 relative overflow-hidden"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="animate-spin" /> Отправка...
-                  </>
-                ) : (
-                  'Запросить демо'
+                {/* Shimmer effect */}
+                {!isLoading && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    animate={{ x: ['-100%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  />
                 )}
-              </button>
+
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" /> Отправка...
+                    </>
+                  ) : (
+                    'Запросить демо'
+                  )}
+                </span>
+              </motion.button>
             </form>
           </div>
         </div>

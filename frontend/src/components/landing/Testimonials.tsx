@@ -30,7 +30,7 @@ export function Testimonials() {
     <section className="py-24 bg-[var(--buh-surface-elevated)] border-y border-[var(--buh-border)]">
       <div className="container px-4 md:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-[var(--buh-foreground)] mb-6">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 buh-shimmer-text inline-block">
             Отзывы клиентов
           </h2>
         </div>
@@ -43,16 +43,25 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="bg-[var(--buh-surface)] p-8 rounded-2xl border border-[var(--buh-border)] shadow-sm flex flex-col h-full"
+              whileHover={{
+                scale: 1.02,
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 40px -10px var(--buh-accent-glow)',
+              }}
+              className="bg-[var(--buh-surface)] p-8 rounded-2xl border border-[var(--buh-border)] shadow-sm flex flex-col h-full cursor-pointer relative overflow-hidden"
             >
-              <Quote className="w-10 h-10 text-[var(--buh-primary)] mb-6 opacity-50" />
-              <p className="text-lg text-[var(--buh-foreground)] mb-6 italic flex-grow">
-                "{item.quote}"
-              </p>
-              <div>
-                <p className="font-bold text-[var(--buh-foreground)]">{item.author}</p>
-                <p className="text-sm text-[var(--buh-primary)]">{item.role}</p>
-                <p className="text-sm text-[var(--buh-foreground-muted)]">{item.city}</p>
+              {/* Add gradient overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--buh-accent-glow)] to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col h-full">
+                <Quote className="w-10 h-10 text-[var(--buh-primary)] mb-6 opacity-50" />
+                <p className="text-lg text-[var(--buh-foreground)] mb-6 italic flex-grow leading-relaxed">
+                  "{item.quote}"
+                </p>
+                <div>
+                  <p className="font-bold text-[var(--buh-foreground)]">{item.author}</p>
+                  <p className="text-sm text-[var(--buh-primary)]">{item.role}</p>
+                  <p className="text-sm text-[var(--buh-foreground-muted)]">{item.city}</p>
+                </div>
               </div>
             </motion.div>
           ))}

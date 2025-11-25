@@ -18,17 +18,16 @@ export const contactRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // 1. Save to database using raw SQL (workaround for Prisma 7 UUID bug)
-      const result = await ctx.prisma.$queryRaw<Array<{ id: string }>>`
-        INSERT INTO contact_requests (id, name, email, company, message, created_at, is_processed)
-        VALUES (gen_random_uuid(), ${input.name}, ${input.email}, ${input.company ?? null}, ${input.message ?? null}, NOW(), false)
-        RETURNING id
-      `;
-
-      const contactId = result[0]?.id;
-      if (!contactId) {
-        throw new Error('Failed to create contact request');
-      }
+      // 1. Save to database using Prisma ORM
+      const contact = await ctx.prisma.contactRequest.create({
+        data: {
+          name: input.name,
+          email: input.email,
+          company: input.company,
+          message: input.message,
+        },
+        select: { id: true },
+      });
 
       // 2. Send notification to Telegram
       await notificationService.notifyNewLead({
@@ -38,6 +37,6 @@ export const contactRouter = router({
         message: input.message ?? null,
       });
 
-      return { success: true, id: contactId };
+      return { success: true, id: contact.id };
     }),
 });

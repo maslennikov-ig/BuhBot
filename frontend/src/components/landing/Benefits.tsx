@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { CounterAnimation } from './CounterAnimation';
 
 const stats = [
   {
@@ -31,7 +32,7 @@ export function Benefits() {
     <section id="benefits" className="py-24 relative">
       <div className="container px-4 md:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-[var(--buh-foreground)] mb-6">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 buh-shimmer-text inline-block">
             Результаты наших клиентов
           </h2>
         </div>
@@ -46,8 +47,8 @@ export function Benefits() {
               transition={{ delay: index * 0.1, duration: 0.5 }}
               className="flex flex-col items-center text-center p-6 rounded-2xl bg-[var(--buh-surface-elevated)]/50 border border-[var(--buh-border)] hover:border-[var(--buh-accent)] transition-colors"
             >
-              <span className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-br from-[var(--buh-primary)] to-[var(--buh-accent)] mb-4">
-                {stat.value}
+              <span className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-br from-[var(--buh-primary)] to-[var(--buh-accent)] mb-4 inline-block min-h-[1.2em]">
+                <CounterAnimation value={stat.value} duration={2000} />
               </span>
               <span className="text-xl font-bold text-[var(--buh-foreground)] mb-2">
                 {stat.label}

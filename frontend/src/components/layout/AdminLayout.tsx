@@ -425,6 +425,9 @@ function Header({
   );
 }
 
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+
 // ============================================
 // MAIN LAYOUT COMPONENT
 // ============================================
@@ -432,6 +435,21 @@ function Header({
 function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
+
+  // Check authentication
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/login');
+      } else {
+        setIsAuthorized(true);
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   // Handle escape key to close mobile sidebar
   React.useEffect(() => {
@@ -455,6 +473,10 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
       document.body.style.overflow = '';
     };
   }, [mobileSidebarOpen]);
+
+  if (!isAuthorized) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <div className="min-h-screen bg-[var(--buh-background)]">

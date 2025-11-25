@@ -13,6 +13,8 @@ const navLinks = [
   { name: 'Контакты', href: '#contact' },
 ];
 
+import { ThemeToggle } from '../ThemeToggle';
+
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -66,24 +68,29 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:flex items-center">
-          <Link
-            href="/login"
-            className="px-5 py-2.5 rounded-[var(--buh-radius-md)] bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)] text-sm font-semibold text-[var(--buh-foreground)] hover:border-[var(--buh-primary)] hover:text-[var(--buh-primary)] transition-all duration-300"
-          >
-            Войти
-          </Link>
-        </div>
+        {/* Actions Area */}
+        <div className="flex items-center gap-3">
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center">
+            <Link
+              href="/login"
+              className="px-5 py-2.5 rounded-[var(--buh-radius-md)] bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)] text-sm font-semibold text-[var(--buh-foreground)] hover:border-[var(--buh-primary)] hover:text-[var(--buh-primary)] transition-all duration-300"
+            >
+              Войти
+            </Link>
+          </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2 text-[var(--buh-foreground)]"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+          <ThemeToggle />
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 text-[var(--buh-foreground)]"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}

@@ -9,6 +9,8 @@ import {
   ContactForm,
   Footer,
 } from '@/components/landing';
+import { CursorGlow } from '@/components/CursorGlow';
+import { SectionDivider } from '@/components/SectionDivider';
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -34,26 +36,33 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--buh-background)] flex flex-col overflow-x-hidden selection:bg-[var(--buh-accent)] selection:text-white">
+      <CursorGlow />
       <Header />
       <main className="flex-grow">
         <section id="hero">
           <Hero />
         </section>
+        <SectionDivider />
         <section id="pain-points">
           <PainPoints />
         </section>
+        <SectionDivider />
         <section id="features">
           <Features />
         </section>
+        <SectionDivider />
         <section id="how-it-works">
           <HowItWorks />
         </section>
+        <SectionDivider />
         <section id="benefits">
           <Benefits />
         </section>
+        <SectionDivider />
         <section id="testimonials">
           <Testimonials />
         </section>
+        <SectionDivider />
         <section id="contact">
           <ContactForm />
         </section>

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-11-25
+
+### Added
+- **backend**: integrate tRPC Express adapter (a6c0d39)
+
+### Fixed
+- **backend**: add .js extensions to tRPC imports for ESM compatibility (5f13d91)
+- **backend**: convert undefined to null for contact notification payload (47ba96d)
+- **backend**: use bracket notation for env var access to satisfy TypeScript strict mode (22671f4)
+
 ## [0.2.2] - 2025-11-25
 
 ### Added

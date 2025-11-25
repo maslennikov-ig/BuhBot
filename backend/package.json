@@ -9,7 +9,7 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "nodemon --exec ts-node --esm src/index.ts",
+    "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
@@ -60,6 +60,7 @@
     "nodemon": "^3.1.9",
     "prisma": "7.0.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.47.0"
   }

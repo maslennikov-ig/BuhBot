@@ -1,0 +1,9 @@
+export { Header } from './Header';
+export { Hero } from './Hero';
+export { PainPoints } from './PainPoints';
+export { Features } from './Features';
+export { HowItWorks } from './HowItWorks';
+export { Benefits } from './Benefits';
+export { Testimonials } from './Testimonials';
+export { ContactForm } from './ContactForm';
+export { Footer } from './Footer';

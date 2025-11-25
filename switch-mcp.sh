@@ -89,6 +89,10 @@ esac
 SOURCE_FILE="$MCP_DIR/.mcp.$config.json"
 if [ -f "$SOURCE_FILE" ]; then
   cp "$SOURCE_FILE" .mcp.json
+  # Also copy to .gemini/settings.json for Gemini CLI support
+  mkdir -p .gemini
+  cp "$SOURCE_FILE" .gemini/settings.json
+  
   echo ""
   echo -e "${GREEN}✅ Switched to: $desc${NC}"
   echo -e "   Source: ${BLUE}$SOURCE_FILE${NC}"

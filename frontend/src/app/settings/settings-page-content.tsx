@@ -14,6 +14,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { HolidayCalendar } from '@/components/settings/HolidayCalendar';
+import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
 
 /**
  * Settings Page Content Component
@@ -27,8 +28,8 @@ export function SettingsPageContent() {
     <AdminLayout>
       {/* Page Header */}
       <PageHeader
-        title="Настройки SLA"
-        description="Настройка рабочих часов, порогов SLA и календаря федеральных праздников. Эти настройки применяются ко всем чатам по умолчанию."
+        title="Настройки системы"
+        description="Управление уведомлениями, рабочим временем и SLA."
         breadcrumbs={[
           { label: 'Панель управления', href: '/dashboard' },
           { label: 'Настройки' },
@@ -37,8 +38,25 @@ export function SettingsPageContent() {
 
       {/* Content sections with staggered animation */}
       <div className="space-y-6 buh-stagger">
-        {/* Working Hours Section */}
+        {/* Notifications Section */}
         <section className="buh-animate-fade-in-up">
+          <NotificationSettingsForm />
+        </section>
+
+        {/* Divider */}
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[var(--buh-border)]" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-[var(--buh-background)] px-4 text-xs font-medium uppercase tracking-wider text-[var(--buh-foreground-subtle)]">
+              SLA и Рабочее время
+            </span>
+          </div>
+        </div>
+
+        {/* Working Hours Section */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <WorkingHoursForm />
         </section>
 

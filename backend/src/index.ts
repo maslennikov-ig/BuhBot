@@ -84,23 +84,45 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
   });
 });
 
-// Start server
-const PORT = env.PORT;
-const server = app.listen(PORT, () => {
-  logger.info(`BuhBot server started successfully`, {
-    port: PORT,
-    environment: env.NODE_ENV,
-    nodeVersion: process.version,
-    platform: process.platform
+import type { Server } from 'http';
+
+// ... (previous code remains same until Start server section)
+
+// Start server with dynamic port selection
+let server: Server;
+
+const startServer = (port: number) => {
+  const s = app.listen(port, () => {
+    logger.info(`BuhBot server started successfully`, {
+      port,
+      environment: env.NODE_ENV,
+      nodeVersion: process.version,
+      platform: process.platform
+    });
+
+    if (isDevelopment()) {
+      logger.info(`Server is running at http://localhost:${port}`);
+      logger.info(`Health check: http://localhost:${port}/health`);
+    }
   });
 
-  if (isDevelopment()) {
-    logger.info(`Server is running at http://localhost:${PORT}`);
-    logger.info(`Health check: http://localhost:${PORT}/health`);
-  }
-});
+  s.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.warn(`Port ${port} is busy, trying ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      logger.error('Failed to start server:', err);
+      process.exit(1);
+    }
+  });
+
+  server = s;
+};
+
+startServer(env.PORT);
 
 // Graceful shutdown configuration
+// ... (rest of the file remains same)
 const SHUTDOWN_TIMEOUT_MS = 30000; // 30 seconds as per PM-009 spec
 
 // Track shutdown state to prevent multiple shutdown attempts

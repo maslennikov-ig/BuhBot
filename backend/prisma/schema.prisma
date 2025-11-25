@@ -396,6 +396,9 @@ model GlobalSettings {
   // Manager Alerts
   globalManagerIds String[] @default([]) @map("global_manager_ids") // Telegram IDs
 
+  // Lead Notifications (for Landing Page)
+  leadNotificationIds String[] @default([]) @map("lead_notification_ids") // Telegram IDs
+
   // AI Classification
   aiConfidenceThreshold Float @default(0.7) @map("ai_confidence_threshold") // 0.0-1.0
   messagePreviewLength  Int   @default(500) @map("message_preview_length") // Chars in alert preview
@@ -461,4 +464,21 @@ model ClassificationCache {
   @@index([messageHash])
   @@index([expiresAt])
   @@map("classification_cache")
+}
+
+/// Landing page contact form submissions (Lead capture)
+model ContactRequest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  email       String
+  company     String?
+  message     String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  // Status tracking
+  isProcessed Boolean  @default(false) @map("is_processed")
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  processedBy String?  @map("processed_by") @db.Uuid // User ID if processed by admin
+
+  @@map("contact_requests")
 }

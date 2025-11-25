@@ -1,209 +1,203 @@
-# Fixup Prompt - Landing Page Missing Components
+# Landing Page Fixup Prompt
+
+**Date**: 2025-11-25
+**Status**: 2 blocking issues, 3 warnings
+**Priority**: HIGH - Required before production deployment
 
 ---
 
-## Task
+## Executive Summary
 
-Complete the remaining tasks for BuhBot landing page implementation.
+Landing page implementation is **95% complete** with excellent code quality. Two blocking issues and three warnings need resolution before production deployment. Estimated fix time: **30 minutes**.
 
-## Repository
+---
 
-```
-Repository: https://github.com/maslennikov-ig/BuhBot
-Branch: 004-landing-page
-```
+## BLOCKING ISSUES (Must Fix)
 
-Pull latest changes:
+### 1. Missing Database Migration for ContactRequest
+
+**Priority**: CRITICAL - BLOCKING PRODUCTION
+**Impact**: Contact form submissions will fail (500 error)
+**Root Cause**: Migration file not created/committed
+
+**Fix**:
 ```bash
-git pull origin 004-landing-page
-```
-
----
-
-## Critical Issues to Fix
-
-### 1. Create Login Page (CRITICAL)
-
-**File**: `frontend/src/app/login/page.tsx`
-
-**Requirements**:
-- Simple page with Supabase Auth redirect
-- After authentication, redirect to `/dashboard`
-- Use existing Supabase client configuration
-- Match existing app styling (use design tokens from other pages)
-
-**Example structure**:
-```typescript
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-
-export default function LoginPage() {
-  const router = useRouter();
-  const supabase = createClient();
-
-  useEffect(() => {
-    // Check if already authenticated
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push('/dashboard');
-      } else {
-        // Redirect to Supabase Auth
-        supabase.auth.signInWithOAuth({
-          provider: 'github', // or your configured provider
-          options: {
-            redirectTo: `${window.location.origin}/dashboard`,
-          },
-        });
-      }
-    });
-  }, [router, supabase]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold mb-4">Вход в систему</h1>
-        <p>Перенаправление на страницу авторизации...</p>
-      </div>
-    </div>
-  );
-}
-```
-
----
-
-### 2. Run Prisma Migration (CRITICAL)
-
-**Commands** (from backend directory):
-```bash
-cd backend
+cd /home/me/code/bobabuh/backend
 pnpm prisma migrate dev --name add_contact_requests
 pnpm prisma generate
 ```
 
-This creates the `contact_requests` table in the database.
+**Verify**:
+```bash
+# Check migration was created
+ls -la backend/prisma/migrations/ | grep contact
 
----
-
-### 3. Verify Login Button in Header
-
-**File**: `frontend/src/components/landing/Header.tsx`
-
-**Check**:
-- Does Header have a "Войти" button?
-- Does it link to `/login`?
-- Is it visible on mobile menu?
-
-**If missing**, add:
-```typescript
-<Link href="/login" className="...">
-  Войти
-</Link>
+# Test database connection
+pnpm prisma migrate status
 ```
 
 ---
 
-### 4. Verify Navigation Features
+### 2. Missing SEO Metadata
 
-**Files to check**:
-- `frontend/src/components/landing/Header.tsx`
-- `frontend/src/app/page.tsx`
+**Priority**: HIGH - Required for search visibility
+**Impact**: Poor search engine indexing, no social media previews
+**File**: `/home/me/code/bobabuh/frontend/src/app/page.tsx`
 
-**Required features**:
-1. **Section IDs**: Each section should have `id` attribute (e.g., `id="features"`, `id="how-it-works"`)
-2. **Smooth scroll**: Navigation links should scroll to sections smoothly
-3. **Sticky header**: Header should stick to top on scroll
-4. **Mobile menu**: Hamburger menu with section links
+**Current State**: No metadata export
 
-**Example section IDs in page.tsx**:
+**Required Fix**: Add metadata export at top of file (after imports, before component):
+
 ```typescript
-<section id="hero">
-  <Hero />
-</section>
-<section id="pain-points">
-  <PainPoints />
-</section>
-<section id="features">
-  <Features />
-</section>
-// etc.
+import type { Metadata } from "next";
+import {
+  Header,
+  Hero,
+  PainPoints,
+  Features,
+  HowItWorks,
+  Benefits,
+  Testimonials,
+  ContactForm,
+  Footer,
+} from '@/components/landing';
+
+export const metadata: Metadata = {
+  title: "BuhBot - Автоматизация коммуникаций для бухгалтерских фирм",
+  description: "SLA-мониторинг ответов бухгалтеров в Telegram. Автоматические напоминания о приближении дедлайна. Контролируйте время реакции на обращения клиентов.",
+  keywords: [
+    "бухгалтерия",
+    "telegram бот",
+    "sla мониторинг",
+    "автоматизация бухгалтерии",
+    "контроль времени ответа",
+  ],
+  openGraph: {
+    title: "BuhBot - Контроль времени ответа бухгалтеров",
+    description: "Автоматическое отслеживание SLA в Telegram-чатах с умными алертами",
+    url: "https://buhbot.aidevteam.ru",
+    siteName: "BuhBot",
+    locale: "ru_RU",
+    type: "website",
+  },
+};
+
+export default function LandingPage() { ... }
 ```
 
-**Example smooth scroll in Header.tsx**:
+---
+
+## WARNINGS (Should Fix)
+
+### 3. Add Type-Check Script to package.json
+
+**Priority**: MEDIUM - CI/CD improvement
+**File**: `/home/me/code/bobabuh/frontend/package.json`
+
+Add to scripts section:
+```json
+"scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint",
+  "type-check": "tsc --noEmit"
+}
+```
+
+**Verify**:
+```bash
+cd frontend
+pnpm type-check
+```
+
+---
+
+### 4. Improve Accessibility (ARIA Labels)
+
+**Priority**: MEDIUM - Accessibility compliance
+
+**A. Hero.tsx** - Add labels to CTA buttons (lines 85-99):
 ```typescript
-<a href="#features" className="..." onClick={(e) => {
-  e.preventDefault();
-  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-}}>
-  Возможности
+<button
+  onClick={...}
+  aria-label="Запросить демонстрацию BuhBot"
+  className="group relative inline-flex..."
+>
+  <span>Запросить демо</span>
+</button>
+```
+
+**B. Header.tsx** - Add labels to navigation links:
+```typescript
+<a
+  href={link.href}
+  onClick={(e) => scrollToSection(e, link.href)}
+  aria-label={`Перейти к разделу: ${link.name}`}
+  className="text-sm font-medium..."
+>
+  {link.name}
 </a>
 ```
 
 ---
 
-### 5. Verify Contact Form Integration
+## Validation Checklist
 
-**Check** (`frontend/src/components/landing/ContactForm.tsx`):
-- [ ] Uses tRPC mutation `contact.submit`
-- [ ] Has consent checkbox with text: "Даю согласие на обработку персональных данных"
-- [ ] Links to `/privacy` in checkbox label
-- [ ] Shows success message in Russian after submission
-- [ ] Shows error message in Russian on failure
+After applying fixes:
 
----
-
-## Testing Checklist
-
-After completing fixes, test:
-
+### 1. Database Migration
 ```bash
-# 1. Build passes
-cd frontend
-pnpm build
-
-# 2. Backend builds
-cd ../backend
-pnpm build
-
-# 3. Start dev servers
-pnpm dev  # backend (terminal 1)
-cd frontend && pnpm dev  # frontend (terminal 2)
-
-# 4. Manual tests
-- Visit http://localhost:3000
-- Click "Войти" → should redirect to /login → auth flow
-- Fill contact form → submit → check Telegram notification
-- Test mobile view (resize browser to 375px width)
-- Test all navigation links scroll to sections
+cd backend
+pnpm prisma migrate status
+# Should show: Database schema is up to date!
 ```
 
+### 2. Type Check
+```bash
+cd frontend
+pnpm type-check
+# Should complete with no errors
+```
+
+### 3. Build Test
+```bash
+cd frontend
+pnpm build
+# Should build successfully
+```
+
+### 4. Manual Testing
+```bash
+# Terminal 1: Backend
+cd backend && pnpm dev
+
+# Terminal 2: Frontend
+cd frontend && pnpm dev
+
+# Open http://localhost:3000
+```
+
+**Test Cases**:
+- [ ] Landing page loads without errors
+- [ ] Contact form submits successfully
+- [ ] Telegram notification received
+- [ ] Login link navigates to /login
+- [ ] SEO metadata visible in page source
+
 ---
 
-## Acceptance Criteria
+## Timeline Estimate
 
-Before marking complete:
-
-- [X] Login page created and working
-- [X] Prisma migration run successfully
-- [X] Login button in Header
-- [X] Navigation smooth scrolls to sections
-- [X] Mobile menu works
-- [X] Contact form submits successfully
-- [X] Telegram notification received on form submit
-- [X] All content in Russian
-- [X] Build passes without errors
-- [X] Mobile responsive (320px-1440px)
+| Task | Time |
+|------|------|
+| Run database migration | 2 min |
+| Add SEO metadata | 10 min |
+| Add type-check script | 1 min |
+| Add aria-labels | 15 min |
+| Testing | 10 min |
+| **Total** | **~30-40 min** |
 
 ---
 
-## Reference Documents
-
-- Specification: `specs/004-landing-page/landing-spec.md`
-- Status Report: `specs/004-landing-page/STATUS-REPORT.md`
-- Original Tasks: `specs/004-landing-page/tasks.md`
-
----
-
-**Priority Order**: Login page → Prisma migration → Navigation verification → Testing
+**Ready for Production After**: All blocking issues resolved

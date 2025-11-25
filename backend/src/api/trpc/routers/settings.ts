@@ -51,6 +51,9 @@ const UpdateGlobalSettingsInput = z.object({
 
   // Manager Alerts
   globalManagerIds: z.array(z.string()).optional(),
+  
+  // Lead Notifications (Landing Page)
+  leadNotificationIds: z.array(z.string()).optional(),
 
   // AI Classification
   aiConfidenceThreshold: z.number().min(0).max(1).optional(),
@@ -126,6 +129,9 @@ const GlobalSettingsOutput = z.object({
   // Manager Alerts
   globalManagerIds: z.array(z.string()),
   globalManagerCount: z.number(),
+
+  // Lead Notifications
+  leadNotificationIds: z.array(z.string()),
 
   // AI Classification
   aiConfidenceThreshold: z.number(),
@@ -263,6 +269,7 @@ export const settingsRouter = router({
         escalationIntervalMin: settings.escalationIntervalMin,
         globalManagerIds: settings.globalManagerIds,
         globalManagerCount: settings.globalManagerIds.length,
+        leadNotificationIds: settings.leadNotificationIds,
         aiConfidenceThreshold: settings.aiConfidenceThreshold,
         messagePreviewLength: settings.messagePreviewLength,
         dataRetentionYears: settings.dataRetentionYears,
@@ -350,6 +357,7 @@ export const settingsRouter = router({
         escalationIntervalMin: settings.escalationIntervalMin,
         globalManagerIds: settings.globalManagerIds,
         globalManagerCount: settings.globalManagerIds.length,
+        leadNotificationIds: settings.leadNotificationIds,
         aiConfidenceThreshold: settings.aiConfidenceThreshold,
         messagePreviewLength: settings.messagePreviewLength,
         dataRetentionYears: settings.dataRetentionYears,

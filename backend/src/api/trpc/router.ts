@@ -28,6 +28,7 @@ import { settingsRouter } from './routers/settings.js';
 import { slaRouter } from './routers/sla.js';
 import { feedbackRouter } from './routers/feedback.js';
 import { surveyRouter } from './routers/survey.js';
+import { contactRouter } from './routers/contact.js';
 
 /**
  * App router combining all sub-routers
@@ -216,6 +217,14 @@ export const appRouter = router({
    * - updateSettings: Update survey settings (admin only)
    */
   survey: surveyRouter,
+
+  /**
+   * Contact router - Landing page lead capture
+   *
+   * Procedures:
+   * - submit: Submit new contact form (public)
+   */
+  contact: contactRouter,
 });
 
 /**

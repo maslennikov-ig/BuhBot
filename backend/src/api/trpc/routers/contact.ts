@@ -33,8 +33,8 @@ export const contactRouter = router({
       await notificationService.notifyNewLead({
         name: input.name,
         email: input.email,
-        company: input.company,
-        message: input.message,
+        company: input.company ?? null,
+        message: input.message ?? null,
       });
 
       return { success: true, id: contactRequest.id };

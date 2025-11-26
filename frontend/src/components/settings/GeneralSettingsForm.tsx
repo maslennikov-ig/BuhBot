@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bot, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bot, CheckCircle2, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/layout/GlassCard';
@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { trpc } from '@/lib/trpc';
-import { cn } from '@/lib/utils';
 
 const botSettingsSchema = z.object({
   token: z.string().min(10, 'Token is too short'),

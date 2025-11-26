@@ -22,6 +22,7 @@
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma, ClientRequest, Chat, User } from '@prisma/client';
 import { classifyMessage as classifyMessageService } from '../../../services/classifier/index.js';
 import {
   startSlaTimer,
@@ -200,9 +201,9 @@ const ActiveTimerOutput = z.object({
  * Convert Prisma ClientRequest to RequestOutput format
  */
 function formatRequestOutput(
-  request: any,
-  chat: any | null,
-  assignedUser: any | null
+  request: ClientRequest,
+  chat: Chat | null,
+  assignedUser: User | null
 ): z.infer<typeof RequestOutput> {
   return {
     id: request.id,
@@ -288,7 +289,7 @@ export const slaRouter = router({
       const receivedAt = input.receivedAt ?? new Date();
 
       // Build create data, filtering undefined values
-      const createData: any = {
+      const createData: Prisma.ClientRequestUncheckedCreateInput = {
         chatId: BigInt(input.chatId),
         messageId: BigInt(input.messageId),
         messageText: input.messageText,
@@ -427,7 +428,7 @@ export const slaRouter = router({
       }
 
       // 2. Build update data
-      const updateData: any = {
+      const updateData: Prisma.ClientRequestUpdateInput = {
         respondedBy: input.respondedBy,
         responseAt: new Date(),
         status: 'answered',
@@ -480,7 +481,7 @@ export const slaRouter = router({
     .output(RequestListOutput)
     .query(async ({ ctx, input }) => {
       // Build where clause
-      const where: any = {};
+      const where: Prisma.ClientRequestWhereInput = {};
 
       if (input.chatId !== undefined) {
         where.chatId = BigInt(input.chatId);
@@ -574,7 +575,7 @@ export const slaRouter = router({
     .output(z.array(ActiveTimerOutput))
     .query(async ({ ctx, input }) => {
       // Build where clause for active timers
-      const where: any = {
+      const where: Prisma.ClientRequestWhereInput = {
         status: { in: ['pending', 'in_progress'] },
         slaTimerStartedAt: { not: null },
         classification: 'REQUEST', // Only track REQUEST type

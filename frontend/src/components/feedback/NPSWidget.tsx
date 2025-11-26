@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { GlassCard } from '@/components/layout/GlassCard';
-import { Star, TrendingUp, TrendingDown, Users, BarChart3 } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ============================================

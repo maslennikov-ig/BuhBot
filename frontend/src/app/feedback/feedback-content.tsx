@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { NPSWidget, FeedbackTable } from '@/components/feedback';
-import type { FeedbackEntry, FeedbackFilters, FeedbackPagination } from '@/components/feedback';
+import type { FeedbackEntry, FeedbackFilters } from '@/components/feedback';
 import { trpc } from '@/lib/trpc';
 
 // ============================================

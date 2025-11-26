@@ -30,19 +30,25 @@ const { Pool } = pg;
  * Prevents hot-reload from creating multiple instances
  */
 declare global {
-  // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
-  // eslint-disable-next-line no-var
   var pgPool: pg.Pool | undefined;
 }
 
 /**
  * Create PostgreSQL connection pool
+ *
+ * Connection priority:
+ * 1. DIRECT_URL - Direct connection (port 5432), bypasses Supavisor pooler
+ * 2. DATABASE_URL - Fallback, may use pooler (port 6543)
+ *
+ * Note: Supabase pooler (Supavisor) in session mode requires JWT authentication.
+ * Direct connection bypasses this requirement and works with service credentials.
  */
 function createPool(): pg.Pool {
-  const connectionString = process.env['DATABASE_URL'];
+  // Prefer DIRECT_URL to bypass Supabase pooler JWT requirement
+  const connectionString = process.env['DIRECT_URL'] || process.env['DATABASE_URL'];
   if (!connectionString) {
-    throw new Error('DATABASE_URL environment variable is required');
+    throw new Error('DIRECT_URL or DATABASE_URL environment variable is required');
   }
 
   return new Pool({
@@ -50,6 +56,9 @@ function createPool(): pg.Pool {
     max: 10, // Maximum connections per constitution
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
+    // Force IPv4 DNS resolution (fixes WSL2 IPv6 connectivity issues)
+    // @ts-expect-error - family is a valid option for net.connect() used by pg
+    family: 4,
   });
 }
 

@@ -3,7 +3,7 @@
 import React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { trpc } from '@/lib/trpc';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { RequestsTable } from '@/components/requests/RequestsTable';
 
 export default function RequestsPage() {

@@ -11,6 +11,7 @@
 
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 /**
  * Analytics router for reports and dashboards
@@ -49,12 +50,12 @@ export const analyticsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build where clause
-      const where: any = {
+      const where: Prisma.ClientRequestWhereInput = {
         receivedAt: {
           gte: input.startDate,
           lte: input.endDate,
         },
-        isSpam: false, // Exclude spam from analytics
+        classification: 'REQUEST', // Only count actual requests
       };
       if (input.assignedTo) {
         where.assignedTo = input.assignedTo;
@@ -94,7 +95,7 @@ export const analyticsRouter = router({
       let breachedSLA = 0;
       const responseTimes: number[] = [];
 
-      requests.forEach((request: any) => {
+      requests.forEach((request) => {
         if (request.responseTimeMinutes !== null) {
           responseTimes.push(request.responseTimeMinutes);
 
@@ -200,7 +201,7 @@ export const analyticsRouter = router({
       }
 
       // Calculate average rating
-      const totalRating = responses.reduce((sum: number, r: any) => sum + r.rating, 0);
+      const totalRating = responses.reduce((sum, r) => sum + r.rating, 0);
       const averageRating = totalRating / totalResponses;
 
       // Calculate rating distribution
@@ -212,7 +213,7 @@ export const analyticsRouter = router({
         star5: 0,
       };
 
-      responses.forEach((r: any) => {
+      responses.forEach((r) => {
         if (r.rating === 1) distribution.star1++;
         else if (r.rating === 2) distribution.star2++;
         else if (r.rating === 3) distribution.star3++;
@@ -267,7 +268,7 @@ export const analyticsRouter = router({
 
       // Fetch requests for each accountant
       const performance = await Promise.all(
-        accountants.map(async (accountant: any) => {
+        accountants.map(async (accountant) => {
           // Get requests assigned to this accountant
           const requests = await ctx.prisma.clientRequest.findMany({
             where: {
@@ -306,7 +307,7 @@ export const analyticsRouter = router({
           let answeredWithinSLA = 0;
           const responseTimes: number[] = [];
 
-          requests.forEach((request: any) => {
+          requests.forEach((request) => {
             if (request.responseTimeMinutes !== null) {
               responseTimes.push(request.responseTimeMinutes);
               if (request.responseTimeMinutes <= request.chat.slaResponseMinutes) {
@@ -321,7 +322,7 @@ export const analyticsRouter = router({
               : 0;
 
           // Get feedback ratings for this accountant's chats
-          const requestIds = requests.map((r: any) => r.id);
+          const requestIds = requests.map((r) => r.id);
           const feedbackResponses = await ctx.prisma.feedbackResponse.findMany({
             where: {
               requestId: {
@@ -335,7 +336,7 @@ export const analyticsRouter = router({
 
           const averageFeedbackRating =
             feedbackResponses.length > 0
-              ? feedbackResponses.reduce((sum: number, f: any) => sum + f.rating, 0) /
+              ? feedbackResponses.reduce((sum, f) => sum + f.rating, 0) /
                 feedbackResponses.length
               : null;
 
@@ -672,7 +673,7 @@ export const analyticsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build user filter
-      const userWhere: any = {};
+      const userWhere: Prisma.UserWhereInput = {};
       if (input.accountantId) {
         userWhere.id = input.accountantId;
       }
@@ -688,7 +689,7 @@ export const analyticsRouter = router({
       });
 
       // Build request date filter
-      const dateFilter: any = {};
+      const dateFilter: Prisma.DateTimeFilter = {};
       if (input.dateFrom) {
         dateFilter.gte = input.dateFrom;
       }
@@ -700,7 +701,7 @@ export const analyticsRouter = router({
       const stats = await Promise.all(
         accountants.map(async (acc) => {
           // Build where clause for requests
-          const requestWhere: any = {
+          const requestWhere: Prisma.ClientRequestWhereInput = {
             assignedTo: acc.id,
             classification: 'REQUEST',
           };
@@ -831,7 +832,7 @@ export const analyticsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build base where clause
-      const baseWhere: any = {
+      const baseWhere: Prisma.ClientRequestWhereInput = {
         receivedAt: {
           gte: input.dateFrom,
           lte: input.dateTo,
@@ -846,7 +847,7 @@ export const analyticsRouter = router({
         baseWhere.assignedTo = input.accountantId;
       }
 
-      let data: any[] = [];
+      let data: Record<string, unknown>[] = [];
       let headers: string[] = [];
 
       switch (input.reportType) {
@@ -908,7 +909,7 @@ export const analyticsRouter = router({
         }
 
         case 'accountant_performance': {
-          const accountantFilter: any = {};
+          const accountantFilter: Prisma.UserWhereInput = {};
           if (input.accountantId) {
             accountantFilter.id = input.accountantId;
           }

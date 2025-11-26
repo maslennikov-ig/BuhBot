@@ -19,7 +19,7 @@
  * @module api/health
  */
 
-import { Request, Response } from 'express';
+import { Request, Response, Application } from 'express';
 import { testDatabaseConnection } from '../lib/prisma.js';
 import { testRedisConnection } from '../lib/redis.js';
 import logger from '../utils/logger.js';
@@ -244,7 +244,7 @@ export async function healthHandler(_req: Request, res: Response): Promise<void>
  * const app = express();
  * registerHealthEndpoint(app);
  */
-export function registerHealthEndpoint(app: any): void {
+export function registerHealthEndpoint(app: Application): void {
   app.get('/health', healthHandler);
   logger.info('Health check endpoint registered at /health');
 }

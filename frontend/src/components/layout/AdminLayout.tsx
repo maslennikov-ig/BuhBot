@@ -18,7 +18,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  LogOut,
   User,
   Star,
   ListChecks,

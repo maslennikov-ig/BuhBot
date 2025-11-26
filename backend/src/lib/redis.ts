@@ -58,6 +58,7 @@ const redisOptions: RedisOptions = {
 /**
  * Singleton Redis client
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const redis = new (Redis as any)(redisOptions);
 
 /**

@@ -8,7 +8,6 @@ import {
   ChevronRight,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   XCircle,
   ExternalLink,
 } from 'lucide-react';

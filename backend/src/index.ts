@@ -118,7 +118,7 @@ const startServer = (port: number) => {
     }
   });
 
-  s.on('error', (err: any) => {
+  s.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       logger.warn(`Port ${port} is busy, trying ${port + 1}...`);
       startServer(port + 1);

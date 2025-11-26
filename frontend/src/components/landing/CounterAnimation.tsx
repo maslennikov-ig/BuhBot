@@ -19,8 +19,8 @@ export function CounterAnimation({ value, duration = 2000 }: CounterProps) {
     // Extract numeric value
     const numericMatch = value.match(/[\d.]+/);
     if (!numericMatch) {
-      setCount(value);
-      return;
+      const t = setTimeout(() => setCount(value), 0);
+      return () => clearTimeout(t);
     }
 
     const target = parseFloat(numericMatch[0]);

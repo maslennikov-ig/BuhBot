@@ -6,14 +6,33 @@ import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
 import { StepBotToken } from '@/components/onboarding/StepBotToken';
 import { StepWorkingHours } from '@/components/onboarding/StepWorkingHours';
 import { StepSla } from '@/components/onboarding/StepSla';
+import { trpc } from '@/lib/trpc';
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
+  const utils = trpc.useUtils();
+  
+  const completeMutation = trpc.auth.completeOnboarding.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      router.push('/dashboard');
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error('Failed to complete onboarding:', error);
+      router.push('/dashboard');
+    }
+  });
 
   const nextStep = () => setStep((s) => s + 1);
+  
   const completeOnboarding = () => {
-    router.push('/dashboard');
+    completeMutation.mutate();
+  };
+
+  const handleSkip = () => {
+    completeMutation.mutate();
   };
 
   let stepContent;
@@ -46,6 +65,7 @@ export default function OnboardingPage() {
       totalSteps={3}
       title={title}
       description={description}
+      onSkip={handleSkip}
     >
       {stepContent}
     </OnboardingLayout>

@@ -10,6 +10,7 @@
 import { createTRPCReact } from '@trpc/react-query';
 import { httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../types/trpc';
+import { supabase } from './supabase';
 
 /**
  * tRPC React hooks
@@ -53,13 +54,13 @@ export function createTRPCClient() {
     links: [
       httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
-        headers() {
-          // Get JWT token from localStorage (client-side only)
+        async headers() {
+          // Get JWT token from Supabase session (client-side only)
           if (typeof window !== 'undefined') {
-            const token = localStorage.getItem('access_token');
-            if (token) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
               return {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${session.access_token}`,
               };
             }
           }

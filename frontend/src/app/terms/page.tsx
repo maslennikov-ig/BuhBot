@@ -21,17 +21,17 @@ export default function TermsOfServicePage() {
 
         <h2>2. Use License</h2>
         <p>
-          Permission is granted to temporarily download one copy of the materials (information or software) on BuhBot's website for personal, non-commercial transitory viewing only.
+          Permission is granted to temporarily download one copy of the materials (information or software) on BuhBot&apos;s website for personal, non-commercial transitory viewing only.
         </p>
 
         <h2>3. Disclaimer</h2>
         <p>
-          The materials on BuhBot's website are provided on an 'as is' basis. BuhBot makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.
+          The materials on BuhBot&apos;s website are provided on an &apos;as is&apos; basis. BuhBot makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.
         </p>
 
         <h2>4. Limitations</h2>
         <p>
-          In no event shall BuhBot or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on BuhBot's website.
+          In no event shall BuhBot or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on BuhBot&apos;s website.
         </p>
       </main>
     </div>

@@ -55,7 +55,7 @@ export function Testimonials() {
               <div className="relative z-10 flex flex-col h-full">
                 <Quote className="w-10 h-10 text-[var(--buh-primary)] mb-6 opacity-50" />
                 <p className="text-lg text-[var(--buh-foreground)] mb-6 italic flex-grow leading-relaxed">
-                  "{item.quote}"
+                  &quot;{item.quote}&quot;
                 </p>
                 <div>
                   <p className="font-bold text-[var(--buh-foreground)]">{item.author}</p>

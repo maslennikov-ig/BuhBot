@@ -7,7 +7,6 @@ import {
   MessageSquare,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   XCircle,
   ExternalLink,
 } from 'lucide-react';

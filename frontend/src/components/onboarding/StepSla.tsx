@@ -22,10 +22,12 @@ export function StepSla({ onComplete }: StepSlaProps) {
       slaThreshold: 60,
     },
   });
-
+  
+  const utils = trpc.useUtils();
   const updateSlaMutation = trpc.settings.updateSlaThresholds.useMutation();
-  const completeMutation = trpc.settings.completeOnboarding.useMutation({
-    onSuccess: () => {
+  const completeMutation = trpc.auth.completeOnboarding.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
       onComplete();
     },
   });
@@ -58,16 +60,16 @@ export function StepSla({ onComplete }: StepSlaProps) {
                 />
               </FormControl>
               <FormDescription>
-                The maximum time allowed to respond to a client request before it's marked as breached.
+                The maximum time allowed to respond to a client request before it&apos;s marked as breached.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="bg-blue-50 p-4 rounded-md text-blue-800 text-sm">
-          <p className="font-semibold mb-1">You're almost done!</p>
-          <p>Clicking "Finish Setup" will activate your dashboard and you can start connecting clients.</p>
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md text-blue-800 dark:text-blue-300 text-sm">
+          <p className="font-semibold mb-1">You&apos;re almost done!</p>
+          <p>Clicking &quot;Finish Setup&quot; will activate your dashboard and you can start connecting clients.</p>
         </div>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

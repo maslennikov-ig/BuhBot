@@ -133,6 +133,7 @@ try {
 
   // Log successful validation (but don't log in production to avoid noise)
   if (process.env['NODE_ENV'] !== 'production') {
+    // eslint-disable-next-line no-console
     console.log('[ENV] Environment variables validated successfully');
   }
 } catch (error) {

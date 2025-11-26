@@ -16,7 +16,6 @@ import {
   Calendar,
   Send,
   CheckCircle2,
-  Clock,
   XCircle,
   AlertTriangle,
   Loader2,
@@ -28,21 +27,6 @@ import {
 // ============================================
 
 type SurveyStatus = 'scheduled' | 'sending' | 'active' | 'closed' | 'expired';
-
-type SurveyItem = {
-  id: string;
-  quarter: string;
-  status: SurveyStatus;
-  scheduledAt: Date;
-  sentAt: Date | null;
-  expiresAt: Date | null;
-  closedAt: Date | null;
-  totalClients: number;
-  deliveredCount: number;
-  responseCount: number;
-  averageRating: number | null;
-  responseRate: number;
-};
 
 // ============================================
 // CONSTANTS

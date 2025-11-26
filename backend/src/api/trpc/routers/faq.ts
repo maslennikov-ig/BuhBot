@@ -14,6 +14,7 @@
 import { router, authedProcedure, managerProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 
 /**
  * FAQ router for FAQ management
@@ -115,7 +116,7 @@ export const faqRouter = router({
 
       // Score FAQ items based on keyword matches
       const scoredItems = allFaqItems
-        .map((item: any) => {
+        .map((item) => {
           let score = 0;
 
           // Check keyword matches
@@ -142,8 +143,8 @@ export const faqRouter = router({
             relevanceScore: score,
           };
         })
-        .filter((item: any) => item.relevanceScore > 0) // Only return items with matches
-        .sort((a: any, b: any) => b.relevanceScore - a.relevanceScore) // Sort by score desc
+        .filter((item) => item.relevanceScore > 0) // Only return items with matches
+        .sort((a, b) => b.relevanceScore - a.relevanceScore) // Sort by score desc
         .slice(0, input.limit); // Limit results
 
       return scoredItems;
@@ -250,7 +251,7 @@ export const faqRouter = router({
       }
 
       // Build update data from optional fields
-      const data: any = {};
+      const data: Prisma.FaqItemUpdateInput = {};
       if (input.question !== undefined) {
         data.question = input.question;
       }

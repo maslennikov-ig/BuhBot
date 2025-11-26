@@ -13,6 +13,7 @@
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 
 /**
  * Request status schema (matches Prisma RequestStatus enum)
@@ -90,7 +91,7 @@ export const requestsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build where clause from filters
-      const where: any = {};
+      const where: Prisma.ClientRequestWhereInput = {};
       if (input.chatId !== undefined) {
         where.chatId = input.chatId;
       }
@@ -114,7 +115,7 @@ export const requestsRouter = router({
       }
 
       // Build order by clause
-      const orderBy: any = {};
+      const orderBy: Prisma.ClientRequestOrderByWithRelationInput = {};
       if (input.sortBy === 'received_at') {
         orderBy.receivedAt = input.sortOrder;
       } else if (input.sortBy === 'response_time_minutes') {
@@ -297,7 +298,7 @@ export const requestsRouter = router({
       }
 
       // Build update data from optional fields
-      const data: any = {};
+      const data: Prisma.ClientRequestUncheckedUpdateInput = {};
       if (input.assignedTo !== undefined) {
         data.assignedTo = input.assignedTo;
       }

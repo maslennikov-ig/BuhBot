@@ -12,6 +12,7 @@
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 
 /**
  * Chat type schema (matches Prisma ChatType enum)
@@ -60,7 +61,7 @@ export const chatsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build where clause from filters
-      const where: any = {};
+      const where: Prisma.ChatWhereInput = {};
       if (input.assignedTo !== undefined) {
         where.assignedAccountantId = input.assignedTo;
       }
@@ -196,7 +197,7 @@ export const chatsRouter = router({
       }
 
       // Build update data from optional fields
-      const data: any = {};
+      const data: Prisma.ChatUncheckedUpdateInput = {};
       if (input.assignedAccountantId !== undefined) {
         data.assignedAccountantId = input.assignedAccountantId;
       }

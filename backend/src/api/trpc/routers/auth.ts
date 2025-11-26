@@ -115,4 +115,19 @@ export const authRouter = router({
 
       return users;
     }),
+
+  /**
+   * Mark onboarding as complete for the current user
+   *
+   * @returns Success status
+   * @authorization All authenticated users
+   */
+  completeOnboarding: authedProcedure.mutation(async ({ ctx }) => {
+    await ctx.prisma.user.update({
+      where: { id: ctx.user.id },
+      data: { isOnboardingComplete: true },
+    });
+
+    return { success: true };
+  }),
 });

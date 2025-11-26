@@ -40,10 +40,37 @@ cleanup() {
 # Trap Ctrl+C (SIGINT)
 trap cleanup SIGINT SIGTERM
 
-# 3. Start App (Concurrent Backend + Frontend)
-# Force REDIS_PORT and REDIS_HOST (IPv4) env vars for backend
-echo "⚡ Starting Frontend and Backend (REDIS_HOST=127.0.0.1, REDIS_PORT=$REDIS_PORT)..."
-REDIS_HOST=127.0.0.1 REDIS_PORT=$REDIS_PORT npm run dev
+# 3. Start App (Backend on fixed port, Frontend auto-selects)
+BACKEND_PORT=3333
+
+# Check if backend port is available (critical - BACKEND_URL depends on it)
+if lsof -i :$BACKEND_PORT > /dev/null 2>&1; then
+    echo "❌ ERROR: Port $BACKEND_PORT is already in use!"
+    echo "   Backend MUST run on this port (BACKEND_URL depends on it)."
+    echo "   Please free the port: lsof -i :$BACKEND_PORT"
+    cleanup
+    exit 1
+fi
+
+echo "⚡ Starting Backend on port $BACKEND_PORT, Frontend on auto-selected port..."
+echo "   Redis: 127.0.0.1:$REDIS_PORT"
+
+# Export common env vars
+export REDIS_HOST=127.0.0.1
+export REDIS_PORT=$REDIS_PORT
+export BACKEND_URL="http://localhost:$BACKEND_PORT"
+
+# Force IPv4 for DNS resolution (fixes WSL2 + Supabase IPv6 connectivity issues)
+export NODE_OPTIONS="--dns-result-order=ipv4first"
+
+# Start services:
+# - Backend: explicit PORT (critical - BACKEND_URL depends on it)
+# - Frontend: NO PORT - let Next.js auto-select (default 3000, auto-increment if busy)
+concurrently \
+  --names "backend,frontend" \
+  --prefix-colors "blue,green" \
+  "PORT=$BACKEND_PORT npm run dev:backend" \
+  "npm run dev:frontend"
 
 # Cleanup on exit
 cleanup

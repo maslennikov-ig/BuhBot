@@ -79,13 +79,13 @@ export const alertsRouter = router({
       });
 
       // Flatten request data into alert object
-      return alerts.map((alert: any) => ({
+      return alerts.map((alert) => ({
         id: alert.id,
         requestId: alert.requestId,
         alertType: alert.alertType,
         minutesElapsed: alert.minutesElapsed,
         alertSentAt: alert.alertSentAt,
-        chatId: alert.request.chatId,
+        chatId: Number(alert.request.chatId),
         messageText: alert.request.messageText,
         clientUsername: alert.request.clientUsername,
       }));

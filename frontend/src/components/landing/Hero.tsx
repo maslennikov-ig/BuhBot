@@ -26,15 +26,18 @@ export function Hero() {
 
   // Generate particles only on client to avoid hydration mismatch
   useEffect(() => {
-    setParticles(
-      [...Array(20)].map(() => ({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        yOffset: Math.random() * -100 - 50,
-        duration: Math.random() * 10 + 10,
-        delay: Math.random() * 5,
-      }))
-    );
+    const timer = setTimeout(() => {
+      setParticles(
+        [...Array(20)].map(() => ({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          yOffset: Math.random() * -100 - 50,
+          duration: Math.random() * 10 + 10,
+          delay: Math.random() * 5,
+        }))
+      );
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {

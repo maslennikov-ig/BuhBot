@@ -13,6 +13,7 @@
 import { router, authedProcedure, managerProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 
 /**
  * Template category schema (matches Prisma TemplateCategory enum)
@@ -188,7 +189,7 @@ export const templatesRouter = router({
       }
 
       // Build update data from optional fields
-      const data: any = {};
+      const data: Prisma.TemplateUpdateInput = {};
       if (input.title !== undefined) {
         data.title = input.title;
       }

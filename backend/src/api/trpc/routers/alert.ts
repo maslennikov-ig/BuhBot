@@ -21,6 +21,7 @@
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma, SlaAlert, ClientRequest, Chat, User } from '@prisma/client';
 import {
   createAlert as createAlertService,
   resolveAlert as resolveAlertService,
@@ -180,10 +181,18 @@ const AlertStatsOutput = z.object({
 // HELPER FUNCTIONS
 // ============================================================================
 
+type AlertWithRelations = SlaAlert & {
+  request?: (ClientRequest & {
+    chat: Chat;
+    assignedUser?: User | null;
+  }) | null;
+  acknowledgedUser?: User | null;
+};
+
 /**
  * Transform database alert to API output format
  */
-function transformAlertToOutput(alert: any): z.infer<typeof AlertOutput> {
+function transformAlertToOutput(alert: AlertWithRelations): z.infer<typeof AlertOutput> {
   return {
     id: alert.id,
     requestId: alert.requestId,
@@ -508,7 +517,7 @@ export const alertRouter = router({
     .output(AlertListOutput)
     .query(async ({ ctx, input }) => {
       // Build where clause
-      const where: any = {};
+      const where: Prisma.SlaAlertWhereInput = {};
 
       if (input.requestId) {
         where.requestId = input.requestId;

@@ -10,7 +10,7 @@
  */
 
 import * as React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Settings2, Clock, Save, Loader2 } from 'lucide-react';
@@ -121,7 +121,10 @@ export function ChatSettingsForm({
   });
 
   // Watch SLA enabled to conditionally show threshold field
-  const slaEnabled = form.watch('slaEnabled');
+  const slaEnabled = useWatch({
+    control: form.control,
+    name: 'slaEnabled',
+  });
 
   // Reset form when initial data changes
   React.useEffect(() => {

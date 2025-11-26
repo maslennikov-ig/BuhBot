@@ -1,8 +1,16 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+
+interface Particle {
+  x: number;
+  y: number;
+  yOffset: number;
+  duration: number;
+  delay: number;
+}
 
 export function Hero() {
   const scrollToNext = () => {
@@ -14,6 +22,20 @@ export function Hero() {
 
   const ctaRef = useRef<HTMLButtonElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  // Generate particles only on client to avoid hydration mismatch
+  useEffect(() => {
+    setParticles(
+      [...Array(20)].map(() => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        yOffset: Math.random() * -100 - 50,
+        duration: Math.random() * 10 + 10,
+        delay: Math.random() * 5,
+      }))
+    );
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!ctaRef.current) return;
@@ -55,24 +77,21 @@ export function Hero() {
       {/* Grid/Noise overlay for texture */}
       <div className="absolute inset-0 buh-noise z-0 pointer-events-none" />
 
-      {/* Floating particles */}
+      {/* Floating particles - rendered only on client */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {[...Array(20)].map((_, i) => (
+        {particles.map((particle, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-[var(--buh-accent)] rounded-full opacity-30"
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
-            }}
+            initial={{ x: particle.x, y: particle.y }}
             animate={{
-              y: [null, Math.random() * -100 - 50],
+              y: [null, particle.yOffset],
               opacity: [0.3, 0, 0.3],
             }}
             transition={{
-              duration: Math.random() * 10 + 10,
+              duration: particle.duration,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: particle.delay,
               ease: 'linear',
             }}
           />

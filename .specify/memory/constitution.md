@@ -1,234 +1,50 @@
-<!--
-Sync Impact Report
-==================
-Version Change: 1.0.0 → 1.1.0
-Modified Principles: Technology Standards (Core Stack)
-Added Sections: LTS Policy, AI/ML stack, Infrastructure stack
-Removed Sections: Vite, Netlify Functions (replaced with actual stack)
-
-Templates Requiring Updates:
-✅ plan-template.md - Constitution Check section already references constitution file
-✅ spec-template.md - Already aligned with user-centric requirements approach
-✅ tasks-template.md - Already organized by user stories and testability principles
-✅ CLAUDE.md - Updated with matching LTS versions
-
-Follow-up TODOs: None
--->
-
-# Symancy Project Constitution
+# [PROJECT_NAME] Constitution
+<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
 ## Core Principles
 
-### I. Context-First Development
+### [PRINCIPLE_1_NAME]
+<!-- Example: I. Library-First -->
+[PRINCIPLE_1_DESCRIPTION]
+<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
 
-Every feature implementation MUST begin with comprehensive context gathering before any code is written or delegated. This principle is NON-NEGOTIABLE.
+### [PRINCIPLE_2_NAME]
+<!-- Example: II. CLI Interface -->
+[PRINCIPLE_2_DESCRIPTION]
+<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
 
-**Requirements:**
-- Read existing code in related files
-- Search codebase for similar patterns and implementations
-- Review relevant documentation files (specs, design docs, ADRs)
-- Check recent commits that touched related areas
-- Understand dependencies and integration points
+### [PRINCIPLE_3_NAME]
+<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
+[PRINCIPLE_3_DESCRIPTION]
+<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
 
-**Rationale:** Context-first prevents duplicate work, ensures consistency with existing patterns, and prevents conflicting approaches. Blind implementation or delegation leads to rework and technical debt.
+### [PRINCIPLE_4_NAME]
+<!-- Example: IV. Integration Testing -->
+[PRINCIPLE_4_DESCRIPTION]
+<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
 
-### II. Agent-Based Orchestration
+### [PRINCIPLE_5_NAME]
+<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
+[PRINCIPLE_5_DESCRIPTION]
+<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
 
-Complex tasks MUST be delegated to specialized subagents. The orchestrator coordinates but does not implement beyond minimal changes.
+## [SECTION_2_NAME]
+<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
 
-**Requirements:**
-- Provide complete context to subagents (code snippets, file paths, patterns, documentation references)
-- Specify exact expected output and validation criteria
-- Verify results after subagent completes (read modified files, run type-check)
-- Re-delegate with corrections if results incorrect
-- Only execute directly for trivial tasks (single-line fixes, simple imports, minimal configuration)
+[SECTION_2_CONTENT]
+<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
 
-**Rationale:** Specialized agents produce higher quality results in their domain. Orchestrator maintains oversight while leveraging specialized expertise.
+## [SECTION_3_NAME]
+<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
 
-### III. Test-Driven Development (Conditional)
-
-When tests are specified in feature requirements, Test-Driven Development (TDD) is MANDATORY. Tests MUST be written first, verified to fail, then implementation proceeds.
-
-**Requirements:**
-- Write tests BEFORE implementation
-- Verify tests FAIL before implementing
-- Follow Red-Green-Refactor cycle
-- Tests MUST be independently verifiable for each user story
-
-**Rationale:** TDD ensures requirements are testable, prevents over-engineering, and provides immediate validation of implementation correctness.
-
-**Note:** Tests are OPTIONAL by default. Only when explicitly requested in feature specifications does this principle activate.
-
-### IV. Atomic Task Execution
-
-Each task MUST be independently completable, testable, and committable. Tasks are completed one at a time with immediate validation.
-
-**Requirements:**
-- Mark task in_progress BEFORE starting
-- Verify implementation (read files + run type-check)
-- Mark task completed IMMEDIATELY after validation
-- Update tasks.md with [X] and artifacts
-- Commit with `/push patch` after EACH task
-- Move to next task only after current task validated
-
-**Rationale:** Atomic commits provide detailed history, easy rollback, better code review, and clear progress tracking. Batching hides granularity and complicates debugging.
-
-### V. User Story Independence
-
-Features MUST be decomposed into independently testable user stories. Each user story delivers standalone value and can be deployed independently.
-
-**Requirements:**
-- Prioritize user stories (P1, P2, P3...)
-- Each story MUST be independently implementable
-- Each story MUST be independently testable
-- Each story MUST deliver measurable value
-- Foundation phase MUST complete before any user story work begins
-
-**Rationale:** Independent user stories enable incremental delivery, parallel development, and risk reduction. MVP can be delivered with just P1 story.
-
-### VI. Quality Gates (NON-NEGOTIABLE)
-
-Type-check and build MUST pass before any commit. No exceptions.
-
-**Requirements:**
-- Run type-check after implementation
-- Run build verification
-- No hardcoded credentials
-- No TODO comments without issue references
-
-**Rationale:** Quality gates prevent broken code from entering main branch, reduce debugging time, and maintain codebase health.
-
-### VII. Progressive Specification
-
-Features progress through mandatory specification phases before implementation. Each phase builds upon previous validated artifacts.
-
-**Requirements:**
-- Phase 0: Specification (spec.md with user stories)
-- Phase 1: Planning (plan.md with technical approach)
-- Phase 2: Task Generation (tasks.md organized by user stories)
-- Phase 3: Implementation (execute tasks atomically)
-- No phase can be skipped
-- Each phase output MUST be validated before proceeding
-
-**Rationale:** Progressive specification reduces rework, ensures shared understanding, and validates approach before expensive implementation.
-
-## Security Requirements
-
-### Data Protection
-
-All user data MUST comply with 152-ФЗ (Russian data protection law) and GDPR where applicable.
-
-**Requirements:**
-- No hardcoded credentials in code
-- Use environment variables for secrets
-- Supabase RLS policies for data access
-- Audit logs for sensitive operations
-
-### Authentication & Authorization
-
-All API endpoints MUST enforce authentication via Supabase Auth.
-
-**Requirements:**
-- Use Supabase MCP for auth operations when available
-- Implement RLS policies for data isolation
-- Session management via Supabase
-- No custom auth implementations without justification
-
-## Technology Standards
-
-> **LTS Policy**: Используем только стабильные LTS-версии. Обновление major-версий — после 3+ месяцев стабильности.
-
-### Core Stack
-
-**Runtime:**
-- Node.js 20.x LTS (Active LTS)
-- TypeScript 5.x (strict mode)
-
-**Frontend:**
-- Next.js 16.x LTS (App Router, Turbopack)
-- React 19.x
-- Tailwind CSS 4.x
-- shadcn/ui (Radix primitives)
-- Supabase client for auth and data
-
-**Backend:**
-- Express 5.x (HTTP server)
-- Prisma 7.x (ORM, driver adapter pattern)
-- tRPC 11.x (type-safe API)
-- Telegraf 4.x (Telegram bot)
-- BullMQ 5.x + Redis 7.x (job queues)
-- Zod 3.x (validation)
-
-**Database:**
-- PostgreSQL 15+ (Supabase Cloud, EU region)
-- Supabase Auth (JWT)
-- Row Level Security (RLS)
-- Redis 7.x (caching, queues)
-
-**AI/ML:**
-- OpenRouter API (primary)
-- OpenAI API (fallback)
-- pgvector for semantic search (future)
-
-**Infrastructure:**
-- VDS: FirstVDS.ru (152-ФЗ compliance)
-- Docker + Docker Compose
-- Nginx + Let's Encrypt SSL
-- Prometheus + Grafana + Uptime Kuma (monitoring)
-- GitHub Actions (CI/CD)
-
-### File Organization
-
-**Agents:** `.claude/agents/{domain}/{orchestrators|workers}/`
-**Commands:** `.claude/commands/`
-**Skills:** `.claude/skills/{skill-name}/SKILL.md`
-**Specifications:** `.specify/specs/{###-feature-name}/`
-**Templates:** `.specify/templates/`
-**Temporary Files:** `.tmp/current/` (git ignored)
-**Reports:** `docs/reports/{domain}/{YYYY-MM}/`
-
-### MCP Configuration
-
-**BASE Configuration** (`.mcp.base.json`): context7 + sequential-thinking (~600 tokens)
-**FULL Configuration** (`.mcp.full.json`): + supabase + playwright + n8n + shadcn (~5000 tokens)
-
-Switch configurations with `./switch-mcp.sh` based on task needs.
+[SECTION_3_CONTENT]
+<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
 
 ## Governance
+<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-### Constitution Authority
+[GOVERNANCE_RULES]
+<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
 
-This constitution supersedes all other development practices. When conflicts arise between this constitution and other guidance, the constitution takes precedence.
-
-### Amendment Procedure
-
-Constitution amendments require:
-1. Documented rationale for change
-2. Impact analysis on existing templates and workflows
-3. Version bump according to semantic versioning:
-   - **MAJOR**: Backward incompatible governance or principle removals/redefinitions
-   - **MINOR**: New principle or section added, or materially expanded guidance
-   - **PATCH**: Clarifications, wording, typo fixes, non-semantic refinements
-4. Sync Impact Report identifying affected templates
-5. Update of all dependent templates and documentation
-
-### Compliance Review
-
-All feature specifications, plans, and implementations MUST verify compliance with this constitution. The "Constitution Check" section in plan-template.md enforces this requirement.
-
-### Complexity Justification
-
-Any violation of constitutional principles MUST be justified in the "Complexity Tracking" section of plan.md. Justifications must explain:
-- Why the principle violation is necessary
-- Why simpler alternatives were rejected
-- Mitigation strategies for introduced complexity
-
-### Runtime Guidance
-
-Development runtime guidance is maintained in `CLAUDE.md` at repository root. This file provides operational procedures that implement constitutional principles but may be updated more frequently than the constitution itself.
-
-**Version**: 1.1.0 | **Ratified**: 2025-11-10 | **Last Amended**: 2025-11-22
-
-### Changelog
-
-- **1.1.0** (2025-11-22): Updated Technology Standards to reflect actual BuhBot stack (Next.js + Express on VDS instead of Vite + Netlify). Added LTS policy. Added AI/ML and Infrastructure sections.
+**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
+<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->

@@ -106,6 +106,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  isOnboardingComplete Boolean @default(false) @map("is_onboarding_complete")
+
   // Relations
   assignedChats      Chat[]           @relation("AssignedAccountant")
   assignedRequests   ClientRequest[]  @relation("AssignedTo")
@@ -381,6 +383,11 @@ model FaqItem {
 /// Single row with id="default" for system-wide configuration
 model GlobalSettings {
   id String @id
+
+  // Telegram Bot
+  botToken        String? @map("bot_token")
+  botUsername     String? @map("bot_username")
+  botId           BigInt? @map("bot_id")
 
   // Working Hours Defaults
   defaultTimezone    String @default("Europe/Moscow") @map("default_timezone")

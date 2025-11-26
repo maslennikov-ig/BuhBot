@@ -22,6 +22,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
+import { validateBotToken } from '../../../services/telegram/validation.js';
 
 // ============================================================================
 // INPUT SCHEMAS
@@ -540,4 +541,119 @@ export const settingsRouter = router({
         })),
       };
     }),
+
+  /**
+   * Setup Telegram Bot (Onboarding Step 1)
+   */
+  setupTelegramBot: adminProcedure
+    .input(z.object({ token: z.string() }))
+    .output(
+      z.object({
+        success: z.boolean(),
+        botUsername: z.string().optional(),
+        botId: z.number().optional(), // Changed to number to match service output, will convert to BigInt for DB if needed
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const validation = await validateBotToken(input.token);
+
+      if (!validation.isValid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error || 'Invalid bot token',
+        });
+      }
+
+      await ctx.prisma.globalSettings.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          botToken: input.token,
+          botUsername: validation.botUsername ?? null,
+          botId: validation.botId ? BigInt(validation.botId) : null,
+        },
+        update: {
+          botToken: input.token,
+          botUsername: validation.botUsername ?? null,
+          botId: validation.botId ? BigInt(validation.botId) : null,
+        },
+      });
+
+      return {
+        success: true,
+        botUsername: validation.botUsername,
+        botId: validation.botId,
+      };
+    }),
+
+  /**
+   * Update Working Schedule (Onboarding Step 2)
+   * Updates global defaults for working hours
+   */
+  updateWorkingSchedule: adminProcedure
+    .input(
+      z.object({
+        days: z.array(z.number().min(1).max(7)),
+        startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
+        endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
+        timezone: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.globalSettings.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          defaultWorkingDays: input.days,
+          defaultStartTime: input.startTime,
+          defaultEndTime: input.endTime,
+          defaultTimezone: input.timezone,
+        },
+        update: {
+          defaultWorkingDays: input.days,
+          defaultStartTime: input.startTime,
+          defaultEndTime: input.endTime,
+          defaultTimezone: input.timezone,
+        },
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Update SLA Thresholds (Onboarding Step 3)
+   * Updates global defaults for SLA
+   */
+  updateSlaThresholds: adminProcedure
+    .input(
+      z.object({
+        slaThreshold: z.number().min(1).max(480),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.globalSettings.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          defaultSlaThreshold: input.slaThreshold,
+        },
+        update: {
+          defaultSlaThreshold: input.slaThreshold,
+        },
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Complete Onboarding
+   * Marks the current user as having completed the onboarding wizard
+   */
+  completeOnboarding: authedProcedure.mutation(async ({ ctx }) => {
+    await ctx.prisma.user.update({
+      where: { id: ctx.user.id },
+      data: {
+        isOnboardingComplete: true,
+      },
+    });
+    return { success: true };
+  }),
 });

@@ -48,7 +48,11 @@ const redisOptions: RedisOptions = {
 
   // Timeouts
   connectTimeout: 10000, // 10s
-  commandTimeout: 5000,  // 5s
+  // Note: commandTimeout removed for BullMQ compatibility
+  // BullMQ uses blocking commands (BRPOPLPUSH, SUBSCRIBE) that can exceed short timeouts
+
+  // Force IPv4 to avoid issues with Node 17+ resolving localhost to ::1
+  family: 4,
 };
 
 /**

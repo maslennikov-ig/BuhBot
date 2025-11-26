@@ -1,0 +1,63 @@
+'use client';
+
+import React from 'react';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { trpc } from '@/lib/trpc';
+import { Loader2, MessageSquare } from 'lucide-react';
+import { RequestsTable } from '@/components/requests/RequestsTable';
+
+export default function RequestsPage() {
+  const { data, isLoading } = trpc.requests.list.useQuery({
+    limit: 50,
+    offset: 0,
+  });
+
+  const requests = React.useMemo(() => {
+    if (!data) return [];
+    return data.requests.map((req) => {
+      let status: 'pending' | 'in_progress' | 'resolved' | 'violated' = 'pending';
+      
+      if (req.status === 'answered') status = 'resolved';
+      else if (req.status === 'escalated') status = 'violated';
+      else if (req.status === 'in_progress') status = 'in_progress';
+      else status = 'pending';
+
+      return {
+        id: req.id,
+        chatName: req.chat.title || `Chat ${req.chatId}`,
+        clientName: req.clientUsername || 'Неизвестный',
+        message: req.messageText,
+        status,
+        time: new Date(req.receivedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        slaRemaining: undefined, 
+      };
+    });
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-full min-h-[500px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
+            Запросы
+          </h1>
+          <p className="mt-2 text-[var(--buh-foreground-muted)]">
+            Управление обращениями клиентов
+          </p>
+        </div>
+
+        <RequestsTable requests={requests} />
+      </div>
+    </AdminLayout>
+  );
+}

@@ -5,12 +5,25 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "echo 'Development server not yet configured'",
-    "build": "echo 'Build not yet configured'",
-    "start": "echo 'Start not yet configured'",
-    "test": "echo 'Tests not yet configured'",
-    "type-check": "echo 'Type check not yet configured'",
-    "lint": "echo 'Linting not yet configured'"
+    "dev:all": "./infrastructure/scripts/dev-env.sh",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "concurrently \"npm run build:backend\" \"npm run build:frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm run start",
+    "start:frontend": "cd frontend && npm run start",
+    "test": "concurrently \"npm run test:backend\" \"npm run test:frontend\"",
+    "test:backend": "cd backend && npm run test",
+    "test:frontend": "cd frontend && npm run test",
+    "type-check": "concurrently \"npm run type-check:backend\" \"npm run type-check:frontend\"",
+    "type-check:backend": "cd backend && npm run type-check",
+    "type-check:frontend": "cd frontend && npm run type-check",
+    "lint": "concurrently \"npm run lint:backend\" \"npm run lint:frontend\"",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint"
   },
   "keywords": [
     "telegram-bot",
@@ -36,5 +49,8 @@
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }

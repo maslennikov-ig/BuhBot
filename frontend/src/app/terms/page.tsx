@@ -1,55 +1,39 @@
-import { Header, Footer } from '@/components/landing';
+import React from 'react';
+import Link from 'next/link';
 
-export default function TermsPage() {
+export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-[var(--buh-background)] flex flex-col">
-      <Header />
-      <main className="flex-grow container py-24 px-4 md:px-6 prose prose-invert max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-[var(--buh-foreground)] mb-8">Пользовательское соглашение</h1>
-        
-        <div className="space-y-6 text-[var(--buh-foreground-muted)]">
-          <p>
-            <strong>Дата вступления в силу:</strong> 24 ноября 2025 г.
-          </p>
-
-          <p>
-            Настоящее Пользовательское соглашение (далее — "Соглашение") регулирует отношения между AIDevTeam (далее — "Администрация") и пользователем сети Интернет (далее — "Пользователь"), возникающие при использовании сайта BuhBot.
-          </p>
-
-          <h2 className="text-xl font-bold text-[var(--buh-foreground)] mt-8 mb-4">1. Общие положения</h2>
-          <p>
-            1.1. Использование Сайта означает безоговорочное согласие Пользователя с настоящим Соглашением и указанными в нем условиями обработки его персональной информации.
-            <br />
-            1.2. В случае несогласия с этими условиями Пользователь должен воздержаться от использования Сайта.
-          </p>
-
-          <h2 className="text-xl font-bold text-[var(--buh-foreground)] mt-8 mb-4">2. Описание услуг</h2>
-          <p>
-            Сайт предоставляет Пользователю информацию о программном продукте BuhBot, предназначенном для автоматизации коммуникаций в бухгалтерских фирмах.
-          </p>
-
-          <h2 className="text-xl font-bold text-[var(--buh-foreground)] mt-8 mb-4">3. Интеллектуальная собственность</h2>
-          <p>
-            Все объекты, размещенные на Сайте, в том числе элементы дизайна, текст, графические изображения, иллюстрации, видео, скрипты, программы, музыка, звуки и другие объекты и их подборки, являются объектами исключительных прав Администрации и других правообладателей.
-          </p>
-
-          <h2 className="text-xl font-bold text-[var(--buh-foreground)] mt-8 mb-4">4. Ограничение ответственности</h2>
-          <p>
-            Сайт предоставляется на условиях "как есть" (as is). Администрация не предоставляет никаких гарантий в отношении безошибочной и бесперебойной работы Сайта.
-          </p>
-
-          <h2 className="text-xl font-bold text-[var(--buh-foreground)] mt-8 mb-4">5. Разрешение споров</h2>
-          <p>
-            Все споры, возникающие из настоящего Соглашения или в связи с ним, подлежат рассмотрению в соответствии с действующим законодательством Российской Федерации.
-          </p>
-
-          <h2 className="text-xl font-bold text-[var(--buh-foreground)] mt-8 mb-4">6. Изменения условий</h2>
-          <p>
-            Администрация оставляет за собой право вносить изменения в настоящее Соглашение в любое время без предварительного уведомления Пользователя.
-          </p>
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 p-4">
+        <div className="max-w-4xl mx-auto flex justify-between items-center">
+          <Link href="/" className="text-xl font-bold text-slate-900">BuhBot</Link>
+          <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">Login</Link>
         </div>
+      </header>
+      <main className="max-w-3xl mx-auto py-12 px-4 prose prose-slate">
+        <h1>Terms of Service</h1>
+        <p>Last updated: November 25, 2025</p>
+        
+        <h2>1. Acceptance of Terms</h2>
+        <p>
+          By accessing or using BuhBot, you agree to be bound by these Terms of Service and all applicable laws and regulations.
+        </p>
+
+        <h2>2. Use License</h2>
+        <p>
+          Permission is granted to temporarily download one copy of the materials (information or software) on BuhBot's website for personal, non-commercial transitory viewing only.
+        </p>
+
+        <h2>3. Disclaimer</h2>
+        <p>
+          The materials on BuhBot's website are provided on an 'as is' basis. BuhBot makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties.
+        </p>
+
+        <h2>4. Limitations</h2>
+        <p>
+          In no event shall BuhBot or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on BuhBot's website.
+        </p>
       </main>
-      <Footer />
     </div>
   );
 }

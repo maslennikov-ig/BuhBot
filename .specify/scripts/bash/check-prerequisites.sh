@@ -75,7 +75,7 @@ EOF
 done
 
 # Source common functions
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 # Get feature paths and validate branch
@@ -129,12 +129,6 @@ docs=()
 # Check contracts directory (only if it exists and has files)
 if [[ -d "$CONTRACTS_DIR" ]] && [[ -n "$(ls -A "$CONTRACTS_DIR" 2>/dev/null)" ]]; then
     docs+=("contracts/")
-fi
-
-# Check research directory (only if it exists and has files)
-RESEARCH_DIR="${FEATURE_DIR}/research"
-if [[ -d "$RESEARCH_DIR" ]] && [[ -n "$(ls -A "$RESEARCH_DIR" 2>/dev/null)" ]]; then
-    docs+=("research/")
 fi
 
 [[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")

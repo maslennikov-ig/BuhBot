@@ -35,6 +35,7 @@ export const authRouter = router({
         email: z.string().email(),
         fullName: z.string(),
         role: UserRoleSchema,
+        isOnboardingComplete: z.boolean(),
         createdAt: z.date(),
       })
     )
@@ -50,6 +51,7 @@ export const authRouter = router({
           email: true,
           fullName: true,
           role: true,
+          isOnboardingComplete: true,
           createdAt: true,
         },
       });
@@ -65,6 +67,7 @@ export const authRouter = router({
         email: dbUser.email,
         fullName: dbUser.fullName,
         role: dbUser.role,
+        isOnboardingComplete: dbUser.isOnboardingComplete,
         createdAt: dbUser.createdAt,
       };
     }),

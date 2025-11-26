@@ -427,6 +427,7 @@ function Header({
 
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { trpc } from '@/lib/trpc';
 
 // ============================================
 // MAIN LAYOUT COMPONENT
@@ -437,6 +438,18 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = React.useState(false);
+
+  // Check onboarding status
+  const { data: userProfile } = trpc.auth.me.useQuery(undefined, {
+    enabled: isAuthorized,
+    retry: false,
+  });
+
+  React.useEffect(() => {
+    if (userProfile && userProfile.isOnboardingComplete === false) {
+      router.push('/onboarding');
+    }
+  }, [userProfile, router]);
 
   // Check authentication
   React.useEffect(() => {

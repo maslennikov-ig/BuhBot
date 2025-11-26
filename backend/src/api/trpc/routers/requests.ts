@@ -80,6 +80,9 @@ export const requestsRouter = router({
             status: RequestStatusSchema,
             classification: MessageClassificationSchema,
             createdAt: z.date(),
+            chat: z.object({
+              title: z.string().nullable(),
+            }),
           })
         ),
         total: z.number().int(),
@@ -135,6 +138,11 @@ export const requestsRouter = router({
             status: true,
             classification: true,
             createdAt: true,
+            chat: {
+              select: {
+                title: true,
+              },
+            },
           },
           orderBy,
           take: input.limit,

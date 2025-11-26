@@ -23,8 +23,8 @@ export const contactRouter = router({
         data: {
           name: input.name,
           email: input.email,
-          company: input.company,
-          message: input.message,
+          company: input.company ?? null,
+          message: input.message ?? null,
         },
         select: { id: true },
       });

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2025-11-26
+
+### Added
+- implement robust theme management with next-themes (281c102)
+- add password visibility toggle and fix light mode visibility in login (9a6cf15)
+
+### Changed
+- replace custom ThemeContext with next-themes in AdminLayout (0e6f139)
+
+### Fixed
+- improve login page light theme support and add theme toggle (ffaca0d)
+
 ## [0.2.6] - 2025-11-25
 
 ### Fixed

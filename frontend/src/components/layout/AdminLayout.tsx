@@ -24,6 +24,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 // ============================================
 // TYPES
@@ -105,61 +106,6 @@ const navigationItems: NavItem[] = [
     href: '/settings/survey',
   },
 ];
-
-// ============================================
-// THEME CONTEXT
-// ============================================
-
-type Theme = 'light' | 'dark';
-
-const ThemeContext = React.createContext<{
-  theme: Theme;
-  toggleTheme: () => void;
-}>({
-  theme: 'light',
-  toggleTheme: () => {},
-});
-
-export function useTheme() {
-  return React.useContext(ThemeContext);
-}
-
-function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = React.useState<Theme>('light');
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem('buh-theme') as Theme | null;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = stored || (prefersDark ? 'dark' : 'light');
-    setTheme(initialTheme);
-    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
-  }, []);
-
-  const toggleTheme = React.useCallback(() => {
-    setTheme((prev) => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('buh-theme', next);
-      document.documentElement.classList.add('theme-transition');
-      document.documentElement.classList.toggle('dark', next === 'dark');
-      setTimeout(() => {
-        document.documentElement.classList.remove('theme-transition');
-      }, 300);
-      return next;
-    });
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
 
 // ============================================
 // SIDEBAR COMPONENT
@@ -331,8 +277,20 @@ function Header({
   sidebarCollapsed: boolean;
   onToggleMobileSidebar: () => void;
 }) {
-  const { theme, toggleTheme } = useTheme();
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent hydration mismatch by only rendering the toggle icon after mount
+  // Or better yet, assume a default and update. But next-themes handles this via resolvedTheme mostly.
+  // However, for the icon rendering, we want to be sure.
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <header
@@ -383,9 +341,13 @@ function Header({
             'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]',
             'transition-all duration-200'
           )}
-          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          aria-label="Toggle theme"
         >
-          {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+           {mounted ? (
+            resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />
+          ) : (
+            <div className="h-5 w-5" /> // Placeholder to avoid mismatch
+          )}
         </button>
 
         {/* Notifications */}
@@ -547,9 +509,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <ThemeProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
-    </ThemeProvider>
+    <AdminLayoutContent>{children}</AdminLayoutContent>
   );
 }
 

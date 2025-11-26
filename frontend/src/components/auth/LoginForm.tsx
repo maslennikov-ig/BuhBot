@@ -63,10 +63,10 @@ export function LoginForm() {
   };
 
   return (
-    <div className="bg-white/80 dark:bg-white/10 backdrop-blur-md border border-gray-200 dark:border-white/20 rounded-2xl p-8 shadow-xl transition-colors duration-300">
+    <div className="bg-white/80 dark:bg-white/10 backdrop-blur-md border border-[var(--buh-border)] dark:border-white/20 rounded-2xl p-8 shadow-xl transition-colors duration-300">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back</h1>
-        <p className="text-gray-600 dark:text-slate-300 text-sm">Sign in to your accountant dashboard</p>
+        <h1 className="text-2xl font-bold text-[var(--buh-foreground)] dark:text-white mb-2">Welcome Back</h1>
+        <p className="text-[var(--buh-foreground-muted)] dark:text-slate-300 text-sm">Sign in to your accountant dashboard</p>
       </div>
 
       <Form {...form}>
@@ -76,11 +76,11 @@ export function LoginForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 dark:text-slate-200">Email</FormLabel>
+                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">Email</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="name@example.com"
-                    className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-blue-500/50 focus:bg-white dark:focus:bg-white/10 transition-colors"
+                    className="bg-white dark:bg-white/5 border-[var(--buh-border)] dark:border-white/10 text-[var(--buh-foreground)] dark:text-white placeholder:text-[var(--buh-foreground-subtle)] dark:placeholder:text-slate-500 focus:border-blue-500/50 focus:bg-white dark:focus:bg-white/10 transition-colors"
                     {...field}
                   />
                 </FormControl>
@@ -94,20 +94,20 @@ export function LoginForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 dark:text-slate-200">Password</FormLabel>
+                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">Password</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className="bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-blue-500/50 focus:bg-white dark:focus:bg-white/10 transition-colors pr-10"
+                      className="bg-white dark:bg-white/5 border-[var(--buh-border)] dark:border-white/10 text-[var(--buh-foreground)] dark:text-white placeholder:text-[var(--buh-foreground-subtle)] dark:placeholder:text-slate-500 focus:border-blue-500/50 focus:bg-white dark:focus:bg-white/10 transition-colors pr-10"
                       {...field}
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full w-10 px-3 py-2 hover:bg-transparent text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                      className="absolute right-0 top-0 h-full w-10 px-3 py-2 hover:bg-transparent text-[var(--buh-foreground-subtle)] dark:text-slate-400 hover:text-[var(--buh-foreground)] dark:hover:text-white transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (

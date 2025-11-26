@@ -4,6 +4,7 @@ import "./globals.css";
 import { TRPCProvider } from "@/lib/trpc-provider";
 import { Toaster } from "sonner";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -36,9 +37,16 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className={`antialiased ${fontSans.variable} ${fontSerif.variable} ${fontMono.variable}`}>
-        <ScrollProgress />
-        <TRPCProvider>{children}</TRPCProvider>
-        <Toaster richColors />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ScrollProgress />
+          <TRPCProvider>{children}</TRPCProvider>
+          <Toaster richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

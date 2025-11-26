@@ -3,36 +3,19 @@
 import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from 'next-themes';
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
-    // Check system preference and localStorage
-    const stored = localStorage.getItem('theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = stored || (systemDark ? 'dark' : 'light');
-    setTheme(initialTheme as 'light' | 'dark');
-    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-
-    // Add transition class
-    document.documentElement.classList.add('theme-transition');
-
-    // Toggle theme
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    localStorage.setItem('theme', newTheme);
-
-    // Remove transition class after animation
-    setTimeout(() => {
-      document.documentElement.classList.remove('theme-transition');
-    }, 300);
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   if (!mounted) return <div className="w-10 h-10" />; // Prevent hydration mismatch
@@ -41,10 +24,10 @@ export function ThemeToggle() {
     <button
       onClick={toggleTheme}
       className="relative w-10 h-10 rounded-full bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)] flex items-center justify-center transition-colors duration-200 hover:border-[var(--buh-primary)] group"
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      aria-label="Toggle theme"
     >
       <AnimatePresence mode="wait">
-        {theme === 'light' ? (
+        {resolvedTheme === 'light' ? (
           <motion.div
             key="moon"
             initial={{ rotate: -90, opacity: 0, scale: 0.5 }}

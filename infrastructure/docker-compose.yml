@@ -61,6 +61,7 @@ services:
       args:
         - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
         - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        - NEXT_PUBLIC_BOT_NAME=${NEXT_PUBLIC_BOT_NAME}
     container_name: buhbot-frontend
     restart: unless-stopped
     ports:

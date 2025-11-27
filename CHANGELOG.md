@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.9] - 2025-11-27
 
+## [0.2.9] - 2025-11-27
+
 ### Added
 - **frontend**: add separate Profile settings page (`/settings/profile`) with personal data editing
 - **frontend**: add "Connect Telegram" UI in profile settings

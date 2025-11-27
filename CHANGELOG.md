@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-11-27
+
+### Added
+- **telegram**: implement Telegram Login integration (006) (d3f3fdc)
+
+### Fixed
+- **frontend**: prevent TelegramLoginButton widget re-initialization (98c34bf)
+- **docker**: add NEXT_PUBLIC_BOT_NAME build arg for Telegram Login (2987869)
+
 ## [0.2.9] - 2025-11-27
 
 ## [0.2.9] - 2025-11-27

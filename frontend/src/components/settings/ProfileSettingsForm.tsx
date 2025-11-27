@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,7 +38,8 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function ProfileSettingsForm() {
-  const { data: user, isLoading, refetch } = trpc.auth.me.useQuery();
+  const utils = trpc.useUtils();
+  const { data: user, isLoading } = trpc.auth.me.useQuery();
   const updateProfile = trpc.auth.updateProfile.useMutation();
   const linkTelegram = trpc.user.linkTelegram.useMutation();
   const unlinkTelegram = trpc.user.unlinkTelegram.useMutation();
@@ -62,7 +64,7 @@ export function ProfileSettingsForm() {
     updateProfile.mutate(data, {
       onSuccess: () => {
         toast.success('Профиль обновлен');
-        refetch();
+        utils.auth.me.invalidate();
       },
       onError: (error) => {
         toast.error(`Ошибка обновления: ${error.message}`);
@@ -70,31 +72,32 @@ export function ProfileSettingsForm() {
     });
   };
 
-  const handleTelegramAuth = (telegramUser: TelegramUser) => {
+  // Memoize to prevent TelegramLoginButton re-initialization on every render
+  const handleTelegramAuth = useCallback((telegramUser: TelegramUser) => {
     linkTelegram.mutate(telegramUser, {
       onSuccess: () => {
         toast.success('Telegram аккаунт успешно привязан');
-        refetch();
+        utils.auth.me.invalidate();
       },
       onError: (error) => {
         toast.error(`Ошибка привязки Telegram: ${error.message}`);
       },
     });
-  };
+  }, [linkTelegram, utils.auth.me]);
 
-  const handleDisconnect = () => {
+  const handleDisconnect = useCallback(() => {
     if (confirm('Вы уверены, что хотите отвязать Telegram аккаунт? Вы перестанете получать уведомления.')) {
       unlinkTelegram.mutate(undefined, {
         onSuccess: () => {
           toast.success('Telegram аккаунт отвязан');
-          refetch();
+          utils.auth.me.invalidate();
         },
         onError: (error) => {
           toast.error(`Ошибка отвязки: ${error.message}`);
         },
       });
     }
-  };
+  }, [unlinkTelegram, utils.auth.me]);
 
   if (isLoading) {
     return <div className="h-64 rounded-lg buh-shimmer" />;

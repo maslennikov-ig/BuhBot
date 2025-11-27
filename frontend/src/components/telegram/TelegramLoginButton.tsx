@@ -39,12 +39,18 @@ export const TelegramLoginButton = ({
   usePic = true,
 }: TelegramLoginButtonProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Store onAuth in a ref so we don't re-initialize the widget when the callback changes
+  const onAuthRef = useRef(onAuth);
+
+  // Update the ref when onAuth changes (but don't trigger widget re-render)
+  useEffect(() => {
+    onAuthRef.current = onAuth;
+  }, [onAuth]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clean up previous script if any (though React usually handles this by unmounting, 
-    // simpler to just clear the container)
+    // Clean up previous script if any
     containerRef.current.innerHTML = '';
 
     const script = document.createElement('script');
@@ -59,20 +65,18 @@ export const TelegramLoginButton = ({
     script.setAttribute('data-userpic', usePic.toString());
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
 
-    // Define global callback
+    // Define global callback that uses the ref (always calls latest onAuth)
     window.onTelegramAuth = (user: TelegramUser) => {
-      onAuth(user);
+      onAuthRef.current(user);
     };
 
     containerRef.current.appendChild(script);
 
     return () => {
-      // Cleanup
-      // We don't remove the global callback immediately to prevent race conditions if unmount happens mid-auth
-      // but strictly speaking we should. 
+      // Cleanup on unmount
       delete window.onTelegramAuth;
     };
-  }, [botName, buttonSize, cornerRadius, requestAccess, usePic, onAuth]);
+  }, [botName, buttonSize, cornerRadius, requestAccess, usePic]); // Removed onAuth from deps
 
   return <div ref={containerRef} className="telegram-login-widget" />;
 };

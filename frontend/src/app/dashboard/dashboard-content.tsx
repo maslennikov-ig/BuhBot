@@ -12,134 +12,51 @@ import {
 import { trpc } from '@/lib/trpc';
 
 // ============================================
-// MOCK DATA (fallback)
+// EMPTY STATE DATA (when no real data available)
 // ============================================
 
-const mockSlaData = {
-  compliance: 87.5,
-  compliantCount: 42,
-  violatedCount: 6,
+const emptySlaData = {
+  compliance: 0,
+  compliantCount: 0,
+  violatedCount: 0,
 };
 
-const mockResponseTimeData = {
-  averageTime: 32,
+const emptyResponseTimeData = {
+  averageTime: 0,
   trend: {
-    value: 12,
+    value: 0,
     direction: 'down' as const,
   },
-  chartData: [
-    { time: 'Пн', 'Время ответа': 38 },
-    { time: 'Вт', 'Время ответа': 42 },
-    { time: 'Ср', 'Время ответа': 35 },
-    { time: 'Чт', 'Время ответа': 45 },
-    { time: 'Пт', 'Время ответа': 30 },
-    { time: 'Сб', 'Время ответа': 28 },
-    { time: 'Вс', 'Время ответа': 32 },
-  ],
+  chartData: [] as Array<{ time: string; 'Время ответа': number }>,
 };
 
-const mockViolationsData = {
-  count: 3,
-  yesterdayCount: 5,
+const emptyViolationsData = {
+  count: 0,
+  yesterdayCount: 0,
 };
 
-const mockAlertsData = {
-  totalCount: 5,
-  criticalCount: 1,
-  warningCount: 2,
-  infoCount: 2,
-  recentAlerts: [
-    {
-      id: '1',
-      title: 'SLA нарушение: ООО "Ромашка"',
-      severity: 'critical' as const,
-      time: '5 мин назад',
-    },
-    {
-      id: '2',
-      title: 'Ожидание ответа > 30 мин',
-      severity: 'warning' as const,
-      time: '15 мин назад',
-    },
-    {
-      id: '3',
-      title: 'Новый клиент без привязки',
-      severity: 'info' as const,
-      time: '1 час назад',
-    },
-  ],
+const emptyAlertsData = {
+  totalCount: 0,
+  criticalCount: 0,
+  warningCount: 0,
+  infoCount: 0,
+  recentAlerts: [] as Array<{
+    id: string;
+    title: string;
+    severity: 'critical' | 'warning' | 'info';
+    time: string;
+  }>,
 };
 
-const mockRequestsData = [
-  {
-    id: '1',
-    chatName: 'ООО "Ромашка"',
-    clientName: 'Иванов И.И.',
-    message: 'Добрый день! Подскажите, пожалуйста, по НДС за 3 квартал...',
-    status: 'pending' as const,
-    time: '10:45',
-    slaRemaining: '25 мин',
-  },
-  {
-    id: '2',
-    chatName: 'ИП Петров',
-    clientName: 'Петров П.П.',
-    message: 'Когда будет готова декларация по УСН?',
-    status: 'in_progress' as const,
-    time: '10:30',
-    slaRemaining: '40 мин',
-  },
-  {
-    id: '3',
-    chatName: 'АО "Техно"',
-    clientName: 'Сидорова А.С.',
-    message: 'Спасибо за оперативный ответ!',
-    status: 'resolved' as const,
-    time: '10:15',
-  },
-  {
-    id: '4',
-    chatName: 'ООО "Строй"',
-    clientName: 'Козлов К.К.',
-    message: 'Срочно нужна справка о доходах',
-    status: 'violated' as const,
-    time: '09:45',
-  },
-  {
-    id: '5',
-    chatName: 'ИП Новиков',
-    clientName: 'Новиков Н.Н.',
-    message: 'Подготовьте документы для банка',
-    status: 'resolved' as const,
-    time: '09:30',
-  },
-  {
-    id: '6',
-    chatName: 'ООО "Альфа"',
-    clientName: 'Морозова М.М.',
-    message: 'Есть вопрос по зарплатному проекту',
-    status: 'pending' as const,
-    time: '09:15',
-    slaRemaining: '55 мин',
-  },
-  {
-    id: '7',
-    chatName: 'АО "Бета"',
-    clientName: 'Волков В.В.',
-    message: 'Нужна консультация по ЕНП',
-    status: 'in_progress' as const,
-    time: '09:00',
-    slaRemaining: '35 мин',
-  },
-  {
-    id: '8',
-    chatName: 'ООО "Гамма"',
-    clientName: 'Зайцев З.З.',
-    message: 'Отправьте акт сверки за год',
-    status: 'resolved' as const,
-    time: '08:45',
-  },
-];
+const emptyRequestsData: Array<{
+  id: string;
+  chatName: string;
+  clientName: string;
+  message: string;
+  status: 'pending' | 'in_progress' | 'resolved' | 'violated';
+  time: string;
+  slaRemaining?: string;
+}> = [];
 
 // ============================================
 // CONSTANTS
@@ -285,7 +202,7 @@ export function DashboardContent() {
 
   // Transform API data to widget props or use mock data as fallback
   const slaData = React.useMemo(() => {
-    if (!data) return mockSlaData;
+    if (!data) return emptySlaData;
 
     // Calculate compliant count from total requests and violations
     const totalRequests = data.recentRequests?.length ?? 0;
@@ -293,16 +210,16 @@ export function DashboardContent() {
     const compliantCount = Math.max(0, totalRequests - violatedCount);
 
     return {
-      compliance: data.slaCompliancePercent ?? mockSlaData.compliance,
+      compliance: data.slaCompliancePercent ?? emptySlaData.compliance,
       compliantCount:
-        compliantCount > 0 ? compliantCount : mockSlaData.compliantCount,
+        compliantCount > 0 ? compliantCount : emptySlaData.compliantCount,
       violatedCount:
-        violatedCount > 0 ? violatedCount : mockSlaData.violatedCount,
+        violatedCount > 0 ? violatedCount : emptySlaData.violatedCount,
     };
   }, [data]);
 
   const responseTimeData = React.useMemo(() => {
-    if (!data) return mockResponseTimeData;
+    if (!data) return emptyResponseTimeData;
 
     // Determine trend direction based on responseTimeTrend
     // Positive trend = time increased (bad), negative = decreased (good)
@@ -312,19 +229,19 @@ export function DashboardContent() {
 
     return {
       averageTime: Math.round(
-        data.avgResponseTimeMinutes ?? mockResponseTimeData.averageTime
+        data.avgResponseTimeMinutes ?? emptyResponseTimeData.averageTime
       ),
       trend: {
         value: Math.round(trendValue),
         direction: trendDirection,
       },
       // Keep mock chart data until we have historical data from API
-      chartData: mockResponseTimeData.chartData,
+      chartData: emptyResponseTimeData.chartData,
     };
   }, [data]);
 
   const violationsData = React.useMemo(() => {
-    if (!data) return mockViolationsData;
+    if (!data) return emptyViolationsData;
 
     // Use today's violations as count, week violations to estimate yesterday
     const todayCount = data.totalViolationsToday ?? 0;
@@ -340,7 +257,7 @@ export function DashboardContent() {
   }, [data]);
 
   const alertsData = React.useMemo(() => {
-    if (!data) return mockAlertsData;
+    if (!data) return emptyAlertsData;
 
     // Estimate severity counts from active alerts and recent requests
     const totalAlerts = data.activeAlertsCount ?? 0;
@@ -385,7 +302,7 @@ export function DashboardContent() {
 
     // Use mock alerts if no real alerts available
     if (recentAlerts.length === 0) {
-      return mockAlertsData;
+      return emptyAlertsData;
     }
 
     return {
@@ -394,13 +311,13 @@ export function DashboardContent() {
       warningCount,
       infoCount,
       recentAlerts:
-        recentAlerts.length > 0 ? recentAlerts : mockAlertsData.recentAlerts,
+        recentAlerts.length > 0 ? recentAlerts : emptyAlertsData.recentAlerts,
     };
   }, [data]);
 
   const requestsData = React.useMemo(() => {
     if (!data?.recentRequests || data.recentRequests.length === 0) {
-      return mockRequestsData;
+      return emptyRequestsData;
     }
 
     return data.recentRequests.map((r) => ({

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 const navLinks = [
   { name: 'Возможности', href: '#features' },
@@ -18,6 +19,8 @@ import { ThemeToggle } from '../ThemeToggle';
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +28,23 @@ export function Header() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Check auth status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+      setUserEmail(session?.user?.email ?? null);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      setUserEmail(session?.user?.email ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -71,13 +91,32 @@ export function Header() {
         {/* Actions Area */}
         <div className="flex items-center gap-3">
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center">
-            <Link
-              href="/login"
-              className="px-5 py-2.5 rounded-[var(--buh-radius-md)] bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)] text-sm font-semibold text-[var(--buh-foreground)] hover:border-[var(--buh-primary)] hover:text-[var(--buh-primary)] transition-all duration-300"
-            >
-              Войти
-            </Link>
+          <div className="hidden md:flex items-center gap-3">
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-[var(--buh-foreground)] transition-all duration-200 bg-[var(--buh-surface)] border border-[var(--buh-border)] rounded-full hover:bg-[var(--buh-surface-elevated)] hover:border-[var(--buh-foreground-subtle)] focus:outline-none hover:-translate-y-1"
+                >
+                  Панель управления
+                </Link>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">
+                    <User className="h-3 w-3 text-white" />
+                  </div>
+                  <span className="text-xs text-[var(--buh-foreground-muted)] max-w-[120px] truncate">
+                    {userEmail}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="px-5 py-2.5 rounded-[var(--buh-radius-md)] bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)] text-sm font-semibold text-[var(--buh-foreground)] hover:border-[var(--buh-primary)] hover:text-[var(--buh-primary)] transition-all duration-300"
+              >
+                Войти
+              </Link>
+            )}
           </div>
 
           <ThemeToggle />
@@ -114,13 +153,31 @@ export function Header() {
                   {link.name}
                 </a>
               ))}
-              <Link
-                href="/login"
-                className="mt-2 w-full text-center py-3 rounded-[var(--buh-radius-md)] bg-[var(--buh-primary)] text-white font-semibold"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Войти
-              </Link>
+              {isLoggedIn ? (
+                <div className="flex flex-col gap-2 mt-2">
+                  <div className="flex items-center gap-2 py-2 text-sm text-[var(--buh-foreground-muted)]">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">
+                      <User className="h-3 w-3 text-white" />
+                    </div>
+                    <span className="truncate">{userEmail}</span>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    className="w-full text-center py-3 rounded-[var(--buh-radius-md)] bg-[var(--buh-primary)] text-white font-semibold"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Панель управления
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="mt-2 w-full text-center py-3 rounded-[var(--buh-radius-md)] bg-[var(--buh-primary)] text-white font-semibold"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Войти
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

@@ -274,7 +274,7 @@ function StatCard({
       </div>
       <div>
         <p className="text-xs text-[var(--buh-foreground-muted)]">{label}</p>
-        <p className="text-sm font-semibold text-[var(--buh-foreground)]">{value}</p>
+        <div className="text-sm font-semibold text-[var(--buh-foreground)]">{value}</div>
       </div>
     </div>
   );

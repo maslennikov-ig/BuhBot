@@ -60,7 +60,6 @@ const navigationItems: NavItem[] = [
     labelRu: 'Запросы',
     icon: MessageSquare,
     href: '/requests',
-    badge: 12,
   },
   {
     id: 'clients',
@@ -367,18 +366,18 @@ function Header({
         <div className="relative ml-2">
           <button
             className={cn(
-              'flex items-center gap-3 rounded-lg px-2 py-1.5',
+              'flex items-center gap-2 rounded-lg px-2 py-1.5',
               'hover:bg-[var(--buh-surface-elevated)]',
               'transition-all duration-200'
             )}
+            title="admin@buhbot.ru"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-accent-secondary)]">
               <User className="h-4 w-4 text-white" />
             </div>
-            <div className="hidden text-left md:block">
-              <p className="text-sm font-medium text-[var(--buh-foreground)]">Администратор</p>
-              <p className="text-xs text-[var(--buh-foreground-subtle)]">admin@buhbot.ru</p>
-            </div>
+            <span className="hidden md:inline text-sm font-medium text-[var(--buh-foreground)] max-w-[140px] truncate">
+              admin@buhbot.ru
+            </span>
           </button>
         </div>
       </div>

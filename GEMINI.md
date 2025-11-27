@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-11-25
 
 ## Active Technologies
+- PostgreSQL (via Prisma) (006-telegram-login)
 
 - TypeScript 5.x (Node.js 20+) + Next.js 16 (App Router), tRPC v11, Prisma 7, Tailwind CSS 4, Framer Motion (005-onboarding-dashboard)
 
@@ -22,6 +23,7 @@ npm test && npm run lint
 TypeScript 5.x (Node.js 20+): Follow standard conventions
 
 ## Recent Changes
+- 006-telegram-login: Added TypeScript 5.x (Node.js 20+)
 
 - 005-onboarding-dashboard: Added TypeScript 5.x (Node.js 20+) + Next.js 16 (App Router), tRPC v11, Prisma 7, Tailwind CSS 4, Framer Motion
 

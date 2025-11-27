@@ -65,6 +65,9 @@
 | Template Management UI | P1 | API ready | — |
 | Telegram Login Integration | P1 | Spec ready | `docs/specs/006-telegram-login-integration.md` |
 | User Management UI | P2 | Partial | — |
+| Clients Page | P1 | Implemented as `/chats` | Fix sidebar link |
+| SLA Monitor Page | P2 | Sidebar link only | — |
+| Reports Page | P2 | Sidebar link only | — |
 | Audit Logs | P3 | Not started | — |
 | Documentation | P2 | Not started | — |
 

@@ -15,6 +15,7 @@ const navLinks = [
 ];
 
 import { ThemeToggle } from '../ThemeToggle';
+import { ProfileMenu } from '../ProfileMenu';
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -100,14 +101,7 @@ export function Header() {
                 >
                   Панель управления
                 </Link>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">
-                    <User className="h-3 w-3 text-white" />
-                  </div>
-                  <span className="text-xs text-[var(--buh-foreground-muted)] max-w-[120px] truncate">
-                    {userEmail}
-                  </span>
-                </div>
+                <ProfileMenu email={userEmail} />
               </>
             ) : (
               <Link
@@ -168,6 +162,16 @@ export function Header() {
                   >
                     Панель управления
                   </Link>
+                  <button
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setIsMobileMenuOpen(false);
+                      window.location.reload();
+                    }}
+                    className="w-full text-center py-3 rounded-[var(--buh-radius-md)] bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)] text-[var(--buh-foreground)] font-semibold mt-2"
+                  >
+                    Выйти
+                  </button>
                 </div>
               ) : (
                 <Link

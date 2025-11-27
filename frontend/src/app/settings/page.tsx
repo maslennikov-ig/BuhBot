@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GeneralSettingsForm } from '@/components/settings/GeneralSettingsForm';
 import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
+import { ProfileSettingsForm } from '@/components/settings/ProfileSettingsForm';
 
 export default function SettingsPage() {
   return (
@@ -17,13 +18,18 @@ export default function SettingsPage() {
             Manage your workspace preferences and configurations.
           </p>
         </div>
-        <Tabs defaultValue="general" className="space-y-4">
+        <Tabs defaultValue="profile" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="general">General & Bot</TabsTrigger>
             <TabsTrigger value="schedule">Schedule & SLA</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
           
+          <TabsContent value="profile" className="space-y-4">
+            <ProfileSettingsForm />
+          </TabsContent>
+
           <TabsContent value="general" className="space-y-4">
             <GeneralSettingsForm />
           </TabsContent>

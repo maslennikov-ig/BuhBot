@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
+import { ProfileMenu } from '@/components/ProfileMenu';
 
 // ============================================
 // TYPES
@@ -271,9 +272,11 @@ function Sidebar({
 function Header({
   sidebarCollapsed,
   onToggleMobileSidebar,
+  userEmail,
 }: {
   sidebarCollapsed: boolean;
   onToggleMobileSidebar: () => void;
+  userEmail: string | null;
 }) {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -364,21 +367,7 @@ function Header({
 
         {/* User menu */}
         <div className="relative ml-2">
-          <button
-            className={cn(
-              'flex items-center gap-2 rounded-lg px-2 py-1.5',
-              'hover:bg-[var(--buh-surface-elevated)]',
-              'transition-all duration-200'
-            )}
-            title="admin@buhbot.ru"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-accent-secondary)]">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <span className="hidden md:inline text-sm font-medium text-[var(--buh-foreground)] max-w-[140px] truncate">
-              admin@buhbot.ru
-            </span>
-          </button>
+          <ProfileMenu email={userEmail} />
         </div>
       </div>
     </header>
@@ -398,6 +387,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = React.useState(false);
+  const [userEmail, setUserEmail] = React.useState<string | null>(null);
 
   // Check onboarding status
   const { data: userProfile } = trpc.auth.me.useQuery(undefined, {
@@ -419,6 +409,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         router.push('/login');
       } else {
         setIsAuthorized(true);
+        setUserEmail(session.user.email ?? null);
       }
     };
     checkAuth();
@@ -476,6 +467,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         <Header
           sidebarCollapsed={sidebarCollapsed}
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
+          userEmail={userEmail}
         />
 
         {/* Main content */}

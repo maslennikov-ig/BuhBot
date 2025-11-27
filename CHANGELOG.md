@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2025-11-27
+
+### Added
+- **frontend**: add separate Profile settings page (`/settings/profile`) with personal data editing
+- **frontend**: add "Connect Telegram" UI in profile settings
+- **backend**: add `telegram_id` and `telegram_username` fields to User model (T002)
+- **backend**: implement `auth.updateProfile` tRPC procedure
+
 ## [0.2.8] - 2025-11-27
 
-## [0.2.7] - 2025-11-26
+### Changed
+- **frontend**: unify ProfileMenu component for landing and dashboard
 
 ### Added
 - implement robust theme management with next-themes (281c102)

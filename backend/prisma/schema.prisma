@@ -12,6 +12,7 @@ datasource db {
   provider = "postgresql"
   // Connection URLs moved to prisma.config.ts for Prisma 7
   // url and directUrl are configured there for migrations
+  schemas  = ["public", "auth"]
 }
 
 // ============================================================================
@@ -22,12 +23,14 @@ enum UserRole {
   admin
   manager
   observer
+  @@schema("public")
 }
 
 enum ChatType {
   private
   group
   supergroup
+  @@schema("public")
 }
 
 enum RequestStatus {
@@ -35,11 +38,13 @@ enum RequestStatus {
   in_progress
   answered
   escalated
+  @@schema("public")
 }
 
 enum AlertType {
   warning
   breach
+  @@schema("public")
 }
 
 enum TemplateCategory {
@@ -48,6 +53,7 @@ enum TemplateCategory {
   document_request
   reminder
   closing
+  @@schema("public")
 }
 
 // SLA Monitoring Enums (T006)
@@ -57,6 +63,7 @@ enum MessageClassification {
   SPAM // Spam/advertisement (ignored)
   GRATITUDE // Thank you messages (no response needed)
   CLARIFICATION // Follow-up to existing request
+  @@schema("public")
 }
 
 // Alert delivery status for Telegram notifications
@@ -65,6 +72,7 @@ enum AlertDeliveryStatus {
   sent // Sent to Telegram API
   delivered // Confirmed delivery
   failed // Failed to deliver
+  @@schema("public")
 }
 
 // Resolution action that closed the alert
@@ -72,6 +80,7 @@ enum AlertAction {
   mark_resolved // Manager marked as resolved manually
   accountant_responded // Accountant replied to client
   auto_expired // Auto-closed after max escalations
+  @@schema("public")
 }
 
 // Feedback Survey Enums (Module 1.2)
@@ -81,6 +90,7 @@ enum SurveyStatus {
   active
   closed
   expired
+  @@schema("public")
 }
 
 enum DeliveryStatus {
@@ -90,6 +100,7 @@ enum DeliveryStatus {
   expired
   failed
   responded
+  @@schema("public")
 }
 
 // ============================================================================
@@ -103,6 +114,8 @@ model User {
   email     String   @unique
   fullName  String   @map("full_name")
   role      UserRole
+  telegramId       BigInt?  @map("telegram_id") @db.BigInt
+  telegramUsername String?  @map("telegram_username")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -119,6 +132,7 @@ model User {
   @@index([email])
   @@index([role])
   @@map("users")
+  @@schema("public")
 }
 
 /// Telegram chat metadata for SLA tracking and accountant assignments
@@ -151,6 +165,7 @@ model Chat {
   @@index([slaEnabled], map: "idx_chats_sla_enabled")
   @@index([monitoringEnabled])
   @@map("chats")
+  @@schema("public")
 }
 
 /// Incoming client messages for SLA monitoring and analytics
@@ -197,6 +212,7 @@ model ClientRequest {
   @@index([slaBreached])
   @@index([slaTimerStartedAt])
   @@map("client_requests")
+  @@schema("public")
 }
 
 /// SLA warnings and breaches for monitoring and compliance reporting
@@ -232,6 +248,7 @@ model SlaAlert {
   @@index([deliveryStatus])
   @@index([nextEscalationAt])
   @@map("sla_alerts")
+  @@schema("public")
 }
 
 /// Client satisfaction ratings and feedback comments
@@ -257,6 +274,7 @@ model FeedbackResponse {
   @@index([submittedAt])
   @@index([surveyId])
   @@map("feedback_responses")
+  @@schema("public")
 }
 
 /// Quarterly survey campaigns for client feedback collection
@@ -284,6 +302,7 @@ model FeedbackSurvey {
   @@index([quarter])
   @@index([status])
   @@map("feedback_surveys")
+  @@schema("public")
 }
 
 /// Individual survey delivery tracking per client chat
@@ -310,6 +329,7 @@ model SurveyDelivery {
   @@index([chatId])
   @@index([status])
   @@map("survey_deliveries")
+  @@schema("public")
 }
 
 /// Working hours per chat for accurate SLA calculation
@@ -330,6 +350,7 @@ model WorkingSchedule {
   @@index([chatId])
   @@index([dayOfWeek])
   @@map("working_schedules")
+  @@schema("public")
 }
 
 /// Reusable message templates for quick responses
@@ -351,6 +372,7 @@ model Template {
   @@index([usageCount(sort: Desc)])
   @@index([createdBy])
   @@map("templates")
+  @@schema("public")
 }
 
 /// Frequently asked questions and answers for inline button quick replies
@@ -373,6 +395,7 @@ model FaqItem {
   @@index([usageCount(sort: Desc)])
   @@index([createdBy])
   @@map("faq_items")
+  @@schema("public")
 }
 
 // ============================================================================
@@ -422,6 +445,7 @@ model GlobalSettings {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("global_settings")
+  @@schema("public")
 }
 
 /// Global calendar of federal holidays (T012)
@@ -436,6 +460,7 @@ model GlobalHoliday {
   @@index([year])
   @@index([date])
   @@map("global_holidays")
+  @@schema("public")
 }
 
 /// Chat-specific holidays overriding global (T013)
@@ -455,6 +480,7 @@ model ChatHoliday {
   @@index([chatId])
   @@index([date])
   @@map("chat_holidays")
+  @@schema("public")
 }
 
 /// AI classification result cache (T014)
@@ -471,6 +497,7 @@ model ClassificationCache {
   @@index([messageHash])
   @@index([expiresAt])
   @@map("classification_cache")
+  @@schema("public")
 }
 
 /// Landing page contact form submissions (Lead capture)
@@ -488,4 +515,5 @@ model ContactRequest {
   processedBy String?  @map("processed_by") @db.Uuid // User ID if processed by admin
 
   @@map("contact_requests")
+  @@schema("public")
 }

@@ -37,6 +37,8 @@ export const authRouter = router({
         role: UserRoleSchema,
         isOnboardingComplete: z.boolean(),
         createdAt: z.date(),
+        telegramId: z.string().nullable().optional(),
+        telegramUsername: z.string().nullable().optional(),
       })
     )
     .query(async ({ ctx }) => {
@@ -53,6 +55,8 @@ export const authRouter = router({
           role: true,
           isOnboardingComplete: true,
           createdAt: true,
+          telegramId: true,
+          telegramUsername: true,
         },
       });
 
@@ -69,7 +73,43 @@ export const authRouter = router({
         role: dbUser.role,
         isOnboardingComplete: dbUser.isOnboardingComplete,
         createdAt: dbUser.createdAt,
+        telegramId: dbUser.telegramId?.toString() ?? null,
+        telegramUsername: dbUser.telegramUsername,
       };
+    }),
+
+  /**
+   * Update current user profile
+   *
+   * @param fullName - User's full name
+   * @param telegramUsername - User's Telegram username (optional)
+   * @returns Success status
+   * @authorization All authenticated users
+   */
+  updateProfile: authedProcedure
+    .input(
+      z.object({
+        fullName: z.string().min(1, 'Имя обязательно'),
+        telegramUsername: z
+          .string()
+          .transform((val) => (val.startsWith('@') ? val.slice(1) : val))
+          .refine((val) => !val || /^[a-zA-Z0-9_]{5,32}$/.test(val), {
+            message: 'Неверный формат username (5-32 символа, латиница, цифры, _)',
+          })
+          .optional()
+          .nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.user.update({
+        where: { id: ctx.user.id },
+        data: {
+          fullName: input.fullName,
+          telegramUsername: input.telegramUsername,
+        },
+      });
+
+      return { success: true };
     }),
 
   /**

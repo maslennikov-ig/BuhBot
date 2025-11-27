@@ -6,6 +6,7 @@
 # Sensitive Files - NEVER COMMIT THESE
 # ===================================================================
 # Environment files with credentials
+.env
 .env.local
 .env.*.local
 *.env.local
@@ -18,6 +19,8 @@
 
 # Local settings
 .claude/settings.local.json
+.gemini/settings.json
+.gemini/tmp/
 
 # ===================================================================
 # Temporary Files

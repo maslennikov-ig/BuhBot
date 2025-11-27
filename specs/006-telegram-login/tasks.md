@@ -32,9 +32,10 @@
 
 **Goal**: Initialize project structure and database schema.
 
-- [ ] T001 Verify backend dependencies (crypto, prisma) in `backend/package.json`
-- [ ] T002 Update `backend/prisma/schema.prisma` to include `TelegramAccount` model and relation to `User`
-- [ ] T003 Run `npm run prisma:migrate` (or `prisma db push` for dev) to apply schema changes
+- [x] T001 Verify backend dependencies (crypto, prisma) in `backend/package.json`
+- [x] T002 Update `backend/prisma/schema.prisma` to include `TelegramAccount` model and relation to `User`
+- [x] T003 Run `npm run prisma:migrate` (or `prisma db push` for dev) to apply schema changes
+  → Artifacts: [telegram_accounts table](supabase migration via MCP)
 
 ---
 
@@ -42,8 +43,8 @@
 
 **Goal**: Core logic for Telegram verification and widget wrapper.
 
-- [ ] T004 Create `TelegramService` in `backend/src/services/telegram.service.ts` (or similar) with `verifyHash` logic
-- [ ] T005 Create `TelegramLoginButton` component in `frontend/src/components/telegram/TelegramLoginButton.tsx`
+- [x] T004 Create `TelegramService` in `backend/src/services/telegram.service.ts` (or similar) with `verifyHash` logic
+- [x] T005 Create `TelegramLoginButton` component in `frontend/src/components/telegram/TelegramLoginButton.tsx`
 
 ---
 
@@ -53,11 +54,14 @@
 **Priority**: P1
 **Independent Test**: User clicks "Login with Telegram", authorizes, and sees success.
 
-- [ ] T006 [US1] Backend: Define `linkTelegram` input validation schema in `backend/src/modules/user/user.schema.ts` (or trpc router)
-- [ ] T007 [P] [US1] Backend: Implement `linkTelegram` mutation in `backend/src/trpc/routers/user.ts` calling `TelegramService`
-- [ ] T008 [P] [US1] Frontend: Add `useLinkTelegram` mutation hook in `frontend/src/services/user.ts` (if using separate service file) or usage in component
-- [ ] T009 [US1] Frontend: Integrate `TelegramLoginButton` into `frontend/src/app/(dashboard)/settings/page.tsx`
-- [ ] T010 [US1] Frontend: Handle `onAuth` callback to trigger `linkTelegram` mutation and handle success/error
+- [x] T006 [US1] Backend: Define `linkTelegram` input validation schema in `backend/src/modules/user/user.schema.ts` (or trpc router)
+- [x] T007 [P] [US1] Backend: Implement `linkTelegram` mutation in `backend/src/trpc/routers/user.ts` calling `TelegramService`
+- [x] T008 [P] [US1] Frontend: Add `useLinkTelegram` mutation hook in `frontend/src/services/user.ts` (if using separate service file) or usage in component
+  → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
+- [x] T009 [US1] Frontend: Integrate `TelegramLoginButton` into `frontend/src/app/(dashboard)/settings/page.tsx`
+  → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
+- [x] T010 [US1] Frontend: Handle `onAuth` callback to trigger `linkTelegram` mutation and handle success/error
+  → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
 
 ---
 
@@ -67,9 +71,9 @@
 **Priority**: P2
 **Independent Test**: Settings page shows avatar and username.
 
-- [ ] T011 [US3] Backend: Update `getProfile` (or `me`) query in `backend/src/trpc/routers/user.ts` to include `telegramAccount`
-- [ ] T012 [P] [US3] Frontend: Create `TelegramAccountCard` component in `frontend/src/components/telegram/TelegramAccountCard.tsx`
-- [ ] T013 [US3] Frontend: Update `frontend/src/app/(dashboard)/settings/page.tsx` to conditionally render Button vs Card based on profile data
+- [x] T011 [US3] Backend: Update `getProfile` (or `me`) query in `backend/src/trpc/routers/user.ts` to include `telegramAccount`
+- [x] T012 [P] [US3] Frontend: Create `TelegramAccountCard` component in `frontend/src/components/telegram/TelegramAccountCard.tsx`
+- [x] T013 [US3] Frontend: Update `frontend/src/app/(dashboard)/settings/page.tsx` to conditionally render Button vs Card based on profile data
 
 ---
 
@@ -79,10 +83,10 @@
 **Priority**: P2
 **Independent Test**: User clicks Disconnect, confirms, and button reappears.
 
-- [ ] T014 [US2] Backend: Implement `unlinkTelegram` mutation in `backend/src/trpc/routers/user.ts`
-- [ ] T015 [P] [US2] Frontend: Add "Disconnect" button to `TelegramAccountCard` component
-- [ ] T016 [US2] Frontend: Implement confirmation dialog for unlinking in `frontend/src/components/telegram/TelegramAccountCard.tsx`
-- [ ] T017 [US2] Frontend: connect disconnect action to `unlinkTelegram` mutation
+- [x] T014 [US2] Backend: Implement `unlinkTelegram` mutation in `backend/src/trpc/routers/user.ts`
+- [x] T015 [P] [US2] Frontend: Add "Disconnect" button to `TelegramAccountCard` component
+- [x] T016 [US2] Frontend: Implement confirmation dialog for unlinking in `frontend/src/components/telegram/TelegramAccountCard.tsx`
+- [x] T017 [US2] Frontend: connect disconnect action to `unlinkTelegram` mutation
 
 ---
 
@@ -90,11 +94,12 @@
 
 **Goal**: Production readiness.
 
-- [ ] T018 Verify error messages are in Russian (FR-010) in backend responses and frontend toasts
-- [ ] T019 Ensure `TelegramLoginButton` is hidden if `NEXT_PUBLIC_BOT_NAME` is missing (FR-009)
-- [ ] T020 Verify 24h expiry logic in `TelegramService` (FR-004)
-- [ ] T021 Add audit logging for link/unlink operations (NFR-003) in `TelegramService`
-- [ ] T022 Add rate limiting on `linkTelegram` mutation (Security: prevent brute-force)
+- [x] T018 Verify error messages are in Russian (FR-010) in backend responses and frontend toasts
+- [x] T019 Ensure `TelegramLoginButton` is hidden if `NEXT_PUBLIC_BOT_NAME` is missing (FR-009)
+- [x] T020 Verify 24h expiry logic in `TelegramService` (FR-004)
+- [x] T021 Add audit logging for link/unlink operations (NFR-003) in `TelegramService`
+- [x] T022 Add rate limiting on `linkTelegram` mutation (Security: prevent brute-force)
+  → Artifacts: [rate-limiter.ts](backend/src/services/telegram/rate-limiter.ts), [user.ts](backend/src/api/trpc/routers/user.ts)
 - [ ] T023 Test Telegram widget on mobile browsers (NFR-002): iOS Safari, Android Chrome
 
 ---

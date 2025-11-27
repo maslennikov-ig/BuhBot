@@ -29,6 +29,7 @@ import { slaRouter } from './routers/sla.js';
 import { feedbackRouter } from './routers/feedback.js';
 import { surveyRouter } from './routers/survey.js';
 import { contactRouter } from './routers/contact.js';
+import { userRouter } from './routers/user.js';
 
 /**
  * App router combining all sub-routers
@@ -225,6 +226,15 @@ export const appRouter = router({
    * - submit: Submit new contact form (public)
    */
   contact: contactRouter,
+
+  /**
+   * User router - User account management
+   * 
+   * Procedures:
+   * - linkTelegram: Link Telegram account to user
+   * - unlinkTelegram: Unlink Telegram account
+   */
+  user: userRouter,
 });
 
 /**

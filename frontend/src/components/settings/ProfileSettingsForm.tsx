@@ -20,17 +20,18 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { trpc } from '@/lib/trpc';
+import { TelegramLoginButton, TelegramUser } from '../telegram/TelegramLoginButton';
+import { TelegramAccountCard } from '../telegram/TelegramAccountCard';
 
 const profileSchema = z.object({
   fullName: z.string().min(1, 'Имя обязательно'),
-  telegramUsername: z
-    .string()
-    .max(33, 'Максимум 32 символа')
-    .refine((val) => !val || /^@?[a-zA-Z0-9_]{5,32}$/.test(val), {
-      message: 'Неверный формат (5-32 символа, латиница, цифры, _)',
-    })
-    .optional()
-    .nullable(),
+  // telegramUsername is no longer manually editable for linking, 
+  // but we keep it in schema if backend requires it, or remove it.
+  // The backend updateProfile still accepts it, but we want to rely on the linked account.
+  // However, for backward compatibility or display preference, we might keep it.
+  // The spec says "Replace manual Telegram username input". 
+  // So we remove it from the form UI, but maybe keep it in schema as optional/hidden if needed.
+  // For now, let's remove it from UI.
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -38,12 +39,13 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export function ProfileSettingsForm() {
   const { data: user, isLoading, refetch } = trpc.auth.me.useQuery();
   const updateProfile = trpc.auth.updateProfile.useMutation();
+  const linkTelegram = trpc.user.linkTelegram.useMutation();
+  const unlinkTelegram = trpc.user.unlinkTelegram.useMutation();
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: '',
-      telegramUsername: '',
     },
   });
 
@@ -52,7 +54,6 @@ export function ProfileSettingsForm() {
     if (user) {
       form.reset({
         fullName: user.fullName,
-        telegramUsername: user.telegramUsername || '',
       });
     }
   }, [user, form]);
@@ -69,9 +70,37 @@ export function ProfileSettingsForm() {
     });
   };
 
+  const handleTelegramAuth = (telegramUser: TelegramUser) => {
+    linkTelegram.mutate(telegramUser, {
+      onSuccess: () => {
+        toast.success('Telegram аккаунт успешно привязан');
+        refetch();
+      },
+      onError: (error) => {
+        toast.error(`Ошибка привязки Telegram: ${error.message}`);
+      },
+    });
+  };
+
+  const handleDisconnect = () => {
+    if (confirm('Вы уверены, что хотите отвязать Telegram аккаунт? Вы перестанете получать уведомления.')) {
+      unlinkTelegram.mutate(undefined, {
+        onSuccess: () => {
+          toast.success('Telegram аккаунт отвязан');
+          refetch();
+        },
+        onError: (error) => {
+          toast.error(`Ошибка отвязки: ${error.message}`);
+        },
+      });
+    }
+  };
+
   if (isLoading) {
     return <div className="h-64 rounded-lg buh-shimmer" />;
   }
+
+  const botName = process.env.NEXT_PUBLIC_BOT_NAME;
 
   return (
     <div className="space-y-6">
@@ -114,31 +143,6 @@ export function ProfileSettingsForm() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="telegramUsername"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telegram Username</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--buh-foreground-subtle)]">@</span>
-                      <Input
-                        className="pl-7"
-                        placeholder="username"
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Ваш публичный юзернейм (без @). Используется для контактов.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="flex justify-end">
               <Button
                 type="submit"
@@ -175,41 +179,44 @@ export function ProfileSettingsForm() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-[var(--buh-foreground)]">Статус подключения:</span>
-              {user?.telegramId ? (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-600 text-xs font-medium">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Подключено
-                </span>
-              ) : (
+        {user?.telegramAccount ? (
+          <TelegramAccountCard
+            telegramAccount={user.telegramAccount}
+            onDisconnect={handleDisconnect}
+            isDisconnecting={unlinkTelegram.isPending}
+          />
+        ) : (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-[var(--buh-foreground)]">Статус подключения:</span>
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-600 text-xs font-medium">
                   <AlertCircle className="w-3 h-3" />
                   Не подключено
                 </span>
-              )}
+              </div>
+              <p className="text-sm text-[var(--buh-foreground-muted)]">
+                Нажмите кнопку, чтобы авторизоваться через Telegram и привязать аккаунт.
+              </p>
             </div>
-            <p className="text-sm text-[var(--buh-foreground-muted)]">
-                {user?.telegramId 
-                    ? `Аккаунт привязан (ID: ${user.telegramId})`
-                    : 'Нажмите кнопку справа, чтобы запустить бота и привязать аккаунт.'
-                }
-            </p>
-          </div>
 
-          <Button
-            variant={user?.telegramId ? "outline" : "default"}
-            onClick={() => {
-              // In a real app, this would use a generated deep link token
-              window.open(`https://t.me/BuhBot?start=connect_${user?.id}`, '_blank');
-            }}
-            className={user?.telegramId ? "" : "bg-[#229ED9] hover:bg-[#1b8bbd] text-white"}
-          >
-            {user?.telegramId ? 'Переподключить' : 'Подключить Telegram'}
-          </Button>
-        </div>
+            {botName ? (
+              <div className="flex justify-center md:justify-end">
+                <TelegramLoginButton
+                  botName={botName}
+                  onAuth={handleTelegramAuth}
+                  buttonSize="large"
+                  cornerRadius={8}
+                  requestAccess="write"
+                />
+              </div>
+            ) : (
+              <div className="text-sm text-[var(--buh-error)]">
+                Bot name not configured (NEXT_PUBLIC_BOT_NAME missing)
+              </div>
+            )}
+          </div>
+        )}
       </GlassCard>
     </div>
   );

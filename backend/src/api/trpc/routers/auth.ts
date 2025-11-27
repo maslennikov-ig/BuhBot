@@ -39,6 +39,16 @@ export const authRouter = router({
         createdAt: z.date(),
         telegramId: z.string().nullable().optional(),
         telegramUsername: z.string().nullable().optional(),
+        telegramAccount: z.object({
+          id: z.string(),
+          telegramId: z.string(),
+          username: z.string().nullable(),
+          firstName: z.string().nullable(),
+          lastName: z.string().nullable(),
+          photoUrl: z.string().nullable(),
+          authDate: z.string(),
+          linkedAt: z.date(),
+        }).nullable().optional(),
       })
     )
     .query(async ({ ctx }) => {
@@ -48,15 +58,8 @@ export const authRouter = router({
       // Fetch full user profile from database (context only has basic info)
       const dbUser = await ctx.prisma.user.findUnique({
         where: { id: user.id },
-        select: {
-          id: true,
-          email: true,
-          fullName: true,
-          role: true,
-          isOnboardingComplete: true,
-          createdAt: true,
-          telegramId: true,
-          telegramUsername: true,
+        include: {
+          telegramAccount: true,
         },
       });
 
@@ -75,6 +78,16 @@ export const authRouter = router({
         createdAt: dbUser.createdAt,
         telegramId: dbUser.telegramId?.toString() ?? null,
         telegramUsername: dbUser.telegramUsername,
+        telegramAccount: dbUser.telegramAccount ? {
+          id: dbUser.telegramAccount.id,
+          telegramId: dbUser.telegramAccount.telegramId.toString(),
+          username: dbUser.telegramAccount.username,
+          firstName: dbUser.telegramAccount.firstName,
+          lastName: dbUser.telegramAccount.lastName,
+          photoUrl: dbUser.telegramAccount.photoUrl,
+          authDate: dbUser.telegramAccount.authDate.toString(),
+          linkedAt: dbUser.telegramAccount.linkedAt,
+        } : null,
       };
     }),
 
@@ -105,7 +118,7 @@ export const authRouter = router({
         where: { id: ctx.user.id },
         data: {
           fullName: input.fullName,
-          telegramUsername: input.telegramUsername,
+          telegramUsername: input.telegramUsername ?? null,
         },
       });
 

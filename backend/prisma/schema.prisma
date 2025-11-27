@@ -23,6 +23,7 @@ enum UserRole {
   admin
   manager
   observer
+
   @@schema("public")
 }
 
@@ -30,6 +31,7 @@ enum ChatType {
   private
   group
   supergroup
+
   @@schema("public")
 }
 
@@ -38,12 +40,14 @@ enum RequestStatus {
   in_progress
   answered
   escalated
+
   @@schema("public")
 }
 
 enum AlertType {
   warning
   breach
+
   @@schema("public")
 }
 
@@ -53,6 +57,7 @@ enum TemplateCategory {
   document_request
   reminder
   closing
+
   @@schema("public")
 }
 
@@ -63,6 +68,7 @@ enum MessageClassification {
   SPAM // Spam/advertisement (ignored)
   GRATITUDE // Thank you messages (no response needed)
   CLARIFICATION // Follow-up to existing request
+
   @@schema("public")
 }
 
@@ -72,6 +78,7 @@ enum AlertDeliveryStatus {
   sent // Sent to Telegram API
   delivered // Confirmed delivery
   failed // Failed to deliver
+
   @@schema("public")
 }
 
@@ -80,6 +87,7 @@ enum AlertAction {
   mark_resolved // Manager marked as resolved manually
   accountant_responded // Accountant replied to client
   auto_expired // Auto-closed after max escalations
+
   @@schema("public")
 }
 
@@ -90,6 +98,7 @@ enum SurveyStatus {
   active
   closed
   expired
+
   @@schema("public")
 }
 
@@ -100,6 +109,7 @@ enum DeliveryStatus {
   expired
   failed
   responded
+
   @@schema("public")
 }
 
@@ -110,14 +120,14 @@ enum DeliveryStatus {
 /// Admin panel users (synchronized with Supabase Auth)
 /// References auth.users.id from Supabase Auth
 model User {
-  id        String   @id @db.Uuid
-  email     String   @unique
-  fullName  String   @map("full_name")
-  role      UserRole
+  id               String   @id @db.Uuid
+  email            String   @unique
+  fullName         String   @map("full_name")
+  role             UserRole
   telegramId       BigInt?  @map("telegram_id") @db.BigInt
   telegramUsername String?  @map("telegram_username")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   isOnboardingComplete Boolean @default(false) @map("is_onboarding_complete")
 
@@ -128,10 +138,32 @@ model User {
   createdTemplates   Template[]       @relation("TemplateCreator")
   createdFaqItems    FaqItem[]        @relation("FaqCreator")
   closedSurveys      FeedbackSurvey[] @relation("SurveyClosedBy")
+  telegramAccount    TelegramAccount?
 
   @@index([email])
   @@index([role])
   @@map("users")
+  @@schema("public")
+}
+
+/// Linked Telegram accounts for identity verification
+model TelegramAccount {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @unique @map("user_id") @db.Uuid
+  telegramId BigInt   @unique @map("telegram_id") @db.BigInt
+  username   String?
+  firstName  String?  @map("first_name")
+  lastName   String?  @map("last_name")
+  photoUrl   String?  @map("photo_url")
+  authDate   BigInt   @map("auth_date") // Timestamp from Telegram auth widget
+  linkedAt   DateTime @default(now()) @map("linked_at") @db.Timestamptz(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([telegramId])
+  @@index([username])
+  @@map("telegram_accounts")
   @@schema("public")
 }
 
@@ -408,9 +440,9 @@ model GlobalSettings {
   id String @id
 
   // Telegram Bot
-  botToken        String? @map("bot_token")
-  botUsername     String? @map("bot_username")
-  botId           BigInt? @map("bot_id")
+  botToken    String? @map("bot_token")
+  botUsername String? @map("bot_username")
+  botId       BigInt? @map("bot_id")
 
   // Working Hours Defaults
   defaultTimezone    String @default("Europe/Moscow") @map("default_timezone")
@@ -502,17 +534,17 @@ model ClassificationCache {
 
 /// Landing page contact form submissions (Lead capture)
 model ContactRequest {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  email       String
-  company     String?
-  message     String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  email     String
+  company   String?
+  message   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
   // Status tracking
-  isProcessed Boolean  @default(false) @map("is_processed")
+  isProcessed Boolean   @default(false) @map("is_processed")
   processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
-  processedBy String?  @map("processed_by") @db.Uuid // User ID if processed by admin
+  processedBy String?   @map("processed_by") @db.Uuid // User ID if processed by admin
 
   @@map("contact_requests")
   @@schema("public")

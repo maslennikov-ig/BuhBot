@@ -63,11 +63,11 @@ const navigationItems: NavItem[] = [
     href: '/requests',
   },
   {
-    id: 'clients',
-    label: 'Clients',
-    labelRu: 'Клиенты',
+    id: 'chats',
+    label: 'Chats',
+    labelRu: 'Чаты',
     icon: Users,
-    href: '/clients',
+    href: '/chats',
   },
   {
     id: 'sla',

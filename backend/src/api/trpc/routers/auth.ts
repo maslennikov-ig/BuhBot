@@ -8,7 +8,7 @@
  * @module api/trpc/routers/auth
  */
 
-import { router, authedProcedure } from '../trpc.js';
+import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 
 /**
@@ -145,6 +145,7 @@ export const authRouter = router({
           email: z.string().email(),
           fullName: z.string(),
           role: UserRoleSchema,
+          telegramId: z.string().nullable(),
         })
       )
     )
@@ -160,13 +161,41 @@ export const authRouter = router({
           email: true,
           fullName: true,
           role: true,
+          telegramId: true,
         },
         orderBy: {
           fullName: 'asc',
         },
       });
 
-      return users;
+      return users.map((user) => ({
+        ...user,
+        telegramId: user.telegramId?.toString() ?? null,
+      }));
+    }),
+
+  /**
+   * Update a user's role
+   *
+   * @param userId - Target user ID
+   * @param role - New role
+   * @returns Success status
+   * @authorization Admin only
+   */
+  updateUserRole: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        role: UserRoleSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { role: input.role },
+      });
+
+      return { success: true };
     }),
 
   /**

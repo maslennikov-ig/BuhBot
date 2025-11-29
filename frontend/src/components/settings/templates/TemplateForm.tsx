@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/layout/GlassCard';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Название обязательно').max(100, 'Максимум 100 символов'),
@@ -106,6 +107,10 @@ export function TemplateForm({ initialData, onSuccess, onCancel }: TemplateFormP
     setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(start + variable.length, start + variable.length);
+        toast.success(`Переменная ${variable} добавлена`, {
+            duration: 1500,
+            position: 'bottom-right',
+        });
     }, 0);
   };
 

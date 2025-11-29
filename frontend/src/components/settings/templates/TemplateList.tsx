@@ -5,6 +5,8 @@ import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Search, Edit2, Trash2, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -29,17 +31,24 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
   const [search, setSearch] = React.useState('');
   const utils = trpc.useContext();
 
+  const [deleteConfirm, setDeleteConfirm] = React.useState<{ open: boolean; id: string | null }>({
+    open: false,
+    id: null,
+  });
+
+  const { data: currentUser } = trpc.auth.me.useQuery();
   const { data: templates, isLoading } = trpc.templates.list.useQuery({ sortBy: 'usage_count' });
   const deleteMutation = trpc.templates.delete.useMutation({
     onSuccess: () => {
       utils.templates.list.invalidate();
+      toast.success('Шаблон удален');
     },
   });
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Вы уверены, что хотите удалить этот шаблон?')) {
-      await deleteMutation.mutateAsync({ id });
-    }
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return;
+    await deleteMutation.mutateAsync({ id: deleteConfirm.id });
+    setDeleteConfirm({ open: false, id: null });
   };
 
   const filteredItems = React.useMemo(() => {
@@ -54,7 +63,16 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
   }, [templates, search]);
 
   if (isLoading) {
-    return <div className="buh-shimmer h-64 w-full rounded-xl" />;
+    return (
+      <GlassCard variant="default" padding="md" className="flex flex-col gap-4">
+        <div className="buh-shimmer h-9 w-64 rounded-lg" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="buh-shimmer h-40 w-full rounded-lg" />
+          ))}
+        </div>
+      </GlassCard>
+    );
   }
 
   return (
@@ -78,14 +96,15 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredItems.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-[var(--buh-foreground-muted)]">
-            Нет данных
+          <div className="col-span-full py-12 text-center">
+             <p className="text-sm font-medium text-[var(--buh-foreground)]">Нет шаблонов сообщений</p>
+             <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">Создайте шаблон для быстрых ответов</p>
           </div>
         ) : (
           filteredItems.map((item) => (
             <div
               key={item.id}
-              className="group relative flex flex-col justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-subtle)] p-4 transition-all hover:border-[var(--buh-primary)] hover:shadow-md"
+              className="group relative flex flex-col justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-subtle)] p-4 buh-hover-lift hover:border-[var(--buh-primary)]"
             >
               <div>
                 <div className="mb-2 flex items-start justify-between">
@@ -93,12 +112,14 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
                         {CATEGORIES[item.category as keyof typeof CATEGORIES] || item.category}
                     </span>
                     <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit(item)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit(item)} aria-label="Редактировать шаблон">
                             <Edit2 className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[var(--buh-error)] hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]" onClick={() => handleDelete(item.id)}>
-                            <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {currentUser?.role === 'admin' && (
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-[var(--buh-error)] hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]" onClick={() => setDeleteConfirm({ open: true, id: item.id })} aria-label="Удалить шаблон">
+                                <Trash2 className="h-3 w-3" />
+                            </Button>
+                        )}
                     </div>
                 </div>
                 <h3 className="mb-1 font-semibold text-[var(--buh-foreground)]">{item.title}</h3>
@@ -113,6 +134,14 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
           ))
         )}
       </div>
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, id: null })}
+        onConfirm={handleDelete}
+        title="Удалить шаблон?"
+        description="Это действие нельзя отменить. Шаблон будет удален."
+        confirmText="Удалить"
+      />
     </GlassCard>
   );
 }

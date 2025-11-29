@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-11-29
+
+### Added
+- **007**: Implement Admin CRUD Pages (1cd27c7)
+
+### Fixed
+- **007**: Implement shadcn Select component (f797340)
+- **007**: Code review improvements (dd27da5)
+
 ## [0.3.0] - 2025-11-27
 
 ### Added

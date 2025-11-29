@@ -19,6 +19,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   title: z.string().min(1, 'Название обязательно').max(100, 'Максимум 100 символов'),
@@ -142,18 +149,20 @@ export function TemplateForm({ initialData, onSuccess, onCancel }: TemplateFormP
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Категория</FormLabel>
-                <FormControl>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-[var(--buh-border)] bg-[var(--buh-surface)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--buh-accent)] disabled:cursor-not-allowed disabled:opacity-50"
-                    {...field}
-                  >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите категорию" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
                     {CATEGORIES.map((cat) => (
-                      <option key={cat.value} value={cat.value}>
+                      <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                </FormControl>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

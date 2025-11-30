@@ -231,7 +231,7 @@ input, textarea, select {
   background: var(--buh-surface);
   border: 1px solid var(--buh-border);
   border-radius: var(--buh-radius-md);
-  padding: 0.5rem 0.75rem;
+  /* Removed fixed padding to allow Tailwind utility classes to work */
   transition:
     border-color var(--buh-transition-fast),
     box-shadow var(--buh-transition-fast);

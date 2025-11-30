@@ -11,7 +11,6 @@ import {
   BarChart3,
   Settings,
   Bell,
-  Search,
   Moon,
   Sun,
   ChevronLeft,
@@ -21,10 +20,13 @@ import {
   User,
   Star,
   ListChecks,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import { ProfileMenu } from '@/components/ProfileMenu';
+import { NotificationPopover } from '@/components/layout/NotificationPopover';
+import { SearchInput } from '@/components/ui/SearchInput';
 
 // ============================================
 // TYPES
@@ -77,6 +79,13 @@ const navigationItems: NavItem[] = [
     href: '/sla',
   },
   {
+    id: 'alerts',
+    label: 'Alerts',
+    labelRu: 'Алерты',
+    icon: AlertCircle,
+    href: '/alerts',
+  },
+  {
     id: 'reports',
     label: 'Reports',
     labelRu: 'Отчеты',
@@ -115,11 +124,13 @@ function Sidebar({
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
+  alertCount,
 }: {
   collapsed: boolean;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  alertCount?: number;
 }) {
   const pathname = usePathname();
 
@@ -186,6 +197,11 @@ function Sidebar({
               const Icon = item.icon;
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
+              // Dynamic badge for alerts
+              const badge = item.id === 'alerts' && alertCount && alertCount > 0
+                ? alertCount > 99 ? '99+' : alertCount.toString()
+                : item.badge;
+
               return (
                 <li
                   key={item.id}
@@ -217,18 +233,18 @@ function Sidebar({
                         <span className="truncate">{item.labelRu}</span>
 
                         {/* Badge */}
-                        {item.badge && (
+                        {badge && (
                           <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--buh-accent)] px-1.5 text-xs font-semibold text-white">
-                            {item.badge}
+                            {badge}
                           </span>
                         )}
                       </>
                     )}
 
                     {/* Collapsed badge */}
-                    {collapsed && item.badge && (
+                    {collapsed && badge && (
                       <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--buh-accent)] px-1 text-[10px] font-semibold text-white">
-                        {item.badge}
+                        {badge}
                       </span>
                     )}
                   </Link>
@@ -314,22 +330,13 @@ function Header({
 
       {/* Search */}
       <div className="flex-1">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--buh-foreground-subtle)]" />
-          <input
-            type="text"
-            placeholder="Поиск..."
-            className={cn(
-              'h-9 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] pl-9 pr-4 text-sm',
-              'placeholder:text-[var(--buh-foreground-subtle)]',
-              'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]',
-              'transition-all duration-200'
-            )}
-          />
-          <kbd className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-[var(--buh-border)] bg-[var(--buh-surface-elevated)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--buh-foreground-subtle)] sm:inline-block">
-            /
-          </kbd>
-        </div>
+        <SearchInput
+          placeholder="Поиск..."
+          className="max-w-md"
+          enableShortcut={true}
+          showShortcutHint={true}
+          autoFocusOnShortcut={true}
+        />
       </div>
 
       {/* Right actions */}
@@ -352,18 +359,7 @@ function Header({
         </button>
 
         {/* Notifications */}
-        <button
-          className={cn(
-            'relative flex h-9 w-9 items-center justify-center rounded-lg',
-            'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]',
-            'transition-all duration-200'
-          )}
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          {/* Notification dot */}
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--buh-accent)] ring-2 ring-[var(--buh-header-background)]" />
-        </button>
+        <NotificationPopover />
 
         {/* User menu */}
         <div className="relative ml-2">
@@ -393,6 +389,12 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   const { data: userProfile } = trpc.auth.me.useQuery(undefined, {
     enabled: isAuthorized,
     retry: false,
+  });
+
+  // Fetch active alerts count for badge
+  const { data: alertCountData } = trpc.alert.getActiveAlertCount.useQuery(undefined, {
+    enabled: isAuthorized,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   React.useEffect(() => {
@@ -453,6 +455,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        alertCount={alertCountData?.count}
       />
 
       {/* Main content area */}
@@ -478,15 +481,10 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-4 lg:px-6">
-          <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-2 sm:flex-row">
-            <p className="text-sm text-[var(--buh-foreground-subtle)]">
-              &copy; {new Date().getFullYear()} BuhBot. Все права защищены.
-            </p>
-            <p className="text-xs text-[var(--buh-foreground-subtle)]">
-              Версия 0.1.16
-            </p>
-          </div>
+        <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-3 lg:px-6">
+          <p className="text-center text-sm text-[var(--buh-foreground-subtle)]">
+            &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v0.4.0
+          </p>
         </footer>
       </div>
     </div>

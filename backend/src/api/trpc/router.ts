@@ -30,6 +30,7 @@ import { feedbackRouter } from './routers/feedback.js';
 import { surveyRouter } from './routers/survey.js';
 import { contactRouter } from './routers/contact.js';
 import { userRouter } from './routers/user.js';
+import { notificationRouter } from './routers/notification.js';
 
 /**
  * App router combining all sub-routers
@@ -235,6 +236,11 @@ export const appRouter = router({
    * - unlinkTelegram: Unlink Telegram account
    */
   user: userRouter,
+
+  /**
+   * Notification router - In-app notifications
+   */
+  notification: notificationRouter,
 });
 
 /**

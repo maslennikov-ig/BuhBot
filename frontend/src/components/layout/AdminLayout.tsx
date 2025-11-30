@@ -21,6 +21,7 @@ import {
   Star,
   ListChecks,
   AlertCircle,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -91,6 +92,13 @@ const navigationItems: NavItem[] = [
     labelRu: 'Отчеты',
     icon: BarChart3,
     href: '/reports',
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    labelRu: 'Аналитика',
+    icon: Activity,
+    href: '/analytics',
   },
   {
     id: 'settings',
@@ -195,17 +203,16 @@ function Sidebar({
           <ul className="space-y-1">
             {navigationItems.map((item, index) => {
               const Icon = item.icon;
-              // Check for exact match or partial match without a more specific nav item
+              // Check if pathname exactly matches this item
               const isExactMatch = pathname === item.href;
+              // Check if pathname starts with this item's href (child page)
               const isPartialMatch = pathname.startsWith(`${item.href}/`);
-              // Don't highlight parent if a child nav item is a better match
-              const hasMoreSpecificMatch = navigationItems.some(
-                (other) =>
-                  other.href !== item.href &&
-                  pathname.startsWith(other.href) &&
-                  other.href.length > item.href.length
+              // Check if pathname exactly matches ANY nav item (if so, don't highlight parents)
+              const pathnameMatchesAnyNavItem = navigationItems.some(
+                (nav) => nav.href === pathname
               );
-              const isActive = isExactMatch || (isPartialMatch && !hasMoreSpecificMatch);
+              // Active if exact match, or partial match when pathname isn't its own nav item
+              const isActive = isExactMatch || (isPartialMatch && !pathnameMatchesAnyNavItem);
 
               // Dynamic badge for alerts
               const badge = item.id === 'alerts' && alertCount && alertCount > 0

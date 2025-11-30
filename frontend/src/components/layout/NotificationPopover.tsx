@@ -198,8 +198,8 @@ export function NotificationPopover() {
 
             {/* Footer */}
             <div className="p-2 bg-[var(--buh-surface)]/30 border-t border-[var(--buh-border)] text-center">
-              <Link href="/notifications" className="text-xs font-medium text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)] transition-colors">
-                Показать все уведомления
+              <Link href="/alerts" onClick={() => setIsOpen(false)} className="text-xs font-medium text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)] transition-colors">
+                Показать все алерты
               </Link>
             </div>
           </motion.div>

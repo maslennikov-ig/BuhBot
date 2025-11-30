@@ -22,6 +22,7 @@ type ResponseTimeWidgetProps = {
     direction: 'up' | 'down';
   };
   chartData: ResponseTimeDataPoint[];
+  onClick?: () => void;
   className?: string;
 };
 
@@ -33,6 +34,7 @@ export function ResponseTimeWidget({
   averageTime,
   trend,
   chartData,
+  onClick,
   className,
 }: ResponseTimeWidgetProps) {
   // Trend is good when response time decreases
@@ -43,7 +45,12 @@ export function ResponseTimeWidget({
     <GlassCard
       variant="elevated"
       padding="lg"
-      className={cn('relative overflow-hidden group', className)}
+      className={cn(
+        'relative overflow-hidden group transition-transform duration-200',
+        onClick && 'cursor-pointer hover:-translate-y-1',
+        className
+      )}
+      onClick={onClick}
     >
       {/* Gradient accent on hover */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

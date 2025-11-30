@@ -5,6 +5,8 @@ import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Search, User as UserIcon, MessageCircle, Users } from 'lucide-react';
+import { useTableSort } from '@/hooks/useTableSort';
+import { SortableHeader } from '@/components/ui/SortableHeader';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -43,6 +45,8 @@ export function UserList({ onEditRole }: UserListProps) {
         user.email.toLowerCase().includes(lowerSearch)
     );
   }, [users, search]);
+
+  const { sortedData, requestSort, getSortIcon } = useTableSort(filteredItems, 'fullName', 'asc');
 
   if (isLoading) {
     return (
@@ -92,15 +96,30 @@ export function UserList({ onEditRole }: UserListProps) {
         <table className="w-full text-left text-sm">
           <thead className="bg-[var(--buh-surface-subtle)]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Пользователь</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Роль</th>
+              <SortableHeader
+                label="Пользователь"
+                sortDirection={getSortIcon('fullName')}
+                onClick={() => requestSort('fullName')}
+                className="px-6 py-3"
+              />
+              <SortableHeader
+                label="Email"
+                sortDirection={getSortIcon('email')}
+                onClick={() => requestSort('email')}
+                className="px-6 py-3"
+              />
+              <SortableHeader
+                label="Роль"
+                sortDirection={getSortIcon('role')}
+                onClick={() => requestSort('role')}
+                className="px-6 py-3"
+              />
               <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Telegram</th>
               <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Действия</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--buh-border)] bg-[var(--buh-surface)]">
-            {filteredItems.length === 0 ? (
+            {sortedData.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center py-12">
@@ -112,7 +131,7 @@ export function UserList({ onEditRole }: UserListProps) {
                 </td>
               </tr>
             ) : (
-              filteredItems.map((user, index) => (
+              sortedData.map((user, index) => (
                 <tr 
                   key={user.id} 
                   className="hover:bg-[var(--buh-surface-elevated)] transition-colors buh-animate-fade-in-up"

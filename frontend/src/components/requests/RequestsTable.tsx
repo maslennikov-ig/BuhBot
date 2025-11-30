@@ -11,6 +11,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTableSort } from '@/hooks/useTableSort';
+import { SortableHeader } from '@/components/ui/SortableHeader';
 
 // ============================================
 // TYPES
@@ -91,6 +93,13 @@ export function RequestsTable({
   requests,
   className,
 }: RequestsTableProps) {
+  // Initialize table sorting (default: sort by time descending)
+  const { sortedData, requestSort, getSortIcon } = useTableSort(
+    requests,
+    'time',
+    'desc'
+  );
+
   return (
     <GlassCard
       variant="elevated"
@@ -122,28 +131,43 @@ export function RequestsTable({
         <table className="w-full">
           <thead>
             <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-elevated)]/50">
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Чат
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Клиент
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Сообщение
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Статус
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Время
-              </th>
+              <SortableHeader
+                label="Чат"
+                sortDirection={getSortIcon('chatName')}
+                onClick={() => requestSort('chatName')}
+                className="px-6 py-3"
+              />
+              <SortableHeader
+                label="Клиент"
+                sortDirection={getSortIcon('clientName')}
+                onClick={() => requestSort('clientName')}
+                className="px-6 py-3"
+              />
+              <SortableHeader
+                label="Сообщение"
+                sortDirection={getSortIcon('message')}
+                onClick={() => requestSort('message')}
+                className="px-6 py-3"
+              />
+              <SortableHeader
+                label="Статус"
+                sortDirection={getSortIcon('status')}
+                onClick={() => requestSort('status')}
+                className="px-6 py-3"
+              />
+              <SortableHeader
+                label="Время"
+                sortDirection={getSortIcon('time')}
+                onClick={() => requestSort('time')}
+                className="px-6 py-3"
+              />
               <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                 Действия
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--buh-border)]">
-            {requests.map((request, index) => (
+            {sortedData.map((request, index) => (
               <tr
                 key={request.id}
                 className={cn(

@@ -411,6 +411,14 @@ export const analyticsRouter = router({
             avgResponseMinutes: z.number(),
           })
         ),
+        responseTimeChartData: z.array(
+          z.object({
+            date: z.date(),
+            dayLabel: z.string(),
+            avgResponseMinutes: z.number(),
+            requestCount: z.number(),
+          })
+        ),
       })
     )
     .query(async ({ ctx }) => {
@@ -612,6 +620,48 @@ export const analyticsRouter = router({
           avgResponseMinutes: a.avgResponseMinutes,
         }));
 
+      // Calculate 7-day response time chart data
+      const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+      const responseTimeChartData: Array<{
+        date: Date;
+        dayLabel: string;
+        avgResponseMinutes: number;
+        requestCount: number;
+      }> = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const dayStart = new Date(now);
+        dayStart.setDate(dayStart.getDate() - i);
+        dayStart.setHours(0, 0, 0, 0);
+
+        const dayEnd = new Date(dayStart);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const dayRequests = await ctx.prisma.clientRequest.findMany({
+          where: {
+            classification: 'REQUEST',
+            receivedAt: { gte: dayStart, lte: dayEnd },
+            responseTimeMinutes: { not: null },
+          },
+          select: {
+            responseTimeMinutes: true,
+          },
+        });
+
+        const responseTimes = dayRequests
+          .map((r) => r.responseTimeMinutes as number);
+        const avgTime = responseTimes.length > 0
+          ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+          : 0;
+
+        responseTimeChartData.push({
+          date: dayStart,
+          dayLabel: dayLabels[dayStart.getDay()] ?? '',
+          avgResponseMinutes: Math.round(avgTime * 100) / 100,
+          requestCount: dayRequests.length,
+        });
+      }
+
       return {
         slaCompliancePercent: Math.round(currentCompliancePercent * 100) / 100,
         avgResponseTimeMinutes: Math.round(currentAvgResponseTime * 100) / 100,
@@ -623,6 +673,7 @@ export const analyticsRouter = router({
         recentRequests,
         topAccountants,
         attentionNeeded,
+        responseTimeChartData,
       };
     }),
 
@@ -1105,6 +1156,304 @@ export const analyticsRouter = router({
         filename,
         expiresAt,
         rowCount: data.length,
+      };
+    }),
+
+  /**
+   * Get response time history with configurable granularity
+   *
+   * Returns time series data for response time analytics page.
+   * Automatically selects hourly or daily granularity based on date range.
+   *
+   * @param periodStart - Start date
+   * @param periodEnd - End date
+   * @param chatId - Optional filter by chat
+   * @param accountantId - Optional filter by accountant
+   * @returns Time series data with summary statistics
+   * @authorization All authenticated users (read-only)
+   */
+  getResponseTimeHistory: authedProcedure
+    .input(
+      z.object({
+        periodStart: z.date(),
+        periodEnd: z.date(),
+        chatId: z.string().optional(),
+        accountantId: z.string().uuid().optional(),
+      })
+    )
+    .output(
+      z.object({
+        dataPoints: z.array(
+          z.object({
+            timestamp: z.date(),
+            label: z.string(),
+            avgResponseMinutes: z.number(),
+            medianResponseMinutes: z.number(),
+            p95ResponseMinutes: z.number(),
+            requestCount: z.number(),
+          })
+        ),
+        summary: z.object({
+          avgResponseMinutes: z.number(),
+          medianResponseMinutes: z.number(),
+          p95ResponseMinutes: z.number(),
+          minResponseMinutes: z.number(),
+          maxResponseMinutes: z.number(),
+          totalRequests: z.number(),
+          avgTrendPercent: z.number(),
+          medianTrendPercent: z.number(),
+          p95TrendPercent: z.number(),
+        }),
+        granularity: z.enum(['hour', 'day']),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { periodStart, periodEnd, chatId, accountantId } = input;
+
+      // Determine granularity: hourly if < 3 days, otherwise daily
+      const diffDays = Math.ceil(
+        (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const granularity: 'hour' | 'day' = diffDays < 3 ? 'hour' : 'day';
+
+      // Build where clause
+      const where: Prisma.ClientRequestWhereInput = {
+        classification: 'REQUEST',
+        receivedAt: { gte: periodStart, lte: periodEnd },
+        responseTimeMinutes: { not: null },
+      };
+      if (chatId) {
+        where.chatId = BigInt(chatId);
+      }
+      if (accountantId) {
+        where.assignedTo = accountantId;
+      }
+
+      // Fetch all requests in period
+      const requests = await ctx.prisma.clientRequest.findMany({
+        where,
+        select: {
+          receivedAt: true,
+          responseTimeMinutes: true,
+        },
+        orderBy: { receivedAt: 'asc' },
+      });
+
+      // Group by time bucket
+      const buckets = new Map<string, number[]>();
+      const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+      requests.forEach((r) => {
+        const date = new Date(r.receivedAt);
+        let key: string;
+        if (granularity === 'hour') {
+          key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
+        } else {
+          key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        }
+        if (!buckets.has(key)) {
+          buckets.set(key, []);
+        }
+        buckets.get(key)!.push(r.responseTimeMinutes as number);
+      });
+
+      // Calculate percentile helper
+      const percentile = (arr: number[], p: number): number => {
+        if (arr.length === 0) return 0;
+        const sorted = [...arr].sort((a, b) => a - b);
+        const index = Math.ceil((p / 100) * sorted.length) - 1;
+        return sorted[Math.max(0, index)] ?? 0;
+      };
+
+      // Build data points
+      const dataPoints: Array<{
+        timestamp: Date;
+        label: string;
+        avgResponseMinutes: number;
+        medianResponseMinutes: number;
+        p95ResponseMinutes: number;
+        requestCount: number;
+      }> = [];
+
+      // Generate all time slots in range
+      const current = new Date(periodStart);
+      while (current <= periodEnd) {
+        let key: string;
+        let label: string;
+        if (granularity === 'hour') {
+          key = `${current.getFullYear()}-${current.getMonth()}-${current.getDate()}-${current.getHours()}`;
+          label = `${current.getHours()}:00`;
+        } else {
+          key = `${current.getFullYear()}-${current.getMonth()}-${current.getDate()}`;
+          label = `${dayLabels[current.getDay()]} ${current.getDate()}`;
+        }
+
+        const times = buckets.get(key) ?? [];
+        const avg = times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+
+        dataPoints.push({
+          timestamp: new Date(current),
+          label,
+          avgResponseMinutes: Math.round(avg * 100) / 100,
+          medianResponseMinutes: Math.round(percentile(times, 50) * 100) / 100,
+          p95ResponseMinutes: Math.round(percentile(times, 95) * 100) / 100,
+          requestCount: times.length,
+        });
+
+        // Increment
+        if (granularity === 'hour') {
+          current.setHours(current.getHours() + 1);
+        } else {
+          current.setDate(current.getDate() + 1);
+        }
+      }
+
+      // Calculate summary from all requests
+      const allTimes = requests.map((r) => r.responseTimeMinutes as number);
+      const totalRequests = allTimes.length;
+
+      const summaryAvg = totalRequests > 0
+        ? allTimes.reduce((a, b) => a + b, 0) / totalRequests
+        : 0;
+      const summaryMedian = percentile(allTimes, 50);
+      const summaryP95 = percentile(allTimes, 95);
+      const summaryMin = totalRequests > 0 ? Math.min(...allTimes) : 0;
+      const summaryMax = totalRequests > 0 ? Math.max(...allTimes) : 0;
+
+      // Calculate previous period for trends
+      const periodLength = periodEnd.getTime() - periodStart.getTime();
+      const prevStart = new Date(periodStart.getTime() - periodLength);
+      const prevEnd = new Date(periodStart.getTime() - 1);
+
+      const prevWhere: Prisma.ClientRequestWhereInput = {
+        ...where,
+        receivedAt: { gte: prevStart, lte: prevEnd },
+      };
+
+      const prevRequests = await ctx.prisma.clientRequest.findMany({
+        where: prevWhere,
+        select: { responseTimeMinutes: true },
+      });
+
+      const prevTimes = prevRequests.map((r) => r.responseTimeMinutes as number);
+      const prevAvg = prevTimes.length > 0
+        ? prevTimes.reduce((a, b) => a + b, 0) / prevTimes.length
+        : 0;
+      const prevMedian = percentile(prevTimes, 50);
+      const prevP95 = percentile(prevTimes, 95);
+
+      // Calculate trend percentages
+      const calcTrend = (current: number, previous: number): number => {
+        if (previous === 0) return 0;
+        return Math.round(((current - previous) / previous) * 100);
+      };
+
+      return {
+        dataPoints,
+        summary: {
+          avgResponseMinutes: Math.round(summaryAvg * 100) / 100,
+          medianResponseMinutes: Math.round(summaryMedian * 100) / 100,
+          p95ResponseMinutes: Math.round(summaryP95 * 100) / 100,
+          minResponseMinutes: Math.round(summaryMin * 100) / 100,
+          maxResponseMinutes: Math.round(summaryMax * 100) / 100,
+          totalRequests,
+          avgTrendPercent: calcTrend(summaryAvg, prevAvg),
+          medianTrendPercent: calcTrend(summaryMedian, prevMedian),
+          p95TrendPercent: calcTrend(summaryP95, prevP95),
+        },
+        granularity,
+      };
+    }),
+
+  /**
+   * Get response time distribution by buckets
+   *
+   * Returns count and percentage of requests in each time bucket.
+   *
+   * @param periodStart - Start date
+   * @param periodEnd - End date
+   * @param chatId - Optional filter by chat
+   * @param accountantId - Optional filter by accountant
+   * @returns Bucket distribution data
+   * @authorization All authenticated users (read-only)
+   */
+  getResponseTimeDistribution: authedProcedure
+    .input(
+      z.object({
+        periodStart: z.date(),
+        periodEnd: z.date(),
+        chatId: z.string().optional(),
+        accountantId: z.string().uuid().optional(),
+      })
+    )
+    .output(
+      z.object({
+        buckets: z.array(
+          z.object({
+            label: z.string(),
+            minMinutes: z.number(),
+            maxMinutes: z.number().nullable(),
+            count: z.number(),
+            percentage: z.number(),
+          })
+        ),
+        totalRequests: z.number(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { periodStart, periodEnd, chatId, accountantId } = input;
+
+      // Build where clause
+      const where: Prisma.ClientRequestWhereInput = {
+        classification: 'REQUEST',
+        receivedAt: { gte: periodStart, lte: periodEnd },
+        responseTimeMinutes: { not: null },
+      };
+      if (chatId) {
+        where.chatId = BigInt(chatId);
+      }
+      if (accountantId) {
+        where.assignedTo = accountantId;
+      }
+
+      // Fetch all requests
+      const requests = await ctx.prisma.clientRequest.findMany({
+        where,
+        select: { responseTimeMinutes: true },
+      });
+
+      const totalRequests = requests.length;
+
+      // Define buckets
+      const bucketDefs = [
+        { label: '0-15 мин', min: 0, max: 15 },
+        { label: '15-30 мин', min: 15, max: 30 },
+        { label: '30-60 мин', min: 30, max: 60 },
+        { label: '60+ мин', min: 60, max: null },
+      ];
+
+      // Count requests in each bucket
+      const buckets = bucketDefs.map((def) => {
+        const count = requests.filter((r) => {
+          const time = r.responseTimeMinutes as number;
+          if (def.max === null) {
+            return time >= def.min;
+          }
+          return time >= def.min && time < def.max;
+        }).length;
+
+        return {
+          label: def.label,
+          minMinutes: def.min,
+          maxMinutes: def.max,
+          count,
+          percentage: totalRequests > 0 ? Math.round((count / totalRequests) * 100) : 0,
+        };
+      });
+
+      return {
+        buckets,
+        totalRequests,
       };
     }),
 });

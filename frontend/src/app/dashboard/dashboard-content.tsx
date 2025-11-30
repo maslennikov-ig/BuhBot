@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import {
   SlaComplianceWidget,
@@ -184,6 +185,8 @@ function LoadingSkeleton() {
 // ============================================
 
 export function DashboardContent() {
+  const router = useRouter();
+
   // Fetch dashboard data with real-time polling
   const { data, isLoading, error } = trpc.analytics.getDashboard.useQuery(
     { timezone: 'Europe/Moscow' },
@@ -227,6 +230,12 @@ export function DashboardContent() {
     const trendDirection: 'up' | 'down' =
       (data.responseTimeTrend ?? 0) > 0 ? 'up' : 'down';
 
+    // Transform API chart data to widget format
+    const chartData = data.responseTimeChartData?.map((point) => ({
+      time: point.dayLabel,
+      'Время ответа': point.avgResponseMinutes,
+    })) ?? emptyResponseTimeData.chartData;
+
     return {
       averageTime: Math.round(
         data.avgResponseTimeMinutes ?? emptyResponseTimeData.averageTime
@@ -235,8 +244,7 @@ export function DashboardContent() {
         value: Math.round(trendValue),
         direction: trendDirection,
       },
-      // Keep mock chart data until we have historical data from API
-      chartData: emptyResponseTimeData.chartData,
+      chartData,
     };
   }, [data]);
 
@@ -374,6 +382,7 @@ export function DashboardContent() {
           averageTime={responseTimeData.averageTime}
           trend={responseTimeData.trend}
           chartData={responseTimeData.chartData}
+          onClick={() => router.push('/analytics')}
         />
 
         {/* Violations */}

@@ -13,6 +13,8 @@ import {
   Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTableSort } from '@/hooks/useTableSort';
+import { SortableHeader } from '@/components/ui/SortableHeader';
 
 // ============================================
 // TYPES
@@ -189,6 +191,9 @@ export function FeedbackTable({
 }: FeedbackTableProps) {
   const [showFilters, setShowFilters] = React.useState(false);
 
+  // Sorting
+  const { sortedData, requestSort, getSortIcon } = useTableSort(entries, 'submittedAt', 'desc');
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('ru-RU', {
       day: '2-digit',
@@ -294,24 +299,42 @@ export function FeedbackTable({
         <table className="w-full">
           <thead>
             <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-elevated)]/50">
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Чат
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Клиент
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Бухгалтер
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Оценка
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Комментарий
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                Дата
-              </th>
+              <SortableHeader
+                label="Чат"
+                sortDirection={getSortIcon('chatTitle')}
+                onClick={() => requestSort('chatTitle')}
+                className="px-6 font-semibold"
+              />
+              <SortableHeader
+                label="Клиент"
+                sortDirection={getSortIcon('clientUsername')}
+                onClick={() => requestSort('clientUsername')}
+                className="px-6 font-semibold"
+              />
+              <SortableHeader
+                label="Бухгалтер"
+                sortDirection={getSortIcon('accountantUsername')}
+                onClick={() => requestSort('accountantUsername')}
+                className="px-6 font-semibold"
+              />
+              <SortableHeader
+                label="Оценка"
+                sortDirection={getSortIcon('rating')}
+                onClick={() => requestSort('rating')}
+                className="px-6 font-semibold"
+              />
+              <SortableHeader
+                label="Комментарий"
+                sortDirection={getSortIcon('comment')}
+                onClick={() => requestSort('comment')}
+                className="px-6 font-semibold"
+              />
+              <SortableHeader
+                label="Дата"
+                sortDirection={getSortIcon('submittedAt')}
+                onClick={() => requestSort('submittedAt')}
+                className="px-6 font-semibold"
+              />
               <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                 Действия
               </th>
@@ -341,7 +364,7 @@ export function FeedbackTable({
                 </td>
               </tr>
             ) : (
-              entries.map((entry, index) => (
+              sortedData.map((entry, index) => (
                 <tr
                   key={entry.id}
                   className={cn(

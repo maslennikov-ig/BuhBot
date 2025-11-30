@@ -33,6 +33,8 @@ import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SortableHeader } from '@/components/ui/SortableHeader';
+import { useTableSort } from '@/hooks/useTableSort';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +58,12 @@ type Chat = {
 type FilterState = {
   assignedTo: string;
   slaEnabled: string; // 'all' | 'true' | 'false'
+};
+
+// Flattened type for sorting (handling nested fields)
+type SortableChat = Chat & {
+  accountantDisplayName: string; // Computed field for sorting accountant
+  slaStatus: string; // Computed field for sorting SLA status ('enabled' | 'disabled')
 };
 
 // ============================================
@@ -288,6 +296,27 @@ export function ChatsListContent() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
+  // Transform chats for sorting (add computed fields)
+  const sortableChats: SortableChat[] = React.useMemo(
+    () =>
+      chats.map((chat) => ({
+        ...chat,
+        accountantDisplayName:
+          chat.accountantUsername ||
+          chat.assignedAccountantId ||
+          '', // Empty string for unassigned
+        slaStatus: chat.slaEnabled ? 'enabled' : 'disabled',
+      })),
+    [chats]
+  );
+
+  // Use table sort hook
+  const { sortedData, requestSort, getSortIcon } = useTableSort<SortableChat>(
+    sortableChats,
+    'title',
+    'asc'
+  );
+
   // Reset to first page when filters change
   React.useEffect(() => {
     setPage(0);
@@ -443,28 +472,38 @@ export function ChatsListContent() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-overlay)]">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                      Название
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                      Тип
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                      Бухгалтер
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                      SLA
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                      Порог
-                    </th>
+                    <SortableHeader
+                      label="Название"
+                      sortDirection={getSortIcon('title')}
+                      onClick={() => requestSort('title')}
+                    />
+                    <SortableHeader
+                      label="Тип"
+                      sortDirection={getSortIcon('chatType')}
+                      onClick={() => requestSort('chatType')}
+                    />
+                    <SortableHeader
+                      label="Бухгалтер"
+                      sortDirection={getSortIcon('accountantDisplayName')}
+                      onClick={() => requestSort('accountantDisplayName')}
+                    />
+                    <SortableHeader
+                      label="SLA"
+                      sortDirection={getSortIcon('slaStatus')}
+                      onClick={() => requestSort('slaStatus')}
+                    />
+                    <SortableHeader
+                      label="Порог"
+                      sortDirection={getSortIcon('slaResponseMinutes')}
+                      onClick={() => requestSort('slaResponseMinutes')}
+                    />
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                       Действия
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--buh-border)]">
-                  {chats.map((chat, index) => {
+                  {sortedData.map((chat, index) => {
                     const TypeIcon = CHAT_TYPE_ICONS[chat.chatType] || MessageSquare;
                     return (
                       <tr

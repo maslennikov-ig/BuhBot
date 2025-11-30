@@ -23,6 +23,13 @@ import {
 import { toast } from 'sonner';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Textarea } from '@/components/ui/textarea';
+import { useTableSort } from '@/hooks/useTableSort';
+import { SortableHeader } from '@/components/ui/SortableHeader';
+import { inferRouterOutputs } from '@trpc/server';
+import { AppRouter } from '@/types/trpc';
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type AlertItem = RouterOutputs['alert']['getAlerts']['items'][number];
 
 // Helper for date formatting
 const formatDate = (date: Date | string) => {
@@ -40,6 +47,21 @@ const formatDuration = (minutes: number) => {
   const m = Math.floor(minutes % 60);
   if (h > 0) return `${h}ч ${m}м`;
   return `${m}м`;
+};
+
+// Type for flattened alert data (for sorting)
+type FlattenedAlert = {
+  id: string;
+  alertType: string;
+  resolvedAction: string | null;
+  alertSentAt: Date;
+  minutesElapsed: number;
+  clientUsername: string;
+  chatTitle: string;
+  messagePreview: string;
+  accountantName: string;
+  resolutionNotes: string | null;
+  original: AlertItem;
 };
 
 // Resolve Dialog Component
@@ -157,6 +179,31 @@ export default function AlertsPage() {
   // Stats data
   const stats = statsQuery.data;
 
+  // Flatten alert data for sorting
+  const flattenedAlerts = React.useMemo<FlattenedAlert[]>(() => {
+    if (!alertsQuery.data?.items) return [];
+    return alertsQuery.data.items.map((alert) => ({
+      id: alert.id,
+      alertType: alert.alertType,
+      resolvedAction: alert.resolvedAction,
+      alertSentAt: new Date(alert.alertSentAt),
+      minutesElapsed: alert.minutesElapsed,
+      clientUsername: alert.request?.clientUsername || 'Неизвестный',
+      chatTitle: alert.request?.chatTitle || 'Без названия',
+      messagePreview: alert.request?.messagePreview || '-',
+      accountantName: alert.request?.accountantName || '',
+      resolutionNotes: alert.resolutionNotes,
+      original: alert,
+    }));
+  }, [alertsQuery.data?.items]);
+
+  // Sorting
+  const { sortedData: sortedAlerts, requestSort, getSortIcon } = useTableSort(
+    flattenedAlerts,
+    'alertSentAt',
+    'desc'
+  );
+
   return (
     <AdminLayout>
       <div className="space-y-8">
@@ -265,7 +312,7 @@ export default function AlertsPage() {
               <div className="flex justify-center p-8">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : alertsQuery.data?.items.length === 0 ? (
+            ) : sortedAlerts.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 Алертов не найдено
               </div>
@@ -274,29 +321,39 @@ export default function AlertsPage() {
                 <div className="relative w-full overflow-auto">
                   <table className="w-full caption-bottom text-sm">
                     <thead className="[&_tr]:border-b">
-                      <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                          Статус
-                        </th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                          Клиент / Чат
-                        </th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                          Сообщение
-                        </th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                          Время
-                        </th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                          Ответственный
-                        </th>
+                      <tr className="border-b transition-colors">
+                        <SortableHeader
+                          label="Статус"
+                          sortDirection={getSortIcon('alertType')}
+                          onClick={() => requestSort('alertType')}
+                        />
+                        <SortableHeader
+                          label="Клиент"
+                          sortDirection={getSortIcon('clientUsername')}
+                          onClick={() => requestSort('clientUsername')}
+                        />
+                        <SortableHeader
+                          label="Сообщение"
+                          sortDirection={getSortIcon('messagePreview')}
+                          onClick={() => requestSort('messagePreview')}
+                        />
+                        <SortableHeader
+                          label="Время"
+                          sortDirection={getSortIcon('alertSentAt')}
+                          onClick={() => requestSort('alertSentAt')}
+                        />
+                        <SortableHeader
+                          label="Ответственный"
+                          sortDirection={getSortIcon('accountantName')}
+                          onClick={() => requestSort('accountantName')}
+                        />
                         <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
                           Действия
                         </th>
                       </tr>
                     </thead>
                     <tbody className="[&_tr:last-child]:border-0">
-                      {alertsQuery.data?.items.map((alert) => (
+                      {sortedAlerts.map((alert) => (
                         <tr
                           key={alert.id}
                           className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
@@ -319,14 +376,14 @@ export default function AlertsPage() {
                             </div>
                           </td>
                           <td className="p-4 align-middle">
-                            <div className="font-medium">{alert.request?.clientUsername || 'Неизвестный'}</div>
+                            <div className="font-medium">{alert.clientUsername}</div>
                             <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                              {alert.request?.chatTitle || 'Без названия'}
+                              {alert.chatTitle}
                             </div>
                           </td>
                           <td className="p-4 align-middle">
-                            <div className="truncate max-w-[300px]" title={alert.request?.messagePreview}>
-                              {alert.request?.messagePreview || '-'}
+                            <div className="truncate max-w-[300px]" title={alert.messagePreview}>
+                              {alert.messagePreview}
                             </div>
                           </td>
                           <td className="p-4 align-middle">
@@ -340,7 +397,7 @@ export default function AlertsPage() {
                             </div>
                           </td>
                           <td className="p-4 align-middle">
-                            {alert.request?.accountantName || (
+                            {alert.accountantName || (
                               <span className="text-muted-foreground italic">Не назначен</span>
                             )}
                           </td>

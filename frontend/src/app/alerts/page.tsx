@@ -211,6 +211,19 @@ export default function AlertsPage() {
 
   const stats = statsQuery.data;
 
+  // Calculate quick stats from actual data (not just today's)
+  const quickStats = React.useMemo(() => {
+    const items = alertsQuery.data?.items ?? [];
+    const total = alertsQuery.data?.total ?? 0;
+    return {
+      active: items.filter((a) => !a.resolvedAction).length,
+      breaches: items.filter((a) => a.alertType === 'breach' && !a.resolvedAction).length,
+      resolved: items.filter((a) => a.resolvedAction !== null).length,
+      // For total counts, use the query total if we're showing all statuses
+      totalActive: statusFilter === 'active' ? total : items.filter((a) => !a.resolvedAction).length,
+    };
+  }, [alertsQuery.data?.items, alertsQuery.data?.total, statusFilter]);
+
   const flattenedAlerts = React.useMemo<FlattenedAlert[]>(() => {
     if (!alertsQuery.data?.items) return [];
     return alertsQuery.data.items.map((alert) => ({
@@ -279,19 +292,19 @@ export default function AlertsPage() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-[var(--buh-error)]" />
                 <span>
-                  Активных: <strong className="text-[var(--buh-foreground)]">{stats?.today.pending ?? 0}</strong>
+                  Активных: <strong className="text-[var(--buh-foreground)]">{quickStats.totalActive}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-[var(--buh-warning)]" />
                 <span>
-                  Нарушений: <strong className="text-[var(--buh-foreground)]">{stats?.today.breaches ?? 0}</strong>
+                  Нарушений: <strong className="text-[var(--buh-foreground)]">{quickStats.breaches}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-[var(--buh-success)]" />
                 <span>
-                  Разрешено: <strong className="text-[var(--buh-foreground)]">{stats?.today.resolved ?? 0}</strong>
+                  Разрешено: <strong className="text-[var(--buh-foreground)]">{quickStats.resolved}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-2">

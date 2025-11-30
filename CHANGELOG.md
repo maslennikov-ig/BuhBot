@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-11-30
+
+### Added
+- **analytics**: Add response time analytics page and table sorting (1f5698a)
+- **notifications**: Link SLA alerts to in-app notifications (8532bb2)
+
+### Fixed
+- **sidebar**: Simplify active nav item logic (4db5631)
+- **sidebar**: Don't highlight parent nav when child is active (344ec77)
+- **alerts**: Use actual data for quick stats counters (14cb6d6)
+- **ui**: Rewrite AlertsPage to match Chats page structure (5076b30)
+- **ui**: Restyle AlertsPage to match project design system (96957df)
+
 ## [0.5.0] - 2025-11-30
 
 ## [0.4.0] - 2025-11-29

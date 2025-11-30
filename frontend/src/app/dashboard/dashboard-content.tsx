@@ -162,12 +162,12 @@ function LoadingSkeleton() {
         <div className="mt-2 h-5 w-96 animate-pulse rounded bg-[var(--buh-card-bg)]" />
       </div>
 
-      {/* Stats Grid Skeleton */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stats Grid Skeleton - 2x2 layout */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="h-40 animate-pulse rounded-lg border border-[var(--buh-border)] bg-[var(--buh-card-bg)]"
+            className="h-48 animate-pulse rounded-lg border border-[var(--buh-border)] bg-[var(--buh-card-bg)]"
           />
         ))}
       </div>
@@ -368,13 +368,19 @@ export function DashboardContent() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stats Grid - 2x2 layout for better spacing */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         {/* SLA Compliance */}
         <SlaComplianceWidget
           compliance={slaData.compliance}
           compliantCount={slaData.compliantCount}
           violatedCount={slaData.violatedCount}
+        />
+
+        {/* Violations */}
+        <ViolationsWidget
+          count={violationsData.count}
+          yesterdayCount={violationsData.yesterdayCount}
         />
 
         {/* Response Time */}
@@ -383,12 +389,6 @@ export function DashboardContent() {
           trend={responseTimeData.trend}
           chartData={responseTimeData.chartData}
           onClick={() => router.push('/analytics')}
-        />
-
-        {/* Violations */}
-        <ViolationsWidget
-          count={violationsData.count}
-          yesterdayCount={violationsData.yesterdayCount}
         />
 
         {/* Active Alerts */}

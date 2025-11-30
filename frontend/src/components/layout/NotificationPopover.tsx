@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Trash2, X, Info, CheckCircle2, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
+import { Bell, Check, Trash2, Info, CheckCircle2, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';

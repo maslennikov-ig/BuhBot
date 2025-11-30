@@ -239,7 +239,7 @@ export default function AlertsPage() {
       resolutionNotes: alert.resolutionNotes,
       original: alert,
     }));
-  }, [alertsQuery.data?.items]);
+  }, [alertsQuery.data]);
 
   const { sortedData: sortedAlerts, requestSort, getSortIcon } = useTableSort(
     flattenedAlerts,

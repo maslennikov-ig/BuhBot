@@ -1,10 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { AreaChart } from '@tremor/react';
 import { GlassCard } from '@/components/layout/GlassCard';
-import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Clock, TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 // ============================================
 // TYPES
@@ -27,6 +33,79 @@ type ResponseTimeWidgetProps = {
 };
 
 // ============================================
+// CHART CONFIG
+// ============================================
+
+const chartConfig = {
+  'Время ответа': {
+    label: 'Время ответа',
+    color: 'hsl(var(--buh-accent))',
+  },
+};
+
+// ============================================
+// ANIMATION VARIANTS
+// ============================================
+
+const cardVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.16, 1, 0.3, 1] as const,
+    }
+  },
+  hover: {
+    y: -4,
+    transition: {
+      duration: 0.2,
+      ease: [0.16, 1, 0.3, 1] as const,
+    }
+  },
+};
+
+const iconVariants = {
+  initial: { scale: 0.8, opacity: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      delay: 0.2,
+      duration: 0.4,
+      ease: [0.16, 1, 0.3, 1] as const,
+    }
+  },
+};
+
+const metricVariants = {
+  initial: { opacity: 0, x: -20 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: 0.1,
+      duration: 0.5,
+      ease: [0.16, 1, 0.3, 1] as const,
+    }
+  },
+};
+
+const chartVariants = {
+  initial: { opacity: 0, scaleY: 0.8 },
+  animate: {
+    opacity: 1,
+    scaleY: 1,
+    transition: {
+      delay: 0.3,
+      duration: 0.6,
+      ease: [0.16, 1, 0.3, 1] as const,
+    }
+  },
+};
+
+// ============================================
 // COMPONENT
 // ============================================
 
@@ -41,76 +120,172 @@ export function ResponseTimeWidget({
   const isPositiveTrend = trend.direction === 'down';
   const TrendIcon = trend.direction === 'up' ? TrendingUp : TrendingDown;
 
+  // Calculate min/max for better chart visualization
+  const values = chartData.map(d => d['Время ответа']).filter(v => v > 0);
+  const minValue = values.length > 0 ? Math.min(...values) : 0;
+  const maxValue = values.length > 0 ? Math.max(...values) : 0;
+  const chartPadding = maxValue > minValue ? (maxValue - minValue) * 0.2 : 5;
+
   return (
-    <GlassCard
-      variant="elevated"
-      padding="lg"
-      className={cn(
-        'relative overflow-hidden group transition-transform duration-200',
-        onClick && 'cursor-pointer hover:-translate-y-1',
-        className
-      )}
-      onClick={onClick}
+    <motion.div
+      variants={cardVariants}
+      initial="initial"
+      animate="animate"
+      whileHover={onClick ? "hover" : undefined}
     >
-      {/* Gradient accent on hover */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      {/* Header with icon */}
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)]">
-            Среднее время ответа
-          </h3>
-          <p className="mt-1 text-xs text-[var(--buh-foreground-subtle)]">
-            За последние 7 дней
-          </p>
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--buh-accent)]/10 to-[var(--buh-primary)]/10">
-          <Clock className="h-5 w-5 text-[var(--buh-primary)]" />
-        </div>
-      </div>
-
-      {/* Main metric */}
-      <div className="mb-4 flex items-baseline gap-3">
-        <span className="buh-animate-count text-4xl font-bold tracking-tight text-[var(--buh-foreground)]">
-          {averageTime}
-        </span>
-        <span className="text-lg text-[var(--buh-foreground-muted)]">мин</span>
-
-        {/* Trend indicator */}
-        <div
-          className={cn(
-            'ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
-            isPositiveTrend
-              ? 'bg-[var(--buh-success-muted)] text-[var(--buh-success)]'
-              : 'bg-[var(--buh-error-muted)] text-[var(--buh-error)]'
-          )}
-        >
-          <TrendIcon className="h-3.5 w-3.5" />
-          <span>{trend.value}%</span>
-        </div>
-      </div>
-
-      {/* Chart */}
-      <div className="h-24">
-        <AreaChart
-          data={chartData}
-          index="time"
-          categories={['Время ответа']}
-          colors={['cyan']}
-          showLegend={false}
-          showYAxis={false}
-          showXAxis={false}
-          showGridLines={false}
-          showAnimation={true}
-          curveType="monotone"
-          className="h-full"
+      <GlassCard
+        variant="elevated"
+        padding="lg"
+        className={cn(
+          'relative overflow-hidden group',
+          onClick && 'cursor-pointer',
+          className
+        )}
+        onClick={onClick}
+      >
+        {/* Animated gradient accent on top */}
+        <motion.div
+          className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)]"
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
         />
-      </div>
 
-      {/* Decorative glow */}
-      <div className="absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-[var(--buh-primary)] opacity-10 blur-3xl transition-opacity duration-500 group-hover:opacity-20" />
-    </GlassCard>
+        {/* Header with icon and stats */}
+        <div className="mb-6 flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)] mb-1">
+              Среднее время ответа
+            </h3>
+            <div className="flex items-center gap-2">
+              <Activity className="h-3.5 w-3.5 text-[var(--buh-accent)]" />
+              <p className="text-xs text-[var(--buh-foreground-subtle)]">
+                За последние 7 дней
+              </p>
+            </div>
+          </div>
+          <motion.div
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--buh-accent)]/10 via-[var(--buh-primary)]/10 to-[var(--buh-accent-secondary)]/10 ring-1 ring-[var(--buh-accent)]/20"
+            variants={iconVariants}
+          >
+            <Clock className="h-6 w-6 text-[var(--buh-accent)]" />
+          </motion.div>
+        </div>
+
+        {/* Main metric with enhanced styling */}
+        <motion.div
+          className="mb-6 flex items-end gap-3"
+          variants={metricVariants}
+        >
+          <div className="flex items-baseline gap-2">
+            <span className="buh-animate-count text-5xl font-bold tracking-tight text-[var(--buh-foreground)]">
+              {averageTime}
+            </span>
+            <span className="text-xl font-medium text-[var(--buh-foreground-muted)]">
+              мин
+            </span>
+          </div>
+
+          {/* Enhanced trend indicator */}
+          <motion.div
+            className={cn(
+              'ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm ring-1',
+              isPositiveTrend
+                ? 'bg-[var(--buh-success-muted)] text-[var(--buh-success)] ring-[var(--buh-success)]/20'
+                : 'bg-[var(--buh-error-muted)] text-[var(--buh-error)] ring-[var(--buh-error)]/20'
+            )}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <TrendIcon className="h-3.5 w-3.5" />
+            <span>{trend.value}%</span>
+          </motion.div>
+        </motion.div>
+
+        {/* Enhanced Chart with recharts */}
+        <motion.div
+          className="h-32 -mx-2"
+          variants={chartVariants}
+        >
+          <ChartContainer config={chartConfig}>
+            <AreaChart
+              data={chartData}
+              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+            >
+              <defs>
+                <linearGradient id="colorResponseTime" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--buh-accent)"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--buh-accent)"
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="var(--buh-border)"
+                opacity={0.3}
+              />
+              <XAxis
+                dataKey="time"
+                hide
+              />
+              <YAxis
+                hide
+                domain={[minValue - chartPadding, maxValue + chartPadding]}
+              />
+              <ChartTooltip
+                content={<ChartTooltipContent />}
+                cursor={{ stroke: 'var(--buh-accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="Время ответа"
+                stroke="var(--buh-accent)"
+                strokeWidth={2}
+                fill="url(#colorResponseTime)"
+                animationDuration={1000}
+                animationEasing="ease-out"
+              />
+            </AreaChart>
+          </ChartContainer>
+        </motion.div>
+
+        {/* Stats row at bottom */}
+        {values.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-[var(--buh-border)] flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-[var(--buh-foreground-subtle)]">
+              <Zap className="h-3.5 w-3.5" />
+              <span>Лучший: {minValue} мин</span>
+            </div>
+            <div className="text-[var(--buh-foreground-subtle)]">
+              Худший: {maxValue} мин
+            </div>
+          </div>
+        )}
+
+        {/* Decorative animated glow */}
+        <motion.div
+          className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-[var(--buh-accent)] opacity-0 blur-3xl transition-opacity duration-700 group-hover:opacity-20"
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.1, 0.15, 0.1],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </GlassCard>
+    </motion.div>
   );
 }
 

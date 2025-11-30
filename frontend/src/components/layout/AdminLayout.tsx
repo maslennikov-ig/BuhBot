@@ -195,7 +195,17 @@ function Sidebar({
           <ul className="space-y-1">
             {navigationItems.map((item, index) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              // Check for exact match or partial match without a more specific nav item
+              const isExactMatch = pathname === item.href;
+              const isPartialMatch = pathname.startsWith(`${item.href}/`);
+              // Don't highlight parent if a child nav item is a better match
+              const hasMoreSpecificMatch = navigationItems.some(
+                (other) =>
+                  other.href !== item.href &&
+                  pathname.startsWith(other.href) &&
+                  other.href.length > item.href.length
+              );
+              const isActive = isExactMatch || (isPartialMatch && !hasMoreSpecificMatch);
 
               // Dynamic badge for alerts
               const badge = item.id === 'alerts' && alertCount && alertCount > 0

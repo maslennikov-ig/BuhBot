@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { GlassCard } from '@/components/layout/GlassCard';
 import { trpc } from '@/lib/trpc';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -19,14 +20,15 @@ import {
   AlertTriangle,
   X,
   CheckSquare,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { GlassCard } from '@/components/layout/GlassCard';
 import { Textarea } from '@/components/ui/textarea';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
+import { cn } from '@/lib/utils';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type AlertItem = RouterOutputs['alert']['getAlerts']['items'][number];
@@ -91,7 +93,7 @@ function ResolveAlertDialog({
         </button>
 
         <div className="flex items-start gap-4 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--buh-success)]/10 text-[var(--buh-success)]">
             <CheckSquare className="h-5 w-5" />
           </div>
           <div>
@@ -104,13 +106,14 @@ function ResolveAlertDialog({
 
         <div className="space-y-4 mb-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            <label className="text-sm font-medium text-[var(--buh-foreground)]">
               Комментарий (опционально)
             </label>
             <Textarea
               placeholder="Укажите причину или принятые меры..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              className="bg-[var(--buh-surface)] border-[var(--buh-border)]"
             />
           </div>
         </div>
@@ -119,12 +122,58 @@ function ResolveAlertDialog({
           <Button variant="ghost" onClick={onClose} disabled={isLoading}>
             Отмена
           </Button>
-          <Button onClick={() => onConfirm(notes)} disabled={isLoading}>
+          <Button
+            onClick={() => onConfirm(notes)}
+            disabled={isLoading}
+            className={cn(
+              'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]',
+              'hover:shadow-lg hover:shadow-[var(--buh-accent-glow)]'
+            )}
+          >
             {isLoading ? 'Сохранение...' : 'Разрешить'}
           </Button>
         </div>
       </GlassCard>
     </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  iconColor,
+}: {
+  title: string;
+  value: string | number;
+  subtitle: string;
+  icon: React.ElementType;
+  iconColor: string;
+}) {
+  return (
+    <GlassCard variant="elevated" padding="md" className="relative overflow-hidden group">
+      {/* Gradient accent on hover */}
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-[var(--buh-foreground-muted)]">{title}</p>
+          <p className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">{value}</p>
+          <p className="text-xs text-[var(--buh-foreground-subtle)]">{subtitle}</p>
+        </div>
+        <div className={cn(
+          'flex h-10 w-10 items-center justify-center rounded-xl',
+          iconColor
+        )}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+
+      {/* Decorative glow */}
+      <div className="absolute -bottom-16 -right-16 h-32 w-32 rounded-full bg-[var(--buh-primary)] opacity-5 blur-3xl" />
+    </GlassCard>
   );
 }
 
@@ -138,7 +187,7 @@ export default function AlertsPage() {
 
   // Queries
   const statsQuery = trpc.alert.getAlertStats.useQuery({});
-  
+
   const alertsQuery = trpc.alert.getAlerts.useQuery({
     limit: 20,
     offset: page * 20,
@@ -206,82 +255,63 @@ export default function AlertsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
-            Алерты SLA
-          </h1>
-          <p className="text-[var(--buh-foreground-muted)] mt-2">
-            Управление нарушениями SLA и предупреждениями
-          </p>
-        </div>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <PageHeader
+          title="Алерты SLA"
+          description="Управление нарушениями SLA и предупреждениями"
+          breadcrumbs={[
+            { label: 'Панель управления', href: '/dashboard' },
+            { label: 'Алерты SLA' },
+          ]}
+        />
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Активные алерты</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.today.pending ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats?.today.total ?? 0} всего за сегодня
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Нарушения (Сегодня)</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.today.breaches ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Критических нарушений
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Разрешено (Сегодня)</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.today.resolved ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Обработано операторами
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Среднее время реакции</CardTitle>
-              <Clock className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats?.week.avgResolutionMinutes ?? 0} мин
-              </div>
-              <p className="text-xs text-muted-foreground">
-                За последние 7 дней
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 buh-animate-fade-in-up">
+          <StatCard
+            title="Активные алерты"
+            value={stats?.today.pending ?? 0}
+            subtitle={`${stats?.today.total ?? 0} всего за сегодня`}
+            icon={AlertCircle}
+            iconColor="bg-[var(--buh-error)]/10 text-[var(--buh-error)]"
+          />
+          <StatCard
+            title="Нарушения (Сегодня)"
+            value={stats?.today.breaches ?? 0}
+            subtitle="Критических нарушений"
+            icon={AlertTriangle}
+            iconColor="bg-[var(--buh-warning)]/10 text-[var(--buh-warning)]"
+          />
+          <StatCard
+            title="Разрешено (Сегодня)"
+            value={stats?.today.resolved ?? 0}
+            subtitle="Обработано операторами"
+            icon={CheckCircle}
+            iconColor="bg-[var(--buh-success)]/10 text-[var(--buh-success)]"
+          />
+          <StatCard
+            title="Среднее время реакции"
+            value={`${stats?.week.avgResolutionMinutes ?? 0} мин`}
+            subtitle="За последние 7 дней"
+            icon={Clock}
+            iconColor="bg-[var(--buh-primary)]/10 text-[var(--buh-primary)]"
+          />
         </div>
 
         {/* Filters & List */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
-              <CardTitle>Список алертов</CardTitle>
+        <div className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <GlassCard variant="default" padding="none">
+            {/* Header with filters */}
+            <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center p-4 border-b border-[var(--buh-border)]">
+              <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">
+                Список алертов
+              </h2>
               <div className="flex flex-wrap gap-2">
                 <Select
                   value={statusFilter}
-                  onValueChange={(v: any) => setStatusFilter(v)}
+                  onValueChange={(v: 'active' | 'resolved' | 'all') => setStatusFilter(v)}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[160px] bg-[var(--buh-surface)] border-[var(--buh-border)]">
                     <SelectValue placeholder="Статус" />
                   </SelectTrigger>
                   <SelectContent>
@@ -293,9 +323,9 @@ export default function AlertsPage() {
 
                 <Select
                   value={typeFilter}
-                  onValueChange={(v: any) => setTypeFilter(v)}
+                  onValueChange={(v: 'all' | 'warning' | 'breach') => setTypeFilter(v)}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[160px] bg-[var(--buh-surface)] border-[var(--buh-border)]">
                     <SelectValue placeholder="Тип" />
                   </SelectTrigger>
                   <SelectContent>
@@ -306,149 +336,183 @@ export default function AlertsPage() {
                 </Select>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+
+            {/* Table content */}
             {alertsQuery.isLoading ? (
-              <div className="flex justify-center p-8">
-                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--buh-accent)]" />
               </div>
             ) : sortedAlerts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Алертов не найдено
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <AlertCircle className="h-12 w-12 text-[var(--buh-foreground-subtle)] mb-4" />
+                <p className="text-[var(--buh-foreground)]">Алертов не найдено</p>
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Измените фильтры или дождитесь новых уведомлений
+                </p>
               </div>
             ) : (
-              <div className="rounded-md border">
-                <div className="relative w-full overflow-auto">
-                  <table className="w-full caption-bottom text-sm">
-                    <thead className="[&_tr]:border-b">
-                      <tr className="border-b transition-colors">
-                        <SortableHeader
-                          label="Статус"
-                          sortDirection={getSortIcon('alertType')}
-                          onClick={() => requestSort('alertType')}
-                        />
-                        <SortableHeader
-                          label="Клиент"
-                          sortDirection={getSortIcon('clientUsername')}
-                          onClick={() => requestSort('clientUsername')}
-                        />
-                        <SortableHeader
-                          label="Сообщение"
-                          sortDirection={getSortIcon('messagePreview')}
-                          onClick={() => requestSort('messagePreview')}
-                        />
-                        <SortableHeader
-                          label="Время"
-                          sortDirection={getSortIcon('alertSentAt')}
-                          onClick={() => requestSort('alertSentAt')}
-                        />
-                        <SortableHeader
-                          label="Ответственный"
-                          sortDirection={getSortIcon('accountantName')}
-                          onClick={() => requestSort('accountantName')}
-                        />
-                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
-                          Действия
-                        </th>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-overlay)]">
+                      <SortableHeader
+                        label="Статус"
+                        sortDirection={getSortIcon('alertType')}
+                        onClick={() => requestSort('alertType')}
+                      />
+                      <SortableHeader
+                        label="Клиент"
+                        sortDirection={getSortIcon('clientUsername')}
+                        onClick={() => requestSort('clientUsername')}
+                      />
+                      <SortableHeader
+                        label="Сообщение"
+                        sortDirection={getSortIcon('messagePreview')}
+                        onClick={() => requestSort('messagePreview')}
+                      />
+                      <SortableHeader
+                        label="Время"
+                        sortDirection={getSortIcon('alertSentAt')}
+                        onClick={() => requestSort('alertSentAt')}
+                      />
+                      <SortableHeader
+                        label="Ответственный"
+                        sortDirection={getSortIcon('accountantName')}
+                        onClick={() => requestSort('accountantName')}
+                      />
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                        Действия
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--buh-border)]">
+                    {sortedAlerts.map((alert, index) => (
+                      <tr
+                        key={alert.id}
+                        className="hover:bg-[var(--buh-surface-elevated)] transition-colors"
+                        style={{ animationDelay: `${index * 0.03}s` }}
+                      >
+                        {/* Status */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            {alert.resolvedAction ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-success)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-success)]">
+                                <CheckCircle className="h-3 w-3" />
+                                Разрешен
+                              </span>
+                            ) : alert.alertType === 'breach' ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-error)]">
+                                <AlertCircle className="h-3 w-3" />
+                                Нарушение
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-warning)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-warning)]">
+                                <AlertTriangle className="h-3 w-3" />
+                                Внимание
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Client */}
+                        <td className="px-4 py-4">
+                          <div className="font-medium text-[var(--buh-foreground)]">
+                            {alert.clientUsername}
+                          </div>
+                          <div className="text-xs text-[var(--buh-foreground-muted)] truncate max-w-[150px]">
+                            {alert.chatTitle}
+                          </div>
+                        </td>
+
+                        {/* Message */}
+                        <td className="px-4 py-4">
+                          <div
+                            className="truncate max-w-[300px] text-[var(--buh-foreground-muted)]"
+                            title={alert.messagePreview}
+                          >
+                            {alert.messagePreview}
+                          </div>
+                        </td>
+
+                        {/* Time */}
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-[var(--buh-foreground)]">
+                              {formatDate(alert.alertSentAt)}
+                            </span>
+                            <span className="text-xs text-[var(--buh-foreground-subtle)]">
+                              +{formatDuration(alert.minutesElapsed)}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Accountant */}
+                        <td className="px-4 py-4">
+                          {alert.accountantName ? (
+                            <span className="text-[var(--buh-foreground)]">
+                              {alert.accountantName}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--buh-foreground-subtle)] italic">
+                              Не назначен
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-4 text-right">
+                          {!alert.resolvedAction ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResolveClick(alert.id)}
+                              className="border-[var(--buh-border)] hover:bg-[var(--buh-surface-elevated)]"
+                            >
+                              Разрешить
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-[var(--buh-foreground-subtle)]">
+                              {alert.resolutionNotes || 'Без примечаний'}
+                            </span>
+                          )}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="[&_tr:last-child]:border-0">
-                      {sortedAlerts.map((alert) => (
-                        <tr
-                          key={alert.id}
-                          className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                        >
-                          <td className="p-4 align-middle">
-                            <div className="flex items-center gap-2">
-                              {alert.resolvedAction ? (
-                                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-800 hover:bg-green-200">
-                                  Разрешен
-                                </span>
-                              ) : alert.alertType === 'breach' ? (
-                                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-800 hover:bg-red-200">
-                                  Нарушение
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-                                  Внимание
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4 align-middle">
-                            <div className="font-medium">{alert.clientUsername}</div>
-                            <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                              {alert.chatTitle}
-                            </div>
-                          </td>
-                          <td className="p-4 align-middle">
-                            <div className="truncate max-w-[300px]" title={alert.messagePreview}>
-                              {alert.messagePreview}
-                            </div>
-                          </td>
-                          <td className="p-4 align-middle">
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {formatDate(alert.alertSentAt)}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                +{formatDuration(alert.minutesElapsed)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-4 align-middle">
-                            {alert.accountantName || (
-                              <span className="text-muted-foreground italic">Не назначен</span>
-                            )}
-                          </td>
-                          <td className="p-4 align-middle text-right">
-                            {!alert.resolvedAction && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleResolveClick(alert.id)}
-                              >
-                                Разрешить
-                              </Button>
-                            )}
-                            {alert.resolvedAction && (
-                              <span className="text-xs text-muted-foreground">
-                                {alert.resolutionNotes || 'Без примечаний'}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                
-                {/* Pagination */}
-                <div className="flex items-center justify-end space-x-2 py-4 px-4">
-                   <Button
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {sortedAlerts.length > 0 && (
+              <div className="flex items-center justify-between border-t border-[var(--buh-border)] px-4 py-3">
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Страница {page + 1}
+                </p>
+                <div className="flex gap-2">
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0 || alertsQuery.isLoading}
+                    className="border-[var(--buh-border)]"
                   >
                     Назад
                   </Button>
-                  <div className="text-sm text-muted-foreground">
-                    Стр. {page + 1}
-                  </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setPage((p) => p + 1)}
                     disabled={!alertsQuery.data?.hasMore || alertsQuery.isLoading}
+                    className="border-[var(--buh-border)]"
                   >
                     Вперед
                   </Button>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </GlassCard>
+        </div>
 
         <ResolveAlertDialog
           open={resolveDialogOpen}

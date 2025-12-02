@@ -7,18 +7,24 @@ import {
 import { documentation } from '@/config/documentation';
 import { cn } from '@/lib/utils';
 
+type DocEntry = { title: string; description: string };
+
 interface HelpButtonProps {
   section: keyof typeof documentation | `settings.${keyof typeof documentation.settings}`;
   className?: string;
 }
 
 export function HelpButton({ section, className }: HelpButtonProps) {
-  const getDoc = () => {
+  const getDoc = (): DocEntry | null => {
     if (section.startsWith('settings.')) {
       const key = section.split('.')[1] as keyof typeof documentation.settings;
       return documentation.settings[key];
     }
-    return documentation[section as keyof typeof documentation];
+    const doc = documentation[section as keyof typeof documentation];
+    if ('title' in doc && 'description' in doc) {
+      return doc as DocEntry;
+    }
+    return null;
   };
 
   const content = getDoc();

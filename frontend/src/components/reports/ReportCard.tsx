@@ -111,7 +111,7 @@ export function ReportCard({
         {/* Button */}
         <Button
           onClick={onGenerate}
-          className="w-full"
+          className="w-full text-white hover:text-white"
           style={{
             background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`,
           }}

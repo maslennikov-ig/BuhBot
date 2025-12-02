@@ -103,6 +103,9 @@ export function ReportGeneratorModal({
   // Fetch users for accountant filter
   const usersQuery = trpc.auth.listUsers.useQuery({}, { enabled: open });
 
+  // Get tRPC utils at component level (not inside callbacks)
+  const utils = trpc.useUtils();
+
   // Calculate date range
   const [dateFrom, dateTo] = React.useMemo(() => {
     if (period === 'custom' && customStartDate && customEndDate) {
@@ -121,8 +124,7 @@ export function ReportGeneratorModal({
     try {
       const backendReportType = mapReportTypeToBackend(reportType);
 
-      // Use tRPC client directly for query (not a mutation)
-      const utils = trpc.useUtils();
+      // Use tRPC client directly for query
       const result = await utils.client.analytics.exportReport.query({
         reportType: backendReportType,
         dateFrom,

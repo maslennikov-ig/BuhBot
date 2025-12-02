@@ -298,7 +298,7 @@ export function ReportGeneratorModal({
                     isGenerating ||
                     (period === 'custom' && (!customStartDate || !customEndDate))
                   }
-                  className="gap-2"
+                  className="gap-2 bg-[var(--buh-primary)] text-white hover:bg-[var(--buh-primary-hover)] hover:text-white"
                 >
                   {isGenerating ? (
                     <>

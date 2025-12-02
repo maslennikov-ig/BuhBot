@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-12-02
+
+### Added
+- **reports**: Implement reports section with export functionality (fefa74a)
+- add Violations and Help menu items, create Help page (162f266)
+
+### Fixed
+- **ui**: Fix tabs styling and translate to Russian (ba70489)
+- **reports**: Add white text to modal generate button (36cedcd)
+- **api**: Use z.coerce.date() for exportReport input (0be12b6)
+- **reports**: Fix button text color and React hook error (935f281)
+- **ui**: Add popover/dropdown background colors to theme (8e36629)
+- HelpButton TypeScript error (6df3cdb)
+- sync package-lock.json with new dependencies (19a799d)
+
 ## [0.6.1] - 2025-12-02
 
 ## [0.6.0] - 2025-11-30

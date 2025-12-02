@@ -866,8 +866,8 @@ export const analyticsRouter = router({
     .input(
       z.object({
         reportType: z.enum(['sla_compliance', 'accountant_performance', 'violations']),
-        dateFrom: z.date(),
-        dateTo: z.date(),
+        dateFrom: z.coerce.date(),
+        dateTo: z.coerce.date(),
         chatId: z.string().optional(),
         accountantId: z.string().uuid().optional(),
         format: z.enum(['csv', 'json']).default('csv'),

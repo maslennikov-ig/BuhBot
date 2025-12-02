@@ -23,6 +23,15 @@
   --color-surface-elevated: var(--buh-surface-elevated);
   --color-border: var(--buh-border);
   --color-muted: var(--buh-foreground-muted);
+  --color-muted-foreground: var(--buh-foreground-muted);
+
+  /* Popover/Dropdown colors (for shadcn components) */
+  --color-popover: var(--buh-surface);
+  --color-popover-foreground: var(--buh-foreground);
+
+  /* Input colors */
+  --color-input: var(--buh-border);
+  --color-ring: var(--buh-accent);
 
   /* Semantic Colors */
   --color-success: var(--buh-success);

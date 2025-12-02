@@ -372,36 +372,38 @@ export function DashboardContent() {
         <HelpButton section="dashboard" />
       </div>
 
-      {/* Stats Grid - 2x2 layout for better spacing */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-        {/* SLA Compliance */}
+      {/* Stats Grid - 2x2 layout, grouped by similar height */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 items-stretch">
+        {/* Row 1: Tall widgets - SLA Compliance + Active Alerts */}
         <SlaComplianceWidget
           compliance={slaData.compliance}
           compliantCount={slaData.compliantCount}
           violatedCount={slaData.violatedCount}
+          className="h-full"
         />
 
-        {/* Violations */}
-        <ViolationsWidget
-          count={violationsData.count}
-          yesterdayCount={violationsData.yesterdayCount}
-        />
-
-        {/* Response Time */}
-        <ResponseTimeWidget
-          averageTime={responseTimeData.averageTime}
-          trend={responseTimeData.trend}
-          chartData={responseTimeData.chartData}
-          onClick={() => router.push('/analytics')}
-        />
-
-        {/* Active Alerts */}
         <ActiveAlertsWidget
           totalCount={alertsData.totalCount}
           criticalCount={alertsData.criticalCount}
           warningCount={alertsData.warningCount}
           infoCount={alertsData.infoCount}
           recentAlerts={alertsData.recentAlerts}
+          className="h-full"
+        />
+
+        {/* Row 2: Medium widgets - Response Time + Violations */}
+        <ResponseTimeWidget
+          averageTime={responseTimeData.averageTime}
+          trend={responseTimeData.trend}
+          chartData={responseTimeData.chartData}
+          onClick={() => router.push('/analytics')}
+          className="h-full"
+        />
+
+        <ViolationsWidget
+          count={violationsData.count}
+          yesterdayCount={violationsData.yesterdayCount}
+          className="h-full"
         />
       </div>
 

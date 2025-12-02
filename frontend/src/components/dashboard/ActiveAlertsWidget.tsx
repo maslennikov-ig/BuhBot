@@ -82,7 +82,7 @@ export function ActiveAlertsWidget({
       variant="elevated"
       padding="lg"
       className={cn(
-        'relative overflow-hidden group cursor-pointer transition-transform duration-200 hover:-translate-y-1',
+        'relative overflow-hidden group cursor-pointer transition-transform duration-200 hover:-translate-y-1 h-full flex flex-col',
         className
       )}
       onClick={handleWidgetClick}
@@ -187,6 +187,9 @@ export function ActiveAlertsWidget({
           })}
         </div>
       )}
+
+      {/* Spacer to push link to bottom */}
+      <div className="flex-1" />
 
       {/* View all indicator */}
       <div className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)]">

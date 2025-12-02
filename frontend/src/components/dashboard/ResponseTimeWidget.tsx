@@ -132,14 +132,14 @@ export function ResponseTimeWidget({
       initial="initial"
       animate="animate"
       whileHover={onClick ? "hover" : undefined}
+      className={cn('h-full', className)}
     >
       <GlassCard
         variant="elevated"
         padding="lg"
         className={cn(
-          'relative overflow-hidden group',
-          onClick && 'cursor-pointer',
-          className
+          'relative overflow-hidden group h-full flex flex-col',
+          onClick && 'cursor-pointer'
         )}
         onClick={onClick}
       >
@@ -205,7 +205,7 @@ export function ResponseTimeWidget({
 
         {/* Enhanced Chart with recharts */}
         <motion.div
-          className="h-32 -mx-2"
+          className="h-32 -mx-2 flex-1 min-h-[8rem]"
           variants={chartVariants}
         >
           <ChartContainer config={chartConfig}>

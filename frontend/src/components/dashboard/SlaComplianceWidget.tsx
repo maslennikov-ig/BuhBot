@@ -176,14 +176,12 @@ export function SlaComplianceWidget({
       initial="initial"
       animate="animate"
       whileHover="hover"
+      className={cn('h-full', className)}
     >
       <GlassCard
         variant="elevated"
         padding="lg"
-        className={cn(
-          'relative overflow-hidden group cursor-pointer',
-          className
-        )}
+        className="relative overflow-hidden group cursor-pointer h-full flex flex-col"
         onClick={handleWidgetClick}
       >
         {/* Gradient accent on hover */}
@@ -272,8 +270,11 @@ export function SlaComplianceWidget({
           </div>
         </div>
 
+        {/* Spacer to push link to bottom */}
+        <div className="flex-1" />
+
         {/* View details link */}
-        <div className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)]">
+        <div className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)] mt-auto">
           <span>Подробнее</span>
           <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </div>

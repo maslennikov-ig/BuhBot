@@ -197,14 +197,12 @@ export function ViolationsWidget({
       initial="initial"
       animate="animate"
       whileHover="hover"
+      className={cn('h-full', className)}
     >
       <GlassCard
         variant="elevated"
         padding="lg"
-        className={cn(
-          'relative overflow-hidden group cursor-pointer',
-          className
-        )}
+        className="relative overflow-hidden group cursor-pointer h-full flex flex-col"
         onClick={handleWidgetClick}
       >
         {/* Gradient accent - colored based on severity */}
@@ -293,7 +291,7 @@ export function ViolationsWidget({
         {/* Sparkline Chart */}
         {last7Days.length > 0 && (
           <motion.div
-            className="h-16 -mx-2 mb-2"
+            className="h-16 -mx-2 mb-2 flex-1 min-h-[4rem]"
             variants={chartVariants}
             role="img"
             aria-label="График нарушений за последние 7 дней"
@@ -322,7 +320,7 @@ export function ViolationsWidget({
         )}
 
         {/* View details link */}
-        <div className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)]">
+        <div className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)] mt-auto">
           <span>Подробнее</span>
           <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </div>

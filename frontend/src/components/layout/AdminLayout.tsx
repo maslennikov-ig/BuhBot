@@ -20,6 +20,8 @@ import {
   ListChecks,
   AlertCircle,
   Activity,
+  AlertTriangle,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -85,6 +87,13 @@ const navigationItems: NavItem[] = [
     href: '/alerts',
   },
   {
+    id: 'violations',
+    label: 'Violations',
+    labelRu: 'Нарушения',
+    icon: AlertTriangle,
+    href: '/violations',
+  },
+  {
     id: 'reports',
     label: 'Reports',
     labelRu: 'Отчеты',
@@ -118,6 +127,13 @@ const navigationItems: NavItem[] = [
     labelRu: 'Опросы',
     icon: ListChecks,
     href: '/settings/survey',
+  },
+  {
+    id: 'help',
+    label: 'Help',
+    labelRu: 'Справка',
+    icon: BookOpen,
+    href: '/help',
   },
 ];
 

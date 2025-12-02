@@ -276,8 +276,8 @@ export default function ViolationsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-[var(--buh-accent)]" />
             </div>
           ) : (
-            <div className="h-64" role="img" aria-label="График нарушений SLA за последние 30 дней">
-              <ChartContainer config={chartConfig}>
+            <div className="h-64 overflow-hidden" role="img" aria-label="График нарушений SLA за последние 30 дней">
+              <ChartContainer config={chartConfig} className="h-full w-full">
                 <BarChart
                   data={chartData}
                   margin={{ top: 10, right: 10, bottom: 20, left: 10 }}

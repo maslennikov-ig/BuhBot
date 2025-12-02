@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { UserList } from '@/components/settings/users/UserList';
 import { UserRoleDialog } from '@/components/settings/users/UserRoleDialog';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -31,6 +32,7 @@ export default function UsersPage() {
       <PageHeader
         title="Пользователи"
         description="Управление доступом и ролями сотрудников."
+        actions={<HelpButton section="settings.users" />}
         breadcrumbs={[
           { label: 'Настройки', href: '/settings' },
           { label: 'Пользователи' },

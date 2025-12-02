@@ -37,6 +37,7 @@ import { SortableHeader } from '@/components/ui/SortableHeader';
 import { useTableSort } from '@/hooks/useTableSort';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // TYPES
@@ -341,16 +342,19 @@ export function ChatsListContent() {
           { label: 'Чаты' },
         ]}
         actions={
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className={cn(
-              'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]',
-              'hover:shadow-lg hover:shadow-[var(--buh-accent-glow)]'
-            )}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Добавить чат
-          </Button>
+          <div className="flex items-center gap-3">
+            <HelpButton section="chats" />
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className={cn(
+                'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]',
+                'hover:shadow-lg hover:shadow-[var(--buh-accent-glow)]'
+              )}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Добавить чат
+            </Button>
+          </div>
         }
       />
 

@@ -30,6 +30,7 @@ import { SortableHeader } from '@/components/ui/SortableHeader';
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
 import { cn } from '@/lib/utils';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type AlertItem = RouterOutputs['alert']['getAlerts']['items'][number];
@@ -258,6 +259,7 @@ export default function AlertsPage() {
       <PageHeader
         title="Алерты SLA"
         description="Управление нарушениями SLA и предупреждениями"
+        actions={<HelpButton section="alerts" />}
         breadcrumbs={[
           { label: 'Панель управления', href: '/dashboard' },
           { label: 'Алерты SLA' },

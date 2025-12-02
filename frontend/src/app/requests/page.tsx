@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { trpc } from '@/lib/trpc';
 import { Loader2 } from 'lucide-react';
 import { RequestsTable } from '@/components/requests/RequestsTable';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 export default function RequestsPage() {
   const { data, isLoading } = trpc.requests.list.useQuery({
@@ -47,13 +48,16 @@ export default function RequestsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
-            Запросы
-          </h1>
-          <p className="mt-2 text-[var(--buh-foreground-muted)]">
-            Управление обращениями клиентов
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
+              Запросы
+            </h1>
+            <p className="mt-2 text-[var(--buh-foreground-muted)]">
+              Управление обращениями клиентов
+            </p>
+          </div>
+          <HelpButton section="requests" />
         </div>
 
         <RequestsTable requests={requests} />

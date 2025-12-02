@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { FaqList } from '@/components/settings/faq/FaqList';
 import { FaqForm } from '@/components/settings/faq/FaqForm';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -41,6 +42,7 @@ export default function FaqPage() {
       <PageHeader
         title="База знаний (FAQ)"
         description="Управление ответами на часто задаваемые вопросы."
+        actions={<HelpButton section="settings.faq" />}
         breadcrumbs={[
           { label: 'Настройки', href: '/settings' },
           { label: 'FAQ' },

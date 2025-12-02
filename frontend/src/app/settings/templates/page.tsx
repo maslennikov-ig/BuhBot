@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TemplateList } from '@/components/settings/templates/TemplateList';
 import { TemplateForm } from '@/components/settings/templates/TemplateForm';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -41,6 +42,7 @@ export default function TemplatesPage() {
       <PageHeader
         title="Шаблоны сообщений"
         description="Управление готовыми ответами и уведомлениями."
+        actions={<HelpButton section="settings.templates" />}
         breadcrumbs={[
           { label: 'Настройки', href: '/settings' },
           { label: 'Шаблоны' },

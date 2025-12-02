@@ -41,6 +41,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // TYPES
@@ -388,13 +389,16 @@ export default function AnalyticsPage() {
         animate="visible"
       >
         {/* Header */}
-        <motion.div variants={itemVariants}>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
-            Аналитика времени ответа
-          </h1>
-          <p className="text-[var(--buh-foreground-muted)] mt-2">
-            Детальная статистика по скорости обработки обращений клиентов
-          </p>
+        <motion.div variants={itemVariants} className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
+              Аналитика времени ответа
+            </h1>
+            <p className="text-[var(--buh-foreground-muted)] mt-2">
+              Детальная статистика по скорости обработки обращений клиентов
+            </p>
+          </div>
+          <HelpButton section="analytics" />
         </motion.div>
 
         {/* Filters */}

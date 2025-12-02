@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { HolidayCalendar } from '@/components/settings/HolidayCalendar';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 /**
  * Settings Page Content Component
@@ -30,6 +31,7 @@ export function SettingsPageContent() {
       <PageHeader
         title="Настройки системы"
         description="Управление уведомлениями, рабочим временем и SLA."
+        actions={<HelpButton section="settings.general" />}
         breadcrumbs={[
           { label: 'Панель управления', href: '/dashboard' },
           { label: 'Настройки' },

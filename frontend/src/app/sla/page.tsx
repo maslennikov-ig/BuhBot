@@ -33,6 +33,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { RadialBar, RadialBarChart, PolarAngleAxis } from 'recharts';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // TYPES
@@ -170,6 +171,7 @@ export default function SlaPage() {
       <PageHeader
         title="SLA Мониторинг"
         description="Детальная статистика по соблюдению SLA"
+        actions={<HelpButton section="sla" />}
         breadcrumbs={[
           { label: 'Панель управления', href: '/dashboard' },
           { label: 'SLA Мониторинг' },

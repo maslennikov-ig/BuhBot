@@ -18,6 +18,7 @@ import {
   Star,
   Clock,
 } from 'lucide-react';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // TYPES
@@ -199,8 +200,10 @@ export function SurveySettingsContent() {
             Конфигурация параметров квартальных опросов клиентов
           </p>
         </div>
-        <button
-          onClick={handleSave}
+        <div className="flex items-center gap-3">
+          <HelpButton section="settings.survey" />
+          <button
+            onClick={handleSave}
           disabled={updateMutation.isPending || !hasChanges}
           className={cn(
             'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
@@ -223,6 +226,7 @@ export function SurveySettingsContent() {
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Save Status Message */}

@@ -2,19 +2,24 @@
 
 import React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { ProfileSettingsForm } from '@/components/settings/ProfileSettingsForm';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 export default function ProfilePage() {
   return (
     <AdminLayout>
+      <PageHeader
+        title="Профиль"
+        description="Управление личными данными и уведомлениями"
+        actions={<HelpButton section="settings.profile" />}
+        breadcrumbs={[
+          { label: 'Настройки', href: '/settings' },
+          { label: 'Профиль' },
+        ]}
+      />
+      
       <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium text-[var(--buh-foreground)]">Профиль</h3>
-          <p className="text-sm text-[var(--buh-foreground-muted)]">
-            Управление личными данными и уведомлениями
-          </p>
-        </div>
-        
         <ProfileSettingsForm />
       </div>
     </AdminLayout>

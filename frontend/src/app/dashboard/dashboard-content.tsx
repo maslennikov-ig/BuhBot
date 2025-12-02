@@ -11,6 +11,7 @@ import {
   RecentRequestsTable,
 } from '@/components/dashboard';
 import { trpc } from '@/lib/trpc';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // EMPTY STATE DATA (when no real data available)
@@ -354,18 +355,21 @@ export function DashboardContent() {
   return (
     <AdminLayout>
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
-          Панель управления
-        </h1>
-        <p className="mt-2 text-[var(--buh-foreground-muted)]">
-          Обзор показателей SLA и активности за сегодня
-          {error && (
-            <span className="ml-2 text-sm text-[var(--buh-status-critical)]">
-              (данные из кэша)
-            </span>
-          )}
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
+            Панель управления
+          </h1>
+          <p className="mt-2 text-[var(--buh-foreground-muted)]">
+            Обзор показателей SLA и активности за сегодня
+            {error && (
+              <span className="ml-2 text-sm text-[var(--buh-status-critical)]">
+                (данные из кэша)
+              </span>
+            )}
+          </p>
+        </div>
+        <HelpButton section="dashboard" />
       </div>
 
       {/* Stats Grid - 2x2 layout for better spacing */}

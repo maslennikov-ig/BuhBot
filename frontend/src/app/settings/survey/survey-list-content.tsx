@@ -21,6 +21,7 @@ import {
   Loader2,
   RefreshCw,
 } from 'lucide-react';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // TYPES
@@ -384,6 +385,7 @@ export function SurveyListContent() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <HelpButton section="settings.survey" />
           <Link
             href="/settings/survey/settings"
             className={cn(

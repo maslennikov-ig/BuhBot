@@ -24,6 +24,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // TYPES
@@ -224,6 +225,7 @@ export default function ViolationsPage() {
       <PageHeader
         title="Нарушения SLA"
         description="История нарушений и статистика"
+        actions={<HelpButton section="violations" />}
         breadcrumbs={[
           { label: 'Панель управления', href: '/dashboard' },
           { label: 'Нарушения SLA' },

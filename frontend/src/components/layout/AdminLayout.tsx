@@ -51,6 +51,7 @@ type AdminLayoutProps = {
 // ============================================
 
 const navigationItems: NavItem[] = [
+  // === Главное ===
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -58,6 +59,7 @@ const navigationItems: NavItem[] = [
     icon: LayoutDashboard,
     href: '/dashboard',
   },
+  // === Операционная работа ===
   {
     id: 'requests',
     label: 'Requests',
@@ -72,19 +74,13 @@ const navigationItems: NavItem[] = [
     icon: Users,
     href: '/chats',
   },
+  // === Мониторинг SLA ===
   {
     id: 'sla',
     label: 'SLA Monitor',
     labelRu: 'SLA Мониторинг',
     icon: Timer,
     href: '/sla',
-  },
-  {
-    id: 'alerts',
-    label: 'Alerts',
-    labelRu: 'Алерты',
-    icon: AlertCircle,
-    href: '/alerts',
   },
   {
     id: 'violations',
@@ -94,12 +90,13 @@ const navigationItems: NavItem[] = [
     href: '/violations',
   },
   {
-    id: 'reports',
-    label: 'Reports',
-    labelRu: 'Отчеты',
-    icon: BarChart3,
-    href: '/reports',
+    id: 'alerts',
+    label: 'Alerts',
+    labelRu: 'Алерты',
+    icon: AlertCircle,
+    href: '/alerts',
   },
+  // === Аналитика и отчёты ===
   {
     id: 'analytics',
     label: 'Analytics',
@@ -108,12 +105,13 @@ const navigationItems: NavItem[] = [
     href: '/analytics',
   },
   {
-    id: 'settings',
-    label: 'Settings',
-    labelRu: 'Настройки',
-    icon: Settings,
-    href: '/settings',
+    id: 'reports',
+    label: 'Reports',
+    labelRu: 'Отчёты',
+    icon: BarChart3,
+    href: '/reports',
   },
+  // === Обратная связь ===
   {
     id: 'feedback',
     label: 'Feedback',
@@ -127,6 +125,14 @@ const navigationItems: NavItem[] = [
     labelRu: 'Опросы',
     icon: ListChecks,
     href: '/settings/survey',
+  },
+  // === Система ===
+  {
+    id: 'settings',
+    label: 'Settings',
+    labelRu: 'Настройки',
+    icon: Settings,
+    href: '/settings',
   },
   {
     id: 'help',

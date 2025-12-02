@@ -128,6 +128,13 @@ const navigationItems: NavItem[] = [
   },
   // === Система ===
   {
+    id: 'users',
+    label: 'Users',
+    labelRu: 'Пользователи',
+    icon: Users,
+    href: '/settings/users',
+  },
+  {
     id: 'settings',
     label: 'Settings',
     labelRu: 'Настройки',

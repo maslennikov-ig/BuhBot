@@ -10,6 +10,7 @@
 
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 /**
  * User role schema (matches Prisma UserRole enum)
@@ -212,4 +213,124 @@ export const authRouter = router({
 
     return { success: true };
   }),
+
+  /**
+   * Create a new user in the system
+   *
+   * Creates a user with specified email, name, and role.
+   * The user will need to set up their password via Supabase Auth.
+   *
+   * @param email - User email address
+   * @param fullName - User's full name
+   * @param role - User role (admin, manager, observer)
+   * @returns Created user info
+   * @authorization Admin only
+   */
+  createUser: adminProcedure
+    .input(
+      z.object({
+        email: z.string().email('Неверный формат email'),
+        fullName: z.string().min(1, 'Имя обязательно'),
+        role: UserRoleSchema,
+      })
+    )
+    .output(
+      z.object({
+        id: z.string().uuid(),
+        email: z.string().email(),
+        fullName: z.string(),
+        role: UserRoleSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user with this email already exists
+      const existingUser = await ctx.prisma.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (existingUser) {
+        throw new Error('Пользователь с таким email уже существует');
+      }
+
+      // Create user in database
+      // Note: User will need to sign up via Supabase Auth with this email
+      // to get authentication credentials
+      const newUser = await ctx.prisma.user.create({
+        data: {
+          id: randomUUID(),
+          email: input.email,
+          fullName: input.fullName,
+          role: input.role,
+          isOnboardingComplete: false,
+        },
+      });
+
+      return {
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        role: newUser.role,
+      };
+    }),
+
+  /**
+   * Delete a user from the system
+   *
+   * Removes user and all associated data (telegram account, assigned chats reassigned to null).
+   * Cannot delete yourself or the last admin.
+   *
+   * @param userId - Target user ID to delete
+   * @returns Success status
+   * @authorization Admin only
+   */
+  deleteUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Prevent self-deletion
+      if (input.userId === ctx.user.id) {
+        throw new Error('Нельзя удалить самого себя');
+      }
+
+      // Check if user exists
+      const userToDelete = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!userToDelete) {
+        throw new Error('Пользователь не найден');
+      }
+
+      // Prevent deletion of last admin
+      if (userToDelete.role === 'admin') {
+        const adminCount = await ctx.prisma.user.count({
+          where: { role: 'admin' },
+        });
+
+        if (adminCount <= 1) {
+          throw new Error('Нельзя удалить последнего администратора');
+        }
+      }
+
+      // Unassign chats from this user
+      await ctx.prisma.chat.updateMany({
+        where: { assignedAccountantId: input.userId },
+        data: { assignedAccountantId: null },
+      });
+
+      // Delete telegram account if exists
+      await ctx.prisma.telegramAccount.deleteMany({
+        where: { userId: input.userId },
+      });
+
+      // Delete user
+      await ctx.prisma.user.delete({
+        where: { id: input.userId },
+      });
+
+      return { success: true };
+    }),
 });

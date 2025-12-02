@@ -5,7 +5,10 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { UserList } from '@/components/settings/users/UserList';
 import { UserRoleDialog } from '@/components/settings/users/UserRoleDialog';
+import { UserCreateDialog } from '@/components/settings/users/UserCreateDialog';
+import { UserDeleteDialog } from '@/components/settings/users/UserDeleteDialog';
 import { HelpButton } from '@/components/ui/HelpButton';
+import { trpc } from '@/lib/trpc';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -15,16 +18,40 @@ type UserItem = RouterOutputs['auth']['listUsers'][number];
 
 export default function UsersPage() {
   const [editingUser, setEditingUser] = React.useState<UserItem | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [deletingUser, setDeletingUser] = React.useState<UserItem | null>(null);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = React.useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
+  const { data: currentUser } = trpc.auth.me.useQuery();
+  const isAdmin = currentUser?.role === 'admin';
 
   const handleEditRole = (user: UserItem) => {
     setEditingUser(user);
-    setIsDialogOpen(true);
+    setIsRoleDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleDeleteUser = (user: UserItem) => {
+    setDeletingUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleAddUser = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCloseRoleDialog = () => {
+    setIsRoleDialogOpen(false);
     setEditingUser(null);
+  };
+
+  const handleCloseCreateDialog = () => {
+    setIsCreateDialogOpen(false);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setDeletingUser(null);
   };
 
   return (
@@ -39,13 +66,31 @@ export default function UsersPage() {
         ]}
       />
 
-      <UserList onEditRole={handleEditRole} />
+      <UserList
+        onEditRole={handleEditRole}
+        onDeleteUser={handleDeleteUser}
+        onAddUser={handleAddUser}
+        isAdmin={isAdmin}
+      />
 
       <UserRoleDialog
         user={editingUser}
-        open={isDialogOpen}
-        onClose={handleCloseDialog}
-        onSuccess={handleCloseDialog}
+        open={isRoleDialogOpen}
+        onClose={handleCloseRoleDialog}
+        onSuccess={handleCloseRoleDialog}
+      />
+
+      <UserCreateDialog
+        open={isCreateDialogOpen}
+        onClose={handleCloseCreateDialog}
+        onSuccess={handleCloseCreateDialog}
+      />
+
+      <UserDeleteDialog
+        user={deletingUser}
+        open={isDeleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onSuccess={handleCloseDeleteDialog}
       />
     </AdminLayout>
   );

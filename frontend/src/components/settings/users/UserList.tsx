@@ -4,7 +4,7 @@ import * as React from 'react';
 import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
-import { Search, User as UserIcon, MessageCircle, Users } from 'lucide-react';
+import { Search, User as UserIcon, MessageCircle, Users, Trash2, Plus } from 'lucide-react';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 
@@ -16,6 +16,9 @@ type UserItem = RouterOutputs['auth']['listUsers'][number];
 
 interface UserListProps {
   onEditRole: (user: UserItem) => void;
+  onDeleteUser: (user: UserItem) => void;
+  onAddUser: () => void;
+  isAdmin: boolean;
 }
 
 const ROLE_LABELS = {
@@ -30,7 +33,7 @@ const ROLE_COLORS = {
   observer: 'text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-subtle)]',
 };
 
-export function UserList({ onEditRole }: UserListProps) {
+export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserListProps) {
   const [search, setSearch] = React.useState('');
 
   const { data: users, isLoading } = trpc.auth.listUsers.useQuery({});
@@ -90,6 +93,12 @@ export function UserList({ onEditRole }: UserListProps) {
             className="h-9 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] pl-9 pr-4 text-sm focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]"
           />
         </div>
+        {isAdmin && (
+          <Button onClick={onAddUser} className="buh-btn-primary gap-2">
+            <Plus className="h-4 w-4" />
+            Добавить
+          </Button>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-lg border border-[var(--buh-border)]">
@@ -163,9 +172,23 @@ export function UserList({ onEditRole }: UserListProps) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => onEditRole(user)} className="text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)]">
-                        Изменить роль
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {isAdmin && (
+                        <Button variant="ghost" size="sm" onClick={() => onEditRole(user)} className="text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)]">
+                          Изменить роль
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteUser(user)}
+                          className="text-[var(--buh-error)] hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

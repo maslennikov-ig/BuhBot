@@ -348,7 +348,8 @@ export function ChatsListContent() {
               onClick={() => setShowAddModal(true)}
               className={cn(
                 'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]',
-                'hover:shadow-lg hover:shadow-[var(--buh-accent-glow)]'
+                'hover:shadow-lg hover:shadow-[var(--buh-accent-glow)]',
+                'text-white hover:text-white'
               )}
             >
               <Plus className="mr-2 h-4 w-4" />

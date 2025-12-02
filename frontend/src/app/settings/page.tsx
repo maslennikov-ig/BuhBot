@@ -24,10 +24,10 @@ export default function SettingsPage() {
         </div>
         <Tabs defaultValue="profile" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="general">General & Bot</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule & SLA</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="profile">Профиль</TabsTrigger>
+            <TabsTrigger value="general">Основные и бот</TabsTrigger>
+            <TabsTrigger value="schedule">Расписание и SLA</TabsTrigger>
+            <TabsTrigger value="notifications">Уведомления</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-4">

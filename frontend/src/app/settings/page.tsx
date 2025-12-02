@@ -7,16 +7,20 @@ import { GeneralSettingsForm } from '@/components/settings/GeneralSettingsForm';
 import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
 import { ProfileSettingsForm } from '@/components/settings/ProfileSettingsForm';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 export default function SettingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium">Settings</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your workspace preferences and configurations.
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-medium">Настройки</h3>
+            <p className="text-sm text-muted-foreground">
+              Управление параметрами рабочего пространства и конфигурациями.
+            </p>
+          </div>
+          <HelpButton section="settings.general" />
         </div>
         <Tabs defaultValue="profile" className="space-y-4">
           <TabsList>

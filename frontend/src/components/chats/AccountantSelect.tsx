@@ -37,10 +37,10 @@ type AccountantSelectProps = {
 // ============================================
 
 const MOCK_ACCOUNTANTS: Accountant[] = [
-  { id: 'acc-1', name: 'Иванов Иван', email: 'ivanov@example.com' },
-  { id: 'acc-2', name: 'Петрова Анна', email: 'petrova@example.com' },
-  { id: 'acc-3', name: 'Сидоров Петр', email: 'sidorov@example.com' },
-  { id: 'acc-4', name: 'Козлова Мария', email: 'kozlova@example.com' },
+  { id: '00000000-0000-0000-0000-000000000001', name: 'Иванов Иван', email: 'ivanov@example.com' },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Петрова Анна', email: 'petrova@example.com' },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Сидоров Петр', email: 'sidorov@example.com' },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Козлова Мария', email: 'kozlova@example.com' },
 ];
 
 // ============================================
@@ -127,12 +127,13 @@ export function AccountantSelect({
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
-      {/* Trigger Button */}
-      <button
-        type="button"
+      {/* Trigger Container */}
+      <div
+        role="combobox"
+        tabIndex={disabled ? -1 : 0}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         onKeyDown={handleKeyDown}
-        disabled={disabled}
+        aria-disabled={disabled}
         className={cn(
           'flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5',
           'bg-[var(--buh-surface)] border-[var(--buh-border)]',
@@ -140,7 +141,7 @@ export function AccountantSelect({
           'transition-all duration-200',
           'focus:outline-none focus:border-[var(--buh-accent)] focus:ring-2 focus:ring-[var(--buh-accent-glow)]',
           disabled && 'opacity-50 cursor-not-allowed',
-          !disabled && 'hover:border-[var(--buh-foreground-subtle)]',
+          !disabled && 'hover:border-[var(--buh-foreground-subtle)] cursor-pointer',
           isOpen && 'border-[var(--buh-accent)] ring-2 ring-[var(--buh-accent-glow)]'
         )}
         aria-expanded={isOpen}
@@ -185,7 +186,7 @@ export function AccountantSelect({
             )}
           />
         </div>
-      </button>
+      </div>
 
       {/* Dropdown Panel */}
       {isOpen && (

@@ -14,6 +14,7 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import { queueAlert, scheduleEscalation } from '../../queues/setup.js';
 import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '@prisma/client';
+import { appNotificationService } from '../notification/app-notification.service.js';
 
 // Re-export types for consumers
 export type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus };
@@ -151,6 +152,15 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
         managerCount: managerIds.length,
         service: 'alert',
       });
+
+      // Create in-app notifications for managers
+      await createNotificationsForManagers(
+        managerIds,
+        alert,
+        request.chat?.title ?? 'Неизвестный чат',
+        request.clientUsername,
+        request.messageText
+      );
     }
 
     // Schedule next escalation if not at max level
@@ -488,6 +498,87 @@ export async function updateEscalationLevel(
       service: 'alert',
     });
     throw error;
+  }
+}
+
+/**
+ * Create in-app notifications for managers when SLA alert is triggered
+ *
+ * Finds users by their Telegram IDs and creates notifications for them.
+ *
+ * @param managerTelegramIds - Array of manager Telegram IDs
+ * @param alert - The SlaAlert record
+ * @param chatTitle - Title of the chat
+ * @param clientUsername - Client's username (optional)
+ * @param messagePreview - Preview of the message
+ */
+async function createNotificationsForManagers(
+  managerTelegramIds: string[],
+  alert: SlaAlert,
+  chatTitle: string,
+  clientUsername: string | null,
+  messagePreview: string
+): Promise<void> {
+  try {
+    // Find users by their Telegram IDs
+    const users = await prisma.user.findMany({
+      where: {
+        telegramId: {
+          in: managerTelegramIds.map(id => BigInt(id)),
+        },
+      },
+      select: { id: true, telegramId: true },
+    });
+
+    if (users.length === 0) {
+      logger.warn('No users found for manager Telegram IDs', {
+        managerTelegramIds,
+        service: 'alert',
+      });
+      return;
+    }
+
+    // Prepare notification content
+    const isWarning = alert.alertType === 'warning';
+    const title = isWarning
+      ? `⚠️ SLA предупреждение`
+      : `🚨 SLA нарушение`;
+
+    const clientInfo = clientUsername ? `@${clientUsername}` : 'Клиент';
+    const preview = messagePreview.length > 100
+      ? messagePreview.substring(0, 100) + '...'
+      : messagePreview;
+
+    const message = isWarning
+      ? `${clientInfo} в чате "${chatTitle}" ждёт ответа ${alert.minutesElapsed} мин. Сообщение: "${preview}"`
+      : `${clientInfo} в чате "${chatTitle}" не получил ответ уже ${alert.minutesElapsed} мин! Сообщение: "${preview}"`;
+
+    // Create notifications for all found users
+    const notifications = users.map(user =>
+      appNotificationService.create({
+        userId: user.id,
+        title,
+        message,
+        type: isWarning ? 'warning' : 'error',
+        link: '/alerts',
+      })
+    );
+
+    await Promise.all(notifications);
+
+    logger.info('In-app notifications created for managers', {
+      alertId: alert.id,
+      userCount: users.length,
+      alertType: alert.alertType,
+      service: 'alert',
+    });
+  } catch (error) {
+    // Don't fail the alert creation if notification fails
+    logger.error('Failed to create in-app notifications', {
+      alertId: alert.id,
+      error: error instanceof Error ? error.message : String(error),
+      service: 'alert',
+    });
   }
 }
 

@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, CheckCircle2, AlertCircle, Send, Save } from 'lucide-react';
+import { User, AlertCircle, Send, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';

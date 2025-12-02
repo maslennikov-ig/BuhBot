@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Bell, AlertCircle, AlertTriangle, Info, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -65,13 +65,27 @@ export function ActiveAlertsWidget({
   recentAlerts,
   className,
 }: ActiveAlertsWidgetProps) {
+  const router = useRouter();
   const hasUrgent = criticalCount > 0;
+
+  const handleWidgetClick = () => {
+    router.push('/alerts');
+  };
+
+  const handleAlertClick = (e: React.MouseEvent, alertId: string) => {
+    e.stopPropagation(); // Prevent widget click
+    router.push(`/alerts?id=${alertId}`);
+  };
 
   return (
     <GlassCard
       variant="elevated"
       padding="lg"
-      className={cn('relative overflow-hidden group', className)}
+      className={cn(
+        'relative overflow-hidden group cursor-pointer transition-transform duration-200 hover:-translate-y-1',
+        className
+      )}
+      onClick={handleWidgetClick}
     >
       {/* Gradient accent on hover */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -148,9 +162,10 @@ export function ActiveAlertsWidget({
             const Icon = config.icon;
 
             return (
-              <div
+              <button
                 key={alert.id}
-                className="flex items-center gap-3 rounded-lg p-2 transition-colors duration-200 hover:bg-[var(--buh-surface-elevated)]"
+                onClick={(e) => handleAlertClick(e, alert.id)}
+                className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-all duration-200 hover:bg-[var(--buh-surface-elevated)] hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
@@ -166,20 +181,18 @@ export function ActiveAlertsWidget({
                     {alert.time}
                   </p>
                 </div>
-              </div>
+                <ChevronRight className="h-4 w-4 text-[var(--buh-foreground-subtle)] opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
             );
           })}
         </div>
       )}
 
-      {/* View all link */}
-      <Link
-        href="/alerts"
-        className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)] transition-colors duration-200 hover:text-[var(--buh-primary-hover)]"
-      >
+      {/* View all indicator */}
+      <div className="mt-4 flex items-center justify-center gap-1 text-sm font-medium text-[var(--buh-primary)]">
         <span>Все алерты</span>
-        <ChevronRight className="h-4 w-4" />
-      </Link>
+        <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+      </div>
 
       {/* Decorative glow */}
       <div

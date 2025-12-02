@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { NPSWidget, FeedbackTable } from '@/components/feedback';
 import type { FeedbackEntry, FeedbackFilters } from '@/components/feedback';
 import { trpc } from '@/lib/trpc';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // CONSTANTS
@@ -260,18 +261,21 @@ export function FeedbackContent() {
   return (
     <AdminLayout>
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
-          Обратная связь
-        </h1>
-        <p className="mt-2 text-[var(--buh-foreground-muted)]">
-          Анализ отзывов клиентов и индекс лояльности NPS
-          {(aggregatesError || feedbackError) && (
-            <span className="ml-2 text-sm text-[var(--buh-status-critical)]">
-              (данные из кэша)
-            </span>
-          )}
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
+            Обратная связь
+          </h1>
+          <p className="mt-2 text-[var(--buh-foreground-muted)]">
+            Анализ отзывов клиентов и индекс лояльности NPS
+            {(aggregatesError || feedbackError) && (
+              <span className="ml-2 text-sm text-[var(--buh-status-critical)]">
+                (данные из кэша)
+              </span>
+            )}
+          </p>
+        </div>
+        <HelpButton section="feedback" />
       </div>
 
       {/* NPS Widget - Visible to all authenticated users */}

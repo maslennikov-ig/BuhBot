@@ -54,9 +54,12 @@ const chatSettingsSchema = z.object({
   slaEnabled: z.boolean(),
   slaResponseMinutes: z
     .number()
-    .min(1, 'Минимум 1 минута')
+    .min(15, 'Минимум 15 минут')
     .max(480, 'Максимум 480 минут'),
-  assignedAccountantId: z.string().nullable(),
+  // Allow null, valid UUID, or empty string (transformed to null)
+  assignedAccountantId: z
+    .union([z.string().uuid(), z.null(), z.literal('')])
+    .transform((val) => (val === '' ? null : val)),
 });
 
 type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
@@ -219,7 +222,7 @@ export function ChatSettingsForm({
                 <FormControl>
                   <Input
                     type="number"
-                    min={1}
+                    min={15}
                     max={480}
                     disabled={!slaEnabled}
                     className="bg-[var(--buh-surface)] border-[var(--buh-border)] focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]"
@@ -228,7 +231,7 @@ export function ChatSettingsForm({
                   />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                  Максимальное время для ответа клиенту (1-480 мин)
+                  Максимальное время для ответа клиенту (15-480 мин)
                 </FormDescription>
                 <FormMessage />
               </FormItem>

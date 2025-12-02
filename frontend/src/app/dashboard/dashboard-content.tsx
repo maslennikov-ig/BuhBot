@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import {
   SlaComplianceWidget,
@@ -10,6 +11,7 @@ import {
   RecentRequestsTable,
 } from '@/components/dashboard';
 import { trpc } from '@/lib/trpc';
+import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
 // EMPTY STATE DATA (when no real data available)
@@ -161,12 +163,12 @@ function LoadingSkeleton() {
         <div className="mt-2 h-5 w-96 animate-pulse rounded bg-[var(--buh-card-bg)]" />
       </div>
 
-      {/* Stats Grid Skeleton */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stats Grid Skeleton - 2x2 layout */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="h-40 animate-pulse rounded-lg border border-[var(--buh-border)] bg-[var(--buh-card-bg)]"
+            className="h-48 animate-pulse rounded-lg border border-[var(--buh-border)] bg-[var(--buh-card-bg)]"
           />
         ))}
       </div>
@@ -184,6 +186,8 @@ function LoadingSkeleton() {
 // ============================================
 
 export function DashboardContent() {
+  const router = useRouter();
+
   // Fetch dashboard data with real-time polling
   const { data, isLoading, error } = trpc.analytics.getDashboard.useQuery(
     { timezone: 'Europe/Moscow' },
@@ -227,6 +231,12 @@ export function DashboardContent() {
     const trendDirection: 'up' | 'down' =
       (data.responseTimeTrend ?? 0) > 0 ? 'up' : 'down';
 
+    // Transform API chart data to widget format
+    const chartData = data.responseTimeChartData?.map((point) => ({
+      time: point.dayLabel,
+      'Время ответа': point.avgResponseMinutes,
+    })) ?? emptyResponseTimeData.chartData;
+
     return {
       averageTime: Math.round(
         data.avgResponseTimeMinutes ?? emptyResponseTimeData.averageTime
@@ -235,8 +245,7 @@ export function DashboardContent() {
         value: Math.round(trendValue),
         direction: trendDirection,
       },
-      // Keep mock chart data until we have historical data from API
-      chartData: emptyResponseTimeData.chartData,
+      chartData,
     };
   }, [data]);
 
@@ -346,22 +355,25 @@ export function DashboardContent() {
   return (
     <AdminLayout>
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
-          Панель управления
-        </h1>
-        <p className="mt-2 text-[var(--buh-foreground-muted)]">
-          Обзор показателей SLA и активности за сегодня
-          {error && (
-            <span className="ml-2 text-sm text-[var(--buh-status-critical)]">
-              (данные из кэша)
-            </span>
-          )}
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
+            Панель управления
+          </h1>
+          <p className="mt-2 text-[var(--buh-foreground-muted)]">
+            Обзор показателей SLA и активности за сегодня
+            {error && (
+              <span className="ml-2 text-sm text-[var(--buh-status-critical)]">
+                (данные из кэша)
+              </span>
+            )}
+          </p>
+        </div>
+        <HelpButton section="dashboard" />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stats Grid - 2x2 layout for better spacing */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         {/* SLA Compliance */}
         <SlaComplianceWidget
           compliance={slaData.compliance}
@@ -369,17 +381,18 @@ export function DashboardContent() {
           violatedCount={slaData.violatedCount}
         />
 
+        {/* Violations */}
+        <ViolationsWidget
+          count={violationsData.count}
+          yesterdayCount={violationsData.yesterdayCount}
+        />
+
         {/* Response Time */}
         <ResponseTimeWidget
           averageTime={responseTimeData.averageTime}
           trend={responseTimeData.trend}
           chartData={responseTimeData.chartData}
-        />
-
-        {/* Violations */}
-        <ViolationsWidget
-          count={violationsData.count}
-          yesterdayCount={violationsData.yesterdayCount}
+          onClick={() => router.push('/analytics')}
         />
 
         {/* Active Alerts */}

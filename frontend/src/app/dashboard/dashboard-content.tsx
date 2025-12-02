@@ -35,6 +35,7 @@ const emptyResponseTimeData = {
 const emptyViolationsData = {
   count: 0,
   yesterdayCount: 0,
+  last7Days: [0, 0, 0, 0, 0, 0, 0],
 };
 
 const emptyAlertsData = {
@@ -252,16 +253,17 @@ export function DashboardContent() {
   const violationsData = React.useMemo(() => {
     if (!data) return emptyViolationsData;
 
-    // Use today's violations as count, week violations to estimate yesterday
+    // Use today's violations as count
     const todayCount = data.totalViolationsToday ?? 0;
-    const weekCount = data.totalViolationsWeek ?? 0;
-    // Estimate yesterday's count (average of remaining week days)
-    const remainingDays = Math.max(1, 6); // 6 other days in week
-    const yesterdayEstimate = Math.round((weekCount - todayCount) / remainingDays);
+
+    // Get yesterday's count from last7Days (index 5 is yesterday, index 6 is today)
+    const last7Days = data.violationsLast7Days ?? [0, 0, 0, 0, 0, 0, 0];
+    const yesterdayCount = last7Days[5] ?? 0;
 
     return {
       count: todayCount,
-      yesterdayCount: Math.max(0, yesterdayEstimate),
+      yesterdayCount,
+      last7Days,
     };
   }, [data]);
 
@@ -403,6 +405,7 @@ export function DashboardContent() {
         <ViolationsWidget
           count={violationsData.count}
           yesterdayCount={violationsData.yesterdayCount}
+          last7Days={violationsData.last7Days}
           className="h-full"
         />
       </div>

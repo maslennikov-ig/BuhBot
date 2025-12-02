@@ -419,6 +419,7 @@ export const analyticsRouter = router({
             requestCount: z.number(),
           })
         ),
+        violationsLast7Days: z.array(z.number()),
       })
     )
     .query(async ({ ctx }) => {
@@ -662,6 +663,27 @@ export const analyticsRouter = router({
         });
       }
 
+      // Calculate violations for each of the last 7 days
+      const violationsLast7Days: number[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const dayStart = new Date(now);
+        dayStart.setDate(dayStart.getDate() - i);
+        dayStart.setHours(0, 0, 0, 0);
+
+        const dayEnd = new Date(dayStart);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const dayViolations = await ctx.prisma.clientRequest.count({
+          where: {
+            slaBreached: true,
+            classification: 'REQUEST',
+            receivedAt: { gte: dayStart, lte: dayEnd },
+          },
+        });
+
+        violationsLast7Days.push(dayViolations);
+      }
+
       return {
         slaCompliancePercent: Math.round(currentCompliancePercent * 100) / 100,
         avgResponseTimeMinutes: Math.round(currentAvgResponseTime * 100) / 100,
@@ -674,6 +696,7 @@ export const analyticsRouter = router({
         topAccountants,
         attentionNeeded,
         responseTimeChartData,
+        violationsLast7Days,
       };
     }),
 

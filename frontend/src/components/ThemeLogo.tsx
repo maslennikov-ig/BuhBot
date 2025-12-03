@@ -31,11 +31,11 @@ export function ThemeLogo({ size = 'md', className = '', priority = false }: The
     return <div className={`${sizeClass} ${className}`} style={{ width, height }} />;
   }
 
-  // logo-small.png has gray background - for DARK theme (dark background)
-  // logo-small-light.png is transparent - for LIGHT theme (light background)
+  // logo-small-dark.png has gray background - for DARK theme
+  // logo-small.png is transparent - for LIGHT theme (and emails)
   const logoSrc = resolvedTheme === 'dark'
-    ? '/images/logo/logo-small.png'
-    : '/images/logo/logo-small-light.png';
+    ? '/images/logo/logo-small-dark.png'
+    : '/images/logo/logo-small.png';
 
   return (
     <Image

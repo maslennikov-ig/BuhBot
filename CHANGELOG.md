@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-12-03
+
+### Added
+- **auth**: Add user invitation flow with Supabase Auth (66b8a4b)
+- **users**: Add full user management for admins (c43cc82)
+
+### Fixed
+- **auth**: Wrap SetPasswordForm in Suspense boundary (d938b2b)
+- **dashboard**: Add violations chart data to dashboard widget (2043ad6)
+
 ## [0.6.3] - 2025-12-02
 
 ## [0.6.2] - 2025-12-02

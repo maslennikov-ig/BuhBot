@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -200,18 +201,29 @@ function Sidebar({
               collapsed && 'lg:justify-center'
             )}
           >
-            {/* Logo Icon */}
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)] shadow-lg">
-              <span className="text-lg font-bold text-white">B</span>
-              {/* Glow effect */}
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-50 blur-lg" />
-            </div>
-
-            {/* Logo Text */}
-            {!collapsed && (
-              <span className="text-xl font-bold tracking-tight text-[var(--buh-foreground)]">
-                Buh<span className="gradient-text">Bot</span>
-              </span>
+            {/* Logo - Full wordmark when expanded, icon when collapsed */}
+            {collapsed ? (
+              <div className="relative h-9 w-9 flex items-center justify-center">
+                <Image
+                  src="/apple-touch-icon.png"
+                  alt="BuhBot"
+                  width={36}
+                  height={36}
+                  className="rounded-lg"
+                  priority
+                />
+              </div>
+            ) : (
+              <div className="relative h-9">
+                <Image
+                  src="/images/logo/logo-small.png"
+                  alt="BuhBot"
+                  width={120}
+                  height={36}
+                  className="h-9 w-auto object-contain"
+                  priority
+                />
+              </div>
             )}
           </Link>
 

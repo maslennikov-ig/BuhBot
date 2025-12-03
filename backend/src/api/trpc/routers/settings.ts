@@ -642,18 +642,4 @@ export const settingsRouter = router({
       });
       return { success: true };
     }),
-
-  /**
-   * Complete Onboarding
-   * Marks the current user as having completed the onboarding wizard
-   */
-  completeOnboarding: authedProcedure.mutation(async ({ ctx }) => {
-    await ctx.prisma.user.update({
-      where: { id: ctx.user.id },
-      data: {
-        isOnboardingComplete: true,
-      },
-    });
-    return { success: true };
-  }),
 });

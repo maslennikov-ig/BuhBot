@@ -200,21 +200,6 @@ export const authRouter = router({
     }),
 
   /**
-   * Mark onboarding as complete for the current user
-   *
-   * @returns Success status
-   * @authorization All authenticated users
-   */
-  completeOnboarding: authedProcedure.mutation(async ({ ctx }) => {
-    await ctx.prisma.user.update({
-      where: { id: ctx.user.id },
-      data: { isOnboardingComplete: true },
-    });
-
-    return { success: true };
-  }),
-
-  /**
    * Create a new user in the system
    *
    * Creates a user via Supabase Auth invite and stores profile in database.
@@ -284,7 +269,7 @@ export const authRouter = router({
           email: input.email,
           fullName: input.fullName,
           role: input.role,
-          isOnboardingComplete: false,
+          isOnboardingComplete: true, // Skip onboarding (all settings available in /settings)
         },
       });
 

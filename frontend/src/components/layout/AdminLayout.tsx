@@ -429,23 +429,11 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [isAuthorized, setIsAuthorized] = React.useState(false);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
 
-  // Check onboarding status
-  const { data: userProfile } = trpc.auth.me.useQuery(undefined, {
-    enabled: isAuthorized,
-    retry: false,
-  });
-
   // Fetch active alerts count for badge
   const { data: alertCountData } = trpc.alert.getActiveAlertCount.useQuery(undefined, {
     enabled: isAuthorized,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
-
-  React.useEffect(() => {
-    if (userProfile && userProfile.isOnboardingComplete === false) {
-      router.push('/onboarding');
-    }
-  }, [userProfile, router]);
 
   // Check authentication
   React.useEffect(() => {

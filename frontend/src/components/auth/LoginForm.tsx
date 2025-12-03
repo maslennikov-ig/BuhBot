@@ -128,7 +128,7 @@ export function LoginForm() {
 
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white border-0 cursor-pointer"
+            className="w-full bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] hover:opacity-90 text-white border-0 cursor-pointer"
             disabled={isLoading}
           >
             {isLoading ? (

@@ -1,12 +1,21 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 p-4">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-slate-900">BuhBot</Link>
+          <Link href="/">
+            <Image
+              src="/images/logo/logo-small.png"
+              alt="BuhBot"
+              width={100}
+              height={30}
+              className="h-7 w-auto object-contain"
+            />
+          </Link>
           <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">Login</Link>
         </div>
       </header>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function Footer() {
   const scrollToSection = (id: string) => {
@@ -17,7 +18,13 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[var(--buh-foreground-muted)]">
           {/* Left: Branding + Copyright */}
           <div className="flex items-center gap-4">
-            <span className="font-bold text-[var(--buh-foreground)]">BuhBot</span>
+            <Image
+              src="/images/logo/logo-small.png"
+              alt="BuhBot"
+              width={100}
+              height={30}
+              className="h-7 w-auto object-contain"
+            />
             <span className="text-[var(--buh-foreground-subtle)]">© 2025 AIDevTeam</span>
           </div>
 

@@ -130,7 +130,7 @@ export function SetPasswordForm() {
     <div className="bg-white/80 dark:bg-white/10 backdrop-blur-md border border-[var(--buh-border)] dark:border-white/20 rounded-2xl p-8 shadow-xl transition-colors duration-300 animate-slide-up">
       {/* Header */}
       <div className="text-center mb-8 space-y-2 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl mb-4 shadow-lg animate-scale-in">
+        <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)] rounded-xl mb-4 shadow-lg animate-scale-in">
           <Shield className="w-7 h-7 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-[var(--buh-foreground)] dark:text-white">
@@ -158,7 +158,7 @@ export function SetPasswordForm() {
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Введите пароль"
-                      className="bg-white dark:bg-white/5 border-[var(--buh-border)] dark:border-white/10 text-[var(--buh-foreground)] dark:text-white placeholder:text-[var(--buh-foreground-subtle)] dark:placeholder:text-slate-500 focus:border-indigo-500/50 focus:bg-white dark:focus:bg-white/10 transition-colors pr-10"
+                      className="bg-white dark:bg-white/5 border-[var(--buh-border)] dark:border-white/10 text-[var(--buh-foreground)] dark:text-white placeholder:text-[var(--buh-foreground-subtle)] dark:placeholder:text-slate-500 focus:border-[var(--buh-accent)]/50 focus:bg-white dark:focus:bg-white/10 transition-colors pr-10"
                       {...field}
                     />
                     <Button
@@ -248,7 +248,7 @@ export function SetPasswordForm() {
                     <Input
                       type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Повторите пароль"
-                      className="bg-white dark:bg-white/5 border-[var(--buh-border)] dark:border-white/10 text-[var(--buh-foreground)] dark:text-white placeholder:text-[var(--buh-foreground-subtle)] dark:placeholder:text-slate-500 focus:border-indigo-500/50 focus:bg-white dark:focus:bg-white/10 transition-colors pr-10"
+                      className="bg-white dark:bg-white/5 border-[var(--buh-border)] dark:border-white/10 text-[var(--buh-foreground)] dark:text-white placeholder:text-[var(--buh-foreground-subtle)] dark:placeholder:text-slate-500 focus:border-[var(--buh-accent)]/50 focus:bg-white dark:focus:bg-white/10 transition-colors pr-10"
                       {...field}
                     />
                     <Button
@@ -277,7 +277,7 @@ export function SetPasswordForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white border-0 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in animation-delay-300"
+            className="w-full bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)] hover:opacity-90 text-white border-0 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in animation-delay-300"
             disabled={isLoading}
           >
             {isLoading ? (

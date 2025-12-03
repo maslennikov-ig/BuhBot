@@ -70,7 +70,7 @@ export function Header() {
       <div className="container h-full flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300">
-          <ThemeLogo size="md" priority />
+          <ThemeLogo size="xl" priority />
         </Link>
 
         {/* Desktop Nav */}

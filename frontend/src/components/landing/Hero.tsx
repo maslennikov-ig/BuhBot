@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { HeroChatMockup } from './HeroChatMockup';
 
 interface Particle {
   x: number;
@@ -76,7 +77,7 @@ export function Hero() {
     <section className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden pt-20 pb-10">
       {/* Aurora Background */}
       <div className="absolute inset-0 buh-aurora z-0" />
-      
+
       {/* Grid/Noise overlay for texture */}
       <div className="absolute inset-0 buh-noise z-0 pointer-events-none" />
 
@@ -101,76 +102,102 @@ export function Hero() {
         ))}
       </div>
 
-      <div className="container relative z-10 px-4 md:px-6 flex flex-col items-center text-center">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto"
-        >
-          {/* Badge */}
-          <motion.div variants={itemVariants} className="mb-8 flex justify-center">
-            <span className="inline-flex items-center px-4 py-1.5 rounded-full border border-[var(--buh-accent-glow)] bg-[rgba(0,212,170,0.05)] text-[var(--buh-accent)] text-xs md:text-sm font-bold uppercase tracking-wider shadow-[0_0_20px_-5px_var(--buh-accent-glow)]">
-              Для бухгалтерских фирм
-            </span>
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1
-            variants={itemVariants}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-[var(--buh-foreground)] leading-[1.1] mb-6"
-          >
-            Клиенты ждут ответа.
-            <br />
-            <span className="relative">
-              <span className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)] blur-lg opacity-50 animate-pulse" />
-              <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)]">
-                Вы контролируете время.
-              </span>
-            </span>
-          </motion.h1>
-
-          {/* Subheadline */}
-          <motion.p
-            variants={itemVariants}
-            className="text-lg md:text-xl text-[var(--buh-foreground-muted)] max-w-2xl mx-auto mb-10 leading-relaxed"
-          >
-            BuhBot автоматически отслеживает время ответа бухгалтеров
-            и уведомляет о приближении дедлайна — прежде чем клиент
-            успеет пожаловаться.
-          </motion.p>
-
-          {/* CTAs */}
+      {/* Main Content - Two Column Layout */}
+      <div className="container relative z-10 px-4 md:px-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* Left Column - Text Content */}
           <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-center lg:text-left"
           >
-            <motion.button
-              ref={ctaRef}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              animate={{ x: mousePosition.x, y: mousePosition.y }}
-              transition={{ type: 'spring', stiffness: 150, damping: 15 }}
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-[var(--buh-primary)] rounded-full hover:bg-[var(--buh-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--buh-primary)] shadow-[0_0_20px_-5px_var(--buh-primary-muted)] hover:shadow-[0_0_40px_-5px_var(--buh-primary),0_0_60px_-10px_var(--buh-accent)] overflow-hidden"
+            {/* Badge */}
+            <motion.div variants={itemVariants} className="mb-8 flex justify-center lg:justify-start">
+              <span className="inline-flex items-center px-4 py-1.5 rounded-full border border-[var(--buh-accent-glow)] bg-[rgba(0,212,170,0.05)] text-[var(--buh-accent)] text-xs md:text-sm font-bold uppercase tracking-wider shadow-[0_0_20px_-5px_var(--buh-accent-glow)]">
+                Для бухгалтерских фирм
+              </span>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-[var(--buh-foreground)] leading-[1.1] mb-6"
             >
-              {/* Shimmer effect */}
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              Клиенты ждут ответа.
+              <br />
+              <span className="relative">
+                <span className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)] blur-lg opacity-50 animate-pulse" />
+                <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)]">
+                  Вы контролируете время.
+                </span>
+              </span>
+            </motion.h1>
 
-              {/* Ripple effect */}
-              <span className="absolute inset-0 rounded-full bg-white/30 scale-0 group-active:scale-100 transition-transform duration-500" />
-
-              <span>Запросить демо</span>
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-
-            <button
-              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-[var(--buh-foreground)] transition-all duration-200 bg-[var(--buh-surface)] border border-[var(--buh-border)] rounded-full hover:bg-[var(--buh-surface-elevated)] hover:border-[var(--buh-foreground-subtle)] focus:outline-none hover:-translate-y-1"
+            {/* Subheadline */}
+            <motion.p
+              variants={itemVariants}
+              className="text-lg md:text-xl text-[var(--buh-foreground-muted)] max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed"
             >
-              Узнать как это работает
-            </button>
+              BuhBot автоматически отслеживает время ответа бухгалтеров
+              и уведомляет о приближении дедлайна — прежде чем клиент
+              успеет пожаловаться.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
+            >
+              <motion.button
+                ref={ctaRef}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                animate={{ x: mousePosition.x, y: mousePosition.y }}
+                transition={{ type: 'spring', stiffness: 150, damping: 15 }}
+                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-[var(--buh-primary)] rounded-full hover:bg-[var(--buh-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--buh-primary)] shadow-[0_0_20px_-5px_var(--buh-primary-muted)] hover:shadow-[0_0_40px_-5px_var(--buh-primary),0_0_60px_-10px_var(--buh-accent)] overflow-hidden"
+              >
+                {/* Shimmer effect */}
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+
+                {/* Ripple effect */}
+                <span className="absolute inset-0 rounded-full bg-white/30 scale-0 group-active:scale-100 transition-transform duration-500" />
+
+                <span>Запросить демо</span>
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+
+              <button
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-[var(--buh-foreground)] transition-all duration-200 bg-[var(--buh-surface)] border border-[var(--buh-border)] rounded-full hover:bg-[var(--buh-surface-elevated)] hover:border-[var(--buh-foreground-subtle)] focus:outline-none hover:-translate-y-1"
+              >
+                Как это работает
+              </button>
+            </motion.div>
           </motion.div>
+
+          {/* Right Column - Chat Mockup */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="hidden lg:block"
+          >
+            <HeroChatMockup />
+          </motion.div>
+        </div>
+
+        {/* Mobile Chat Mockup - shown below on smaller screens */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.5 }}
+          className="lg:hidden mt-12 flex justify-center"
+        >
+          <div className="scale-90 sm:scale-100">
+            <HeroChatMockup />
+          </div>
         </motion.div>
       </div>
 

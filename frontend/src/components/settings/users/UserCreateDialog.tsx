@@ -4,7 +4,8 @@ import * as React from 'react';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/layout/GlassCard';
-import { X } from 'lucide-react';
+import { X, Mail } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { inferRouterInputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -32,7 +33,7 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
   const utils = trpc.useContext();
 
   const createUserMutation = trpc.auth.createUser.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       utils.auth.listUsers.invalidate();
       setEmail('');
       setFullName('');
@@ -40,6 +41,13 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
       setError(null);
       onSuccess();
       onClose();
+      // Show success toast about invite
+      if (data.inviteSent) {
+        toast.success('Пользователь создан', {
+          description: `Приглашение отправлено на ${data.email}`,
+          icon: <Mail className="h-4 w-4" />,
+        });
+      }
     },
     onError: (err) => {
       setError(err.message);
@@ -89,7 +97,7 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
 
         <h2 className="text-xl font-semibold mb-2 text-[var(--buh-foreground)]">Добавить пользователя</h2>
         <p className="text-sm text-[var(--buh-foreground-muted)] mb-6">
-          Создайте нового пользователя системы.
+          Приглашение с ссылкой для установки пароля будет отправлено на указанный email.
         </p>
 
         <form onSubmit={handleSubmit}>

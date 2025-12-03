@@ -10,7 +10,7 @@
 
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
+import { supabase } from '../../../lib/supabase.js';
 
 /**
  * User role schema (matches Prisma UserRole enum)
@@ -217,8 +217,8 @@ export const authRouter = router({
   /**
    * Create a new user in the system
    *
-   * Creates a user with specified email, name, and role.
-   * The user will need to set up their password via Supabase Auth.
+   * Creates a user via Supabase Auth invite and stores profile in database.
+   * Supabase will automatically send an invitation email with password setup link.
    *
    * @param email - User email address
    * @param fullName - User's full name
@@ -240,10 +240,11 @@ export const authRouter = router({
         email: z.string().email(),
         fullName: z.string(),
         role: UserRoleSchema,
+        inviteSent: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user with this email already exists
+      // Check if user with this email already exists in our database
       const existingUser = await ctx.prisma.user.findUnique({
         where: { email: input.email },
       });
@@ -252,12 +253,34 @@ export const authRouter = router({
         throw new Error('Пользователь с таким email уже существует');
       }
 
-      // Create user in database
-      // Note: User will need to sign up via Supabase Auth with this email
-      // to get authentication credentials
+      // Invite user via Supabase Auth (sends email automatically)
+      const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+        input.email,
+        {
+          redirectTo: `${process.env['FRONTEND_URL'] || 'https://buhbot.aidevteam.ru'}/set-password`,
+          data: {
+            full_name: input.fullName,
+            role: input.role,
+          },
+        }
+      );
+
+      if (authError) {
+        // If user already exists in Supabase Auth but not in our DB
+        if (authError.message.includes('already been registered')) {
+          throw new Error('Пользователь с таким email уже зарегистрирован в системе аутентификации');
+        }
+        throw new Error(`Ошибка отправки приглашения: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('Не удалось создать пользователя');
+      }
+
+      // Create user profile in our database with Supabase Auth ID
       const newUser = await ctx.prisma.user.create({
         data: {
-          id: randomUUID(),
+          id: authData.user.id, // Use Supabase Auth user ID
           email: input.email,
           fullName: input.fullName,
           role: input.role,
@@ -270,6 +293,7 @@ export const authRouter = router({
         email: newUser.email,
         fullName: newUser.fullName,
         role: newUser.role,
+        inviteSent: true,
       };
     }),
 

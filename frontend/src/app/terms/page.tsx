@@ -9,7 +9,7 @@ export default function TermsOfServicePage() {
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <Link href="/">
             <Image
-              src="/images/logo/logo-small.png"
+              src="/images/logo/logo-small-light.png"
               alt="BuhBot"
               width={100}
               height={30}

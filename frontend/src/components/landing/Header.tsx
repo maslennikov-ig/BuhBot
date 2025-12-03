@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Menu, X, User } from 'lucide-react';
+import { ThemeLogo } from '../ThemeLogo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -69,15 +69,8 @@ export function Header() {
     >
       <div className="container h-full flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <Image
-            src="/images/logo/logo-small.png"
-            alt="BuhBot"
-            width={120}
-            height={36}
-            className="h-9 w-auto object-contain group-hover:opacity-80 transition-opacity duration-300"
-            priority
-          />
+        <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300">
+          <ThemeLogo size="md" priority />
         </Link>
 
         {/* Desktop Nav */}

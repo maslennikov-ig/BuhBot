@@ -1,7 +1,7 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeLogo } from '@/components/ThemeLogo';
 
 export default function AuthLayout({
   children,
@@ -26,14 +26,7 @@ export default function AuthLayout({
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link href="/">
-            <Image
-              src="/images/logo/logo-small.png"
-              alt="BuhBot"
-              width={160}
-              height={48}
-              className="h-12 w-auto object-contain"
-              priority
-            />
+            <ThemeLogo size="lg" priority />
           </Link>
         </div>
         {children}

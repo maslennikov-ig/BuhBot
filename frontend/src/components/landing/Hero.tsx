@@ -122,7 +122,7 @@ export function Hero() {
             {/* Headline */}
             <motion.h1
               variants={itemVariants}
-              className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-[var(--buh-foreground)] leading-[1.1] mb-6"
+              className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold tracking-tight text-[var(--buh-foreground)] leading-[1.1] mb-6"
             >
               Клиенты ждут ответа.
               <br />
@@ -137,7 +137,7 @@ export function Hero() {
             {/* Subheadline */}
             <motion.p
               variants={itemVariants}
-              className="text-lg md:text-xl text-[var(--buh-foreground-muted)] max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed"
+              className="text-lg md:text-xl 2xl:text-2xl text-[var(--buh-foreground-muted)] max-w-xl 2xl:max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed"
             >
               BuhBot автоматически отслеживает время ответа бухгалтеров
               и уведомляет о приближении дедлайна — прежде чем клиент

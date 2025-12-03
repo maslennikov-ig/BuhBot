@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { ThemeLogo } from '../ThemeLogo';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -214,16 +215,7 @@ function Sidebar({
                 />
               </div>
             ) : (
-              <div className="relative h-9">
-                <Image
-                  src="/images/logo/logo-small.png"
-                  alt="BuhBot"
-                  width={120}
-                  height={36}
-                  className="h-9 w-auto object-contain"
-                  priority
-                />
-              </div>
+              <ThemeLogo size="md" priority />
             )}
           </Link>
 

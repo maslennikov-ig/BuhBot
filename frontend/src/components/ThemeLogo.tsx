@@ -34,8 +34,8 @@ export function ThemeLogo({ size = 'md', className = '', priority = false }: The
   // logo-small-dark.png has gray background - for DARK theme
   // logo-small.png is transparent - for LIGHT theme (and emails)
   const logoSrc = resolvedTheme === 'dark'
-    ? '/images/logo/logo-small-dark.png?v=2'
-    : '/images/logo/logo-small.png?v=2';
+    ? '/images/logo/logo-small-dark.png'
+    : '/images/logo/logo-small.png';
 
   return (
     <Image

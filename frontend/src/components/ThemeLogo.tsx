@@ -11,10 +11,10 @@ interface ThemeLogoProps {
 }
 
 const sizes = {
-  sm: { width: 100, height: 30, className: 'h-7' },
-  md: { width: 120, height: 36, className: 'h-9' },
-  lg: { width: 160, height: 48, className: 'h-12' },
-  xl: { width: 140, height: 42, className: 'h-10' },
+  sm: { width: 100, height: 30, className: 'h-7' },   // 28px
+  md: { width: 120, height: 36, className: 'h-9' },   // 36px
+  lg: { width: 160, height: 48, className: 'h-12' },  // 48px
+  xl: { width: 180, height: 54, className: 'h-14' },  // 56px - for Header
 };
 
 export function ThemeLogo({ size = 'md', className = '', priority = false }: ThemeLogoProps) {

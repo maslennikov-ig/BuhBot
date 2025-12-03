@@ -45,6 +45,7 @@ export function ThemeLogo({ size = 'md', className = '', priority = false }: The
       height={height}
       className={`${sizeClass} w-auto object-contain ${className}`}
       priority={priority}
+      unoptimized
     />
   );
 }

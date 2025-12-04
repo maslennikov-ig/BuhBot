@@ -129,7 +129,7 @@ export function SetPasswordForm() {
   return (
     <div className="bg-white/80 dark:bg-white/10 backdrop-blur-md border border-[var(--buh-border)] dark:border-white/20 rounded-2xl p-8 shadow-xl transition-colors duration-300 animate-slide-up">
       {/* Header */}
-      <div className="text-center mb-8 space-y-2 animate-fade-in">
+      <div className="text-center mb-8 space-y-4 animate-fade-in">
         <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-[var(--buh-accent)] via-[var(--buh-primary)] to-[var(--buh-accent-secondary)] rounded-xl mb-4 shadow-lg animate-scale-in">
           <Shield className="w-7 h-7 text-white" />
         </div>
@@ -150,7 +150,7 @@ export function SetPasswordForm() {
             name="password"
             render={({ field }) => (
               <FormItem className="animate-fade-in animation-delay-100">
-                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">
+                <FormLabel className="text-slate-700 dark:text-slate-200 font-medium">
                   Новый пароль
                 </FormLabel>
                 <FormControl>
@@ -240,7 +240,7 @@ export function SetPasswordForm() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem className="animate-fade-in animation-delay-200">
-                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">
+                <FormLabel className="text-slate-700 dark:text-slate-200 font-medium">
                   Подтвердите пароль
                 </FormLabel>
                 <FormControl>

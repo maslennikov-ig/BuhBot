@@ -38,9 +38,7 @@ export function ProfileMenu({ email }: ProfileMenuProps) {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsOpen(false);
-    router.refresh();
-    // Optional: Redirect to home if needed, though router.refresh might handle auth state update in Header
-    // router.push('/'); 
+    router.push('/login');
   };
 
   const menuItems = [

@@ -315,9 +315,9 @@ export const authRouter = router({
 
       // Prevent deletion of last admin
       if (userToDelete.role === 'admin') {
-        // Use raw query to avoid Prisma pg-adapter enum type mismatch issue
+        // Use raw query with text cast to avoid Prisma pg-adapter enum type mismatch
         const result = await ctx.prisma.$queryRaw<[{ count: bigint }]>`
-          SELECT COUNT(*) as count FROM users WHERE role = 'admin'::"UserRole"
+          SELECT COUNT(*) as count FROM users WHERE role::text = 'admin'
         `;
         const adminCount = Number(result[0].count);
 

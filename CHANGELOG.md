@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-12-04
+
+### Added
+- **hero**: Add light theme and 8 chat scenarios to HeroChatMockup (429a3a6)
+- **branding**: Add light theme logo + increase Hero text size (470e29b)
+- **landing**: Add animated chat mockup to Hero section (cf6a3ec)
+- **branding**: Add logo image to Header, Footer, Auth pages (63e51f0)
+
+### Fixed
+- Multiple UI and backend fixes (f368c45)
+- **auth**: Fix deleteUser enum type mismatch with Prisma pg-adapter (0dc137f)
+- **logo**: Add unoptimized to preserve PNG quality (prevent WebP conversion) (761551e)
+- **logo**: Regenerate logos from source with max quality (400px, Lanczos) (98d956d)
+- **logo**: Remove query params breaking Next.js Image (ed5cdd2)
+- **logo**: Add cache-busting version param (61b15dc)
+- **logo**: Swap logo files so emails use light version (0fea50b)
+- **logo**: Increase xl size to h-14 (56px) for Header logo (5c79b0b)
+- **logo**: Fix theme-aware logo switching and increase Header size (dc1c3d7)
+
 ## [0.7.2] - 2025-12-03
 
 ## [0.7.1] - 2025-12-03

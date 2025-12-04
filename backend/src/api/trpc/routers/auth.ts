@@ -315,9 +315,11 @@ export const authRouter = router({
 
       // Prevent deletion of last admin
       if (userToDelete.role === 'admin') {
-        const adminCount = await ctx.prisma.user.count({
-          where: { role: 'admin' },
-        });
+        // Use raw query to avoid Prisma pg-adapter enum type mismatch issue
+        const result = await ctx.prisma.$queryRaw<[{ count: bigint }]>`
+          SELECT COUNT(*) as count FROM users WHERE role = 'admin'::"UserRole"
+        `;
+        const adminCount = Number(result[0].count);
 
         if (adminCount <= 1) {
           throw new Error('Нельзя удалить последнего администратора');

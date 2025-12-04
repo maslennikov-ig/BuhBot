@@ -5,6 +5,11 @@
  * - list: List all chats with optional filtering
  * - getById: Get single chat details
  * - update: Update chat settings (assignment, SLA config)
+ * - updateWorkingSchedule: Update working schedule for a chat
+ * - registerChat: Register a new chat or update existing one
+ * - createInvitation: Create a new chat invitation with deep link
+ * - listInvitations: List chat invitations (own or all for admin)
+ * - revokeInvitation: Delete/revoke a chat invitation
  *
  * @module api/trpc/routers/chats
  */
@@ -13,6 +18,7 @@ import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
+import { randomBytes } from 'crypto';
 
 /**
  * Chat type schema (matches Prisma ChatType enum)
@@ -428,5 +434,198 @@ export const chatsRouter = router({
       });
 
       return { ...chat, id: Number(chat.id) };
+    }),
+
+  /**
+   * Create a new chat invitation
+   *
+   * @param initialTitle - Optional pre-defined title for the chat
+   * @param assignedAccountantId - Optional UUID of accountant to assign
+   * @param expiresInHours - Hours until invitation expires (default: 72)
+   * @returns Invitation details with deep link and connect command
+   * @authorization Admins and managers only
+   */
+  createInvitation: managerProcedure
+    .input(
+      z.object({
+        initialTitle: z.string().optional(),
+        assignedAccountantId: z.string().uuid().optional(),
+        expiresInHours: z.number().int().min(1).max(720).default(72),
+      })
+    )
+    .output(
+      z.object({
+        id: z.string().uuid(),
+        token: z.string(),
+        deepLink: z.string(),
+        connectCommand: z.string(),
+        expiresAt: z.date(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Generate secure random token
+      const token = randomBytes(16).toString('base64url');
+
+      // Calculate expiration date
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + input.expiresInHours);
+
+      // Create invitation
+      const invitation = await ctx.prisma.chatInvitation.create({
+        data: {
+          token,
+          initialTitle: input.initialTitle ?? null,
+          assignedAccountantId: input.assignedAccountantId ?? null,
+          createdBy: ctx.user.id,
+          expiresAt,
+        },
+        select: {
+          id: true,
+          token: true,
+          expiresAt: true,
+        },
+      });
+
+      // Get bot username from environment or use default
+      const botUsername = process.env['BOT_USERNAME'] || 'BuhBot_dev_bot';
+
+      return {
+        id: invitation.id,
+        token: invitation.token,
+        deepLink: `https://t.me/${botUsername}?start=${invitation.token}`,
+        connectCommand: `/connect ${invitation.token}`,
+        expiresAt: invitation.expiresAt,
+      };
+    }),
+
+  /**
+   * List chat invitations
+   *
+   * @param includeUsed - Include used invitations (default: false)
+   * @param limit - Page size (default: 50, max: 100)
+   * @param offset - Pagination offset (default: 0)
+   * @returns Paginated list of invitations created by current user (or all for admin)
+   * @authorization All authenticated users (managers see only their own, admins see all)
+   */
+  listInvitations: authedProcedure
+    .input(
+      z.object({
+        includeUsed: z.boolean().default(false),
+        limit: z.number().int().min(1).max(100).default(50),
+        offset: z.number().int().min(0).default(0),
+      })
+    )
+    .output(
+      z.object({
+        invitations: z.array(
+          z.object({
+            id: z.string().uuid(),
+            token: z.string(),
+            initialTitle: z.string().nullable(),
+            isUsed: z.boolean(),
+            usedAt: z.date().nullable(),
+            expiresAt: z.date(),
+            createdAt: z.date(),
+          })
+        ),
+        total: z.number().int(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Build where clause
+      const where: Prisma.ChatInvitationWhereInput = {};
+
+      // Filter by creator (non-admin users can only see their own)
+      if (ctx.user.role !== 'admin') {
+        where.createdBy = ctx.user.id;
+      }
+
+      // Filter by used status
+      if (!input.includeUsed) {
+        where.isUsed = false;
+      }
+
+      // Fetch invitations with pagination
+      const [invitations, total] = await Promise.all([
+        ctx.prisma.chatInvitation.findMany({
+          where,
+          select: {
+            id: true,
+            token: true,
+            initialTitle: true,
+            isUsed: true,
+            usedAt: true,
+            expiresAt: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: input.limit,
+          skip: input.offset,
+        }),
+        ctx.prisma.chatInvitation.count({ where }),
+      ]);
+
+      return {
+        invitations,
+        total,
+      };
+    }),
+
+  /**
+   * Revoke a chat invitation
+   *
+   * @param id - Invitation UUID to revoke
+   * @returns Success status
+   * @throws NOT_FOUND if invitation doesn't exist
+   * @throws FORBIDDEN if user is not creator and not admin
+   * @authorization Creator or admin only
+   */
+  revokeInvitation: authedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Fetch invitation to verify ownership
+      const invitation = await ctx.prisma.chatInvitation.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          createdBy: true,
+          isUsed: true,
+        },
+      });
+
+      if (!invitation) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Invitation with ID ${input.id} not found`,
+        });
+      }
+
+      // Check authorization: only creator or admin can revoke
+      if (ctx.user.role !== 'admin' && invitation.createdBy !== ctx.user.id) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You can only revoke invitations you created',
+        });
+      }
+
+      // Delete the invitation
+      await ctx.prisma.chatInvitation.delete({
+        where: { id: input.id },
+      });
+
+      return {
+        success: true,
+      };
     }),
 });

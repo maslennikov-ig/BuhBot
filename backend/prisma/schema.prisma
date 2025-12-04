@@ -139,6 +139,7 @@ model User {
   createdFaqItems    FaqItem[]        @relation("FaqCreator")
   closedSurveys      FeedbackSurvey[] @relation("SurveyClosedBy")
   notifications      Notification[]
+  createdInvitations ChatInvitation[] @relation("InvitationCreator")
   telegramAccount    TelegramAccount?
 
   @@index([email])
@@ -568,5 +569,27 @@ model ContactRequest {
   processedBy String?   @map("processed_by") @db.Uuid // User ID if processed by admin
 
   @@map("contact_requests")
+  @@schema("public")
+}
+
+/// Invitations for connecting new chats via Deep Linking or Command
+model ChatInvitation {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token                String   @unique // The code used in /start or /connect
+  initialTitle         String?  @map("initial_title") // Pre-defined title
+  assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
+  createdBy            String   @map("created_by") @db.Uuid
+  isUsed               Boolean  @default(false) @map("is_used")
+  usedAt               DateTime? @map("used_at") @db.Timestamptz(6)
+  createdChatId        BigInt?  @map("created_chat_id") @db.BigInt
+  expiresAt            DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  creator User @relation("InvitationCreator", fields: [createdBy], references: [id])
+
+  @@index([token])
+  @@index([isUsed])
+  @@map("chat_invitations")
   @@schema("public")
 }

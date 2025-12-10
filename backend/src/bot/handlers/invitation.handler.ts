@@ -30,6 +30,7 @@ function sanitizeChatTitle(title: string | null | undefined): string {
 
   // Remove control characters and limit length
   const cleaned = title
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
     .trim()
     .substring(0, 255);

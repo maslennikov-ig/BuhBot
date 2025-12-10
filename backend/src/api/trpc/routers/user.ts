@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { authedProcedure, router } from '../trpc.js';
 import { telegramAuthService } from '../../../services/telegram/auth.service.js';
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
+import { logger } from '../../../utils/logger.js';
 
 export const LinkTelegramInput = z.object({
   id: z.number(),
@@ -78,7 +79,7 @@ export const userRouter = router({
         },
       });
 
-      console.info(`[Audit] Telegram account linked: User ${ctx.user.id} -> Telegram ${telegramId} (${validatedData.username})`);
+      logger.info('[Audit] Telegram account linked', { userId: ctx.user.id, telegramId, username: validatedData.username });
 
       // 4. Update User model's telegram fields for backward compatibility/easier access
       // (Optional, depending on if we want to keep them in sync or migrate away)
@@ -115,7 +116,7 @@ export const userRouter = router({
       where: { userId: ctx.user.id },
     });
 
-    console.info(`[Audit] Telegram account unlinked: User ${ctx.user.id} -> Telegram ${link.telegramId}`);
+    logger.info('[Audit] Telegram account unlinked', { userId: ctx.user.id, telegramId: link.telegramId });
 
     // 3. Clear User fields
     await ctx.prisma.user.update({

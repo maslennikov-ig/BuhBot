@@ -45,7 +45,7 @@ export const notificationRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         return await appNotificationService.markAsRead(input.id, ctx.user.id);
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Notification not found or access denied',
@@ -70,7 +70,7 @@ export const notificationRouter = router({
       try {
         await appNotificationService.delete(input.id, ctx.user.id);
         return { success: true };
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Notification not found or access denied',

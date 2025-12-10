@@ -314,10 +314,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Send Telegram notification
-        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
         run: |
           if [ "${{ needs.deploy-to-vds.result }}" == "success" ]; then
             STATUS="SUCCESS"

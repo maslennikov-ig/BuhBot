@@ -7,6 +7,7 @@ import { metricsHandler } from './api/metrics.js';
 import { disconnectPrisma } from './lib/prisma.js';
 import { disconnectRedis } from './lib/redis.js';
 import { appRouter, createContext } from './api/trpc/index.js';
+import { registerHandlers, setupWebhook, stopBot } from './bot/index.js';
 
 /**
  * BuhBot Backend Server
@@ -30,6 +31,9 @@ app.use((req, _res, next) => {
   });
   next();
 });
+
+// Initialize Telegram bot handlers
+registerHandlers();
 
 // Health check endpoint with database and Redis checks
 app.get('/health', healthHandler);
@@ -104,7 +108,7 @@ import type { Server } from 'http';
 let server: Server;
 
 const startServer = (port: number) => {
-  const s = app.listen(port, () => {
+  const s = app.listen(port, async () => {
     logger.info(`BuhBot server started successfully`, {
       port,
       environment: env.NODE_ENV,
@@ -115,6 +119,15 @@ const startServer = (port: number) => {
     if (isDevelopment()) {
       logger.info(`Server is running at http://localhost:${port}`);
       logger.info(`Health check: http://localhost:${port}/health`);
+    }
+
+    // Setup Telegram webhook after server is ready
+    try {
+      await setupWebhook(app, '/webhook/telegram');
+    } catch (error) {
+      logger.error('Failed to setup Telegram webhook on startup', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   });
 
@@ -180,6 +193,11 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
         }
       });
     });
+
+    // Stop Telegram bot
+    logger.info('Stopping Telegram bot...');
+    stopBot(signal);
+    logger.info('Telegram bot stopped');
 
     // Close Redis connections
     logger.info('Closing Redis connections...');

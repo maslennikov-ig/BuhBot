@@ -1,9 +1,13 @@
-name: Deploy to Staging
+name: Deploy to Staging (Disabled)
 
+# DISABLED: This workflow is legacy and not applicable to BuhBot
+# Use deploy.yml for production deployments
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      reason:
+        description: 'This workflow is disabled'
+        required: false
 
 jobs:
   deploy:

@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { authedProcedure, router } from '../trpc.js';
 import { telegramAuthService } from '../../../services/telegram/auth.service.js';
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
-import { logger } from '../../../utils/logger.js';
+import logger from '../../../utils/logger.js';
 
 export const LinkTelegramInput = z.object({
   id: z.number(),

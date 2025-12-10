@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2025-12-10
+
+### Fixed
+- **bot**: integrate Telegram bot initialization into backend entry point (c5b93a9)
+
 ## [0.8.2] - 2025-12-04
 
 ## [0.8.1] - 2025-12-04

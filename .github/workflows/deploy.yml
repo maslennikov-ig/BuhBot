@@ -193,6 +193,9 @@ jobs:
             --exclude 'frontend/node_modules' \
             --exclude 'frontend/.next' \
             --exclude '*.log' \
+            --exclude '.env' \
+            --exclude 'backend/.env' \
+            --exclude 'frontend/.env*' \
             ./ ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }}:${{ env.VDS_DEPLOY_PATH }}/
 
       - name: Run deployment script on VDS

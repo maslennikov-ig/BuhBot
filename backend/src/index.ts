@@ -70,45 +70,59 @@ app.get('/', (_req, res) => {
       metrics: '/metrics',
       ready: '/ready',
       api: '/api',
-      trpc: '/api/trpc'
+      trpc: '/api/trpc',
+      webhook: '/webhook/telegram'
     }
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.method} ${req.path} not found`,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Error handler
-app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  logger.error('Unhandled error:', {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method
-  });
-
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: isProduction() ? 'Something went wrong' : err.message,
-    timestamp: new Date().toISOString()
   });
 });
 
 import type { Server } from 'http';
 
-// ... (previous code remains same until Start server section)
-
 // Start server with dynamic port selection
 let server: Server;
 
-const startServer = (port: number) => {
-  const s = app.listen(port, async () => {
+// Register 404 and error handlers after webhook setup
+const registerFinalHandlers = () => {
+  // 404 handler - must be registered after all routes including webhook
+  app.use((req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Route ${req.method} ${req.path} not found`,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Error handler
+  app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    logger.error('Unhandled error:', {
+      error: err.message,
+      stack: err.stack,
+      path: req.path,
+      method: req.method
+    });
+
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: isProduction() ? 'Something went wrong' : err.message,
+      timestamp: new Date().toISOString()
+    });
+  });
+};
+
+const startServer = async (port: number) => {
+  // Setup Telegram webhook BEFORE starting server (registers route)
+  try {
+    await setupWebhook(app, '/webhook/telegram');
+  } catch (error) {
+    logger.error('Failed to setup Telegram webhook on startup', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Register 404/error handlers AFTER webhook route
+  registerFinalHandlers();
+
+  const s = app.listen(port, () => {
     logger.info(`BuhBot server started successfully`, {
       port,
       environment: env.NODE_ENV,
@@ -119,15 +133,6 @@ const startServer = (port: number) => {
     if (isDevelopment()) {
       logger.info(`Server is running at http://localhost:${port}`);
       logger.info(`Health check: http://localhost:${port}/health`);
-    }
-
-    // Setup Telegram webhook after server is ready
-    try {
-      await setupWebhook(app, '/webhook/telegram');
-    } catch (error) {
-      logger.error('Failed to setup Telegram webhook on startup', {
-        error: error instanceof Error ? error.message : String(error),
-      });
     }
   });
 
@@ -144,7 +149,8 @@ const startServer = (port: number) => {
   server = s;
 };
 
-startServer(env.PORT);
+// Start server (async IIFE to handle top-level await)
+void startServer(env.PORT);
 
 // Graceful shutdown configuration
 // ... (rest of the file remains same)

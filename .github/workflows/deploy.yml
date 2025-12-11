@@ -173,7 +173,7 @@ jobs:
 
       - name: Load Docker images on VDS
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
           set -e
           echo "Loading Docker images..."
           gunzip -c /tmp/backend.tar.gz | docker load
@@ -186,7 +186,7 @@ jobs:
       - name: Sync repository to VDS
         run: |
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60" \
             --exclude 'node_modules' \
             --exclude '.git' \
             --exclude 'backend/node_modules' \
@@ -198,7 +198,7 @@ jobs:
       - name: Run deployment script on VDS
         id: deploy
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
           set -e
           cd ${{ env.VDS_DEPLOY_PATH }}
 
@@ -218,7 +218,7 @@ jobs:
           echo "Waiting for services to stabilize..."
           sleep 30
 
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
           set -e
 
           echo "Running health checks..."
@@ -268,7 +268,7 @@ jobs:
         if: failure() && steps.deploy.outcome == 'failure'
         run: |
           echo "Deployment failed, initiating rollback..."
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
           set -e
           cd ${{ env.VDS_DEPLOY_PATH }}
 

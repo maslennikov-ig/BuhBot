@@ -59,21 +59,26 @@ export async function setupWebhook(
   });
 
   try {
-    // Create webhook handler using Telegraf's createWebhook
-    // This sets up the webhook with Telegram and returns Express middleware
-    const webhookOptions: { domain: string; path: string; drop_pending_updates: boolean; secret_token?: string } = {
+    // Use createWebhook which handles both setWebhook and returns middleware
+    // The middleware checks the path internally, so use app.use() without path
+    const createWebhookOptions: {
+      domain: string;
+      path: string;
+      drop_pending_updates?: boolean;
+      secret_token?: string;
+    } = {
       domain: webhookUrl,
       path: webhookPath,
       drop_pending_updates: false,
     };
     if (secretToken) {
-      webhookOptions.secret_token = secretToken;
+      createWebhookOptions.secret_token = secretToken;
     }
-    const webhookHandler = await bot.createWebhook(webhookOptions);
 
-    // Attach webhook handler to Express
-    // Use POST method explicitly since Telegram sends POST requests
-    app.post(webhookPath, webhookHandler);
+    const webhookMiddleware = await bot.createWebhook(createWebhookOptions);
+
+    // Attach middleware to Express - createWebhook returns middleware that handles path matching internally
+    app.use(webhookMiddleware);
 
     // Set bot commands for menu button
     await bot.telegram.setMyCommands([

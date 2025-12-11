@@ -54,26 +54,26 @@ import logger from '../utils/logger.js';
  * Registers:
  * - FAQ handler for auto-responses (intercepts before SLA)
  * - Chat event handler for auto-registration of chats
- * - Invitation handler for /start and /connect commands
+ * - Invitation handler for /start, /connect, /help commands
+ * - Menu handler for /menu command (BEFORE message handler!)
+ * - Template handler for /template command (BEFORE message handler!)
  * - Message handler for SLA monitoring (client messages)
  * - Response handler for accountant replies (SLA timer stop)
  * - Alert callback handler for inline buttons
  * - Survey handler for rating callbacks and comments
- * - Menu handler for client self-service
  * - File handler for document/photo uploads
- * - Template handler for /template command
  *
  * Handler Order (IMPORTANT - order matters for message handlers):
- * 1. FAQ handler - auto-responds to FAQ matches, stops propagation
- * 2. Chat event handler - handles bot additions/removals
- * 3. Invitation handler - handles /start and /connect tokens
- * 4. Message handler - classifies and tracks non-FAQ messages for SLA
- * 5. Response handler - detects accountant replies, stops SLA timers
- * 6. Alert callback handler - handles alert inline keyboard buttons
- * 7. Survey handler - handles rating callbacks and comments
- * 8. Menu handler - handles /menu command and self-service
- * 9. File handler - auto-confirms document/photo uploads
- * 10. Template handler - handles /template command for message templates
+ * 1. FAQ handler - auto-responds to FAQ matches, calls next() for non-matches
+ * 2. Chat event handler - handles bot additions/removals (event-based)
+ * 3. Invitation handler - handles /start, /connect, /help commands
+ * 4. Menu handler - handles /menu command (must be BEFORE generic message handlers)
+ * 5. Template handler - handles /template command (must be BEFORE generic message handlers)
+ * 6. Message handler - classifies and tracks text messages for SLA (groups only)
+ * 7. Response handler - detects accountant replies, stops SLA timers
+ * 8. Alert callback handler - handles alert inline keyboard buttons
+ * 9. Survey handler - handles rating callbacks and comments
+ * 10. File handler - auto-confirms document/photo uploads
  */
 export function registerHandlers(): void {
   logger.info('Registering bot handlers...', { service: 'bot' });
@@ -84,10 +84,19 @@ export function registerHandlers(): void {
   // Register chat event handler (my_chat_member)
   registerChatEventHandler();
 
-  // Register invitation handler (/start <token>, /connect <token>)
+  // Register invitation handler (/start <token>, /connect <token>, /help)
   registerInvitationHandler();
 
+  // Register menu handler for client self-service menu
+  // IMPORTANT: Must be registered BEFORE message handler to ensure /menu command is processed
+  registerMenuHandler();
+
+  // Register template handler for /template command
+  // IMPORTANT: Must be registered BEFORE message handler to ensure /template command is processed
+  registerTemplateHandler();
+
   // Register message handler for SLA monitoring (processes client messages)
+  // This handler captures all text messages, so command handlers must be registered before it
   registerMessageHandler();
 
   // Register response handler for accountant replies (stops SLA timers)
@@ -99,14 +108,8 @@ export function registerHandlers(): void {
   // Register survey handler for rating callbacks and comments
   registerSurveyHandler();
 
-  // Register menu handler for client self-service menu
-  registerMenuHandler();
-
   // Register file handler for auto-confirmation of document/photo uploads
   registerFileHandler();
-
-  // Register template handler for /template command
-  registerTemplateHandler();
 
   logger.info('Bot handlers registered successfully', { service: 'bot' });
 }

@@ -116,6 +116,39 @@ export function registerInvitationHandler(): void {
     }
   });
 
+  // Handle /help command
+  bot.help(async (ctx: BotContext) => {
+    try {
+      const helpMessage = `📋 *Справка по боту*
+
+🔹 /start — начать работу с ботом
+🔹 /menu — открыть меню самообслуживания
+🔹 /help — показать эту справку
+🔹 /connect <код> — подключить групповой чат
+
+*Как это работает:*
+Бот помогает отслеживать время ответа на ваши сообщения. Когда вы пишете сообщение, бухгалтер получает уведомление и должен ответить в установленный срок.
+
+*Нужна помощь?*
+Обратитесь к вашему бухгалтеру или администратору системы.`;
+
+      await ctx.reply(helpMessage, { parse_mode: 'Markdown' });
+
+      logger.info('Help command processed', {
+        chatId: ctx.chat?.id,
+        userId: ctx.from?.id,
+        service: 'invitation-handler',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error handling /help', {
+        error: errorMessage,
+        service: 'invitation-handler'
+      });
+      await ctx.reply('Произошла ошибка при отображении справки.');
+    }
+  });
+
   logger.info('Invitation handler registered', { service: 'invitation-handler' });
 }
 

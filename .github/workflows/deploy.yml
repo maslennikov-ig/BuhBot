@@ -1,7 +1,10 @@
 name: Deploy to Production
 
 on:
-  push:
+  # Trigger after CI workflow completes successfully
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -18,35 +21,18 @@ concurrency:
 env:
   NODE_VERSION: '18'
   VDS_DEPLOY_PATH: /home/buhbot/BuhBot
+  # Use workflow_run SHA when triggered by CI completion, otherwise current SHA
+  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
-  # ==========================================================================
-  # Wait for CI - Ensure CI passes before deployment
-  # ==========================================================================
-  wait-for-ci:
-    name: Wait for CI
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
-    steps:
-      - name: Wait for CI workflow
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: ${{ github.sha }}
-          check-name: 'CI Success'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 30
-          running-timeout-seconds: 900
-          allowed-conclusions: success
-
   # ==========================================================================
   # Build Production Images
   # ==========================================================================
   build-production:
     name: Build Production Images
     runs-on: ubuntu-latest
-    needs: [wait-for-ci]
-    if: always() && (needs.wait-for-ci.result == 'success' || github.event_name == 'workflow_dispatch')
+    # Only run if CI succeeded or manual dispatch
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       version: ${{ steps.version.outputs.version }}
@@ -54,6 +40,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
 
       - name: Get version from package.json
         id: version
@@ -83,7 +71,7 @@ jobs:
           file: ./backend/Dockerfile
           push: false
           load: true
-          tags: buhbot-backend:${{ github.sha }}
+          tags: buhbot-backend:${{ env.DEPLOY_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -94,7 +82,7 @@ jobs:
           file: ./frontend/Dockerfile
           push: false
           load: true
-          tags: buhbot-frontend:${{ github.sha }}
+          tags: buhbot-frontend:${{ env.DEPLOY_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -108,16 +96,16 @@ jobs:
           file: ./infrastructure/monitoring/Dockerfile
           push: false
           load: true
-          tags: buhbot-monitoring:${{ github.sha }}
+          tags: buhbot-monitoring:${{ env.DEPLOY_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Save Docker images as artifacts
         run: |
           mkdir -p /tmp/docker-images
-          docker save buhbot-backend:${{ github.sha }} | gzip > /tmp/docker-images/backend.tar.gz
-          docker save buhbot-frontend:${{ github.sha }} | gzip > /tmp/docker-images/frontend.tar.gz
-          docker save buhbot-monitoring:${{ github.sha }} | gzip > /tmp/docker-images/monitoring.tar.gz
+          docker save buhbot-backend:${{ env.DEPLOY_SHA }} | gzip > /tmp/docker-images/backend.tar.gz
+          docker save buhbot-frontend:${{ env.DEPLOY_SHA }} | gzip > /tmp/docker-images/frontend.tar.gz
+          docker save buhbot-monitoring:${{ env.DEPLOY_SHA }} | gzip > /tmp/docker-images/monitoring.tar.gz
 
       - name: Upload Docker images artifact
         uses: actions/upload-artifact@v4
@@ -140,7 +128,7 @@ jobs:
       - name: Deployment approved
         run: |
           echo "Deployment to production has been approved"
-          echo "Commit: ${{ github.sha }}"
+          echo "Commit: ${{ env.DEPLOY_SHA }}"
           echo "Version: ${{ needs.build-production.outputs.version }}"
           echo "Triggered by: ${{ github.actor }}"
 
@@ -216,12 +204,12 @@ jobs:
 
           echo "==================================="
           echo "Starting BuhBot deployment..."
-          echo "Commit: ${{ github.sha }}"
+          echo "Commit: ${{ env.DEPLOY_SHA }}"
           echo "==================================="
 
           # Run the deployment script
           chmod +x infrastructure/scripts/github-deploy.sh
-          infrastructure/scripts/github-deploy.sh --commit "${{ github.sha }}" --version "${{ needs.build-production.outputs.version }}"
+          infrastructure/scripts/github-deploy.sh --commit "${{ env.DEPLOY_SHA }}" --version "${{ needs.build-production.outputs.version }}"
           EOF
 
       - name: Health check after deployment
@@ -329,7 +317,7 @@ jobs:
           fi
 
           VERSION="${{ needs.build-production.outputs.version }}"
-          COMMIT="${{ github.sha }}"
+          COMMIT="${{ env.DEPLOY_SHA }}"
           COMMIT_SHORT="${COMMIT:0:7}"
           ACTOR="${{ github.actor }}"
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
@@ -357,6 +345,6 @@ jobs:
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Status | ${{ needs.deploy-to-vds.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Version | ${{ needs.build-production.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ env.DEPLOY_SHA }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Actor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Environment | production |" >> $GITHUB_STEP_SUMMARY

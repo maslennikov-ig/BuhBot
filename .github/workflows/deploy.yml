@@ -36,6 +36,7 @@ jobs:
           check-name: 'CI Success'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 30
+          running-timeout-seconds: 900
           allowed-conclusions: success
 
   # ==========================================================================

@@ -486,8 +486,14 @@ export const chatsRouter = router({
         },
       });
 
-      // Get bot username from environment or use default
-      const botUsername = process.env['BOT_USERNAME'] || 'BuhBot_dev_bot';
+      // Get bot username from environment (required for deep links)
+      const botUsername = process.env['BOT_USERNAME'];
+      if (!botUsername) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'BOT_USERNAME environment variable is not configured',
+        });
+      }
 
       return {
         id: invitation.id,

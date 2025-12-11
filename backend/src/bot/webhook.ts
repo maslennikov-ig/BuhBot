@@ -59,36 +59,28 @@ export async function setupWebhook(
   });
 
   try {
-    // Set webhook with Telegram API
-    const webhookOptions: { secret_token?: string; drop_pending_updates?: boolean } = {
+    // Create webhook handler using Telegraf's createWebhook
+    // This sets up the webhook with Telegram and returns Express middleware
+    const webhookOptions: { domain: string; path: string; drop_pending_updates: boolean; secret_token?: string } = {
+      domain: webhookUrl,
+      path: webhookPath,
       drop_pending_updates: false,
     };
     if (secretToken) {
       webhookOptions.secret_token = secretToken;
     }
-    await bot.telegram.setWebhook(fullWebhookUrl, webhookOptions);
+    const webhookHandler = await bot.createWebhook(webhookOptions);
 
-    // Attach webhook callback middleware to Express
-    // The middleware validates the secret token automatically
-    app.use(webhookPath, (req, res, next) => {
-      // Validate secret token if configured
-      if (secretToken) {
-        const receivedToken = req.headers['x-telegram-bot-api-secret-token'];
-        if (receivedToken !== secretToken) {
-          logger.warn('Invalid webhook secret token', {
-            receivedToken: typeof receivedToken,
-            service: 'webhook',
-          });
-          res.status(401).json({ error: 'Unauthorized' });
-          return;
-        }
-      }
-      next();
-    }, bot.webhookCallback(webhookPath));
+    // Attach webhook handler to Express
+    // Use POST method explicitly since Telegram sends POST requests
+    app.post(webhookPath, webhookHandler);
 
     // Set bot commands for menu button
     await bot.telegram.setMyCommands([
+      { command: 'start', description: 'Начать работу с ботом' },
       { command: 'menu', description: 'Открыть меню' },
+      { command: 'help', description: 'Помощь' },
+      { command: 'connect', description: 'Подключить чат (код)' },
     ]);
     logger.debug('Bot commands set successfully', { service: 'webhook' });
 

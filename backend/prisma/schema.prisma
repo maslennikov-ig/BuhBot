@@ -123,7 +123,7 @@ model User {
   id               String   @id @db.Uuid
   email            String   @unique
   fullName         String   @map("full_name")
-  role             UserRole
+  role             String   @default("observer") // DB has text, not enum
   telegramId       BigInt?  @map("telegram_id") @db.BigInt
   telegramUsername String?  @map("telegram_username")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

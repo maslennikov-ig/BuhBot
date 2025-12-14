@@ -161,7 +161,7 @@ export async function createContext({
         id: dbUser.id,
         email: dbUser.email,
         fullName: dbUser.fullName,
-        role: dbUser.role,
+        role: dbUser.role as 'admin' | 'manager' | 'observer',
       },
       session: {
         accessToken: token,

@@ -25,7 +25,7 @@
   /* === Surface Colors (Cards, Panels) === */
   --buh-surface: #ffffff;
   --buh-surface-elevated: #ffffff;
-  --buh-surface-overlay: rgba(255, 255, 255, 0.8);
+  --buh-surface-overlay: rgba(255, 255, 255, 0.95);
 
   /* === Brand Colors === */
   --buh-primary: #0066cc;
@@ -72,8 +72,8 @@
   );
 
   /* === Glass Effects === */
-  --buh-glass-background: rgba(255, 255, 255, 0.7);
-  --buh-glass-border: rgba(255, 255, 255, 0.3);
+  --buh-glass-background: rgba(255, 255, 255, 0.92);
+  --buh-glass-border: rgba(226, 232, 240, 0.8);
   --buh-glass-blur: 12px;
 
   /* === Sidebar === */
@@ -84,7 +84,7 @@
 
   /* === Header === */
   --buh-header-height: 64px;
-  --buh-header-background: rgba(255, 255, 255, 0.8);
+  --buh-header-background: rgba(255, 255, 255, 0.92);
 
   /* === Typography === */
   --buh-font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

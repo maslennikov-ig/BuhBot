@@ -487,6 +487,7 @@ export const chatsRouter = router({
       });
 
       // Get bot username from environment (required for deep links)
+      // Enforce strict check as per production requirements
       const botUsername = process.env['BOT_USERNAME'];
       if (!botUsername) {
         throw new TRPCError({

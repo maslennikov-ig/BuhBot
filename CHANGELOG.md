@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2025-12-14
+
+### Fixed
+- **bot**: enable polling fallback in prod, fix accountant select, add /info command (fc3a244)
+
 ## [0.9.0] - 2025-12-14
 
 ### Added

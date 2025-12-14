@@ -32,8 +32,8 @@ export const analyticsRouter = router({
   slaCompliance: authedProcedure
     .input(
       z.object({
-        startDate: z.date(),
-        endDate: z.date(),
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
         assignedTo: z.string().uuid().optional(),
       })
     )
@@ -153,8 +153,8 @@ export const analyticsRouter = router({
   feedbackSummary: authedProcedure
     .input(
       z.object({
-        startDate: z.date(),
-        endDate: z.date(),
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
       })
     )
     .output(
@@ -241,8 +241,8 @@ export const analyticsRouter = router({
   accountantPerformance: managerProcedure
     .input(
       z.object({
-        startDate: z.date(),
-        endDate: z.date(),
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
       })
     )
     .output(
@@ -718,8 +718,8 @@ export const analyticsRouter = router({
     .input(
       z.object({
         accountantId: z.string().uuid().optional(),
-        dateFrom: z.date().optional(),
-        dateTo: z.date().optional(),
+        dateFrom: z.coerce.date().optional(),
+        dateTo: z.coerce.date().optional(),
         sortBy: z.enum(['responseTime', 'violations', 'compliance']).default('compliance'),
         sortOrder: z.enum(['asc', 'desc']).default('desc'),
       })
@@ -1198,8 +1198,8 @@ export const analyticsRouter = router({
   getResponseTimeHistory: authedProcedure
     .input(
       z.object({
-        periodStart: z.date(),
-        periodEnd: z.date(),
+        periodStart: z.coerce.date(),
+        periodEnd: z.coerce.date(),
         chatId: z.string().optional(),
         accountantId: z.string().uuid().optional(),
       })
@@ -1403,8 +1403,8 @@ export const analyticsRouter = router({
   getResponseTimeDistribution: authedProcedure
     .input(
       z.object({
-        periodStart: z.date(),
-        periodEnd: z.date(),
+        periodStart: z.coerce.date(),
+        periodEnd: z.coerce.date(),
         chatId: z.string().optional(),
         accountantId: z.string().uuid().optional(),
       })

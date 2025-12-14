@@ -48,8 +48,11 @@ services:
   # ==========================================================================
   # Frontend Service - MEDIUM PRIORITY
   # ==========================================================================
-  # Resource allocation: 0.5 cores / 512 MB (limit: 1.0 cores / 1.0 GB)
+  # Resource allocation: 0.5 cores / 512 MB (limit: 0.8 cores / 768 MB)
   # Telemetry disabled to reduce overhead
+  # SECURITY HARDENING:
+  # - Read-only root filesystem
+  # - Strict resource limits to prevent mining
   # ==========================================================================
   frontend:
     environment:
@@ -57,14 +60,18 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       - NEXT_TELEMETRY_DISABLED=1
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:uid=1001,gid=1001,mode=1777
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1024M
+          cpus: '0.8'  # Strict limit to kill miners
+          memory: 768M
         reservations:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '0.25'
+          memory: 256M
     logging:
       driver: json-file
       options:
@@ -148,12 +155,12 @@ services:
 # Service          | Reserved (CPU/RAM)    | Limit (CPU/RAM)
 # ---------------- | --------------------- | ---------------------
 # bot-backend      | 1.5 cores / 1.5 GB    | 2.0 cores / 2.0 GB
-# frontend         | 0.5 cores / 512 MB    | 1.0 cores / 1.0 GB
+# frontend         | 0.25 cores / 256 MB   | 0.8 cores / 768 MB  <-- REDUCED
 # redis            | 0.25 cores / 256 MB   | 0.5 cores / 512 MB
 # monitoring-stack | 1.0 cores / 1.5 GB    | 1.5 cores / 2.5 GB
 # nginx            | 0.25 cores / 128 MB   | 0.5 cores / 256 MB
 # ---------------- | --------------------- | ---------------------
-# TOTAL            | 3.5 cores / 3.88 GB   | 5.5 cores / 6.26 GB
+# TOTAL            | 3.25 cores / 3.63 GB  | 5.3 cores / 6.00 GB
 # ============================================================================
 # VDS Capacity: 2-4 vCPU, 4-8 GB RAM
 # Reserved resources fit within minimum VDS (4 vCPU, 4 GB RAM)

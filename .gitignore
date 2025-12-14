@@ -151,3 +151,4 @@ articles/
 
 # Content agents (temporary/helper agents for writing)
 .claude/agents/content/
+GEMINI.md

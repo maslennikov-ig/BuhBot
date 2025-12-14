@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-12-14
+
+### Added
+- **bot**: add /help command handler (36485d3)
+
+### Changed
+- **deploy**: use workflow_run trigger instead of wait-on-check (0dbaf9f)
+
+### Fixed
+- **config**: require BOT_USERNAME env var for deep links (7f03672)
+- **bot**: reorder handler registration for /menu and /template commands (983c2c8)
+- **bot**: correct webhook middleware integration with Express (a031268)
+- **bot**: use createWebhook instead of webhookCallback (5436f83)
+- **bot**: register webhook route before 404 handler (e5ff392)
+- **deploy**: add SSH keepalive to prevent connection timeout (fb1c0eb)
+- **deploy**: use root context for frontend Docker build (6c6842e)
+- **deploy**: increase wait-on-check timeout to 15 minutes (ca4b9f9)
+- **ci**: use default import for logger (b7ee219)
+- **ci**: fix eslint errors in notification, user routers and invitation handler (8c4d983)
+- **ci**: update pnpm-lock.yaml to include tsx dependency (3f43c80)
+- **deploy**: fix secrets context not allowed in step if condition (4f9ef28)
+- **ci**: remove CRLF line endings from workflow files (890d2d8)
+- **deploy**: update production URL to buhbot.aidevteam.ru (dab885c)
+
 ## [0.8.3] - 2025-12-10
 
 ### Fixed

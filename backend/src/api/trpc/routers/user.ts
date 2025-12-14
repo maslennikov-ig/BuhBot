@@ -136,11 +136,22 @@ export const userRouter = router({
       list: authedProcedure
         .input(
           z.object({
-            role: z.enum(['admin', 'manager', 'observer']).optional(),
+            role: z.union([
+              z.enum(['admin', 'manager', 'observer']),
+              z.array(z.enum(['admin', 'manager', 'observer'])),
+            ]).optional(),
           }).optional()
         )
         .query(async ({ ctx, input }) => {
-          const where = input?.role ? { role: input.role } : {};
+          const where: any = {};
+          
+          if (input?.role) {
+            if (Array.isArray(input.role)) {
+              where.role = { in: input.role };
+            } else {
+              where.role = input.role;
+            }
+          }
     
           const users = await ctx.prisma.user.findMany({
             where,

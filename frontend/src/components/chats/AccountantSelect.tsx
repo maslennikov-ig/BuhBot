@@ -60,10 +60,9 @@ export function AccountantSelect({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Fetch accountants if not provided (assume 'manager' role is for accountants)
-  // If no role logic exists yet, we fetch all. Or filter by 'manager'.
+  // Fetch accountants if not provided (assume 'manager' and 'admin' roles are for accountants)
   const { data: fetchedUsers, isLoading } = trpc.user.list.useQuery(
-    { role: 'manager' },
+    { role: ['manager', 'admin'] },
     { enabled: !providedAccountants }
   );
 

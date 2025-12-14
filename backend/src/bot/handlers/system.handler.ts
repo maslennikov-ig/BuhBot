@@ -13,7 +13,7 @@ import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
 
 // Package version will be read from process.env.npm_package_version or hardcoded
-const BOT_VERSION = process.env.npm_package_version || '1.0.0';
+const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 
 /**
  * Register system handlers

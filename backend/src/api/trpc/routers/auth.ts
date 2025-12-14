@@ -16,6 +16,13 @@ import { supabase } from '../../../lib/supabase.js';
  * User role schema (matches Prisma UserRole enum)
  */
 const UserRoleSchema = z.enum(['admin', 'manager', 'observer']);
+type UserRole = z.infer<typeof UserRoleSchema>;
+
+/**
+ * Cast database role string to UserRole type
+ * Database stores role as string for compatibility, but we validate on read
+ */
+const asUserRole = (role: string): UserRole => role as UserRole;
 
 /**
  * Auth router for authentication and user management
@@ -74,7 +81,7 @@ export const authRouter = router({
         id: dbUser.id,
         email: dbUser.email,
         fullName: dbUser.fullName,
-        role: dbUser.role,
+        role: asUserRole(dbUser.role),
         isOnboardingComplete: dbUser.isOnboardingComplete,
         createdAt: dbUser.createdAt,
         telegramId: dbUser.telegramId?.toString() ?? null,
@@ -171,6 +178,7 @@ export const authRouter = router({
 
       return users.map((user) => ({
         ...user,
+        role: asUserRole(user.role),
         telegramId: user.telegramId?.toString() ?? null,
       }));
     }),
@@ -277,7 +285,7 @@ export const authRouter = router({
         id: newUser.id,
         email: newUser.email,
         fullName: newUser.fullName,
-        role: newUser.role,
+        role: asUserRole(newUser.role),
         inviteSent: true,
       };
     }),

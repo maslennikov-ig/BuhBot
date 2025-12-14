@@ -10,8 +10,9 @@
  */
 
 import * as React from 'react';
-import { ChevronDown, User, X } from 'lucide-react';
+import { ChevronDown, User, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
 
 // ============================================
 // TYPES
@@ -33,17 +34,6 @@ type AccountantSelectProps = {
 };
 
 // ============================================
-// MOCK DATA (to be replaced with tRPC query)
-// ============================================
-
-const MOCK_ACCOUNTANTS: Accountant[] = [
-  { id: '00000000-0000-0000-0000-000000000001', name: 'Иванов Иван', email: 'ivanov@example.com' },
-  { id: '00000000-0000-0000-0000-000000000002', name: 'Петрова Анна', email: 'petrova@example.com' },
-  { id: '00000000-0000-0000-0000-000000000003', name: 'Сидоров Петр', email: 'sidorov@example.com' },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Козлова Мария', email: 'kozlova@example.com' },
-];
-
-// ============================================
 // ACCOUNTANT SELECT COMPONENT
 // ============================================
 
@@ -60,7 +50,7 @@ const MOCK_ACCOUNTANTS: Accountant[] = [
 export function AccountantSelect({
   value,
   onChange,
-  accountants = MOCK_ACCOUNTANTS,
+  accountants: providedAccountants,
   disabled = false,
   placeholder = 'Выберите бухгалтера',
   className,
@@ -69,6 +59,25 @@ export function AccountantSelect({
   const [searchQuery, setSearchQuery] = React.useState('');
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch accountants if not provided (assume 'manager' role is for accountants)
+  // If no role logic exists yet, we fetch all. Or filter by 'manager'.
+  const { data: fetchedUsers, isLoading } = trpc.user.list.useQuery(
+    { role: 'manager' },
+    { enabled: !providedAccountants }
+  );
+
+  // Merge/Map data
+  const accountants = React.useMemo(() => {
+    if (providedAccountants) return providedAccountants;
+    if (!fetchedUsers) return [];
+    
+    return fetchedUsers.map((u) => ({
+      id: u.id,
+      name: u.fullName,
+      email: u.email,
+    }));
+  }, [providedAccountants, fetchedUsers]);
 
   // Find selected accountant
   const selectedAccountant = accountants.find((acc) => acc.id === value);
@@ -148,7 +157,12 @@ export function AccountantSelect({
         aria-haspopup="listbox"
       >
         <div className="flex items-center gap-2 min-w-0">
-          {selectedAccountant ? (
+          {isLoading && !selectedAccountant ? (
+            <div className="flex items-center gap-2 text-[var(--buh-foreground-muted)]">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span>Загрузка...</span>
+            </div>
+          ) : selectedAccountant ? (
             <>
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] shrink-0">
                 <User className="h-3.5 w-3.5 text-[var(--buh-primary)]" />

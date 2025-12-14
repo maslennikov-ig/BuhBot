@@ -127,6 +127,32 @@ export const userRouter = router({
       },
     });
 
-    return { success: true };
-  }),
-});
+          return { success: true };
+        }),
+    
+      /**
+       * List users (with optional role filter)
+       */
+      list: authedProcedure
+        .input(
+          z.object({
+            role: z.enum(['admin', 'manager', 'observer']).optional(),
+          }).optional()
+        )
+        .query(async ({ ctx, input }) => {
+          const where = input?.role ? { role: input.role } : {};
+    
+          const users = await ctx.prisma.user.findMany({
+            where,
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              role: true,
+            },
+            orderBy: { fullName: 'asc' },
+          });
+    
+          return users;
+        }),
+    });

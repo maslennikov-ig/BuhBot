@@ -7,7 +7,7 @@ import { metricsHandler } from './api/metrics.js';
 import { disconnectPrisma } from './lib/prisma.js';
 import { disconnectRedis } from './lib/redis.js';
 import { appRouter, createContext } from './api/trpc/index.js';
-import { registerHandlers, setupWebhook, stopBot } from './bot/index.js';
+import { registerHandlers, setupWebhook, launchPolling, stopBot } from './bot/index.js';
 
 /**
  * BuhBot Backend Server
@@ -110,11 +110,23 @@ const registerFinalHandlers = () => {
 };
 
 const startServer = async (port: number) => {
-  // Setup Telegram webhook BEFORE starting server (registers route)
+  // Setup Telegram bot (Webhook or Polling)
   try {
-    await setupWebhook(app, '/webhook/telegram');
+    if (env.TELEGRAM_WEBHOOK_URL) {
+      // Production/Staging: Use Webhook
+      await setupWebhook(app, '/webhook/telegram');
+    } else {
+      // Fallback: Use Polling if no webhook URL provided (even in production)
+      // This ensures the bot works even if the webhook URL is missing in config
+      logger.warn('TELEGRAM_WEBHOOK_URL not set. Launching in POLLING mode. This is less efficient for production but ensures functionality.');
+      
+      // Launch polling in background
+      launchPolling().catch(err => {
+        logger.error('Failed to launch polling', { error: err.message });
+      });
+    }
   } catch (error) {
-    logger.error('Failed to setup Telegram webhook on startup', {
+    logger.error('Failed to setup Telegram bot on startup', {
       error: error instanceof Error ? error.message : String(error),
     });
   }

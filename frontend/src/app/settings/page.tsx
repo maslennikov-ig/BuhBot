@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GeneralSettingsForm } from '@/components/settings/GeneralSettingsForm';
 import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
+import { HolidayCalendar } from '@/components/settings/HolidayCalendar';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
 import { ProfileSettingsForm } from '@/components/settings/ProfileSettingsForm';
 import { HelpButton } from '@/components/ui/HelpButton';
@@ -40,6 +41,7 @@ export default function SettingsPage() {
           
           <TabsContent value="schedule" className="space-y-4">
             <WorkingHoursForm />
+            <HolidayCalendar />
           </TabsContent>
           
           <TabsContent value="notifications" className="space-y-4">

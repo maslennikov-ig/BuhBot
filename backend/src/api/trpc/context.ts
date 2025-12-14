@@ -28,7 +28,7 @@ import { prisma } from '../../lib/prisma.js';
 /**
  * User information extracted from session and database
  */
-export interface ContextUser {
+interface ContextUser {
   id: string;           // UUID from Supabase Auth
   email: string;        // User email
   role: 'admin' | 'manager' | 'observer'; // Role for RBAC
@@ -38,7 +38,7 @@ export interface ContextUser {
 /**
  * Supabase session information
  */
-export interface ContextSession {
+interface ContextSession {
   accessToken: string;  // JWT access token
   expiresAt: number;    // Token expiration timestamp (seconds)
 }

@@ -317,4 +317,3 @@ export function FeedbackContent() {
   );
 }
 
-export default FeedbackContent;

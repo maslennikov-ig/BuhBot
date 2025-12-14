@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================
 
-export interface SearchInputProps {
+interface SearchInputProps {
   placeholder?: string;
   value?: string;
   onChange?: (value: string) => void;

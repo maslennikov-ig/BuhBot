@@ -307,4 +307,3 @@ export function ChatSettingsForm({
   );
 }
 
-export default ChatSettingsForm;

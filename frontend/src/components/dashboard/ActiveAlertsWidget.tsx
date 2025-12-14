@@ -208,4 +208,3 @@ export function ActiveAlertsWidget({
   );
 }
 
-export default ActiveAlertsWidget;

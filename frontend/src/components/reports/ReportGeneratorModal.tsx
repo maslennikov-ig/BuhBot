@@ -19,8 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ============================================
 
 export type ReportType = 'productivity' | 'sla' | 'quality' | 'summary';
-export type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
-export type FormatType = 'csv' | 'pdf';
+type PeriodType = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+type FormatType = 'csv' | 'pdf';
 
 interface ReportGeneratorModalProps {
   open: boolean;

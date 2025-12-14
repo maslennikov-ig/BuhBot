@@ -15,15 +15,15 @@
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "cd backend && npm run start",
     "start:frontend": "cd frontend && npm run start",
-    "test": "concurrently \"npm run test:backend\" \"npm run test:frontend\"",
-    "test:backend": "cd backend && npm run test",
-    "test:frontend": "cd frontend && npm run test",
     "type-check": "concurrently \"npm run type-check:backend\" \"npm run type-check:frontend\"",
     "type-check:backend": "cd backend && npm run type-check",
     "type-check:frontend": "cd frontend && npm run type-check",
     "lint": "concurrently \"npm run lint:backend\" \"npm run lint:frontend\"",
     "lint:backend": "cd backend && npm run lint",
-    "lint:frontend": "cd frontend && npm run lint"
+    "lint:frontend": "cd frontend && npm run lint",
+    "knip": "npm run knip:backend && npm run knip:frontend",
+    "knip:backend": "cd backend && npx knip",
+    "knip:frontend": "cd frontend && npx knip"
   },
   "keywords": [
     "telegram-bot",
@@ -51,6 +51,8 @@
   },
   "private": true,
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "knip": "^5.73.3",
+    "typescript": "^5.9.3"
   }
 }

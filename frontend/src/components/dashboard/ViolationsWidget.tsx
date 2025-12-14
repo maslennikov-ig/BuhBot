@@ -348,4 +348,3 @@ export function ViolationsWidget({
   );
 }
 
-export default ViolationsWidget;

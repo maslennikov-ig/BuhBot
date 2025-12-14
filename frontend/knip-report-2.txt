@@ -1,0 +1,26 @@
+Unused exports (7)
+ChartStyle              src/components/ui/chart.tsx:368:3 
+useFormField            src/components/ui/form.tsx:170:3  
+SelectGroup             src/components/ui/select.tsx:151:3
+SelectLabel             src/components/ui/select.tsx:155:3
+SelectSeparator         src/components/ui/select.tsx:157:3
+SelectScrollUpButton    src/components/ui/select.tsx:158:3
+SelectScrollDownButton  src/components/ui/select.tsx:159:3
+Unused exported types (16)
+Accountant          type       src/components/chats/AccountantSelect.tsx:20:13      
+FeedbackPagination  type       src/components/feedback/FeedbackTable.tsx:43:13      
+FeedbackPagination  type       src/components/feedback/index.ts:11:3                
+RatingDistribution  type       src/components/feedback/index.ts:15:15               
+TrendDataPoint      type       src/components/feedback/index.ts:15:35               
+RatingDistribution  type       src/components/feedback/NPSWidget.tsx:12:13          
+TrendDataPoint      type       src/components/feedback/NPSWidget.tsx:18:13          
+ReportCardProps     interface  src/components/reports/ReportCard.tsx:14:18          
+PeriodType          type       src/components/reports/ReportGeneratorModal.tsx:22:13
+FormatType          type       src/components/reports/ReportGeneratorModal.tsx:23:13
+ChartConfig         type       src/components/ui/chart.tsx:11:13                    
+SearchInputProps    interface  src/components/ui/SearchInput.tsx:11:18              
+DocumentationKey    type       src/config/documentation.ts:66:13                    
+SortDirection       type       src/hooks/useTableSort.ts:5:13                       
+SortConfig          interface  src/hooks/useTableSort.ts:7:18                       
+UseTableSortReturn  interface  src/hooks/useTableSort.ts:12:18                      
+Configuration hints (9)

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import FeedbackContent from './feedback-content';
+import { FeedbackContent } from './feedback-content';
 
 export const metadata: Metadata = {
   title: 'Обратная связь | BuhBot',

@@ -1,0 +1,15 @@
+[dotenv@17.2.3] injecting env (24) from .env -- tip: ⚙️  override existing env vars with { override: true }
+CONFIG DEBUG: DATABASE_URL in config: true
+Unused exported types (11)
+AppRouter              type       src/api/trpc/index.ts:11:26                  
+Context                type       src/api/trpc/index.ts:14:30                  
+AppRouter              type       src/api/trpc/router.ts:252:13                
+SurveyDeliveryJobData  interface  src/queues/survey.queue.ts:26:18             
+SlaAlert               type       src/services/alerts/alert.service.ts:20:15   
+AlertType              type       src/services/alerts/alert.service.ts:20:25   
+AlertAction            type       src/services/alerts/alert.service.ts:20:36   
+AlertDeliveryStatus    type       src/services/alerts/alert.service.ts:20:49   
+CreateSurveyInput      interface  src/services/feedback/survey.service.ts:28:18
+SurveyWithStats        interface  src/services/feedback/survey.service.ts:40:18
+ActiveClient           interface  src/services/feedback/survey.service.ts:58:18
+Configuration hints (12)

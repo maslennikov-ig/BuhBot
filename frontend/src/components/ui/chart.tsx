@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
-export type ChartConfig = {
+type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
     icon?: React.ComponentType
@@ -219,11 +219,10 @@ const ChartTooltipContent = React.forwardRef<
                                 "my-0.5": nestLabel && indicator === "dashed",
                               }
                             )}
-                            style={
-                              {
-                                "--color-bg": indicatorColor,
-                                "--color-border": indicatorColor,
-                              } as React.CSSProperties
+                            style={{
+                              "--color-bg": indicatorColor,
+                              "--color-border": indicatorColor,
+                            } as React.CSSProperties
                             }
                           />
                         )
@@ -363,7 +362,7 @@ export {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  ChartStyle,
-}
+    ChartLegend,
+    ChartLegendContent,
+  }
+  

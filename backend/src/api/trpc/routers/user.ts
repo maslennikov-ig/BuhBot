@@ -5,7 +5,7 @@ import { telegramAuthService } from '../../../services/telegram/auth.service.js'
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
 import logger from '../../../utils/logger.js';
 
-export const LinkTelegramInput = z.object({
+const LinkTelegramInput = z.object({
   id: z.number(),
   first_name: z.string(),
   last_name: z.string().optional(),

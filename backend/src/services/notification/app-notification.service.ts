@@ -1,7 +1,7 @@
 import { PrismaClient, Notification } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
-export type CreateNotificationInput = {
+type CreateNotificationInput = {
   userId: string;
   title: string;
   message: string;
@@ -9,7 +9,7 @@ export type CreateNotificationInput = {
   link?: string;
 };
 
-export class AppNotificationService {
+class AppNotificationService {
   constructor(private readonly db: PrismaClient = prisma) {}
 
   /**

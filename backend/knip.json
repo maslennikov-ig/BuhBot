@@ -1,0 +1,18 @@
+{
+  "entry": [
+    "src/index.ts",
+    "prisma/seed.ts",
+    "src/api/trpc/index.ts",
+    "src/api/trpc/router.ts",
+    "src/services/alerts/alert.service.ts",
+    "src/services/feedback/survey.service.ts",
+    "src/queues/survey.queue.ts",
+    "src/queues/*.worker.ts",
+    "src/jobs/*.job.ts",
+    "src/bot/middleware/index.ts",
+    "src/middleware/*.ts",
+    "src/api/trpc/types.ts"
+  ],
+  "project": ["src/**/*.ts"],
+  "ignore": ["**/*.test.ts", "**/*.spec.ts"]
+}

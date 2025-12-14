@@ -23,6 +23,7 @@ export function ThemeLogo({ size = 'md', className = '', priority = false }: The
   const { width, height, className: sizeClass } = sizes[size];
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

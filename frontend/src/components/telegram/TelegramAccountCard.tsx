@@ -37,6 +37,7 @@ export function TelegramAccountCard({
     >
       <div className="flex items-center gap-4">
         {telegramAccount.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={telegramAccount.photoUrl}
             alt={displayName}

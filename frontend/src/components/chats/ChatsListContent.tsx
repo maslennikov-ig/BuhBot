@@ -481,4 +481,3 @@ export function ChatsListContent() {
   );
 }
 
-export default ChatsListContent;

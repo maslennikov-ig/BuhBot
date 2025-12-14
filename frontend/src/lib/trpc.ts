@@ -71,13 +71,4 @@ export function createTRPCClient() {
   });
 }
 
-/**
- * Vanilla tRPC client for non-React contexts
- *
- * Usage in Server Actions or API routes:
- * ```ts
- * import { vanillaClient } from '@/lib/trpc';
- * const result = await vanillaClient.chats.list.query();
- * ```
- */
-export const vanillaClient = createTRPCClient();
+

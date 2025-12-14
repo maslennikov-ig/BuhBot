@@ -1,0 +1,94 @@
+[dotenv@17.2.3] injecting env (24) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+CONFIG DEBUG: DATABASE_URL in config: true
+Unused exports (45)
+LinkTelegramInput                      src/api/trpc/routers/user.ts:8:14                          
+formatFileSize               function  src/bot/handlers/file.handler.ts:28:17                     
+formatTimestamp              function  src/bot/handlers/file.handler.ts:53:17                     
+isAwaitingComment            function  src/bot/handlers/survey.handler.ts:234:17                  
+getAwaitingCommentData       function  src/bot/handlers/survey.handler.ts:252:17                  
+buildAlertKeyboard           function  src/bot/keyboards/alert.keyboard.ts:97:17                  
+buildLowRatingAlertKeyboard  function  src/bot/keyboards/alert.keyboard.ts:235:17                 
+default                                src/bot/keyboards/alert.keyboard.ts:259:8                  
+default                                src/bot/keyboards/client-menu.keyboard.ts:94:8             
+createSurveyRatingKeyboard   function  src/bot/keyboards/survey.keyboard.ts:37:17                 
+SURVEY_MESSAGE_TEXT                    src/bot/keyboards/survey.keyboard.ts:55:14                 
+SURVEY_REMINDER_TEXT                   src/bot/keyboards/survey.keyboard.ts:72:14                 
+COMMENT_RECEIVED_MESSAGE               src/bot/keyboards/survey.keyboard.ts:90:14                 
+parseSurveyCallback          function  src/bot/keyboards/survey.keyboard.ts:127:17                
+default                                src/bot/keyboards/survey.keyboard.ts:146:8                 
+getCategoryDisplay           function  src/bot/keyboards/template.keyboard.ts:148:17              
+default                                src/bot/keyboards/template.keyboard.ts:228:8               
+getEnv                       function  src/config/env.ts:165:17                                   
+isTest                       function  src/config/env.ts:190:17                                   
+SURVEY_QUEUE_NAME                      src/queues/survey.queue.ts:70:14                           
+surveyQueue                            src/queues/survey.queue.ts:79:14                           
+surveyEvents                           src/queues/survey.queue.ts:95:14                           
+queueSurveyReminder          function  src/queues/survey.queue.ts:126:23                          
+queueManagerNotification     function  src/queues/survey.queue.ts:146:23                          
+cancelSurveyJob              function  src/queues/survey.queue.ts:167:23                          
+closeSurveyQueue             function  src/queues/survey.queue.ts:188:23                          
+scheduleNextEscalation       function  src/services/alerts/escalation.service.ts:121:23           
+processEscalation            function  src/services/alerts/escalation.service.ts:322:23           
+isEscalationOverdue          function  src/services/alerts/escalation.service.ts:377:23           
+default                                src/services/alerts/escalation.service.ts:403:8            
+truncateText                 function  src/services/alerts/format.service.ts:66:17                
+formatAlertMessage           function  src/services/alerts/format.service.ts:186:17               
+formatShortNotification      function  src/services/alerts/format.service.ts:225:17               
+default                                src/services/alerts/format.service.ts:291:8                
+hashMessage                  function  src/services/classifier/cache.service.ts:45:17             
+resetClient                  function  src/services/classifier/openrouter-client.ts:323:17        
+OpenRouterClient                       src/services/classifier/openrouter-client.ts:327:10        
+default                                src/services/faq/matcher.service.ts:240:8                  
+AppNotificationService       class     src/services/notification/app-notification.service.ts:12:14
+isWorkingTime                function  src/services/sla/working-hours.service.ts:133:17           
+getNextWorkingTime           function  src/services/sla/working-hours.service.ts:190:17           
+TelegramAuthService          class     src/services/telegram/auth.service.ts:14:14                
+getRemainingAttempts         function  src/services/telegram/rate-limiter.ts:53:17                
+cleanupRateLimitStore        function  src/services/telegram/rate-limiter.ts:71:17                
+stream                                 src/utils/logger.ts:80:14                                  
+Unused exported types (44)
+ContextUser                 interface  src/api/trpc/context.ts:31:18                             
+ContextSession              interface  src/api/trpc/context.ts:41:18                             
+AppRouter                   type       src/api/trpc/index.ts:11:26                               
+Context                     type       src/api/trpc/index.ts:14:30                               
+AppRouter                   type       src/api/trpc/router.ts:252:13                             
+AlertKeyboardData           interface  src/bot/keyboards/alert.keyboard.ts:25:18                 
+AlertKeyboardOptions        interface  src/bot/keyboards/alert.keyboard.ts:37:18                 
+LowRatingAlertKeyboardData  interface  src/bot/keyboards/alert.keyboard.ts:201:18                
+SurveyCallbackData          interface  src/bot/keyboards/survey.keyboard.ts:105:18               
+TemplateCallbackData        interface  src/bot/keyboards/template.keyboard.ts:191:18             
+Env                         type       src/config/env.ts:127:13                                  
+AlertJobData                interface  src/queues/setup.ts:39:18                                 
+LowRatingAlertJobData       interface  src/queues/setup.ts:54:18                                 
+SurveyDeliveryJobData       interface  src/queues/survey.queue.ts:26:18                          
+SurveyReminderJobData       interface  src/queues/survey.queue.ts:40:18                          
+ManagerNotificationJobData  interface  src/queues/survey.queue.ts:52:18                          
+SurveyJobData               type       src/queues/survey.queue.ts:64:13                          
+SlaAlert                    type       src/services/alerts/alert.service.ts:20:15                
+AlertType                   type       src/services/alerts/alert.service.ts:20:25                
+AlertAction                 type       src/services/alerts/alert.service.ts:20:36                
+AlertDeliveryStatus         type       src/services/alerts/alert.service.ts:20:49                
+CreateAlertParams           interface  src/services/alerts/alert.service.ts:25:18                
+ResolveAlertParams          interface  src/services/alerts/alert.service.ts:39:18                
+EscalationConfig            interface  src/services/alerts/escalation.service.ts:26:18           
+AlertMessageData            interface  src/services/alerts/format.service.ts:22:18               
+CreateAlertParams           type       src/services/alerts/index.ts:15:8                         
+ResolveAlertParams          type       src/services/alerts/index.ts:16:8                         
+SlaAlert                    type       src/services/alerts/index.ts:17:8                         
+AlertType                   type       src/services/alerts/index.ts:18:8                         
+AlertAction                 type       src/services/alerts/index.ts:19:8                         
+AlertDeliveryStatus         type       src/services/alerts/index.ts:20:8                         
+AlertMessageData            type       src/services/alerts/index.ts:25:8                         
+EscalationConfig            type       src/services/alerts/index.ts:30:8                         
+FAQMatch                    interface  src/services/faq/matcher.service.ts:28:18                 
+RatingDistribution          interface  src/services/feedback/analytics.service.ts:21:18          
+NPSResult                   interface  src/services/feedback/analytics.service.ts:27:18          
+FeedbackAggregates          interface  src/services/feedback/analytics.service.ts:36:18          
+TrendDataPoint              interface  src/services/feedback/analytics.service.ts:43:18          
+DateRange                   interface  src/services/feedback/analytics.service.ts:50:18          
+CreateSurveyInput           interface  src/services/feedback/survey.service.ts:28:18             
+SurveyWithStats             interface  src/services/feedback/survey.service.ts:40:18             
+ActiveClient                interface  src/services/feedback/survey.service.ts:58:18             
+CreateNotificationInput     type       src/services/notification/app-notification.service.ts:4:13
+TelegramAuthData            interface  src/services/telegram/auth.service.ts:4:18                
+Configuration hints (12)

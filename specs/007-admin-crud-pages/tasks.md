@@ -24,6 +24,7 @@
 - [x] T002 Create `ComingSoon` component in `frontend/src/components/common/ComingSoon.tsx` [EXECUTOR: nextjs-ui-designer]
 - [x] T003 Update `frontend/src/components/layout/AdminLayout.tsx` sidebar links (`/clients` -> `/chats`) [EXECUTOR: fullstack-nextjs-specialist]
 - [x] T004 Create placeholder pages for `/sla` and `/reports` using `ComingSoon` [EXECUTOR: fullstack-nextjs-specialist]
+  - *Note:* Full pages were implemented instead of placeholders.
 
 ## Phase 3: FAQ Management
 

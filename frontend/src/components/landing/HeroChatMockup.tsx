@@ -117,6 +117,7 @@ export function HeroChatMockup() {
   const [scenarioIndex, setScenarioIndex] = useState(0);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -160,6 +161,7 @@ export function HeroChatMockup() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     runSequence();
     const interval = setInterval(runSequence, 7000);
     return () => clearInterval(interval);

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import env from '../../config/env.js';
 
-export interface TelegramAuthData {
+interface TelegramAuthData {
   id: number;
   first_name: string;
   last_name?: string | undefined;
@@ -11,7 +11,7 @@ export interface TelegramAuthData {
   hash: string;
 }
 
-export class TelegramAuthService {
+class TelegramAuthService {
   /**
    * Verifies the integrity of the data received from Telegram Login Widget
    * @param authData The data received from the widget

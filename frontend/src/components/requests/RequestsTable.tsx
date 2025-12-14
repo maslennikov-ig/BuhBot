@@ -257,4 +257,3 @@ export function RequestsTable({
   );
 }
 
-export default RequestsTable;

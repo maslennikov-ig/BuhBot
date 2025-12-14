@@ -2,14 +2,14 @@
 
 import { useState, useMemo, useCallback } from 'react';
 
-export type SortDirection = 'asc' | 'desc';
+type SortDirection = 'asc' | 'desc';
 
-export interface SortConfig<T> {
+interface SortConfig<T> {
   key: keyof T | null;
   direction: SortDirection;
 }
 
-export interface UseTableSortReturn<T> {
+interface UseTableSortReturn<T> {
   sortConfig: SortConfig<T>;
   sortedData: T[];
   requestSort: (key: keyof T) => void;
@@ -104,5 +104,3 @@ export function useTableSort<T extends Record<string, unknown>>(
     getSortIcon,
   };
 }
-
-export default useTableSort;

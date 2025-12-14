@@ -642,4 +642,3 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
   );
 }
 
-export default SurveyDetailContent;

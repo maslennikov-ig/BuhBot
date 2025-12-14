@@ -631,4 +631,3 @@ export function SurveyListContent() {
   );
 }
 
-export default SurveyListContent;

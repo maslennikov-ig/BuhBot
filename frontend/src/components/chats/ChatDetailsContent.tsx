@@ -280,4 +280,3 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
   );
 }
 
-export default ChatDetailsContent;

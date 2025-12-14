@@ -53,4 +53,3 @@ export function SortableHeader({
   );
 }
 
-export default SortableHeader;

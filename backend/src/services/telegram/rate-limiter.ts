@@ -46,29 +46,9 @@ export function isRateLimited(userId: string): boolean {
 }
 
 /**
- * Get remaining attempts for a user
- * @param userId User ID to check
- * @returns Number of remaining attempts in current window
- */
-export function getRemainingAttempts(userId: string): number {
-  const now = Date.now();
-  const entry = rateLimitStore.get(userId);
-
-  if (!entry) {
-    return MAX_ATTEMPTS;
-  }
-
-  const recentAttempts = entry.attempts.filter(
-    (timestamp) => now - timestamp < WINDOW_MS
-  );
-
-  return Math.max(0, MAX_ATTEMPTS - recentAttempts.length);
-}
-
-/**
  * Clean up old entries (call periodically to prevent memory leaks)
  */
-export function cleanupRateLimitStore(): void {
+function cleanupRateLimitStore(): void {
   const now = Date.now();
   for (const [userId, entry] of rateLimitStore.entries()) {
     const recentAttempts = entry.attempts.filter(

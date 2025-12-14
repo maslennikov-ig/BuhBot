@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================
 
-export interface ReportCardProps {
+interface ReportCardProps {
   icon: LucideIcon;
   title: string;
   description: string;

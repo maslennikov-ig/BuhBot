@@ -20,7 +20,6 @@ import {
   Copy,
   Check,
   Loader2,
-  User,
 } from 'lucide-react';
 
 import { GlassCard } from '@/components/layout/GlassCard';
@@ -64,9 +63,6 @@ export function InvitationModal({
   onClose,
   onSuccess,
 }: InvitationModalProps) {
-  // Tab state
-  const [activeTab, setActiveTab] = React.useState('link');
-
   // Shared options state
   const [accountantId, setAccountantId] = React.useState<string | null>(null);
   const [initialTitle, setInitialTitle] = React.useState('');
@@ -485,4 +481,3 @@ export function InvitationModal({
   );
 }
 
-export default InvitationModal;

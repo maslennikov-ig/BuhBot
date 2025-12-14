@@ -62,5 +62,3 @@ export const documentation = {
     },
   },
 };
-
-export type DocumentationKey = keyof typeof documentation | `settings.${keyof typeof documentation.settings}`;

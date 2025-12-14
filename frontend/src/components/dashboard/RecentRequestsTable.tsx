@@ -244,4 +244,3 @@ export function RecentRequestsTable({
   );
 }
 
-export default RecentRequestsTable;

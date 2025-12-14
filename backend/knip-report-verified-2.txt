@@ -1,0 +1,38 @@
+[dotenv@17.2.3] injecting env (24) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+CONFIG DEBUG: DATABASE_URL in config: true
+Unused exports (1)
+updateEscalationLevel  function  src/services/alerts/alert.service.ts:377:23
+Unused exported types (32)
+ContextUser            interface  src/api/trpc/context.ts:31:18                   
+ContextSession         interface  src/api/trpc/context.ts:41:18                   
+AppRouter              type       src/api/trpc/index.ts:11:26                     
+Context                type       src/api/trpc/index.ts:14:30                     
+AppRouter              type       src/api/trpc/router.ts:252:13                   
+AlertJobData           interface  src/queues/setup.ts:39:18                       
+LowRatingAlertJobData  interface  src/queues/setup.ts:54:18                       
+SurveyDeliveryJobData  interface  src/queues/survey.queue.ts:26:18                
+SlaAlert               type       src/services/alerts/alert.service.ts:20:15      
+AlertType              type       src/services/alerts/alert.service.ts:20:25      
+AlertAction            type       src/services/alerts/alert.service.ts:20:36      
+AlertDeliveryStatus    type       src/services/alerts/alert.service.ts:20:49      
+CreateAlertParams      interface  src/services/alerts/alert.service.ts:25:18      
+ResolveAlertParams     interface  src/services/alerts/alert.service.ts:39:18      
+EscalationConfig       interface  src/services/alerts/escalation.service.ts:26:18 
+CreateAlertParams      type       src/services/alerts/index.ts:15:8               
+ResolveAlertParams     type       src/services/alerts/index.ts:16:8               
+SlaAlert               type       src/services/alerts/index.ts:17:8               
+AlertType              type       src/services/alerts/index.ts:18:8               
+AlertAction            type       src/services/alerts/index.ts:19:8               
+AlertDeliveryStatus    type       src/services/alerts/index.ts:20:8               
+AlertMessageData       type       src/services/alerts/index.ts:25:8               
+EscalationConfig       type       src/services/alerts/index.ts:30:8               
+FAQMatch               interface  src/services/faq/matcher.service.ts:28:18       
+RatingDistribution     interface  src/services/feedback/analytics.service.ts:21:18
+NPSResult              interface  src/services/feedback/analytics.service.ts:27:18
+FeedbackAggregates     interface  src/services/feedback/analytics.service.ts:36:18
+TrendDataPoint         interface  src/services/feedback/analytics.service.ts:43:18
+DateRange              interface  src/services/feedback/analytics.service.ts:50:18
+CreateSurveyInput      interface  src/services/feedback/survey.service.ts:28:18   
+SurveyWithStats        interface  src/services/feedback/survey.service.ts:40:18   
+ActiveClient           interface  src/services/feedback/survey.service.ts:58:18   
+Configuration hints (12)

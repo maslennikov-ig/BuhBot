@@ -409,4 +409,3 @@ export function SurveySettingsContent() {
   );
 }
 
-export default SurveySettingsContent;

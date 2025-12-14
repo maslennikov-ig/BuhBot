@@ -10,7 +10,7 @@
  * @module api/metrics
  */
 
-import { Request, Response, Application } from 'express';
+import { Request, Response } from 'express';
 import { getMetricsText } from '../utils/metrics.js';
 import logger from '../utils/logger.js';
 
@@ -47,20 +47,3 @@ export async function metricsHandler(_req: Request, res: Response): Promise<void
     });
   }
 }
-
-/**
- * Register metrics endpoint with Express app
- *
- * @example
- * import express from 'express';
- * import { registerMetricsEndpoint } from './api/metrics.js';
- *
- * const app = express();
- * registerMetricsEndpoint(app);
- */
-export function registerMetricsEndpoint(app: Application): void {
-  app.get('/metrics', metricsHandler);
-  logger.info('Metrics endpoint registered at /metrics');
-}
-
-export default metricsHandler;

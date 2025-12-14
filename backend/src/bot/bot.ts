@@ -72,4 +72,3 @@ export function stopBot(signal: string): void {
   logger.info('Telegram bot stopped', { service: 'telegram-bot' });
 }
 
-export default bot;

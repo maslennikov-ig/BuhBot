@@ -1,0 +1,222 @@
+[dotenv@17.2.3] injecting env (24) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+CONFIG DEBUG: DATABASE_URL in config: true
+Unused exports (141)
+registerHealthEndpoint        function  src/api/health.ts:247:17                                   
+default                                 src/api/health.ts:252:8                                    
+registerMetricsEndpoint       function  src/api/metrics.ts:61:17                                   
+default                                 src/api/metrics.ts:66:8                                    
+LinkTelegramInput                       src/api/trpc/routers/user.ts:8:14                          
+default                                 src/bot/bot.ts:75:8                                        
+default                                 src/bot/handlers/alert-callback.handler.ts:271:8           
+default                                 src/bot/handlers/faq.handler.ts:132:8                      
+formatFileSize                function  src/bot/handlers/file.handler.ts:28:17                     
+formatTimestamp               function  src/bot/handlers/file.handler.ts:53:17                     
+default                                 src/bot/handlers/file.handler.ts:221:8                     
+default                                 src/bot/handlers/menu.handler.ts:174:8                     
+default                                 src/bot/handlers/message.handler.ts:163:8                  
+default                                 src/bot/handlers/response.handler.ts:235:8                 
+isAwaitingComment             function  src/bot/handlers/survey.handler.ts:234:17                  
+getAwaitingCommentData        function  src/bot/handlers/survey.handler.ts:252:17                  
+default                                 src/bot/handlers/survey.handler.ts:256:8                   
+default                                 src/bot/handlers/template.handler.ts:315:8                 
+buildAlertKeyboard            function  src/bot/keyboards/alert.keyboard.ts:97:17                  
+buildLowRatingAlertKeyboard   function  src/bot/keyboards/alert.keyboard.ts:235:17                 
+default                                 src/bot/keyboards/alert.keyboard.ts:259:8                  
+default                                 src/bot/keyboards/client-menu.keyboard.ts:94:8             
+createSurveyRatingKeyboard    function  src/bot/keyboards/survey.keyboard.ts:37:17                 
+SURVEY_MESSAGE_TEXT                     src/bot/keyboards/survey.keyboard.ts:55:14                 
+SURVEY_REMINDER_TEXT                    src/bot/keyboards/survey.keyboard.ts:72:14                 
+COMMENT_RECEIVED_MESSAGE                src/bot/keyboards/survey.keyboard.ts:90:14                 
+parseSurveyCallback           function  src/bot/keyboards/survey.keyboard.ts:127:17                
+default                                 src/bot/keyboards/survey.keyboard.ts:146:8                 
+getCategoryDisplay            function  src/bot/keyboards/template.keyboard.ts:148:17              
+default                                 src/bot/keyboards/template.keyboard.ts:228:8               
+removeWebhook                 function  src/bot/webhook.ts:112:23                                  
+getWebhookInfo                function  src/bot/webhook.ts:144:23                                  
+launchPolling                 function  src/bot/webhook.ts:171:23                                  
+default                                 src/bot/webhook.ts:202:8                                   
+getEnv                        function  src/config/env.ts:165:17                                   
+isTest                        function  src/config/env.ts:190:17                                   
+default                                 src/lib/prisma.ts:124:8                                    
+default                                 src/lib/redis.ts:139:8                                     
+defaultJobOptions                       src/queues/setup.ts:88:14                                  
+QUEUE_NAMES                             src/queues/setup.ts:101:14                                 
+slaTimerQueue                           src/queues/setup.ts:130:14                                 
+alertQueue                              src/queues/setup.ts:156:14                                 
+dataRetentionQueue                      src/queues/setup.ts:176:14                                 
+slaTimerEvents                          src/queues/setup.ts:199:14                                 
+alertEvents                             src/queues/setup.ts:206:14                                 
+dataRetentionEvents                     src/queues/setup.ts:213:14                                 
+updateQueueMetrics            function  src/queues/setup.ts:284:23                                 
+registerWorker                function  src/queues/setup.ts:330:17                                 
+setupQueues                   function  src/queues/setup.ts:342:23                                 
+closeQueues                   function  src/queues/setup.ts:375:23                                 
+scheduleDataRetention         function  src/queues/setup.ts:575:23                                 
+SURVEY_QUEUE_NAME                       src/queues/survey.queue.ts:70:14                           
+surveyQueue                             src/queues/survey.queue.ts:79:14                           
+surveyEvents                            src/queues/survey.queue.ts:95:14                           
+queueSurveyReminder           function  src/queues/survey.queue.ts:126:23                          
+queueManagerNotification      function  src/queues/survey.queue.ts:146:23                          
+cancelSurveyJob               function  src/queues/survey.queue.ts:167:23                          
+closeSurveyQueue              function  src/queues/survey.queue.ts:188:23                          
+scheduleNextEscalation        function  src/services/alerts/escalation.service.ts:121:23           
+processEscalation             function  src/services/alerts/escalation.service.ts:322:23           
+isEscalationOverdue           function  src/services/alerts/escalation.service.ts:377:23           
+default                                 src/services/alerts/escalation.service.ts:403:8            
+truncateText                  function  src/services/alerts/format.service.ts:66:17                
+formatAlertMessage            function  src/services/alerts/format.service.ts:186:17               
+formatShortNotification       function  src/services/alerts/format.service.ts:225:17               
+default                                 src/services/alerts/format.service.ts:291:8                
+hashMessage                   function  src/services/classifier/cache.service.ts:45:17             
+getClassifierService          function  src/services/classifier/classifier.service.ts:225:17       
+resetClassifierService        function  src/services/classifier/classifier.service.ts:263:17       
+default                                 src/services/classifier/classifier.service.ts:267:8        
+DEFAULT_CLASSIFIER_CONFIG               src/services/classifier/index.ts:37:10                     
+classifyByKeywords                      src/services/classifier/index.ts:40:10                     
+classifyWithAI                          src/services/classifier/index.ts:43:10                     
+OpenRouterClient                        src/services/classifier/index.ts:43:26                     
+resetClient                             src/services/classifier/index.ts:43:44                     
+getCached                               src/services/classifier/index.ts:47:3                      
+setCache                                src/services/classifier/index.ts:48:3                      
+cleanupExpiredCache                     src/services/classifier/index.ts:49:3                      
+getCacheStats                           src/services/classifier/index.ts:50:3                      
+hashMessage                             src/services/classifier/index.ts:51:3                      
+ClassifierService                       src/services/classifier/index.ts:56:3                      
+getClassifierService                    src/services/classifier/index.ts:57:3                      
+resetClassifierService                  src/services/classifier/index.ts:59:3                      
+default                                 src/services/classifier/keyword-classifier.ts:254:8        
+resetClient                   function  src/services/classifier/openrouter-client.ts:323:17        
+OpenRouterClient                        src/services/classifier/openrouter-client.ts:327:10        
+default                                 src/services/classifier/openrouter-client.ts:328:8         
+default                                 src/services/faq/matcher.service.ts:240:8                  
+calculateNPS                  function  src/services/feedback/analytics.service.ts:69:17           
+calculateDistribution         function  src/services/feedback/analytics.service.ts:105:17          
+getSurveySummary              function  src/services/feedback/analytics.service.ts:308:23          
+default                                 src/services/feedback/analytics.service.ts:360:8           
+getActiveClients              function  src/services/feedback/survey.service.ts:141:23             
+markSurveyActive              function  src/services/feedback/survey.service.ts:255:23             
+updateDeliveryStatus          function  src/services/feedback/survey.service.ts:318:23             
+getSurveyById                 function  src/services/feedback/survey.service.ts:473:23             
+getDeliveriesNeedingReminder  function  src/services/feedback/survey.service.ts:564:23             
+getSurveys                    function  src/services/feedback/survey.service.ts:591:23             
+expireOverdueSurveys          function  src/services/feedback/survey.service.ts:620:23             
+default                                 src/services/feedback/survey.service.ts:647:8              
+AppNotificationService        class     src/services/notification/app-notification.service.ts:12:14
+getRequestById                function  src/services/sla/request.service.ts:51:23                  
+updateRequestStatus           function  src/services/sla/request.service.ts:83:23                  
+markRequestAsAnswered         function  src/services/sla/request.service.ts:135:23                 
+getActiveRequests             function  src/services/sla/request.service.ts:193:23                 
+getPendingRequestsForChat     function  src/services/sla/request.service.ts:239:23                 
+default                                 src/services/sla/request.service.ts:344:8                  
+pauseSlaTimer                 function  src/services/sla/timer.service.ts:384:23                   
+resumeSlaTimer                function  src/services/sla/timer.service.ts:426:23                   
+default                                 src/services/sla/timer.service.ts:550:8                    
+isWorkingTime                 function  src/services/sla/working-hours.service.ts:133:17           
+getNextWorkingTime            function  src/services/sla/working-hours.service.ts:190:17           
+TelegramAuthService           class     src/services/telegram/auth.service.ts:14:14                
+getRemainingAttempts          function  src/services/telegram/rate-limiter.ts:53:17                
+cleanupRateLimitStore         function  src/services/telegram/rate-limiter.ts:71:17                
+extractVariables                        src/services/templates/index.ts:11:3                       
+validateVariables                       src/services/templates/index.ts:12:3                       
+SUPPORTED_VARIABLES                     src/services/templates/index.ts:13:3                       
+extractVariables              function  src/services/templates/variable.service.ts:132:17          
+SUPPORTED_VARIABLES                     src/services/templates/variable.service.ts:148:14          
+validateVariables             function  src/services/templates/variable.service.ts:173:17          
+default                                 src/services/templates/variable.service.ts:187:8           
+stream                                  src/utils/logger.ts:80:14                                  
+register                                src/utils/metrics.ts:21:14                                 
+botMessagesReceivedTotal                src/utils/metrics.ts:43:14                                 
+botMessageProcessingDuration            src/utils/metrics.ts:55:14                                 
+botWebhookSignatureFailures             src/utils/metrics.ts:67:14                                 
+supabaseQueryDuration                   src/utils/metrics.ts:107:14                                
+supabaseConnectionErrors                src/utils/metrics.ts:119:14                                
+supabaseConnectionPoolSize              src/utils/metrics.ts:129:14                                
+surveyDeliveriesTotal                   src/utils/metrics.ts:145:14                                
+feedbackResponsesTotal                  src/utils/metrics.ts:158:14                                
+feedbackNpsGauge                        src/utils/metrics.ts:171:14                                
+startTimer                    function  src/utils/metrics.ts:190:17                                
+incrementCounter              function  src/utils/metrics.ts:202:17                                
+setGauge                      function  src/utils/metrics.ts:213:17                                
+getMetricsJson                function  src/utils/metrics.ts:232:23                                
+resetMetrics                  function  src/utils/metrics.ts:239:17                                
+incrementSurveyDelivery       function  src/utils/metrics.ts:254:17                                
+incrementFeedbackResponse     function  src/utils/metrics.ts:265:17                                
+updateNPSGauge                function  src/utils/metrics.ts:280:17                                
+Unused exported types (59)
+ContextUser                 interface  src/api/trpc/context.ts:31:18                             
+ContextSession              interface  src/api/trpc/context.ts:41:18                             
+AppRouter                   type       src/api/trpc/index.ts:11:26                               
+Context                     type       src/api/trpc/index.ts:14:30                               
+AppRouter                   type       src/api/trpc/router.ts:252:13                             
+AlertKeyboardData           interface  src/bot/keyboards/alert.keyboard.ts:25:18                 
+AlertKeyboardOptions        interface  src/bot/keyboards/alert.keyboard.ts:37:18                 
+LowRatingAlertKeyboardData  interface  src/bot/keyboards/alert.keyboard.ts:201:18                
+SurveyCallbackData          interface  src/bot/keyboards/survey.keyboard.ts:105:18               
+TemplateCallbackData        interface  src/bot/keyboards/template.keyboard.ts:191:18             
+WebhookInfoResult           interface  src/bot/webhook.ts:127:18                                 
+Env                         type       src/config/env.ts:127:13                                  
+SlaTimerJobData             interface  src/queues/setup.ts:28:18                                 
+AlertJobData                interface  src/queues/setup.ts:41:18                                 
+LowRatingAlertJobData       interface  src/queues/setup.ts:56:18                                 
+DataRetentionJobData        interface  src/queues/setup.ts:73:18                                 
+QueueName                   type       src/queues/setup.ts:108:13                                
+SurveyDeliveryJobData       interface  src/queues/survey.queue.ts:26:18                          
+SurveyReminderJobData       interface  src/queues/survey.queue.ts:40:18                          
+ManagerNotificationJobData  interface  src/queues/survey.queue.ts:52:18                          
+SurveyJobData               type       src/queues/survey.queue.ts:64:13                          
+SlaAlert                    type       src/services/alerts/alert.service.ts:20:15                
+AlertType                   type       src/services/alerts/alert.service.ts:20:25                
+AlertAction                 type       src/services/alerts/alert.service.ts:20:36                
+AlertDeliveryStatus         type       src/services/alerts/alert.service.ts:20:49                
+CreateAlertParams           interface  src/services/alerts/alert.service.ts:25:18                
+ResolveAlertParams          interface  src/services/alerts/alert.service.ts:39:18                
+EscalationConfig            interface  src/services/alerts/escalation.service.ts:26:18           
+AlertMessageData            interface  src/services/alerts/format.service.ts:22:18               
+CreateAlertParams           type       src/services/alerts/index.ts:15:8                         
+ResolveAlertParams          type       src/services/alerts/index.ts:16:8                         
+SlaAlert                    type       src/services/alerts/index.ts:17:8                         
+AlertType                   type       src/services/alerts/index.ts:18:8                         
+AlertAction                 type       src/services/alerts/index.ts:19:8                         
+AlertDeliveryStatus         type       src/services/alerts/index.ts:20:8                         
+AlertMessageData            type       src/services/alerts/index.ts:25:8                         
+EscalationConfig            type       src/services/alerts/index.ts:30:8                         
+ClassificationResult        type       src/services/classifier/index.ts:30:3                     
+MessageCategory             type       src/services/classifier/index.ts:31:3                     
+ClassificationSource        type       src/services/classifier/index.ts:32:3                     
+ClassifierConfig            type       src/services/classifier/index.ts:33:3                     
+AIClassificationResponse    type       src/services/classifier/index.ts:34:3                     
+FAQMatch                    interface  src/services/faq/matcher.service.ts:28:18                 
+RatingDistribution          interface  src/services/feedback/analytics.service.ts:21:18          
+NPSResult                   interface  src/services/feedback/analytics.service.ts:27:18          
+FeedbackAggregates          interface  src/services/feedback/analytics.service.ts:36:18          
+TrendDataPoint              interface  src/services/feedback/analytics.service.ts:43:18          
+DateRange                   interface  src/services/feedback/analytics.service.ts:50:18          
+CreateSurveyInput           interface  src/services/feedback/survey.service.ts:28:18             
+SurveyWithStats             interface  src/services/feedback/survey.service.ts:40:18             
+ActiveClient                interface  src/services/feedback/survey.service.ts:58:18             
+CreateNotificationInput     type       src/services/notification/app-notification.service.ts:4:13
+ResponseData                interface  src/services/sla/request.service.ts:26:18                 
+SlaStatus                   interface  src/services/sla/timer.service.ts:31:18                   
+StopTimerOptions            interface  src/services/sla/timer.service.ts:221:18                  
+StopTimerResult             interface  src/services/sla/timer.service.ts:233:18                  
+TelegramAuthData            interface  src/services/telegram/auth.service.ts:4:18                
+SupportedVariable           type       src/services/templates/index.ts:15:8                      
+SupportedVariable           type       src/services/templates/variable.service.ts:159:13         
+Duplicate exports (16)
+healthHandler|default                 src/api/health.ts                            
+metricsHandler|default                src/api/metrics.ts                           
+bot|default                           src/bot/bot.ts                               
+registerAlertCallbackHandler|default  src/bot/handlers/alert-callback.handler.ts   
+registerFaqHandler|default            src/bot/handlers/faq.handler.ts              
+registerFileHandler|default           src/bot/handlers/file.handler.ts             
+registerMenuHandler|default           src/bot/handlers/menu.handler.ts             
+registerMessageHandler|default        src/bot/handlers/message.handler.ts          
+registerResponseHandler|default       src/bot/handlers/response.handler.ts         
+registerSurveyHandler|default         src/bot/handlers/survey.handler.ts           
+registerTemplateHandler|default       src/bot/handlers/template.handler.ts         
+prisma|default                        src/lib/prisma.ts                            
+redis|default                         src/lib/redis.ts                             
+ClassifierService|default             src/services/classifier/classifier.service.ts
+classifyByKeywords|default            src/services/classifier/keyword-classifier.ts
+classifyWithAI|default                src/services/classifier/openrouter-client.ts 
+Configuration hints (12)

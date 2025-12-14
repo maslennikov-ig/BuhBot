@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2025-12-14
+
+### Security
+- harden frontend container limits and fs permissions (1d8dad9)
+
+### Fixed
+- change User.role from enum to String for DB compatibility (5ce7ff0)
+- add IPv4-first DNS resolution and diagnostic logging (342e1c3)
+- **users**: allow selecting admins as accountants (3c0e188)
+- **chats**: enforce strict BOT_USERNAME check for invitations (d60cb8f)
+
 ## [0.9.1] - 2025-12-14
 
 ### Fixed

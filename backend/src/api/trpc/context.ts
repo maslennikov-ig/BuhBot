@@ -94,11 +94,15 @@ function extractToken(authHeader: string | undefined): string | null {
 export async function createContext({
   req,
 }: CreateExpressContextOptions): Promise<Context> {
+  const reqId = Math.random().toString(36).substring(7);
+  const startTime = Date.now();
+
   // Extract JWT from Authorization header
   const token = extractToken(req.headers.authorization);
 
   // If no token, return unauthenticated context
   if (!token) {
+    console.log(`[CTX:${reqId}] No token, returning unauthenticated context (${Date.now() - startTime}ms)`);
     return {
       prisma,
       user: null,
@@ -108,10 +112,14 @@ export async function createContext({
 
   try {
     // Validate JWT with Supabase Auth
+    console.log(`[CTX:${reqId}] Starting supabase.auth.getUser()...`);
+    const authStart = Date.now();
     const { data, error } = await supabase.auth.getUser(token);
+    console.log(`[CTX:${reqId}] supabase.auth.getUser() completed in ${Date.now() - authStart}ms`);
 
     // If JWT validation fails, return unauthenticated context
     if (error || !data.user) {
+      console.log(`[CTX:${reqId}] Auth failed: ${error?.message || 'no user'} (${Date.now() - startTime}ms)`);
       return {
         prisma,
         user: null,
@@ -122,6 +130,8 @@ export async function createContext({
     const supabaseUser = data.user;
 
     // Fetch user profile from database (includes role for RBAC)
+    console.log(`[CTX:${reqId}] Starting prisma.user.findUnique()...`);
+    const dbStart = Date.now();
     const dbUser = await prisma.user.findUnique({
       where: { id: supabaseUser.id },
       select: {
@@ -131,9 +141,11 @@ export async function createContext({
         role: true,
       },
     });
+    console.log(`[CTX:${reqId}] prisma.user.findUnique() completed in ${Date.now() - dbStart}ms`);
 
     // If user not found in database, return unauthenticated context
     if (!dbUser) {
+      console.log(`[CTX:${reqId}] User not in DB (${Date.now() - startTime}ms)`);
       return {
         prisma,
         user: null,
@@ -141,6 +153,7 @@ export async function createContext({
       };
     }
 
+    console.log(`[CTX:${reqId}] Context created successfully (${Date.now() - startTime}ms)`);
     // Build authenticated context
     return {
       prisma,
@@ -159,7 +172,7 @@ export async function createContext({
     };
   } catch (error) {
     // Log error for debugging (production: use structured logging)
-    console.error('Error creating tRPC context:', error);
+    console.error(`[CTX:${reqId}] Error creating tRPC context (${Date.now() - startTime}ms):`, error);
 
     // Return unauthenticated context on any error
     return {

@@ -26,7 +26,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - LOGGING_LEVEL=warn
-      - NODE_OPTIONS=--max-old-space-size=1536
+      # IPv4 first: fixes Node 20 "Happy Eyeballs" hanging on broken VDS IPv6
+      - NODE_OPTIONS=--max-old-space-size=1536 --dns-result-order=ipv4first
     deploy:
       resources:
         limits:
@@ -60,6 +61,8 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       - NEXT_TELEMETRY_DISABLED=1
+      # IPv4 first: fixes Node 20 "Happy Eyeballs" hanging on broken VDS IPv6
+      - NODE_OPTIONS=--dns-result-order=ipv4first
     read_only: true
     tmpfs:
       - /tmp

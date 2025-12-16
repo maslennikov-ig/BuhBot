@@ -58,9 +58,8 @@ export async function isAccountantForChat(
       return { isAccountant: false, accountantId: null };
     }
 
-    // Check 1: Username matches accountantUsername field
+    // Check 1: Username matches accountantUsername field (legacy)
     if (username && chat.accountantUsername) {
-      // Normalize usernames (remove @ if present)
       const normalizedChatUsername = chat.accountantUsername.replace(/^@/, '').toLowerCase();
       const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
 
@@ -72,10 +71,38 @@ export async function isAccountantForChat(
       }
     }
 
-    // Check 2: User has assignedAccountant relationship
-    // This requires a mapping between Telegram ID and User table
-    // For now, we only support username-based matching
-    // TODO: Implement Telegram ID to User mapping when user registration is added
+    // Check 2: Username matches assignedAccountant.telegramUsername from User table
+    if (username && chat.assignedAccountant?.telegramUsername) {
+      const normalizedAccountantUsername = chat.assignedAccountant.telegramUsername.replace(/^@/, '').toLowerCase();
+      const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
+
+      if (normalizedAccountantUsername === normalizedSenderUsername) {
+        logger.debug('Accountant matched by assignedAccountant.telegramUsername', {
+          chatId: chatId.toString(),
+          username,
+          service: 'response-handler',
+        });
+        return {
+          isAccountant: true,
+          accountantId: chat.assignedAccountantId,
+        };
+      }
+    }
+
+    // Check 3: Telegram ID matches assignedAccountant.telegramId from User table
+    if (telegramUserId && chat.assignedAccountant?.telegramId) {
+      if (BigInt(telegramUserId) === chat.assignedAccountant.telegramId) {
+        logger.debug('Accountant matched by assignedAccountant.telegramId', {
+          chatId: chatId.toString(),
+          telegramUserId,
+          service: 'response-handler',
+        });
+        return {
+          isAccountant: true,
+          accountantId: chat.assignedAccountantId,
+        };
+      }
+    }
 
     return { isAccountant: false, accountantId: null };
   } catch (error) {

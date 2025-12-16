@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2025-12-16
+
+### Added
+- add chat delete functionality (aa16d15)
+- **frontend**: add action buttons for requests management (8fcb1c2)
+- **frontend**: add request details page /requests/[id] (6f18dff)
+
+### Fixed
+- SLA timer now stops on accountant response + dropdown menu visibility (657da82)
+- **bot**: improve accountant detection using User table (7ef66e1)
+- **ci**: exclude Docker-created dirs from rsync sync (f130a3d)
+- **docker**: switch frontend from Alpine to Debian slim for SWC compatibility (07a9f60)
+- **ci**: remove frontend pnpm-lock.yaml for npm-based Docker build (81dc4ec)
+- **ci**: sync backend package-lock.json for Docker build (0230312)
+- **ci**: resolve ESLint error and sync frontend lock file (7f46e78)
+
 ## [0.9.3] - 2025-12-16
 
 ### Added

@@ -1,10 +1,10 @@
 # ================================
 # Backend Types Stage - Build backend to generate Prisma client types
 # ================================
-FROM node:20-alpine AS backend-types
+FROM node:20-slim AS backend-types
 
-# Install build dependencies
-RUN apk add --no-cache libc6-compat openssl
+# Install build dependencies (openssl for Prisma)
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /backend
@@ -27,10 +27,7 @@ COPY backend/src ./src
 # ================================
 # Build Stage - Build Next.js application
 # ================================
-FROM node:20-alpine AS build
-
-# Install build dependencies
-RUN apk add --no-cache libc6-compat
+FROM node:20-slim AS build
 
 # Set working directory
 WORKDIR /app
@@ -68,10 +65,10 @@ RUN npm run build
 # ================================
 # Runtime Stage
 # ================================
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
 
 # Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+RUN apt-get update && apt-get install -y dumb-init && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -83,8 +80,8 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Create non-root user and group
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -m -u 1001 -g nodejs nextjs
 
 # Copy standalone output from build stage
 # The standalone output includes all necessary dependencies

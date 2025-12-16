@@ -9,6 +9,13 @@ import { disconnectRedis } from './lib/redis.js';
 import { appRouter, createContext } from './api/trpc/index.js';
 import { registerHandlers, setupWebhook, launchPolling, stopBot } from './bot/index.js';
 
+// Initialize BullMQ workers for background job processing
+// Workers self-register when imported, enabling SLA monitoring, alert delivery, and surveys
+import './queues/sla-timer.worker.js';
+import './queues/alert.worker.js';
+import './queues/survey.worker.js';
+import { closeQueues } from './queues/setup.js';
+
 /**
  * BuhBot Backend Server
  *
@@ -216,6 +223,11 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
     logger.info('Stopping Telegram bot...');
     stopBot(signal);
     logger.info('Telegram bot stopped');
+
+    // Close BullMQ workers and queues (must be before Redis disconnect)
+    logger.info('Closing BullMQ workers and queues...');
+    await closeQueues();
+    logger.info('BullMQ workers and queues closed');
 
     // Close Redis connections
     logger.info('Closing Redis connections...');

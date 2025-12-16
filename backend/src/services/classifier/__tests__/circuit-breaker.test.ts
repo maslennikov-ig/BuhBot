@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CircuitBreaker, type CircuitState } from '../circuit-breaker.js';
+import { CircuitBreaker } from '../circuit-breaker.js';
 
 // Mock logger
 vi.mock('../../../utils/logger.js', () => ({

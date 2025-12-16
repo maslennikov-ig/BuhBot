@@ -17,6 +17,14 @@ import { cn } from '@/lib/utils';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { trpc } from '@/lib/trpc';
 
 // ============================================
@@ -102,39 +110,23 @@ type ActionMenuProps = {
 };
 
 function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
-  const [showMenu, setShowMenu] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const menuRef = React.useRef<HTMLDivElement>(null);
 
   // Map UI status to API status
   const apiStatus = currentStatus === 'resolved' ? 'answered' : currentStatus === 'violated' ? 'escalated' : currentStatus;
 
   const updateMutation = trpc.requests.update.useMutation({
     onSuccess: () => {
-      setShowMenu(false);
       onRefresh?.();
     },
   });
 
   const deleteMutation = trpc.requests.delete.useMutation({
     onSuccess: () => {
-      setShowMenu(false);
       setShowDeleteConfirm(false);
       onRefresh?.();
     },
   });
-
-  // Close menu on outside click
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-        setShowDeleteConfirm(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleStatusChange = (newStatus: 'pending' | 'in_progress' | 'answered' | 'escalated') => {
     updateMutation.mutate({ id: requestId, status: newStatus });
@@ -147,7 +139,7 @@ function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
   const isLoading = updateMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div className="relative flex items-center gap-1" ref={menuRef}>
+    <div className="flex items-center gap-1">
       {/* View button */}
       <Link
         href={`/requests/${requestId}`}
@@ -169,93 +161,93 @@ function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
         </button>
       )}
 
-      {/* More actions menu */}
-      <button
-        onClick={() => setShowMenu(!showMenu)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--buh-foreground-muted)] transition-colors duration-200 hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]"
-        title="Ещё действия"
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </button>
+      {/* More actions dropdown - uses Portal so renders above all content */}
+      <DropdownMenu onOpenChange={(open) => !open && setShowDeleteConfirm(false)}>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--buh-foreground-muted)] transition-colors duration-200 hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]"
+            title="Ещё действия"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel className="text-xs text-[var(--buh-foreground-muted)]">
+            Статус
+          </DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => handleStatusChange('pending')}
+            disabled={isLoading || apiStatus === 'pending'}
+            className="cursor-pointer"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Ожидает
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => handleStatusChange('in_progress')}
+            disabled={isLoading || apiStatus === 'in_progress'}
+            className="cursor-pointer"
+          >
+            <AlertCircle className="h-3.5 w-3.5" />
+            В работе
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => handleStatusChange('answered')}
+            disabled={isLoading || apiStatus === 'answered'}
+            className="cursor-pointer text-[var(--buh-success)]"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Выполнено
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => handleStatusChange('escalated')}
+            disabled={isLoading || apiStatus === 'escalated'}
+            className="cursor-pointer text-[var(--buh-warning)]"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            Эскалация
+          </DropdownMenuItem>
 
-      {/* Dropdown menu */}
-      {showMenu && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg">
-          <div className="p-1">
-            <div className="px-2 py-1.5 text-xs font-semibold text-[var(--buh-foreground-muted)]">
-              Статус
-            </div>
-            <button
-              onClick={() => handleStatusChange('pending')}
-              disabled={isLoading || apiStatus === 'pending'}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--buh-foreground)] hover:bg-[var(--buh-surface-elevated)] disabled:opacity-50"
-            >
-              <Clock className="h-3.5 w-3.5" />
-              Ожидает
-            </button>
-            <button
-              onClick={() => handleStatusChange('in_progress')}
-              disabled={isLoading || apiStatus === 'in_progress'}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--buh-foreground)] hover:bg-[var(--buh-surface-elevated)] disabled:opacity-50"
-            >
-              <AlertCircle className="h-3.5 w-3.5" />
-              В работе
-            </button>
-            <button
-              onClick={() => handleStatusChange('answered')}
-              disabled={isLoading || apiStatus === 'answered'}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--buh-success)] hover:bg-[var(--buh-surface-elevated)] disabled:opacity-50"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Выполнено
-            </button>
-            <button
-              onClick={() => handleStatusChange('escalated')}
-              disabled={isLoading || apiStatus === 'escalated'}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--buh-warning)] hover:bg-[var(--buh-surface-elevated)] disabled:opacity-50"
-            >
-              <XCircle className="h-3.5 w-3.5" />
-              Эскалация
-            </button>
+          <DropdownMenuSeparator />
 
-            <div className="my-1 border-t border-[var(--buh-border)]" />
-
-            {!showDeleteConfirm ? (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/10"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Удалить
-              </button>
-            ) : (
-              <div className="p-2">
-                <p className="text-xs text-[var(--buh-foreground-muted)] mb-2">Удалить запрос?</p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={isLoading}
-                    className="flex-1 h-7 text-xs"
-                  >
-                    Да
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={isLoading}
-                    className="flex-1 h-7 text-xs"
-                  >
-                    Нет
-                  </Button>
-                </div>
+          {!showDeleteConfirm ? (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.preventDefault();
+                setShowDeleteConfirm(true);
+              }}
+              className="cursor-pointer text-[var(--buh-danger)] focus:text-[var(--buh-danger)]"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Удалить
+            </DropdownMenuItem>
+          ) : (
+            <div className="p-2">
+              <p className="text-xs text-[var(--buh-foreground-muted)] mb-2">Удалить запрос?</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                  className="flex-1 h-7 text-xs"
+                >
+                  Да
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isLoading}
+                  className="flex-1 h-7 text-xs"
+                >
+                  Нет
+                </Button>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

@@ -30,38 +30,48 @@ import {
  * System prompt for message classification
  * Designed for Russian accounting firm communication context
  */
-const CLASSIFICATION_PROMPT = `You are a message classifier for a Russian accounting firm's client communication system.
+const CLASSIFICATION_PROMPT = `Ты классификатор сообщений для бухгалтерской фирмы. Сообщения приходят от клиентов в Telegram-чатах на русском языке.
 
-Classify each message into exactly ONE of these categories:
+Классифицируй сообщение в ОДНУ из 4 категорий:
 
-1. REQUEST - Client requests requiring a response:
-   - Questions about documents, payments, status
-   - Document requests (справка, счёт, акт, выписка)
-   - Problems or issues needing resolution
-   - Any message requiring action from the accountant
+## REQUEST — запрос, требующий ответа бухгалтера
+Примеры:
+- "Когда будут готовы документы?"
+- "Нужна справка 2-НДФЛ"
+- "Где мой счёт?"
+- "Не могу найти акт сверки"
+- "Подскажите по налогам"
+- Любой вопрос (заканчивается на ?)
+- Просьба о документе/действии
 
-2. SPAM - Messages not requiring response:
-   - Simple acknowledgments (ок, да, понятно)
-   - Single emoji responses
-   - Automated messages or advertisements
+## SPAM — не требует ответа, игнорируется
+Примеры:
+- "Ок", "Да", "Нет", "Понятно", "Хорошо"
+- Одиночные эмодзи: 👍 ✅ 👌
+- "Ага", "Угу", "Ясно"
+- Односложные подтверждения
 
-3. GRATITUDE - Thank you messages:
-   - Expressions of thanks or appreciation
-   - Positive feedback about service
-   - Messages showing client satisfaction
+## GRATITUDE — благодарность (для аналитики)
+Примеры:
+- "Спасибо большое!"
+- "Благодарю за помощь"
+- "Отлично, выручили!"
+- "Супер, молодцы!"
 
-4. CLARIFICATION - Follow-up messages:
-   - Additional context to previous request
-   - Corrections or clarifications
-   - "I forgot to mention..." type messages
+## CLARIFICATION — уточнение к предыдущему запросу
+Примеры:
+- "Забыл сказать, ИНН: 123456"
+- "Ещё один вопрос..."
+- "Дополнительно нужно..."
+- "Имел в виду за прошлый месяц"
 
-Respond in JSON format only:
-{"classification": "REQUEST|SPAM|GRATITUDE|CLARIFICATION", "confidence": 0.0-1.0, "reasoning": "brief explanation"}
+ВАЖНО:
+- При сомнениях выбирай REQUEST (лучше отследить лишнее, чем пропустить)
+- Короткие сообщения без вопроса — обычно SPAM
+- Вопросы с "?" почти всегда REQUEST
 
-Important:
-- Always respond with valid JSON only
-- Confidence should reflect how certain you are
-- REQUEST is the default if uncertain (it's safer to track than ignore)`;
+Ответ ТОЛЬКО в JSON:
+{"classification": "REQUEST", "confidence": 0.95, "reasoning": "вопрос о документах"}`;
 
 /**
  * Validates that a string is a valid MessageCategory

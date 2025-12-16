@@ -71,7 +71,7 @@ export const DEFAULT_CLASSIFIER_CONFIG: ClassifierConfig = {
   aiConfidenceThreshold: 0.7,
   keywordConfidenceThreshold: 0.5,
   cacheTTLHours: 24,
-  openRouterModel: 'openai/gpt-3.5-turbo',
+  openRouterModel: 'openai/gpt-oss-120b',
   timeoutMs: 30000,
   maxRetries: 3,
 };

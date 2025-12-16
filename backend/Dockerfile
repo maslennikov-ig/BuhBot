@@ -16,7 +16,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install ALL dependencies (including devDependencies for build)
-RUN npm ci
+# Using --legacy-peer-deps to handle peer dependency conflicts from @prisma/client
+RUN npm install --legacy-peer-deps
 
 # Copy Prisma schema for code generation
 COPY prisma ./prisma
@@ -55,7 +56,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install ONLY production dependencies (no devDependencies)
-RUN npm ci --omit=dev
+# Using --legacy-peer-deps to handle peer dependency conflicts from @prisma/client
+RUN npm install --omit=dev --legacy-peer-deps
 
 # Copy Prisma schema from builder stage
 COPY --from=builder /app/prisma ./prisma

@@ -8,7 +8,7 @@ import { RequestsTable } from '@/components/requests/RequestsTable';
 import { HelpButton } from '@/components/ui/HelpButton';
 
 export default function RequestsPage() {
-  const { data, isLoading } = trpc.requests.list.useQuery({
+  const { data, isLoading, refetch } = trpc.requests.list.useQuery({
     limit: 50,
     offset: 0,
   });
@@ -60,7 +60,7 @@ export default function RequestsPage() {
           <HelpButton section="requests" />
         </div>
 
-        <RequestsTable requests={requests} />
+        <RequestsTable requests={requests} onRefresh={refetch} />
       </div>
     </AdminLayout>
   );

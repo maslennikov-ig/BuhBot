@@ -370,4 +370,54 @@ export const requestsRouter = router({
         success: true,
       };
     }),
+
+  /**
+   * Delete a client request
+   *
+   * @param id - Request UUID
+   * @returns Success indicator
+   * @throws NOT_FOUND if request doesn't exist
+   * @authorization Admins only
+   */
+  delete: managerProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify request exists before deleting
+      const existingRequest = await ctx.prisma.clientRequest.findUnique({
+        where: { id: input.id },
+        include: { slaAlerts: true },
+      });
+
+      if (!existingRequest) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Request with ID ${input.id} not found`,
+        });
+      }
+
+      // Delete related SLA alerts first (cascade)
+      if (existingRequest.slaAlerts.length > 0) {
+        await ctx.prisma.slaAlert.deleteMany({
+          where: { requestId: input.id },
+        });
+      }
+
+      // Delete the request
+      await ctx.prisma.clientRequest.delete({
+        where: { id: input.id },
+      });
+
+      return {
+        success: true,
+      };
+    }),
 });

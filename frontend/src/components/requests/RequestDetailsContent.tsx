@@ -11,6 +11,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   MessageSquare,
   User,
@@ -23,6 +24,9 @@ import {
   XCircle,
   AlertCircle,
   Tag,
+  Trash2,
+  Settings,
+  RotateCcw,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -217,6 +221,209 @@ type AlertsListProps = {
   }>;
 };
 
+// ============================================
+// ACTIONS CARD
+// ============================================
+
+type ActionsCardProps = {
+  requestId: string;
+  currentStatus: RequestStatus;
+  currentClassification: Classification;
+  onUpdate: () => void;
+};
+
+function ActionsCard({ requestId, currentStatus, currentClassification, onUpdate }: ActionsCardProps) {
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
+  const utils = trpc.useUtils();
+
+  const updateMutation = trpc.requests.update.useMutation({
+    onSuccess: () => {
+      utils.requests.getById.invalidate({ id: requestId });
+      onUpdate();
+    },
+  });
+
+  const updateClassificationMutation = trpc.requests.updateClassification.useMutation({
+    onSuccess: () => {
+      utils.requests.getById.invalidate({ id: requestId });
+      onUpdate();
+    },
+  });
+
+  const deleteMutation = trpc.requests.delete.useMutation({
+    onSuccess: () => {
+      router.push('/requests');
+    },
+  });
+
+  const handleStatusChange = (newStatus: RequestStatus) => {
+    updateMutation.mutate({ id: requestId, status: newStatus });
+  };
+
+  const handleClassificationChange = (newClassification: Classification) => {
+    updateClassificationMutation.mutate({ id: requestId, classification: newClassification });
+  };
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    deleteMutation.mutate({ id: requestId });
+  };
+
+  const isLoading = updateMutation.isPending || updateClassificationMutation.isPending || deleteMutation.isPending;
+
+  return (
+    <GlassCard variant="default" padding="lg">
+      <div className="flex items-center gap-3 mb-4">
+        <Settings className="h-5 w-5 text-[var(--buh-accent)]" />
+        <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
+          Действия
+        </h3>
+      </div>
+
+      <div className="space-y-4">
+        {/* Status Actions */}
+        <div>
+          <label className="block text-sm font-medium text-[var(--buh-foreground-muted)] mb-2">
+            Изменить статус
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={currentStatus === 'pending' ? 'default' : 'outline'}
+              onClick={() => handleStatusChange('pending')}
+              disabled={isLoading || currentStatus === 'pending'}
+            >
+              <Clock className="mr-1.5 h-3.5 w-3.5" />
+              Ожидает
+            </Button>
+            <Button
+              size="sm"
+              variant={currentStatus === 'in_progress' ? 'default' : 'outline'}
+              onClick={() => handleStatusChange('in_progress')}
+              disabled={isLoading || currentStatus === 'in_progress'}
+            >
+              <AlertCircle className="mr-1.5 h-3.5 w-3.5" />
+              В работе
+            </Button>
+            <Button
+              size="sm"
+              variant={currentStatus === 'answered' ? 'default' : 'outline'}
+              onClick={() => handleStatusChange('answered')}
+              disabled={isLoading || currentStatus === 'answered'}
+              className={currentStatus === 'answered' ? 'bg-[var(--buh-success)] hover:bg-[var(--buh-success)]/90' : ''}
+            >
+              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+              Выполнено
+            </Button>
+            <Button
+              size="sm"
+              variant={currentStatus === 'escalated' ? 'default' : 'outline'}
+              onClick={() => handleStatusChange('escalated')}
+              disabled={isLoading || currentStatus === 'escalated'}
+              className={currentStatus === 'escalated' ? 'bg-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/90' : ''}
+            >
+              <XCircle className="mr-1.5 h-3.5 w-3.5" />
+              Эскалация
+            </Button>
+          </div>
+        </div>
+
+        {/* Classification Actions */}
+        <div>
+          <label className="block text-sm font-medium text-[var(--buh-foreground-muted)] mb-2">
+            Изменить классификацию
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={currentClassification === 'REQUEST' ? 'default' : 'outline'}
+              onClick={() => handleClassificationChange('REQUEST')}
+              disabled={isLoading || currentClassification === 'REQUEST'}
+            >
+              Запрос
+            </Button>
+            <Button
+              size="sm"
+              variant={currentClassification === 'CLARIFICATION' ? 'default' : 'outline'}
+              onClick={() => handleClassificationChange('CLARIFICATION')}
+              disabled={isLoading || currentClassification === 'CLARIFICATION'}
+            >
+              Уточнение
+            </Button>
+            <Button
+              size="sm"
+              variant={currentClassification === 'GRATITUDE' ? 'default' : 'outline'}
+              onClick={() => handleClassificationChange('GRATITUDE')}
+              disabled={isLoading || currentClassification === 'GRATITUDE'}
+            >
+              Благодарность
+            </Button>
+            <Button
+              size="sm"
+              variant={currentClassification === 'SPAM' ? 'default' : 'outline'}
+              onClick={() => handleClassificationChange('SPAM')}
+              disabled={isLoading || currentClassification === 'SPAM'}
+            >
+              Спам
+            </Button>
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="pt-4 border-t border-[var(--buh-border)]">
+          <label className="block text-sm font-medium text-[var(--buh-danger)] mb-2">
+            Опасная зона
+          </label>
+          {!showDeleteConfirm ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-[var(--buh-danger)] border-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/10"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Удалить запрос
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[var(--buh-foreground-muted)]">Удалить?</span>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Да, удалить
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                Отмена
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================
+// ALERTS SECTION
+// ============================================
+
 function AlertsList({ alerts }: AlertsListProps) {
   if (alerts.length === 0) {
     return (
@@ -293,7 +500,7 @@ function AlertsList({ alerts }: AlertsListProps) {
 // ============================================
 
 export function RequestDetailsContent({ requestId }: RequestDetailsContentProps) {
-  const { data, isLoading, error } = trpc.requests.getById.useQuery({ id: requestId });
+  const { data, isLoading, error, refetch } = trpc.requests.getById.useQuery({ id: requestId });
 
   // Loading state
   if (isLoading) {
@@ -378,8 +585,18 @@ export function RequestDetailsContent({ requestId }: RequestDetailsContentProps)
           <RequestInfoCard request={request} />
         </section>
 
+        {/* Actions Section */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <ActionsCard
+            requestId={requestId}
+            currentStatus={request.status}
+            currentClassification={request.classification}
+            onUpdate={refetch}
+          />
+        </section>
+
         {/* Alerts Section */}
-        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <AlertsList alerts={alerts} />
         </section>
       </div>

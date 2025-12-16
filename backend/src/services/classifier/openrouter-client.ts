@@ -194,9 +194,10 @@ class OpenRouterClient {
     this.config = { ...DEFAULT_CLASSIFIER_CONFIG, ...config };
     this.circuitBreaker = circuitBreaker ?? createCircuitBreaker(this.config.circuitBreaker);
 
-    const apiKey = process.env['OPENROUTER_API_KEY'];
+    // Use API key from config (DB) or fall back to env
+    const apiKey = this.config.openRouterApiKey ?? process.env['OPENROUTER_API_KEY'];
     if (!apiKey) {
-      logger.warn('OPENROUTER_API_KEY not set, AI classification will fail', {
+      logger.warn('OPENROUTER_API_KEY not set (neither in DB nor env), AI classification will fail', {
         service: 'classifier',
       });
     }

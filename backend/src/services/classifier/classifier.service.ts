@@ -39,6 +39,8 @@ import {
 export class ClassifierService {
   private prisma: PrismaClient;
   private config: ClassifierConfig;
+  private settingsCache: { apiKey?: string; model?: string; timestamp: number } | null = null;
+  private readonly SETTINGS_CACHE_TTL_MS = 60000; // 1 minute cache for DB settings
 
   /**
    * Create a new classifier service instance
@@ -57,6 +59,61 @@ export class ClassifierService {
       model: this.config.openRouterModel,
       service: 'classifier',
     });
+  }
+
+  /**
+   * Fetch OpenRouter settings from database with caching
+   *
+   * @returns Settings from DB or empty object if not configured
+   */
+  private async getDbSettings(): Promise<{ apiKey?: string; model?: string }> {
+    // Check cache
+    if (
+      this.settingsCache &&
+      Date.now() - this.settingsCache.timestamp < this.SETTINGS_CACHE_TTL_MS
+    ) {
+      const result: { apiKey?: string; model?: string } = {};
+      if (this.settingsCache.apiKey) result.apiKey = this.settingsCache.apiKey;
+      if (this.settingsCache.model) result.model = this.settingsCache.model;
+      return result;
+    }
+
+    try {
+      const settings = await this.prisma.globalSettings.findUnique({
+        where: { id: 'default' },
+        select: { openrouterApiKey: true, openrouterModel: true },
+      });
+
+      // Update cache
+      this.settingsCache = {
+        timestamp: Date.now(),
+      } as { apiKey?: string; model?: string; timestamp: number };
+
+      if (settings?.openrouterApiKey) {
+        this.settingsCache.apiKey = settings.openrouterApiKey;
+      }
+      if (settings?.openrouterModel) {
+        this.settingsCache.model = settings.openrouterModel;
+      }
+
+      const result: { apiKey?: string; model?: string } = {};
+      if (this.settingsCache.apiKey) result.apiKey = this.settingsCache.apiKey;
+      if (this.settingsCache.model) result.model = this.settingsCache.model;
+      return result;
+    } catch (error) {
+      logger.warn('Failed to fetch OpenRouter settings from DB, using defaults', {
+        error: error instanceof Error ? error.message : String(error),
+        service: 'classifier',
+      });
+      return {};
+    }
+  }
+
+  /**
+   * Clear settings cache (call when settings are updated)
+   */
+  clearSettingsCache(): void {
+    this.settingsCache = null;
   }
 
   /**
@@ -103,10 +160,19 @@ export class ClassifierService {
     // Record cache miss
     classifierCacheMissesTotal.inc();
 
-    // 2. Try AI classification
+    // 2. Fetch DB settings for OpenRouter (with caching)
+    const dbSettings = await this.getDbSettings();
+    const classifierConfig: Partial<ClassifierConfig> = {
+      ...this.config,
+      // Override with DB settings if available
+      ...(dbSettings.apiKey && { openRouterApiKey: dbSettings.apiKey }),
+      ...(dbSettings.model && { openRouterModel: dbSettings.model }),
+    };
+
+    // 3. Try AI classification
     let aiResult: ClassificationResult | null = null;
     try {
-      aiResult = await classifyWithAI(text, this.config);
+      aiResult = await classifyWithAI(text, classifierConfig);
 
       // If AI confidence is above threshold, use it
       if (aiResult.confidence >= this.config.aiConfidenceThreshold) {

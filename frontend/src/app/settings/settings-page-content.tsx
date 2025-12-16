@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { HolidayCalendar } from '@/components/settings/HolidayCalendar';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
+import { OpenRouterSettingsForm } from '@/components/settings/OpenRouterSettingsForm';
 import { HelpButton } from '@/components/ui/HelpButton';
 
 /**
@@ -43,6 +44,23 @@ export function SettingsPageContent() {
         {/* Notifications Section */}
         <section className="buh-animate-fade-in-up">
           <NotificationSettingsForm />
+        </section>
+
+        {/* Divider - AI Settings */}
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[var(--buh-border)]" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-[var(--buh-background)] px-4 text-xs font-medium uppercase tracking-wider text-[var(--buh-foreground-subtle)]">
+              Классификация сообщений
+            </span>
+          </div>
+        </div>
+
+        {/* OpenRouter Settings Section */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
+          <OpenRouterSettingsForm />
         </section>
 
         {/* Divider */}

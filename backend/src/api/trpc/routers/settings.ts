@@ -59,6 +59,8 @@ const UpdateGlobalSettingsInput = z.object({
   // AI Classification
   aiConfidenceThreshold: z.number().min(0).max(1).optional(),
   messagePreviewLength: z.number().min(100).max(1000).optional(),
+  openrouterApiKey: z.string().optional(),
+  openrouterModel: z.string().optional(),
 
   // Data Retention
   dataRetentionYears: z.number().min(1).max(10).optional(),
@@ -137,6 +139,8 @@ const GlobalSettingsOutput = z.object({
   // AI Classification
   aiConfidenceThreshold: z.number(),
   messagePreviewLength: z.number(),
+  openrouterApiKey: z.string().nullable(), // Masked for security
+  openrouterModel: z.string(),
 
   // Data Retention
   dataRetentionYears: z.number(),
@@ -273,6 +277,11 @@ export const settingsRouter = router({
         leadNotificationIds: settings.leadNotificationIds,
         aiConfidenceThreshold: settings.aiConfidenceThreshold,
         messagePreviewLength: settings.messagePreviewLength,
+        // Mask API key for security (show only last 8 chars)
+        openrouterApiKey: settings.openrouterApiKey
+          ? `***${settings.openrouterApiKey.slice(-8)}`
+          : null,
+        openrouterModel: settings.openrouterModel,
         dataRetentionYears: settings.dataRetentionYears,
         updatedAt: settings.updatedAt,
       };
@@ -361,6 +370,11 @@ export const settingsRouter = router({
         leadNotificationIds: settings.leadNotificationIds,
         aiConfidenceThreshold: settings.aiConfidenceThreshold,
         messagePreviewLength: settings.messagePreviewLength,
+        // Mask API key for security (show only last 8 chars)
+        openrouterApiKey: settings.openrouterApiKey
+          ? `***${settings.openrouterApiKey.slice(-8)}`
+          : null,
+        openrouterModel: settings.openrouterModel,
         dataRetentionYears: settings.dataRetentionYears,
         updatedAt: settings.updatedAt,
       };

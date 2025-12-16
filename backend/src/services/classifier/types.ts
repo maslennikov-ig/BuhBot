@@ -54,8 +54,10 @@ export interface ClassifierConfig {
   keywordConfidenceThreshold: number;
   /** Cache TTL in hours (default: 24) */
   cacheTTLHours: number;
-  /** OpenRouter model to use (default: openai/gpt-3.5-turbo) */
+  /** OpenRouter model to use (default: openai/gpt-oss-120b) */
   openRouterModel: string;
+  /** OpenRouter API key (optional, falls back to env OPENROUTER_API_KEY) */
+  openRouterApiKey?: string;
   /** Request timeout in milliseconds (default: 30000) */
   timeoutMs: number;
   /** Maximum retry attempts for API calls (default: 3) */

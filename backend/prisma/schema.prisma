@@ -484,8 +484,10 @@ model GlobalSettings {
   leadNotificationIds String[] @default([]) @map("lead_notification_ids") // Telegram IDs
 
   // AI Classification
-  aiConfidenceThreshold Float @default(0.7) @map("ai_confidence_threshold") // 0.0-1.0
-  messagePreviewLength  Int   @default(500) @map("message_preview_length") // Chars in alert preview
+  aiConfidenceThreshold Float   @default(0.7) @map("ai_confidence_threshold") // 0.0-1.0
+  messagePreviewLength  Int     @default(500) @map("message_preview_length") // Chars in alert preview
+  openrouterApiKey      String? @map("openrouter_api_key") // OpenRouter API key for classification
+  openrouterModel       String  @default("openai/gpt-oss-120b") @map("openrouter_model") // Model name
 
   // Data Retention
   dataRetentionYears Int @default(3) @map("data_retention_years")

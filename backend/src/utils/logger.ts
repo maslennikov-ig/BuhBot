@@ -5,6 +5,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Import env config for validated LOG_LEVEL
+// Note: We can't import env directly here due to circular dependency
+// (env.ts may log during validation). Use process.env as fallback.
+const LOG_LEVEL = process.env['LOG_LEVEL'] || 'info';
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
+
 /**
  * Winston Logger Configuration
  *
@@ -40,7 +46,7 @@ const consoleFormat = winston.format.combine(
 );
 
 const logger = winston.createLogger({
-  level: process.env['LOG_LEVEL'] || 'info',
+  level: LOG_LEVEL,
   format: logFormat,
   defaultMeta: { service: 'buhbot-backend' },
   transports: [
@@ -61,7 +67,7 @@ const logger = winston.createLogger({
 });
 
 // If not in production, log to console with human-readable format
-if (process.env['NODE_ENV'] !== 'production') {
+if (NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
       format: consoleFormat

@@ -15,6 +15,7 @@
 import { Telegraf, Context } from 'telegraf';
 import logger from '../utils/logger.js';
 import env from '../config/env.js';
+import { errorMiddleware, rateLimitMiddleware } from './middleware/index.js';
 
 /**
  * Extended context type for BuhBot
@@ -44,6 +45,12 @@ if (!token) {
  * ```
  */
 export const bot = new Telegraf<BotContext>(token);
+
+// Apply middleware in recommended order
+// 1. Error middleware - catches all errors (wrap everything)
+// 2. Rate limit middleware - prevents abuse
+bot.use(errorMiddleware());
+bot.use(rateLimitMiddleware({ maxRequests: 30, windowMs: 60000 }));
 
 /**
  * Global error handler for unhandled bot errors

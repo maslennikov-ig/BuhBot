@@ -16,6 +16,7 @@ import { Queue, QueueEvents, Worker } from 'bullmq';
 import { redis } from '../lib/redis.js';
 import logger from '../utils/logger.js';
 import { redisQueueLength } from '../utils/metrics.js';
+import { closeSurveyQueue } from './survey.queue.js';
 
 // ============================================================================
 // JOB DATA TYPES
@@ -405,6 +406,10 @@ export async function closeQueues(timeout: number = 10000): Promise<void> {
       alertQueue.close(),
       dataRetentionQueue.close(),
     ]);
+
+    // Close survey queue (separate module)
+    await closeSurveyQueue();
+
     logger.info('All BullMQ queues closed');
   } catch (error) {
     logger.error('Error closing BullMQ queues', {

@@ -11,9 +11,25 @@
 import { bot, BotContext } from '../bot.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-// Package version will be read from process.env.npm_package_version or hardcoded
-const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
+// Read version from package.json at startup (works in production builds)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJsonPath = path.join(__dirname, '../../../package.json');
+
+let BOT_VERSION = '1.0.0';
+try {
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+  BOT_VERSION = packageJson.version || '1.0.0';
+} catch {
+  // Fallback to hardcoded version if package.json is not accessible
+  logger.warn('Could not read package.json version, using fallback', {
+    service: 'system-handler',
+  });
+}
 
 /**
  * Register system handlers

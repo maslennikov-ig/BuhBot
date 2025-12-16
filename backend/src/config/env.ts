@@ -91,15 +91,57 @@ const envSchema = z.object({
     .optional()
     .describe('Encryption key for sensitive data (min 32 chars)'),
 
-  // Yandex GPT (for LLM services)
+  // Yandex GPT (reserved for future integration)
   YANDEX_GPT_API_KEY: z
     .string()
     .optional()
-    .describe('Yandex GPT API key for AI features'),
+    .describe('Reserved: Yandex GPT API key for future AI features'),
   YANDEX_FOLDER_ID: z
     .string()
     .optional()
-    .describe('Yandex Cloud folder ID'),
+    .describe('Reserved: Yandex Cloud folder ID'),
+
+  // OpenRouter AI Classification
+  OPENROUTER_API_KEY: z
+    .string()
+    .optional()
+    .describe('OpenRouter API key for AI message classification'),
+  APP_URL: z
+    .string()
+    .url()
+    .optional()
+    .default('https://buhbot.ru')
+    .describe('Application URL for OpenRouter HTTP-Referer header'),
+
+  // Frontend & Bot
+  FRONTEND_URL: z
+    .string()
+    .url()
+    .optional()
+    .default('https://buhbot.aidevteam.ru')
+    .describe('Frontend URL for password reset redirects'),
+  BOT_USERNAME: z
+    .string()
+    .optional()
+    .describe('Telegram bot username without @ for invite links'),
+
+  // Supabase
+  SUPABASE_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe('Supabase project URL'),
+  SUPABASE_SERVICE_ROLE_KEY: z
+    .string()
+    .optional()
+    .describe('Supabase service role key for admin operations'),
+
+  // Prisma Direct Connection
+  DIRECT_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe('Direct PostgreSQL connection URL (bypasses pooler)'),
 
   // Metrics & Monitoring
   PROMETHEUS_PORT: z

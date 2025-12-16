@@ -22,6 +22,7 @@ import { classifyWithAI } from './openrouter-client.js';
 import { classifyByKeywords } from './keyword-classifier.js';
 import { getCached, setCache, cleanupExpiredCache, getCacheStats } from './cache.service.js';
 import logger from '../../utils/logger.js';
+import OpenAI from 'openai';
 import {
   classifierRequestsTotal,
   classifierLatencySeconds,
@@ -206,6 +207,15 @@ export class ClassifierService {
    * @returns Error type category
    */
   private categorizeError(error: unknown): 'api_error' | 'parse_error' | 'timeout' | 'rate_limit' {
+    // Check typed errors first (more reliable than string matching)
+    if (error instanceof OpenAI.RateLimitError) {
+      return 'rate_limit';
+    }
+    if (error instanceof OpenAI.APIConnectionTimeoutError) {
+      return 'timeout';
+    }
+
+    // Fallback to string matching for other cases
     const errorMessage = error instanceof Error ? error.message : String(error);
     const lowerMessage = errorMessage.toLowerCase();
 

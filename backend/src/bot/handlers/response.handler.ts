@@ -155,7 +155,7 @@ export function registerResponseHandler(): void {
 
       // 2. Check if this is a reply to a specific message
       const replyToMessage = ctx.message.reply_to_message;
-      let requestToResolve: ClientRequest = null;
+      let requestToResolve: ClientRequest | null = null;
 
       if (replyToMessage) {
         // Try to find the request being replied to

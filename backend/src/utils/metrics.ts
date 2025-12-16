@@ -13,6 +13,7 @@
  */
 
 import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from 'prom-client';
+import logger from './logger.js';
 
 /**
  * Prometheus Registry
@@ -193,6 +194,31 @@ export const classifierCacheMissesTotal = new Counter({
 });
 
 // ============================================================================
+// CIRCUIT BREAKER METRICS
+// ============================================================================
+
+/**
+ * Gauge: Circuit breaker state
+ * 0 = CLOSED, 1 = OPEN, 2 = HALF_OPEN
+ */
+export const classifierCircuitBreakerState = new Gauge({
+  name: 'classifier_circuit_breaker_state',
+  help: 'Circuit breaker state (0=CLOSED, 1=OPEN, 2=HALF_OPEN)',
+  registers: [register],
+});
+
+/**
+ * Counter: Circuit breaker state transitions
+ * Labels: from_state, to_state
+ */
+export const classifierCircuitBreakerTripsTotal = new Counter({
+  name: 'classifier_circuit_breaker_trips_total',
+  help: 'Total number of circuit breaker state transitions',
+  labelNames: ['from_state', 'to_state'],
+  registers: [register],
+});
+
+// ============================================================================
 // FEEDBACK SYSTEM METRICS
 // ============================================================================
 
@@ -263,7 +289,10 @@ export function incrementCounter(counter: Counter<string>, labels?: Record<strin
   try {
     counter.inc(labels || {});
   } catch (error) {
-    console.error('[Metrics] Error incrementing counter:', error);
+    logger.error('Error incrementing counter', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'metrics',
+    });
   }
 }
 
@@ -274,7 +303,10 @@ export function setGauge(gauge: Gauge<string>, value: number, labels?: Record<st
   try {
     gauge.set(labels || {}, value);
   } catch (error) {
-    console.error('[Metrics] Error setting gauge:', error);
+    logger.error('Error setting gauge', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'metrics',
+    });
   }
 }
 
@@ -324,7 +356,10 @@ export function incrementSurveyDelivery(status: 'delivered' | 'failed' | 'expire
  */
 export function incrementFeedbackResponse(rating: number): void {
   if (rating < 1 || rating > 5) {
-    console.error('[Metrics] Invalid feedback rating:', rating);
+    logger.error('Invalid feedback rating', {
+      rating,
+      service: 'metrics',
+    });
     return;
   }
   incrementCounter(feedbackResponsesTotal, { rating: String(rating) });
@@ -339,7 +374,10 @@ export function incrementFeedbackResponse(rating: number): void {
  */
 export function updateNPSGauge(npsScore: number): void {
   if (npsScore < -100 || npsScore > 100) {
-    console.error('[Metrics] Invalid NPS score:', npsScore);
+    logger.error('Invalid NPS score', {
+      npsScore,
+      service: 'metrics',
+    });
     return;
   }
   setGauge(feedbackNpsGauge, npsScore);

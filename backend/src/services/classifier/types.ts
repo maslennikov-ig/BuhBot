@@ -33,6 +33,18 @@ export interface ClassificationResult {
 }
 
 /**
+ * Circuit Breaker configuration
+ */
+export interface CircuitBreakerConfig {
+  /** Consecutive failures before opening circuit (default: 5) */
+  failureThreshold?: number;
+  /** Consecutive successes to close circuit from half-open (default: 2) */
+  successThreshold?: number;
+  /** Timeout before transitioning from open to half-open in ms (default: 60000) */
+  timeoutMs?: number;
+}
+
+/**
  * Configuration for the classifier service
  */
 export interface ClassifierConfig {
@@ -48,6 +60,8 @@ export interface ClassifierConfig {
   timeoutMs: number;
   /** Maximum retry attempts for API calls (default: 3) */
   maxRetries: number;
+  /** Circuit breaker configuration */
+  circuitBreaker?: CircuitBreakerConfig;
 }
 
 /**

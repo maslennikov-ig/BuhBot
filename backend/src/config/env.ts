@@ -91,16 +91,6 @@ const envSchema = z.object({
     .optional()
     .describe('Encryption key for sensitive data (min 32 chars)'),
 
-  // Yandex GPT (reserved for future integration)
-  YANDEX_GPT_API_KEY: z
-    .string()
-    .optional()
-    .describe('Reserved: Yandex GPT API key for future AI features'),
-  YANDEX_FOLDER_ID: z
-    .string()
-    .optional()
-    .describe('Reserved: Yandex Cloud folder ID'),
-
   // OpenRouter AI Classification
   OPENROUTER_API_KEY: z
     .string()

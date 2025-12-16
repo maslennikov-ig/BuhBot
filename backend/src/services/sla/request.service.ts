@@ -17,7 +17,7 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 
 // Re-export Prisma types for consumers
-type ClientRequest = Awaited<ReturnType<typeof prisma.clientRequest.findUnique>>;
+export type ClientRequest = Awaited<ReturnType<typeof prisma.clientRequest.findUnique>>;
 type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
 
 /**

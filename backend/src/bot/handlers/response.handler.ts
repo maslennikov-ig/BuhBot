@@ -25,6 +25,7 @@ import { stopSlaTimer } from '../../services/sla/timer.service.js';
 import {
   getRequestByMessage,
   findOldestPendingRequest,
+  type ClientRequest,
 } from '../../services/sla/request.service.js';
 import logger from '../../utils/logger.js';
 
@@ -154,7 +155,7 @@ export function registerResponseHandler(): void {
 
       // 2. Check if this is a reply to a specific message
       const replyToMessage = ctx.message.reply_to_message;
-      let requestToResolve = null;
+      let requestToResolve: ClientRequest = null;
 
       if (replyToMessage) {
         // Try to find the request being replied to

@@ -41,7 +41,7 @@ import logger from '../../utils/logger.js';
  * @param telegramUserId - Telegram user ID of the sender
  * @returns True if user is an accountant for this chat
  */
-async function isAccountantForChat(
+export async function isAccountantForChat(
   chatId: bigint,
   username: string | undefined,
   telegramUserId: number

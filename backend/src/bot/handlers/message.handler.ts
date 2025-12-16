@@ -19,6 +19,7 @@ import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import { classifyMessage } from '../../services/classifier/index.js';
 import { startSlaTimer } from '../../services/sla/timer.service.js';
+import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -88,7 +89,24 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 2. Classify message using AI/keyword classifier
+      // 2. Check if sender is accountant - skip processing
+      const { isAccountant } = await isAccountantForChat(
+        BigInt(chatId),
+        username,
+        ctx.from?.id ?? 0
+      );
+
+      if (isAccountant) {
+        logger.debug('Accountant message detected, skipping classification', {
+          chatId,
+          messageId,
+          username,
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // 3. Classify message using AI/keyword classifier
       const classification = await classifyMessage(prisma, text);
 
       logger.info('Message classified', {
@@ -100,7 +118,18 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 3. Create ClientRequest record
+      // 4. Only create ClientRequest for REQUEST and CLARIFICATION
+      if (!['REQUEST', 'CLARIFICATION'].includes(classification.classification)) {
+        logger.debug('Non-actionable message, not creating ClientRequest', {
+          chatId,
+          messageId,
+          classification: classification.classification,
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // 5. Create ClientRequest record (only for REQUEST/CLARIFICATION)
       const request = await prisma.clientRequest.create({
         data: {
           chatId: BigInt(chatId),
@@ -112,7 +141,7 @@ export function registerMessageHandler(): void {
           classificationModel: classification.model,
           // Set status based on classification
           // REQUEST: pending (needs response)
-          // Others: answered (no response needed)
+          // CLARIFICATION: answered (no SLA tracking for follow-ups)
           status: classification.classification === 'REQUEST' ? 'pending' : 'answered',
           receivedAt: new Date(ctx.message.date * 1000),
         },
@@ -126,7 +155,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 4. Start SLA timer for REQUEST messages only
+      // 6. Start SLA timer for REQUEST messages only
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 

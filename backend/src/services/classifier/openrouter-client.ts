@@ -169,11 +169,132 @@ function isRetryableError(error: unknown): boolean {
 }
 
 /**
+ * Circuit Breaker State
+ */
+type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+
+/**
+ * Circuit Breaker for API protection
+ *
+ * Implements the circuit breaker pattern to prevent cascading failures
+ * when the OpenRouter API is experiencing issues.
+ *
+ * Three states:
+ * - CLOSED (normal): Requests pass through to OpenRouter
+ * - OPEN (failing): Requests immediately fail, caller uses keyword fallback
+ * - HALF_OPEN (testing): Allow ONE request to test if service recovered
+ *
+ * Parameters:
+ * - failureThreshold: 5 consecutive failures to OPEN the circuit
+ * - successThreshold: 2 consecutive successes in HALF_OPEN to CLOSE circuit
+ * - timeout: 60 seconds before transitioning from OPEN to HALF_OPEN
+ */
+class CircuitBreaker {
+  private state: CircuitState = 'CLOSED';
+  private failureCount = 0;
+  private successCount = 0;
+  private lastFailureTime: number | null = null;
+
+  private readonly failureThreshold = 5;
+  private readonly successThreshold = 2;
+  private readonly timeoutMs = 60000; // 60 seconds
+
+  /**
+   * Check if circuit allows request
+   */
+  canRequest(): boolean {
+    if (this.state === 'CLOSED') {
+      return true;
+    }
+
+    if (this.state === 'OPEN') {
+      // Check if timeout has passed
+      if (this.lastFailureTime && Date.now() - this.lastFailureTime >= this.timeoutMs) {
+        this.state = 'HALF_OPEN';
+        this.successCount = 0;
+        logger.info('Circuit breaker transitioning to HALF_OPEN', {
+          service: 'classifier',
+        });
+        return true;
+      }
+      return false;
+    }
+
+    // HALF_OPEN: allow request
+    return true;
+  }
+
+  /**
+   * Record successful request
+   */
+  recordSuccess(): void {
+    if (this.state === 'HALF_OPEN') {
+      this.successCount++;
+      if (this.successCount >= this.successThreshold) {
+        this.state = 'CLOSED';
+        this.failureCount = 0;
+        this.successCount = 0;
+        this.lastFailureTime = null;
+        logger.info('Circuit breaker CLOSED after recovery', {
+          service: 'classifier',
+        });
+      }
+    } else if (this.state === 'CLOSED') {
+      // Reset failure count on success
+      this.failureCount = 0;
+    }
+  }
+
+  /**
+   * Record failed request
+   */
+  recordFailure(): void {
+    this.lastFailureTime = Date.now();
+
+    if (this.state === 'HALF_OPEN') {
+      // Immediate trip back to OPEN
+      this.state = 'OPEN';
+      this.successCount = 0;
+      logger.warn('Circuit breaker tripped back to OPEN from HALF_OPEN', {
+        service: 'classifier',
+      });
+    } else if (this.state === 'CLOSED') {
+      this.failureCount++;
+      if (this.failureCount >= this.failureThreshold) {
+        this.state = 'OPEN';
+        logger.warn('Circuit breaker OPENED after failures', {
+          failureCount: this.failureCount,
+          service: 'classifier',
+        });
+      }
+    }
+  }
+
+  /**
+   * Get current state (for monitoring)
+   */
+  getState(): CircuitState {
+    return this.state;
+  }
+
+  /**
+   * Reset circuit breaker (for testing)
+   */
+  reset(): void {
+    this.state = 'CLOSED';
+    this.failureCount = 0;
+    this.successCount = 0;
+    this.lastFailureTime = null;
+  }
+}
+
+/**
  * OpenRouter client for AI-powered classification
  */
 class OpenRouterClient {
   private client: OpenAI;
   private config: ClassifierConfig;
+  private circuitBreaker = new CircuitBreaker();
 
   constructor(config: Partial<ClassifierConfig> = {}) {
     this.config = { ...DEFAULT_CLASSIFIER_CONFIG, ...config };
@@ -202,7 +323,7 @@ class OpenRouterClient {
    *
    * @param text - Message text to classify
    * @returns Classification result
-   * @throws Error after max retries exceeded
+   * @throws Error after max retries exceeded or if circuit breaker is open
    *
    * @example
    * ```typescript
@@ -212,6 +333,14 @@ class OpenRouterClient {
    * ```
    */
   async classify(text: string): Promise<ClassificationResult> {
+    // Check circuit breaker first
+    if (!this.circuitBreaker.canRequest()) {
+      logger.warn('Circuit breaker OPEN, skipping OpenRouter', {
+        service: 'classifier',
+      });
+      throw new Error('Circuit breaker OPEN - OpenRouter unavailable');
+    }
+
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
@@ -241,6 +370,9 @@ class OpenRouterClient {
           service: 'classifier',
         });
 
+        // Record success
+        this.circuitBreaker.recordSuccess();
+
         return {
           classification: parsed.classification,
           confidence: parsed.confidence,
@@ -259,6 +391,11 @@ class OpenRouterClient {
           service: 'classifier',
         };
 
+        // Record failure only on final attempt or non-retryable error
+        if (!isRetryableError(error) || attempt >= this.config.maxRetries) {
+          this.circuitBreaker.recordFailure();
+        }
+
         if (isRetryableError(error) && attempt < this.config.maxRetries) {
           // Exponential backoff: 1s, 2s, 4s
           const delay = Math.pow(2, attempt - 1) * 1000;
@@ -275,6 +412,13 @@ class OpenRouterClient {
 
     // Should not reach here, but TypeScript needs the throw
     throw lastError ?? new Error('Classification failed after max retries');
+  }
+
+  /**
+   * Get current circuit breaker state (for monitoring)
+   */
+  getCircuitState(): CircuitState {
+    return this.circuitBreaker.getState();
   }
 }
 
@@ -324,5 +468,23 @@ export function resetClient(): void {
   clientInstance = null;
 }
 
+/**
+ * Get the current circuit breaker state (for monitoring)
+ *
+ * @returns Current circuit state ('CLOSED', 'OPEN', or 'HALF_OPEN')
+ *
+ * @example
+ * ```typescript
+ * import { getCircuitBreakerState } from './openrouter-client.js';
+ *
+ * const state = getCircuitBreakerState();
+ * console.log(`Circuit breaker is ${state}`);
+ * ```
+ */
+export function getCircuitBreakerState(): CircuitState {
+  return getClient().getCircuitState();
+}
+
 export { OpenRouterClient };
+export type { CircuitState };
 export default classifyWithAI;

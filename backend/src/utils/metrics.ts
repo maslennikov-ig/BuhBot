@@ -133,6 +133,66 @@ export const supabaseConnectionPoolSize = new Gauge({
 });
 
 // ============================================================================
+// CLASSIFIER METRICS
+// ============================================================================
+
+/**
+ * Counter: Total classifier requests
+ * Labels:
+ * - model: 'openrouter' | 'keyword-fallback' | 'cache'
+ * - classification: 'REQUEST' | 'SPAM' | 'GRATITUDE' | 'CLARIFICATION'
+ */
+export const classifierRequestsTotal = new Counter({
+  name: 'classifier_requests_total',
+  help: 'Total number of classifier requests',
+  labelNames: ['model', 'classification'],
+  registers: [register],
+});
+
+/**
+ * Histogram: Classifier latency in seconds
+ * Labels:
+ * - model: 'openrouter' | 'keyword-fallback' | 'cache'
+ */
+export const classifierLatencySeconds = new Histogram({
+  name: 'classifier_latency_seconds',
+  help: 'Classifier request latency in seconds',
+  labelNames: ['model'],
+  buckets: [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5], // 50ms to 5s
+  registers: [register],
+});
+
+/**
+ * Counter: Classifier errors
+ * Labels:
+ * - error_type: 'api_error' | 'parse_error' | 'timeout' | 'rate_limit'
+ */
+export const classifierErrorsTotal = new Counter({
+  name: 'classifier_errors_total',
+  help: 'Total number of classifier errors',
+  labelNames: ['error_type'],
+  registers: [register],
+});
+
+/**
+ * Counter: Cache hits
+ */
+export const classifierCacheHitsTotal = new Counter({
+  name: 'classifier_cache_hits_total',
+  help: 'Total number of classifier cache hits',
+  registers: [register],
+});
+
+/**
+ * Counter: Cache misses
+ */
+export const classifierCacheMissesTotal = new Counter({
+  name: 'classifier_cache_misses_total',
+  help: 'Total number of classifier cache misses',
+  registers: [register],
+});
+
+// ============================================================================
 // FEEDBACK SYSTEM METRICS
 // ============================================================================
 

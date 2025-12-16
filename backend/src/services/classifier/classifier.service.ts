@@ -22,6 +22,13 @@ import { classifyWithAI } from './openrouter-client.js';
 import { classifyByKeywords } from './keyword-classifier.js';
 import { getCached, setCache, cleanupExpiredCache, getCacheStats } from './cache.service.js';
 import logger from '../../utils/logger.js';
+import {
+  classifierRequestsTotal,
+  classifierLatencySeconds,
+  classifierErrorsTotal,
+  classifierCacheHitsTotal,
+  classifierCacheMissesTotal,
+} from '../../utils/metrics.js';
 
 /**
  * Message Classifier Service
@@ -75,6 +82,15 @@ export class ClassifierService {
     // 1. Check cache first
     const cached = await getCached(this.prisma, text);
     if (cached) {
+      // Record cache hit metrics
+      classifierCacheHitsTotal.inc();
+      const latencySeconds = (Date.now() - startTime) / 1000;
+      classifierLatencySeconds.observe({ model: 'cache' }, latencySeconds);
+      classifierRequestsTotal.inc({
+        model: 'cache',
+        classification: cached.classification,
+      });
+
       logger.debug('Classification cache hit', {
         classification: cached.classification,
         processingTime: Date.now() - startTime,
@@ -82,6 +98,9 @@ export class ClassifierService {
       });
       return cached;
     }
+
+    // Record cache miss
+    classifierCacheMissesTotal.inc();
 
     // 2. Try AI classification
     let aiResult: ClassificationResult | null = null;
@@ -91,6 +110,14 @@ export class ClassifierService {
       // If AI confidence is above threshold, use it
       if (aiResult.confidence >= this.config.aiConfidenceThreshold) {
         await setCache(this.prisma, text, aiResult, this.config.cacheTTLHours);
+
+        // Record AI success metrics
+        const latencySeconds = (Date.now() - startTime) / 1000;
+        classifierLatencySeconds.observe({ model: 'openrouter' }, latencySeconds);
+        classifierRequestsTotal.inc({
+          model: 'openrouter',
+          classification: aiResult.classification,
+        });
 
         logger.info('Classification completed (AI)', {
           classification: aiResult.classification,
@@ -109,6 +136,10 @@ export class ClassifierService {
         service: 'classifier',
       });
     } catch (error) {
+      // Record AI error
+      const errorType = this.categorizeError(error);
+      classifierErrorsTotal.inc({ error_type: errorType });
+
       // AI classification failed, use fallback
       logger.warn('AI classification failed, using keyword fallback', {
         error: error instanceof Error ? error.message : String(error),
@@ -149,6 +180,14 @@ export class ClassifierService {
     // Cache the result
     await setCache(this.prisma, text, finalResult, this.config.cacheTTLHours);
 
+    // Record fallback metrics
+    const latencySeconds = (Date.now() - startTime) / 1000;
+    classifierLatencySeconds.observe({ model: 'keyword-fallback' }, latencySeconds);
+    classifierRequestsTotal.inc({
+      model: 'keyword-fallback',
+      classification: finalResult.classification,
+    });
+
     logger.info('Classification completed (fallback)', {
       classification: finalResult.classification,
       confidence: finalResult.confidence,
@@ -158,6 +197,28 @@ export class ClassifierService {
     });
 
     return finalResult;
+  }
+
+  /**
+   * Categorize error for metrics tracking
+   *
+   * @param error - Error object
+   * @returns Error type category
+   */
+  private categorizeError(error: unknown): 'api_error' | 'parse_error' | 'timeout' | 'rate_limit' {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const lowerMessage = errorMessage.toLowerCase();
+
+    if (lowerMessage.includes('timeout') || lowerMessage.includes('timed out')) {
+      return 'timeout';
+    }
+    if (lowerMessage.includes('rate limit') || lowerMessage.includes('429')) {
+      return 'rate_limit';
+    }
+    if (lowerMessage.includes('parse') || lowerMessage.includes('json')) {
+      return 'parse_error';
+    }
+    return 'api_error';
   }
 
   /**

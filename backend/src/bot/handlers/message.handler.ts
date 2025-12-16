@@ -39,7 +39,8 @@ import logger from '../../utils/logger.js';
  */
 export function registerMessageHandler(): void {
   // Use message('text') filter for text messages only
-  bot.on(message('text'), async (ctx: BotContext) => {
+  // Note: next() is called to allow response.handler to also process messages
+  bot.on(message('text'), async (ctx: BotContext, next: () => Promise<void>) => {
     // Type guard for text messages
     if (!ctx.message || !('text' in ctx.message)) {
       return;
@@ -103,7 +104,8 @@ export function registerMessageHandler(): void {
           username,
           service: 'message-handler',
         });
-        return;
+        // Pass to response handler to stop SLA timer
+        return next();
       }
 
       // 3. Classify message using AI/keyword classifier
@@ -184,6 +186,9 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
     }
+
+    // Always pass to next handler (response handler)
+    await next();
   });
 
   logger.info('Message handler registered', { service: 'message-handler' });

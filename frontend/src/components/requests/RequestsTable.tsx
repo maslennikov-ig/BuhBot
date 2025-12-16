@@ -280,7 +280,7 @@ export function RequestsTable({
     <GlassCard
       variant="elevated"
       padding="none"
-      className={cn('relative overflow-hidden group', className)}
+      className={cn('relative group', className)}
     >
       {/* Gradient accent on hover */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

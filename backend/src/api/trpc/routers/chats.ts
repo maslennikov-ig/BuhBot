@@ -635,4 +635,84 @@ export const chatsRouter = router({
         success: true,
       };
     }),
+
+  /**
+   * Delete a chat and all related data
+   *
+   * @param id - Chat ID (Telegram chat ID)
+   * @returns Success status
+   * @throws NOT_FOUND if chat doesn't exist
+   * @authorization Admins only
+   */
+  delete: managerProcedure
+    .input(
+      z.object({
+        id: z.number(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const chatId = BigInt(input.id);
+
+      // Verify chat exists
+      const chat = await ctx.prisma.chat.findUnique({
+        where: { id: chatId },
+        include: {
+          clientRequests: {
+            select: { id: true },
+          },
+        },
+      });
+
+      if (!chat) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Chat with ID ${input.id} not found`,
+        });
+      }
+
+      // Delete in transaction to ensure consistency
+      await ctx.prisma.$transaction(async (tx) => {
+        // Delete SLA alerts for all requests in this chat
+        const requestIds = chat.clientRequests.map((r) => r.id);
+        if (requestIds.length > 0) {
+          await tx.slaAlert.deleteMany({
+            where: { requestId: { in: requestIds } },
+          });
+
+          // Delete feedback responses for this chat
+          await tx.feedbackResponse.deleteMany({
+            where: { chatId: chatId },
+          });
+
+          // Delete client requests
+          await tx.clientRequest.deleteMany({
+            where: { chatId: chatId },
+          });
+        }
+
+        // Delete working schedules
+        await tx.workingSchedule.deleteMany({
+          where: { chatId: chatId },
+        });
+
+        // Delete survey deliveries
+        await tx.surveyDelivery.deleteMany({
+          where: { chatId: chatId },
+        });
+
+        // Delete the chat
+        await tx.chat.delete({
+          where: { id: chatId },
+        });
+      });
+
+      return {
+        success: true,
+      };
+    }),
 });

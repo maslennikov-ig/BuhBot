@@ -11,6 +11,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   MessageSquare,
   Users,
@@ -20,6 +21,8 @@ import {
   ArrowLeft,
   Loader2,
   AlertTriangle,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -275,8 +278,109 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
             }}
           />
         </section>
+
+        {/* Danger Zone Section */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
+          <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+        </section>
       </div>
     </AdminLayout>
+  );
+}
+
+// ============================================
+// DANGER ZONE COMPONENT
+// ============================================
+
+type DangerZoneProps = {
+  chatId: number;
+  chatTitle: string;
+};
+
+function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
+  const router = useRouter();
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const deleteMutation = trpc.chats.delete.useMutation({
+    onSuccess: () => {
+      router.push('/chats');
+    },
+    onError: () => {
+      setIsDeleting(false);
+    },
+  });
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    deleteMutation.mutate({ id: chatId });
+  };
+
+  return (
+    <GlassCard variant="default" padding="lg" className="border-[var(--buh-danger)]/30">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--buh-danger)]/10">
+          <AlertTriangle className="h-5 w-5 text-[var(--buh-danger)]" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-[var(--buh-danger)]">
+            Опасная зона
+          </h3>
+          <p className="text-xs text-[var(--buh-foreground-muted)]">
+            Необратимые действия
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[var(--buh-danger)]/30 bg-[var(--buh-danger)]/5 p-4">
+        <h4 className="font-medium text-[var(--buh-foreground)] mb-2">
+          Удалить чат
+        </h4>
+        <p className="text-sm text-[var(--buh-foreground-muted)] mb-4">
+          Будут удалены все данные: запросы клиентов, SLA оповещения, расписание и статистика.
+          Это действие нельзя отменить.
+        </p>
+
+        {!showDeleteConfirm ? (
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-[var(--buh-danger)] border-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/10"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Удалить чат
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-[var(--buh-danger)]">
+              Удалить «{chatTitle}»?
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Да, удалить навсегда
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Отмена
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </GlassCard>
   );
 }
 

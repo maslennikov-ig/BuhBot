@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2025-12-16
+
+### Added
+- **classifier**: add metrics, circuit breaker, and message filtering (e152d29)
+
+### Fixed
+- **types**: add explicit ClientRequest type to response handler (5fbdabb)
+- **docker**: use npm install --legacy-peer-deps instead of npm ci (888aaab)
+- **backend**: resolve all audit issues (P0-P3) (7364984)
+- **sla**: initialize BullMQ workers for SLA monitoring (70f1698)
+- **security**: update Next.js to 16.0.10 - CVE-2025-55182/CVE-2025-66478 (e3e69ca)
+- **analytics**: use z.coerce.date() for all date inputs in tRPC (18cb31e)
+- resolve TypeScript errors blocking CI (3739160)
+
 ## [0.9.2] - 2025-12-14
 
 ### Security

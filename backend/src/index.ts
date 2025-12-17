@@ -1,5 +1,6 @@
 import express from 'express';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import packageJson from '../package.json' with { type: 'json' };
 import logger from './utils/logger.js';
 import env, { isProduction, isDevelopment } from './config/env.js';
 import { healthHandler } from './api/health.js';
@@ -85,7 +86,7 @@ app.use(
 app.get('/', (_req, res) => {
   res.json({
     service: 'BuhBot Backend API',
-    version: '0.1.0',
+    version: packageJson.version,
     description: 'Платформа автоматизации коммуникаций для бухгалтерских фирм',
     endpoints: {
       health: '/health',

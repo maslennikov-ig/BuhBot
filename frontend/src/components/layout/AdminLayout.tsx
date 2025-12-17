@@ -519,7 +519,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         {/* Footer */}
         <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-3 lg:px-6">
           <p className="text-center text-sm text-[var(--buh-foreground-subtle)]">
-            &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v0.4.0
+            &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v{process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0'}
           </p>
         </footer>
       </div>

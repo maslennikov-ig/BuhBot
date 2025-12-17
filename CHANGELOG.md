@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.7] - 2025-12-17
+
+### Added
+- **agents**: add supabase-fixer agent (7ab2cfe)
+
+### Fixed
+- **sla**: use IN operator for enum comparison in Prisma 7 (f923928)
+
 ## [0.9.6] - 2025-12-17
 
 ### Added

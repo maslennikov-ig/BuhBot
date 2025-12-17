@@ -1,6 +1,6 @@
 {
   "name": "buhbot",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "Платформа автоматизации коммуникаций для бухгалтерских фирм через Telegram",
   "main": "dist/index.js",
   "type": "module",

@@ -21,6 +21,7 @@ services:
   # Heap size limit: 1536 MB (to prevent OOM)
   # ==========================================================================
   bot-backend:
+    image: buhbot-backend:latest
     restart: always
     environment:
       - NODE_ENV=production
@@ -56,6 +57,7 @@ services:
   # - Strict resource limits to prevent mining
   # ==========================================================================
   frontend:
+    image: buhbot-frontend:latest
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -116,6 +118,7 @@ services:
   # Constrained to prevent resource starvation of critical services
   # ==========================================================================
   monitoring-stack:
+    image: buhbot-monitoring:latest
     deploy:
       resources:
         limits:

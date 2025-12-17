@@ -30,6 +30,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
 import { ChatSettingsForm } from '@/components/chats/ChatSettingsForm';
+import { ChatMessageThread } from '@/components/chats/ChatMessageThread';
+import { ChatTabs } from '@/components/chats/ChatTabs';
 import { trpc } from '@/lib/trpc';
 
 // ============================================
@@ -41,6 +43,7 @@ type ChatDetailsContentProps = {
 };
 
 type ChatType = 'private' | 'group' | 'supergroup';
+type Tab = 'messages' | 'settings' | 'schedule';
 
 const CHAT_TYPE_LABELS: Record<ChatType, string> = {
   private: 'Личный чат',
@@ -171,6 +174,7 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
 // ============================================
 
 export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
+  const [activeTab, setActiveTab] = React.useState<Tab>('messages');
   const { data: chat, isLoading, error } = trpc.chats.getById.useQuery({ id: chatId });
 
   // Loading state
@@ -249,39 +253,61 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
       />
 
       {/* Content sections with staggered animation */}
-      <div className="space-y-6 buh-stagger">
-        {/* Chat Info Section */}
+      <div className="space-y-6">
+        {/* Chat Info Section - always visible */}
         <section className="buh-animate-fade-in-up">
           <ChatInfoCard chat={chat as ChatInfoCardProps['chat']} />
         </section>
 
-        {/* Divider with gradient accent */}
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--buh-border)]" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-[var(--buh-background)] px-4 text-xs font-medium uppercase tracking-wider text-[var(--buh-foreground-subtle)]">
-              Настройки
-            </span>
-          </div>
-        </div>
-
-        {/* Settings Form Section */}
-        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-          <ChatSettingsForm
-            chatId={chat.id}
-            initialData={{
-              slaEnabled: chat.slaEnabled,
-              slaResponseMinutes: chat.slaResponseMinutes,
-              assignedAccountantId: chat.assignedAccountantId,
-            }}
-          />
+        {/* Tab Navigation */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <ChatTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </section>
 
-        {/* Danger Zone Section */}
-        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
-          <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+        {/* Tab Content */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+          {activeTab === 'messages' && (
+            <GlassCard variant="default" padding="lg">
+              <ChatMessageThread chatId={chat.id} />
+            </GlassCard>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              {/* Settings Form - higher z-index for dropdown to work over DangerZone */}
+              <div className="relative z-10">
+                <ChatSettingsForm
+                  chatId={chat.id}
+                  initialData={{
+                    slaEnabled: chat.slaEnabled,
+                    slaResponseMinutes: chat.slaResponseMinutes,
+                    assignedAccountantId: chat.assignedAccountantId,
+                  }}
+                />
+              </div>
+
+              {/* Danger Zone */}
+              <div className="relative z-0">
+                <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'schedule' && (
+            <GlassCard variant="default" padding="lg">
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--buh-surface-overlay)] mb-4">
+                  <Calendar className="h-8 w-8 text-[var(--buh-foreground-muted)]" />
+                </div>
+                <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">
+                  Расписание работы
+                </h3>
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Настройка рабочих часов находится в разработке
+                </p>
+              </div>
+            </GlassCard>
+          )}
         </section>
       </div>
     </AdminLayout>
@@ -317,68 +343,97 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
   };
 
   return (
-    <GlassCard variant="default" padding="lg" className="border-[var(--buh-danger)]/30">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--buh-danger)]/10">
-          <AlertTriangle className="h-5 w-5 text-[var(--buh-danger)]" />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-[var(--buh-danger)]">
-            Опасная зона
-          </h3>
-          <p className="text-xs text-[var(--buh-foreground-muted)]">
-            Необратимые действия
-          </p>
-        </div>
-      </div>
+    <GlassCard
+      variant="default"
+      padding="lg"
+      className="border-[var(--buh-error)]/20 relative overflow-hidden buh-hover-lift group"
+    >
+      {/* Subtle danger gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--buh-error)]/5 via-transparent to-transparent opacity-50 pointer-events-none" />
 
-      <div className="rounded-lg border border-[var(--buh-danger)]/30 bg-[var(--buh-danger)]/5 p-4">
-        <h4 className="font-medium text-[var(--buh-foreground)] mb-2">
-          Удалить чат
-        </h4>
-        <p className="text-sm text-[var(--buh-foreground-muted)] mb-4">
-          Будут удалены все данные: запросы клиентов, SLA оповещения, расписание и статистика.
-          Это действие нельзя отменить.
-        </p>
-
-        {!showDeleteConfirm ? (
-          <Button
-            variant="outline"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="text-[var(--buh-danger)] border-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/10"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Удалить чат
-          </Button>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-[var(--buh-danger)]">
-              Удалить «{chatTitle}»?
+      {/* Content wrapper with relative positioning */}
+      <div className="relative">
+        {/* Header with gradient icon */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--buh-error)] to-[var(--buh-warning)] shadow-lg transition-transform group-hover:scale-105">
+            <AlertTriangle className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-[var(--buh-foreground)]">
+              Опасная зона
+            </h3>
+            <p className="text-sm text-[var(--buh-foreground-muted)]">
+              Необратимые действия
             </p>
-            <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
-                )}
-                Да, удалить навсегда
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isDeleting}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Отмена
-              </Button>
+          </div>
+        </div>
+
+        {/* Delete section - styled like info cards in ChatInfoCard */}
+        <div className="rounded-lg border border-[var(--buh-error)]/30 bg-[var(--buh-surface-overlay)] p-5 transition-all hover:border-[var(--buh-error)]/50">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--buh-error)]/10 mt-0.5">
+              <Trash2 className="h-4 w-4 text-[var(--buh-error)]" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-[var(--buh-foreground)] mb-1.5">
+                Удалить чат
+              </h4>
+              <p className="text-sm text-[var(--buh-foreground-muted)] leading-relaxed">
+                Будут удалены все данные: запросы клиентов, SLA оповещения, расписание и статистика.
+                Это действие нельзя отменить.
+              </p>
             </div>
           </div>
-        )}
+
+          {!showDeleteConfirm ? (
+            <div className="pl-11">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-[var(--buh-error)] border-[var(--buh-error)]/40 hover:bg-[var(--buh-error)]/10 hover:border-[var(--buh-error)] transition-all font-medium"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалить чат
+              </Button>
+            </div>
+          ) : (
+            <div className="pl-11 space-y-3 pt-2">
+              {/* Confirmation message with danger styling */}
+              <div className="rounded-lg bg-[var(--buh-error)]/10 border border-[var(--buh-error)]/20 p-3">
+                <p className="text-sm font-semibold text-[var(--buh-error)] flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Подтвердите удаление «{chatTitle}»
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="shadow-md hover:shadow-lg transition-all"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  Да, удалить навсегда
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="hover:bg-[var(--buh-surface-overlay)] transition-all"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </GlassCard>
   );

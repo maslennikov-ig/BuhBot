@@ -67,6 +67,75 @@ const ALERT_TYPE_CONFIG: Record<AlertType, { label: string; color: string }> = {
 };
 
 // ============================================
+// RESPONSE SECTION
+// ============================================
+
+type ResponseSectionProps = {
+  responseMessage: {
+    id: string;
+    messageText: string;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    createdAt: string | Date;
+  } | null;
+  responseAt: string | Date | null;
+  responseTimeMinutes: number | null;
+};
+
+function ResponseSection({ responseMessage, responseAt, responseTimeMinutes }: ResponseSectionProps) {
+  if (!responseMessage) {
+    return null;
+  }
+
+  const responseDate = new Date(responseMessage.createdAt).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const respondentName = responseMessage.username
+    ? `@${responseMessage.username}`
+    : responseMessage.firstName || 'Бухгалтер';
+
+  return (
+    <GlassCard variant="default" padding="lg" className="buh-hover-lift">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--buh-success)] to-[var(--buh-accent)] shadow-lg">
+            <CheckCircle2 className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
+              Ответ бухгалтера
+            </h2>
+            <p className="text-sm text-[var(--buh-foreground-muted)]">
+              {respondentName} • {responseDate}
+            </p>
+          </div>
+        </div>
+        {responseTimeMinutes !== null && (
+          <div className="flex items-center gap-2 rounded-full bg-[var(--buh-success)]/10 px-3 py-1.5 text-[var(--buh-success)]">
+            <Clock className="h-4 w-4" />
+            <span className="text-sm font-medium">{responseTimeMinutes} мин</span>
+          </div>
+        )}
+      </div>
+
+      {/* Response Text */}
+      <div className="rounded-lg border border-[var(--buh-success)]/30 bg-[var(--buh-success)]/5 p-4">
+        <p className="text-[var(--buh-foreground)] whitespace-pre-wrap break-words">
+          {responseMessage.messageText}
+        </p>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ============================================
 // REQUEST INFO CARD
 // ============================================
 
@@ -584,6 +653,17 @@ export function RequestDetailsContent({ requestId }: RequestDetailsContentProps)
         <section className="buh-animate-fade-in-up">
           <RequestInfoCard request={request} />
         </section>
+
+        {/* Response Section - only if answered */}
+        {data.responseMessage && (
+          <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
+            <ResponseSection
+              responseMessage={data.responseMessage}
+              responseAt={request.responseAt}
+              responseTimeMinutes={request.responseTimeMinutes}
+            />
+          </section>
+        )}
 
         {/* Actions Section */}
         <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>

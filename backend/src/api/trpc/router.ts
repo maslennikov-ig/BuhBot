@@ -31,6 +31,7 @@ import { surveyRouter } from './routers/survey.js';
 import { contactRouter } from './routers/contact.js';
 import { userRouter } from './routers/user.js';
 import { notificationRouter } from './routers/notification.js';
+import { messagesRouter } from './routers/messages.js';
 
 /**
  * App router combining all sub-routers
@@ -241,6 +242,14 @@ export const appRouter = router({
    * Notification router - In-app notifications
    */
   notification: notificationRouter,
+
+  /**
+   * Messages router - Chat message history
+   *
+   * Procedures:
+   * - listByChat: List messages for a chat with cursor-based pagination
+   */
+  messages: messagesRouter,
 });
 
 /**

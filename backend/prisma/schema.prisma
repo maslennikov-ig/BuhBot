@@ -214,6 +214,7 @@ model Chat {
   workingSchedules   WorkingSchedule[]
   holidays           ChatHoliday[]
   surveyDeliveries   SurveyDelivery[]
+  messages           ChatMessage[]
 
   @@index([assignedAccountantId])
   @@index([slaEnabled], map: "idx_chats_sla_enabled")
@@ -257,6 +258,7 @@ model ClientRequest {
   assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
   slaAlerts         SlaAlert[]
   feedbackResponses FeedbackResponse[]
+  responseMessages  ChatMessage[]      @relation("ResponseMessage")
 
   @@index([chatId])
   @@index([assignedTo])
@@ -593,5 +595,37 @@ model ChatInvitation {
   @@index([token])
   @@index([isUsed])
   @@map("chat_invitations")
+  @@schema("public")
+}
+
+/// Complete message log for monitored chats
+/// Stores both client and accountant messages
+model ChatMessage {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId            BigInt   @map("chat_id") @db.BigInt
+  messageId         BigInt   @map("message_id") @db.BigInt
+  telegramUserId    BigInt   @map("telegram_user_id") @db.BigInt
+  username          String?
+  firstName         String?  @map("first_name")
+  lastName          String?  @map("last_name")
+  messageText       String   @map("message_text")
+  isAccountant      Boolean  @default(false) @map("is_accountant")
+  replyToMessageId  BigInt?  @map("reply_to_message_id") @db.BigInt
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Link to request if this message resolved it
+  resolvedRequestId String?  @map("resolved_request_id") @db.Uuid
+
+  // Relations
+  chat              Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  resolvedRequest   ClientRequest? @relation("ResponseMessage", fields: [resolvedRequestId], references: [id])
+
+  @@unique([chatId, messageId], name: "unique_chat_message")
+  @@index([chatId])
+  @@index([createdAt])
+  @@index([isAccountant])
+  @@index([chatId, createdAt(sort: Desc)], name: "idx_chat_messages_chat_created")
+  @@index([chatId, isAccountant, createdAt], name: "idx_chat_messages_chat_accountant_created")
+  @@map("chat_messages")
   @@schema("public")
 }

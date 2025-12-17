@@ -325,7 +325,35 @@ export function registerResponseHandler(): void {
         });
       }
 
-      // 4. Stop the SLA timer
+      // 4. Update the existing ChatMessage with resolvedRequestId
+      // (Message was already logged by message handler with correct isAccountant=true)
+      try {
+        await prisma.chatMessage.updateMany({
+          where: {
+            chatId: BigInt(chatId),
+            messageId: BigInt(messageId),
+          },
+          data: {
+            resolvedRequestId: requestToResolve.id,
+          },
+        });
+
+        logger.info('ChatMessage updated with resolvedRequestId', {
+          chatId,
+          messageId,
+          requestId: requestToResolve.id,
+          service: 'response-handler',
+        });
+      } catch (updateError) {
+        logger.warn('Failed to update ChatMessage with resolvedRequestId', {
+          chatId,
+          messageId,
+          error: updateError instanceof Error ? updateError.message : String(updateError),
+          service: 'response-handler',
+        });
+      }
+
+      // 5. Stop the SLA timer
       const result = await stopSlaTimer(requestToResolve.id, {
         respondedBy: accountantId,
         responseMessageId: messageId,

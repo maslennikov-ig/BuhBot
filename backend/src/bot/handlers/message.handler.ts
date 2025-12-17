@@ -15,12 +15,25 @@
  */
 
 import { message } from 'telegraf/filters';
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import { classifyMessage } from '../../services/classifier/index.js';
 import { startSlaTimer } from '../../services/sla/timer.service.js';
 import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
+
+/**
+ * Zod schema for validating incoming Telegram message data
+ * Prevents XSS and validates field lengths before database insertion
+ */
+const TelegramMessageSchema = z.object({
+  text: z.string().min(1).max(10000),
+  username: z.string().max(255).optional().nullable(),
+  firstName: z.string().max(255).optional().nullable(),
+  lastName: z.string().max(255).optional().nullable(),
+});
 
 /**
  * Register the message handler for SLA monitoring
@@ -90,25 +103,97 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 2. Check if sender is accountant - skip processing
-      const { isAccountant } = await isAccountantForChat(
+      // 2. Check if sender is accountant FIRST (before logging)
+      const { isAccountant, accountantId } = await isAccountantForChat(
         BigInt(chatId),
         username,
         ctx.from?.id ?? 0
       );
 
+      // 3. Validate input data before database insertion
+      const validationResult = TelegramMessageSchema.safeParse({
+        text,
+        username: ctx.from?.username ?? null,
+        firstName: ctx.from?.first_name ?? null,
+        lastName: ctx.from?.last_name ?? null,
+      });
+
+      if (!validationResult.success) {
+        logger.warn('Invalid message data, skipping', {
+          chatId,
+          messageId,
+          errors: validationResult.error.flatten(),
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // 4. Log ALL messages to ChatMessage table with CORRECT isAccountant flag
+      try {
+        await prisma.chatMessage.upsert({
+          where: {
+            unique_chat_message: {
+              chatId: BigInt(chatId),
+              messageId: BigInt(messageId),
+            },
+          },
+          create: {
+            chatId: BigInt(chatId),
+            messageId: BigInt(messageId),
+            telegramUserId: BigInt(ctx.from?.id ?? 0),
+            username: ctx.from?.username ?? null,
+            firstName: ctx.from?.first_name ?? null,
+            lastName: ctx.from?.last_name ?? null,
+            messageText: text,
+            isAccountant: isAccountant, // Correct flag from accountant check
+            replyToMessageId: ctx.message.reply_to_message?.message_id
+              ? BigInt(ctx.message.reply_to_message.message_id)
+              : null,
+          },
+          update: {
+            isAccountant: isAccountant, // Update if message is being re-processed
+          },
+        });
+
+        logger.debug('Message logged to ChatMessage', {
+          chatId,
+          messageId,
+          isAccountant,
+          service: 'message-handler',
+        });
+      } catch (logError) {
+        if (logError instanceof Prisma.PrismaClientKnownRequestError) {
+          logger.error('Database error logging message', {
+            chatId,
+            messageId,
+            code: logError.code,
+            error: logError.message,
+            service: 'message-handler',
+          });
+        } else {
+          logger.warn('Failed to log message to ChatMessage', {
+            chatId,
+            messageId,
+            error: logError instanceof Error ? logError.message : String(logError),
+            service: 'message-handler',
+          });
+        }
+      }
+
+      // 5. If accountant, pass to response handler (don't process as client message)
       if (isAccountant) {
         logger.debug('Accountant message detected, skipping classification', {
           chatId,
           messageId,
           username,
+          accountantId,
           service: 'message-handler',
         });
         // Pass to response handler to stop SLA timer
         return next();
       }
 
-      // 3. Classify message using AI/keyword classifier
+      // 6. Classify message using AI/keyword classifier
       const classification = await classifyMessage(prisma, text);
 
       logger.info('Message classified', {
@@ -120,7 +205,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 4. Only create ClientRequest for REQUEST and CLARIFICATION
+      // 7. Only create ClientRequest for REQUEST and CLARIFICATION
       if (!['REQUEST', 'CLARIFICATION'].includes(classification.classification)) {
         logger.debug('Non-actionable message, not creating ClientRequest', {
           chatId,
@@ -131,7 +216,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 5. Create ClientRequest record (only for REQUEST/CLARIFICATION)
+      // 8. Create ClientRequest record (only for REQUEST/CLARIFICATION)
       const request = await prisma.clientRequest.create({
         data: {
           chatId: BigInt(chatId),
@@ -157,7 +242,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 6. Start SLA timer for REQUEST messages only
+      // 9. Start SLA timer for REQUEST messages only
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 

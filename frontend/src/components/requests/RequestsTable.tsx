@@ -41,6 +41,7 @@ type Request = {
   status: RequestStatus;
   time: string;
   slaRemaining?: string; // for pending/in_progress
+  responseTimeMinutes?: number | null; // response time in minutes
 };
 
 type RequestsTableProps = {
@@ -323,6 +324,9 @@ export function RequestsTable({
                 onClick={() => requestSort('status')}
                 className="px-6 py-3"
               />
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                Ответ
+              </th>
               <SortableHeader
                 label="Время"
                 sortDirection={getSortIcon('time')}
@@ -368,6 +372,24 @@ export function RequestsTable({
                 {/* Status */}
                 <td className="whitespace-nowrap px-6 py-4">
                   <StatusBadge status={request.status} />
+                </td>
+
+                {/* Response indicator */}
+                <td className="py-4 px-4">
+                  {request.status === 'resolved' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-success)]/10">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[var(--buh-success)]" />
+                      </div>
+                      {request.responseTimeMinutes !== null && request.responseTimeMinutes !== undefined && (
+                        <span className="text-xs text-[var(--buh-foreground-muted)]">
+                          {request.responseTimeMinutes} мин
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-[var(--buh-foreground-subtle)]">—</span>
+                  )}
                 </td>
 
                 {/* Time */}

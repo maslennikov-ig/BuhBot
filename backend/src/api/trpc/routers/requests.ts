@@ -14,6 +14,7 @@ import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
+import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
 /**
  * Request status schema (matches Prisma RequestStatus enum)
@@ -155,8 +156,8 @@ export const requestsRouter = router({
       return {
         requests: requests.map((req) => ({
           ...req,
-          chatId: Number(req.chatId),
-          messageId: Number(req.messageId),
+          chatId: safeNumberFromBigInt(req.chatId),
+          messageId: safeNumberFromBigInt(req.messageId),
         })),
         total,
       };
@@ -204,10 +205,20 @@ export const requestsRouter = router({
             resolutionNotes: z.string().nullable(),
           })
         ),
+        responseMessage: z
+          .object({
+            id: z.string().uuid(),
+            messageText: z.string(),
+            username: z.string().nullable(),
+            firstName: z.string().nullable(),
+            lastName: z.string().nullable(),
+            createdAt: z.date(),
+          })
+          .nullable(),
       })
     )
     .query(async ({ ctx, input }) => {
-      // Fetch request with related alerts
+      // Fetch request with related alerts and response messages
       const request = await ctx.prisma.clientRequest.findUnique({
         where: { id: input.id },
         include: {
@@ -225,6 +236,18 @@ export const requestsRouter = router({
               alertSentAt: 'desc',
             },
           },
+          responseMessages: {
+            select: {
+              id: true,
+              messageText: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' },
+            take: 1, // Usually just one response
+          },
         },
       });
 
@@ -238,8 +261,8 @@ export const requestsRouter = router({
       return {
         request: {
           id: request.id,
-          chatId: Number(request.chatId),
-          messageId: Number(request.messageId),
+          chatId: safeNumberFromBigInt(request.chatId),
+          messageId: safeNumberFromBigInt(request.messageId),
           messageText: request.messageText,
           clientUsername: request.clientUsername,
           receivedAt: request.receivedAt,
@@ -252,6 +275,7 @@ export const requestsRouter = router({
           updatedAt: request.updatedAt,
         },
         alerts: request.slaAlerts,
+        responseMessage: request.responseMessages[0] ?? null,
       };
     }),
 

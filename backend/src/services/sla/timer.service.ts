@@ -58,12 +58,11 @@ export interface SlaStatus {
  */
 async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
   try {
+    // Check if chat exists and get 24/7 mode setting
     const chat = await prisma.chat.findUnique({
       where: { id: BigInt(chatId) },
-      include: {
-        workingSchedules: {
-          where: { isActive: true },
-        },
+      select: {
+        is24x7Mode: true,
       },
     });
 
@@ -79,17 +78,30 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
       };
     }
 
+    // Fetch working schedules for this chat
+    const workingSchedules = await prisma.workingSchedule.findMany({
+      where: {
+        chatId: BigInt(chatId),
+        isActive: true,
+      },
+    });
+
     // If chat has custom schedules, use them
-    if (chat.workingSchedules.length > 0) {
+    if (workingSchedules.length > 0) {
       // Convert database schedules to WorkingSchedule format
-      const workingDays = chat.workingSchedules.map((s: { dayOfWeek: number }) => s.dayOfWeek);
-      const firstSchedule = chat.workingSchedules[0];
+      const workingDays = workingSchedules.map((s) => s.dayOfWeek);
+      const firstSchedule = workingSchedules[0];
 
       // Use the timezone from the first schedule, or default
       const timezone = firstSchedule?.timezone ?? 'Europe/Moscow';
 
-      // Extract time from database Time field
-      // Database stores as Date with 1970-01-01 + time
+      // Format time from Date object (Prisma returns TIME as Date)
+      const formatTime = (date: Date): string => {
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+      };
+
       const startTime = firstSchedule
         ? formatTime(firstSchedule.startTime)
         : '09:00';
@@ -116,15 +128,6 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
     });
     return DEFAULT_WORKING_SCHEDULE;
   }
-}
-
-/**
- * Format a Date object to HH:mm string
- */
-function formatTime(date: Date): string {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
 }
 
 /**

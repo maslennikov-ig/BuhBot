@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
+import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
 /**
  * Chat type schema (matches Prisma ChatType enum)
@@ -99,7 +100,7 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats: chats.map((chat: { id: bigint; chatType: 'private' | 'group' | 'supergroup'; title: string | null; accountantUsername: string | null; assignedAccountantId: string | null; slaEnabled: boolean; slaResponseMinutes: number; createdAt: Date }) => ({ ...chat, id: Number(chat.id) })),
+        chats: chats.map((chat: { id: bigint; chatType: 'private' | 'group' | 'supergroup'; title: string | null; accountantUsername: string | null; assignedAccountantId: string | null; slaEnabled: boolean; slaResponseMinutes: number; createdAt: Date }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })),
         total,
       };
     }),
@@ -154,7 +155,100 @@ export const chatsRouter = router({
         });
       }
 
-      return { ...chat, id: Number(chat.id) };
+      return { ...chat, id: safeNumberFromBigInt(chat.id) };
+    }),
+
+  /**
+   * Get chat details with recent messages
+   *
+   * @param id - Chat ID (Telegram chat ID)
+   * @param messageLimit - Number of recent messages to fetch (default: 20, max: 100)
+   * @returns Chat details with recent messages
+   * @throws NOT_FOUND if chat doesn't exist
+   * @authorization All authenticated users (read-only)
+   */
+  getByIdWithMessages: authedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        messageLimit: z.number().int().min(1).max(100).default(20),
+      })
+    )
+    .output(
+      z.object({
+        chat: z.object({
+          id: z.number(),
+          chatType: ChatTypeSchema,
+          title: z.string().nullable(),
+          accountantUsername: z.string().nullable(),
+          assignedAccountantId: z.string().uuid().nullable(),
+          slaEnabled: z.boolean(),
+          slaResponseMinutes: z.number().int(),
+          createdAt: z.date(),
+        }),
+        messages: z.array(
+          z.object({
+            id: z.string().uuid(),
+            messageId: z.number(),
+            telegramUserId: z.number(),
+            username: z.string().nullable(),
+            firstName: z.string().nullable(),
+            lastName: z.string().nullable(),
+            messageText: z.string(),
+            isAccountant: z.boolean(),
+            createdAt: z.date(),
+          })
+        ),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const chat = await ctx.prisma.chat.findUnique({
+        where: { id: BigInt(input.id) },
+        include: {
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: input.messageLimit,
+            select: {
+              id: true,
+              messageId: true,
+              telegramUserId: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              messageText: true,
+              isAccountant: true,
+              createdAt: true,
+            },
+          },
+        },
+      });
+
+      if (!chat) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Chat with ID ${input.id} not found`,
+        });
+      }
+
+      return {
+        chat: {
+          id: safeNumberFromBigInt(chat.id),
+          chatType: chat.chatType,
+          title: chat.title,
+          accountantUsername: chat.accountantUsername,
+          assignedAccountantId: chat.assignedAccountantId,
+          slaEnabled: chat.slaEnabled,
+          slaResponseMinutes: chat.slaResponseMinutes,
+          createdAt: chat.createdAt,
+        },
+        messages: chat.messages
+          .map((msg) => ({
+            ...msg,
+            messageId: safeNumberFromBigInt(msg.messageId),
+            telegramUserId: safeNumberFromBigInt(msg.telegramUserId),
+          }))
+          .reverse(), // Return oldest first
+      };
     }),
 
   /**
@@ -229,7 +323,7 @@ export const chatsRouter = router({
 
       return {
         success: true,
-        chat: { ...updatedChat, id: Number(updatedChat.id) },
+        chat: { ...updatedChat, id: safeNumberFromBigInt(updatedChat.id) },
       };
     }),
 
@@ -433,7 +527,7 @@ export const chatsRouter = router({
         },
       });
 
-      return { ...chat, id: Number(chat.id) };
+      return { ...chat, id: safeNumberFromBigInt(chat.id) };
     }),
 
   /**

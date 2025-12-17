@@ -601,9 +601,11 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
 
   try {
     // Find all pending requests with SLA timer started
+    // Note: Use { in: [...] } instead of direct equality for enum fields
+    // due to Prisma 7.0 driver adapter behavior with PostgreSQL enums
     const pendingRequests = await prisma.clientRequest.findMany({
       where: {
-        status: 'pending',
+        status: { in: ['pending'] },
         slaTimerStartedAt: { not: null },
       },
       include: {

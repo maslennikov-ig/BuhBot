@@ -27,8 +27,22 @@ import { closeQueues } from './queues/setup.js';
 const app = express();
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// IMPORTANT: Webhook path must NOT go through express.json() as Telegraf needs raw body
+// express.json() consumes the body stream, making it unavailable for Telegraf
+const webhookPath = '/webhook/telegram';
+app.use((req, res, next) => {
+  if (req.path === webhookPath) {
+    // Skip JSON parsing for webhook - Telegraf handles it internally
+    return next();
+  }
+  express.json()(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.path === webhookPath) {
+    return next();
+  }
+  express.urlencoded({ extended: true })(req, res, next);
+});
 
 // Request logging middleware
 app.use((req, _res, next) => {

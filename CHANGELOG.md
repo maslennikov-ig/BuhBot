@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2025-12-17
+
+### Added
+- **sla**: add SLA timer recovery on server restart (e01bacf)
+
+### Fixed
+- **webhook**: use explicit POST route for Telegraf middleware (f2081af)
+- **webhook**: skip express.json() for Telegram webhook path (1cb266b)
+- **deploy**: use pre-built Docker images instead of building on deploy (06718c3)
+
 ## [0.9.5] - 2025-12-16
 
 ### Added

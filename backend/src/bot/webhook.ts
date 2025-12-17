@@ -77,8 +77,10 @@ export async function setupWebhook(
 
     const webhookMiddleware = await bot.createWebhook(createWebhookOptions);
 
-    // Attach middleware to Express - createWebhook returns middleware that handles path matching internally
-    app.use(webhookMiddleware);
+    // Attach middleware to Express with explicit path
+    // createWebhook returns middleware that expects to be mounted at the root
+    // but we need explicit path matching for Express routing
+    app.post(webhookPath, webhookMiddleware);
 
     // Set bot commands for menu button
     await bot.telegram.setMyCommands([

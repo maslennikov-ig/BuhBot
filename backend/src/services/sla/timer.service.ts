@@ -17,6 +17,8 @@ import logger from '../../utils/logger.js';
 import {
   scheduleSlaCheck,
   cancelSlaCheck,
+  slaTimerQueue,
+  queueAlert,
 } from '../../queues/setup.js';
 import {
   calculateDelayUntilBreach,
@@ -547,10 +549,234 @@ export async function getSlaStatus(requestId: string): Promise<SlaStatus | null>
   }
 }
 
+/**
+ * Recovery result statistics
+ */
+export interface RecoveryResult {
+  /** Total pending requests found */
+  totalPending: number;
+  /** Requests rescheduled (job was missing, breach not yet) */
+  rescheduled: number;
+  /** Requests marked as breached (job missing, breach time passed) */
+  breached: number;
+  /** Requests that already had active jobs */
+  alreadyActive: number;
+  /** Requests that failed to recover */
+  failed: number;
+}
+
+/**
+ * Recover pending SLA timers after server restart
+ *
+ * This function handles the critical edge case where BullMQ delayed jobs
+ * are lost during container restarts. It:
+ *
+ * 1. Queries all ClientRequests with status='pending' and slaTimerStartedAt != null
+ * 2. For each request, checks if the BullMQ job still exists
+ * 3. If job is missing:
+ *    - If breach time has passed: immediately mark as breached and queue alert
+ *    - If breach time not yet passed: reschedule the job with remaining delay
+ *
+ * Should be called during application startup AFTER Redis connection is established.
+ *
+ * @returns Recovery statistics
+ *
+ * @example
+ * ```typescript
+ * // In index.ts startup sequence
+ * const result = await recoverPendingSlaTimers();
+ * logger.info('SLA timer recovery complete', result);
+ * ```
+ */
+export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
+  const result: RecoveryResult = {
+    totalPending: 0,
+    rescheduled: 0,
+    breached: 0,
+    alreadyActive: 0,
+    failed: 0,
+  };
+
+  logger.info('Starting SLA timer recovery...', { service: 'sla-timer-recovery' });
+
+  try {
+    // Find all pending requests with SLA timer started
+    const pendingRequests = await prisma.clientRequest.findMany({
+      where: {
+        status: 'pending',
+        slaTimerStartedAt: { not: null },
+      },
+      include: {
+        chat: true,
+      },
+    });
+
+    result.totalPending = pendingRequests.length;
+
+    if (pendingRequests.length === 0) {
+      logger.info('No pending SLA timers to recover', { service: 'sla-timer-recovery' });
+      return result;
+    }
+
+    logger.info(`Found ${pendingRequests.length} pending requests to check`, {
+      service: 'sla-timer-recovery',
+    });
+
+    for (const request of pendingRequests) {
+      const jobId = `sla-${request.id}`;
+
+      try {
+        // Check if job still exists in BullMQ
+        const existingJob = await slaTimerQueue.getJob(jobId);
+
+        if (existingJob) {
+          // Job still exists, nothing to do
+          result.alreadyActive++;
+          logger.debug('SLA timer job still active', {
+            requestId: request.id,
+            jobId,
+            service: 'sla-timer-recovery',
+          });
+          continue;
+        }
+
+        // Job is missing - need to recover
+        const chatId = String(request.chatId);
+        const thresholdMinutes = request.chat?.slaThresholdMinutes ?? 60;
+        const schedule = await getScheduleForChat(chatId);
+
+        // Calculate elapsed working time
+        const elapsedMinutes = calculateWorkingMinutes(
+          request.receivedAt,
+          new Date(),
+          schedule
+        );
+
+        if (elapsedMinutes >= thresholdMinutes) {
+          // Breach time has already passed - mark as breached immediately
+          logger.warn('SLA breach detected during recovery (job was lost)', {
+            requestId: request.id,
+            chatId,
+            elapsedMinutes,
+            thresholdMinutes,
+            service: 'sla-timer-recovery',
+          });
+
+          // Update request as breached
+          await prisma.clientRequest.update({
+            where: { id: request.id },
+            data: {
+              slaBreached: true,
+              status: 'escalated',
+            },
+          });
+
+          // Queue breach alert
+          // Get manager IDs from chat for escalation
+          const managers = await getManagersForChat(chatId);
+
+          if (managers.length > 0) {
+            await queueAlert({
+              requestId: request.id,
+              alertType: 'breach',
+              managerIds: managers,
+              escalationLevel: 0,
+            });
+          }
+
+          result.breached++;
+        } else {
+          // Breach time not yet passed - reschedule the job
+          const delayMs = calculateDelayUntilBreach(
+            request.receivedAt,
+            thresholdMinutes,
+            schedule
+          );
+
+          // Ensure delay is positive (at least 1 second)
+          const actualDelayMs = Math.max(delayMs, 1000);
+
+          await scheduleSlaCheck(request.id, chatId, thresholdMinutes, actualDelayMs);
+
+          logger.info('SLA timer rescheduled after recovery', {
+            requestId: request.id,
+            chatId,
+            elapsedMinutes,
+            remainingMinutes: thresholdMinutes - elapsedMinutes,
+            delayMs: actualDelayMs,
+            service: 'sla-timer-recovery',
+          });
+
+          result.rescheduled++;
+        }
+      } catch (error) {
+        logger.error('Failed to recover SLA timer for request', {
+          requestId: request.id,
+          error: error instanceof Error ? error.message : String(error),
+          service: 'sla-timer-recovery',
+        });
+        result.failed++;
+      }
+    }
+
+    logger.info('SLA timer recovery completed', {
+      ...result,
+      service: 'sla-timer-recovery',
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to recover SLA timers', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      service: 'sla-timer-recovery',
+    });
+    throw error;
+  }
+}
+
+/**
+ * Get manager Telegram user IDs for alert escalation
+ *
+ * Uses the managerTelegramIds field from Chat which stores
+ * Telegram IDs of managers to notify on SLA breach.
+ *
+ * @param chatId - Telegram chat ID
+ * @returns Array of manager Telegram user IDs as strings
+ */
+async function getManagersForChat(chatId: string): Promise<string[]> {
+  try {
+    const chat = await prisma.chat.findUnique({
+      where: { id: BigInt(chatId) },
+      select: {
+        managerTelegramIds: true,
+      },
+    });
+
+    if (!chat?.managerTelegramIds || chat.managerTelegramIds.length === 0) {
+      logger.debug('No managers configured for chat', {
+        chatId,
+        service: 'sla-timer-recovery',
+      });
+      return [];
+    }
+
+    return chat.managerTelegramIds;
+  } catch (error) {
+    logger.error('Failed to get managers for chat', {
+      chatId,
+      error: error instanceof Error ? error.message : String(error),
+      service: 'sla-timer-recovery',
+    });
+    return [];
+  }
+}
+
 export default {
   startSlaTimer,
   stopSlaTimer,
   pauseSlaTimer,
   resumeSlaTimer,
   getSlaStatus,
+  recoverPendingSlaTimers,
 };

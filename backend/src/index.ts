@@ -8,6 +8,7 @@ import { disconnectPrisma } from './lib/prisma.js';
 import { disconnectRedis } from './lib/redis.js';
 import { appRouter, createContext } from './api/trpc/index.js';
 import { registerHandlers, setupWebhook, launchPolling, stopBot } from './bot/index.js';
+import { recoverPendingSlaTimers } from './services/sla/timer.service.js';
 
 // Initialize BullMQ workers for background job processing
 // Workers self-register when imported, enabling SLA monitoring, alert delivery, and surveys
@@ -131,6 +132,24 @@ const registerFinalHandlers = () => {
 };
 
 const startServer = async (port: number) => {
+  // Recover pending SLA timers after restart
+  // This must be done after Redis/BullMQ workers are loaded
+  try {
+    const recoveryResult = await recoverPendingSlaTimers();
+    if (recoveryResult.totalPending > 0) {
+      logger.info('SLA timer recovery completed', {
+        ...recoveryResult,
+        service: 'startup',
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to recover SLA timers on startup', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'startup',
+    });
+    // Don't fail startup - continue even if recovery fails
+  }
+
   // Setup Telegram bot (Webhook or Polling)
   try {
     if (env.TELEGRAM_WEBHOOK_URL) {

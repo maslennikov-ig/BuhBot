@@ -55,15 +55,44 @@ export async function isAccountantForChat(
     });
 
     if (!chat) {
+      logger.debug('Chat not found in database', {
+        chatId: chatId.toString(),
+        service: 'response-handler',
+      });
       return { isAccountant: false, accountantId: null };
     }
+
+    // Log chat configuration for debugging
+    logger.debug('Chat configuration for accountant check', {
+      chatId: chatId.toString(),
+      chatAccountantUsername: chat.accountantUsername,
+      assignedAccountantId: chat.assignedAccountantId,
+      assignedAccountantTelegramUsername: chat.assignedAccountant?.telegramUsername,
+      assignedAccountantTelegramId: chat.assignedAccountant?.telegramId?.toString(),
+      senderUsername: username,
+      senderTelegramId: telegramUserId,
+      service: 'response-handler',
+    });
 
     // Check 1: Username matches accountantUsername field (legacy)
     if (username && chat.accountantUsername) {
       const normalizedChatUsername = chat.accountantUsername.replace(/^@/, '').toLowerCase();
       const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
 
+      logger.debug('Checking legacy accountantUsername match', {
+        chatId: chatId.toString(),
+        normalizedChatUsername,
+        normalizedSenderUsername,
+        matches: normalizedChatUsername === normalizedSenderUsername,
+        service: 'response-handler',
+      });
+
       if (normalizedChatUsername === normalizedSenderUsername) {
+        logger.info('Accountant matched by legacy accountantUsername field', {
+          chatId: chatId.toString(),
+          username,
+          service: 'response-handler',
+        });
         return {
           isAccountant: true,
           accountantId: chat.assignedAccountantId,
@@ -76,8 +105,16 @@ export async function isAccountantForChat(
       const normalizedAccountantUsername = chat.assignedAccountant.telegramUsername.replace(/^@/, '').toLowerCase();
       const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
 
+      logger.debug('Checking assignedAccountant.telegramUsername match', {
+        chatId: chatId.toString(),
+        normalizedAccountantUsername,
+        normalizedSenderUsername,
+        matches: normalizedAccountantUsername === normalizedSenderUsername,
+        service: 'response-handler',
+      });
+
       if (normalizedAccountantUsername === normalizedSenderUsername) {
-        logger.debug('Accountant matched by assignedAccountant.telegramUsername', {
+        logger.info('Accountant matched by assignedAccountant.telegramUsername', {
           chatId: chatId.toString(),
           username,
           service: 'response-handler',
@@ -91,8 +128,19 @@ export async function isAccountantForChat(
 
     // Check 3: Telegram ID matches assignedAccountant.telegramId from User table
     if (telegramUserId && chat.assignedAccountant?.telegramId) {
-      if (BigInt(telegramUserId) === chat.assignedAccountant.telegramId) {
-        logger.debug('Accountant matched by assignedAccountant.telegramId', {
+      const senderTgId = BigInt(telegramUserId);
+      const accountantTgId = chat.assignedAccountant.telegramId;
+
+      logger.debug('Checking assignedAccountant.telegramId match', {
+        chatId: chatId.toString(),
+        senderTelegramId: senderTgId.toString(),
+        accountantTelegramId: accountantTgId.toString(),
+        matches: senderTgId === accountantTgId,
+        service: 'response-handler',
+      });
+
+      if (senderTgId === accountantTgId) {
+        logger.info('Accountant matched by assignedAccountant.telegramId', {
           chatId: chatId.toString(),
           telegramUserId,
           service: 'response-handler',
@@ -104,6 +152,12 @@ export async function isAccountantForChat(
       }
     }
 
+    logger.debug('No accountant match found', {
+      chatId: chatId.toString(),
+      username,
+      telegramUserId,
+      service: 'response-handler',
+    });
     return { isAccountant: false, accountantId: null };
   } catch (error) {
     logger.error('Error checking if user is accountant', {
@@ -111,6 +165,7 @@ export async function isAccountantForChat(
       username,
       telegramUserId,
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
       service: 'response-handler',
     });
     return { isAccountant: false, accountantId: null };
@@ -151,10 +206,31 @@ export function registerResponseHandler(): void {
 
     const chatId = ctx.chat.id;
     const messageId = ctx.message.message_id;
+    const messageText = ctx.message.text;
     const username = ctx.from?.username;
     const telegramUserId = ctx.from?.id;
+    const firstName = ctx.from?.first_name;
+    const lastName = ctx.from?.last_name;
+
+    // Log all incoming messages for debugging (truncate long messages)
+    logger.debug('Processing message in response handler', {
+      chatId,
+      messageId,
+      username,
+      telegramUserId,
+      firstName,
+      lastName,
+      textPreview: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
+      textLength: messageText.length,
+      service: 'response-handler',
+    });
 
     if (!telegramUserId) {
+      logger.warn('Message without telegramUserId, skipping', {
+        chatId,
+        messageId,
+        service: 'response-handler',
+      });
       return;
     }
 
@@ -166,17 +242,36 @@ export function registerResponseHandler(): void {
         telegramUserId
       );
 
+      logger.debug('Accountant check result', {
+        chatId,
+        messageId,
+        isAccountant,
+        accountantId,
+        checkedUsername: username,
+        checkedTelegramUserId: telegramUserId,
+        service: 'response-handler',
+      });
+
       if (!isAccountant) {
         // Not an accountant, skip response processing
         // (Message handler will process client messages)
+        logger.debug('Not an accountant message, skipping response processing', {
+          chatId,
+          messageId,
+          username,
+          telegramUserId,
+          service: 'response-handler',
+        });
         return;
       }
 
-      logger.debug('Accountant message detected', {
+      logger.info('Accountant message detected', {
         chatId,
         messageId,
         username,
+        telegramUserId,
         accountantId,
+        textPreview: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
         service: 'response-handler',
       });
 

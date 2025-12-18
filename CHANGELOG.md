@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2025-12-18
+
+### Fixed
+- **api**: remove direction param conflict with tRPC infinite query (1d199fa)
+- **ci**: sync backend package-lock.json with npm (not pnpm) (0e831df)
+- **ci**: regenerate backend package-lock.json for Docker build (bb9175d)
+
 ## [0.9.7] - 2025-12-17
 
 ### Added

@@ -59,7 +59,6 @@ export const messagesRouter = router({
    * @param chatId - Chat ID (Telegram chat ID)
    * @param limit - Number of messages to fetch (default: 50, max: 100)
    * @param cursor - Cursor for pagination (message UUID to start after)
-   * @param direction - Pagination direction: 'older' or 'newer' (default: 'older')
    * @returns Messages with pagination info
    */
   listByChat: authedProcedure
@@ -68,7 +67,6 @@ export const messagesRouter = router({
         chatId: z.number(),
         limit: z.number().int().min(1).max(100).default(50),
         cursor: z.string().uuid().optional(),
-        direction: z.enum(['older', 'newer']).default('older'),
       })
     )
     .output(
@@ -109,7 +107,7 @@ export const messagesRouter = router({
         });
       }
 
-      // Build cursor condition
+      // Build cursor condition (always fetch older messages for infinite scroll)
       let cursorCondition = {};
       if (input.cursor) {
         const cursorMessage = await ctx.prisma.chatMessage.findUnique({
@@ -119,22 +117,19 @@ export const messagesRouter = router({
 
         if (cursorMessage) {
           cursorCondition = {
-            createdAt:
-              input.direction === 'older'
-                ? { lt: cursorMessage.createdAt }
-                : { gt: cursorMessage.createdAt },
+            createdAt: { lt: cursorMessage.createdAt },
           };
         }
       }
 
-      // Fetch messages
+      // Fetch messages (newest first, then reverse for display)
       const messages = await ctx.prisma.chatMessage.findMany({
         where: {
           chatId: BigInt(input.chatId),
           ...cursorCondition,
         },
         orderBy: {
-          createdAt: input.direction === 'older' ? 'desc' : 'asc',
+          createdAt: 'desc',
         },
         take: input.limit + 1, // Fetch one extra to check if there are more
         select: {
@@ -156,11 +151,6 @@ export const messagesRouter = router({
       // Check if there are more messages
       const hasMore = messages.length > input.limit;
       const resultMessages = hasMore ? messages.slice(0, -1) : messages;
-
-      // If fetching newer, reverse to show oldest first
-      if (input.direction === 'newer') {
-        resultMessages.reverse();
-      }
 
       // Get next cursor
       const lastMessage = resultMessages[resultMessages.length - 1];

@@ -85,6 +85,12 @@ export const requestsRouter = router({
             chat: z.object({
               title: z.string().nullable(),
             }),
+            responseMessage: z
+              .object({
+                messageText: z.string(),
+                username: z.string().nullable(),
+              })
+              .nullable(),
           })
         ),
         total: z.number().int(),
@@ -145,6 +151,14 @@ export const requestsRouter = router({
                 title: true,
               },
             },
+            responseMessages: {
+              select: {
+                messageText: true,
+                username: true,
+              },
+              take: 1,
+              orderBy: { createdAt: 'asc' },
+            },
           },
           orderBy,
           take: input.limit,
@@ -158,6 +172,7 @@ export const requestsRouter = router({
           ...req,
           chatId: safeNumberFromBigInt(req.chatId),
           messageId: safeNumberFromBigInt(req.messageId),
+          responseMessage: req.responseMessages[0] ?? null,
         })),
         total,
       };
@@ -437,7 +452,7 @@ export const requestsRouter = router({
           });
         }
 
-        // 2. Delete corresponding chat message (same chat_id + message_id)
+        // 2. Delete client's message from chat history
         await tx.chatMessage.deleteMany({
           where: {
             chatId: existingRequest.chatId,
@@ -445,7 +460,17 @@ export const requestsRouter = router({
           },
         });
 
-        // 3. Delete the request
+        // 3. Delete accountant's response from chat history (if exists)
+        if (existingRequest.responseMessageId) {
+          await tx.chatMessage.deleteMany({
+            where: {
+              chatId: existingRequest.chatId,
+              messageId: existingRequest.responseMessageId,
+            },
+          });
+        }
+
+        // 4. Delete the request
         await tx.clientRequest.delete({
           where: { id: input.id },
         });

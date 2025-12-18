@@ -42,6 +42,8 @@ type Request = {
   time: string;
   slaRemaining?: string; // for pending/in_progress
   responseTimeMinutes?: number | null; // response time in minutes
+  responseMessage?: string | null; // accountant's response text
+  responseUsername?: string | null; // accountant's username
 };
 
 type RequestsTableProps = {
@@ -374,18 +376,23 @@ export function RequestsTable({
                   <StatusBadge status={request.status} />
                 </td>
 
-                {/* Response indicator */}
-                <td className="py-4 px-4">
-                  {request.status === 'resolved' ? (
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-success)]/10">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-[var(--buh-success)]" />
+                {/* Response message */}
+                <td className="max-w-[200px] px-4 py-4">
+                  {request.responseMessage ? (
+                    <div className="space-y-1">
+                      <span className="block truncate text-sm text-[var(--buh-foreground-muted)]">
+                        {request.responseMessage}
+                      </span>
+                      <div className="flex items-center gap-2 text-xs text-[var(--buh-foreground-subtle)]">
+                        {request.responseUsername && (
+                          <span>@{request.responseUsername}</span>
+                        )}
+                        {request.responseTimeMinutes !== null && request.responseTimeMinutes !== undefined && (
+                          <span className="text-[var(--buh-success)]">
+                            • {request.responseTimeMinutes} мин
+                          </span>
+                        )}
                       </div>
-                      {request.responseTimeMinutes !== null && request.responseTimeMinutes !== undefined && (
-                        <span className="text-xs text-[var(--buh-foreground-muted)]">
-                          {request.responseTimeMinutes} мин
-                        </span>
-                      )}
                     </div>
                   ) : (
                     <span className="text-xs text-[var(--buh-foreground-subtle)]">—</span>

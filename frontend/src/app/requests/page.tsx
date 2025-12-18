@@ -30,7 +30,10 @@ export default function RequestsPage() {
         message: req.messageText,
         status,
         time: new Date(req.receivedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        slaRemaining: undefined, 
+        slaRemaining: undefined,
+        responseTimeMinutes: req.responseTimeMinutes,
+        responseMessage: req.responseMessage?.messageText ?? null,
+        responseUsername: req.responseMessage?.username ?? null,
       };
     });
   }, [data]);

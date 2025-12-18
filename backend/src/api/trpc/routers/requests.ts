@@ -428,16 +428,27 @@ export const requestsRouter = router({
         });
       }
 
-      // Delete related SLA alerts first (cascade)
-      if (existingRequest.slaAlerts.length > 0) {
-        await ctx.prisma.slaAlert.deleteMany({
-          where: { requestId: input.id },
-        });
-      }
+      // Use transaction for consistency
+      await ctx.prisma.$transaction(async (tx) => {
+        // 1. Delete related SLA alerts
+        if (existingRequest.slaAlerts.length > 0) {
+          await tx.slaAlert.deleteMany({
+            where: { requestId: input.id },
+          });
+        }
 
-      // Delete the request
-      await ctx.prisma.clientRequest.delete({
-        where: { id: input.id },
+        // 2. Delete corresponding chat message (same chat_id + message_id)
+        await tx.chatMessage.deleteMany({
+          where: {
+            chatId: existingRequest.chatId,
+            messageId: existingRequest.messageId,
+          },
+        });
+
+        // 3. Delete the request
+        await tx.clientRequest.delete({
+          where: { id: input.id },
+        });
       });
 
       return {

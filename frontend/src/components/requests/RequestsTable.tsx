@@ -364,9 +364,9 @@ export function RequestsTable({
 
                 {/* Message (truncated) */}
                 <td className="max-w-[200px] px-6 py-4">
-                  <p className="truncate text-sm text-[var(--buh-foreground-muted)]">
+                  <span className="block truncate text-sm text-[var(--buh-foreground-muted)]">
                     {request.message}
-                  </p>
+                  </span>
                 </td>
 
                 {/* Status */}

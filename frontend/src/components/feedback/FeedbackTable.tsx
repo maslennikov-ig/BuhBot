@@ -401,9 +401,9 @@ export function FeedbackTable({
 
                   {/* Comment preview */}
                   <td className="max-w-[200px] px-6 py-4">
-                    <p className="truncate text-sm text-[var(--buh-foreground-muted)]">
+                    <span className="block truncate text-sm text-[var(--buh-foreground-muted)]">
                       {truncateText(entry.comment)}
-                    </p>
+                    </span>
                   </td>
 
                   {/* Date */}

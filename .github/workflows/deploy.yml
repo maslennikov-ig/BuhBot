@@ -301,7 +301,8 @@ jobs:
     name: Notify Deployment
     runs-on: ubuntu-latest
     needs: [build-production, deploy-to-vds]
-    if: always()
+    # Only notify on actual success or failure, not when skipped (CI cancelled/failed)
+    if: always() && needs.deploy-to-vds.result != 'skipped'
 
     steps:
       - name: Checkout code

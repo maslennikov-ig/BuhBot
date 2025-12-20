@@ -34,12 +34,11 @@ type AccountantUsernamesInputProps = {
  * - 5 to 32 characters
  * - Alphanumeric and underscore only
  * - Cannot start/end with underscore
+ * - Regex aligned with backend: /^[a-z0-9][a-z0-9_]{3,30}[a-z0-9]$/
  */
 const isValidUsername = (username: string): boolean => {
-  const cleaned = username.replace(/^@/, '');
-  if (cleaned.length < 5 || cleaned.length > 32) return false;
-  if (cleaned.startsWith('_') || cleaned.endsWith('_')) return false;
-  return /^[a-zA-Z0-9_]+$/.test(cleaned);
+  const cleaned = username.replace(/^@/, '').toLowerCase();
+  return /^[a-z0-9][a-z0-9_]{3,30}[a-z0-9]$/.test(cleaned);
 };
 
 /**
@@ -83,7 +82,7 @@ export function AccountantUsernamesInput({
 
     // Validate format
     if (!isValidUsername(cleaned)) {
-      setError('Неверный формат username (5-32 символа, латиница, цифры, _)');
+      setError('Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)');
       return;
     }
 

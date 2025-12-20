@@ -281,11 +281,11 @@ export const chatsRouter = router({
               .string()
               .transform((val) => val.startsWith('@') ? val.slice(1) : val)
               .transform((val) => val.toLowerCase())
-              .refine((val) => /^[a-z0-9_]{5,32}$/.test(val), {
-                message: 'Неверный формат username (5-32 символа, латиница, цифры, _)',
+              .refine((val) => /^[a-z0-9][a-z0-9_]{3,30}[a-z0-9]$/.test(val), {
+                message: 'Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)',
               })
           )
-          .optional(),
+          .default([]),
       })
     )
     .output(

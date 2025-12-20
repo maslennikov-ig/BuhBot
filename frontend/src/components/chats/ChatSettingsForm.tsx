@@ -146,7 +146,7 @@ export function ChatSettingsForm({
       slaEnabled: data.slaEnabled,
       slaResponseMinutes: data.slaResponseMinutes,
       assignedAccountantId: data.assignedAccountantId,
-      accountantUsernames: data.accountantUsernames,
+      accountantUsernames: data.accountantUsernames ?? [],
     });
   };
 

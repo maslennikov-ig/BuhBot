@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.11] - 2025-12-20
+
+### Fixed
+- **ci**: skip telegram notification when deploy is skipped (72ddd72)
+
 ## [0.9.10] - 2025-12-20
 
 ## [0.9.9] - 2025-12-20

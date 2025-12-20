@@ -33,8 +33,10 @@ import logger from '../../utils/logger.js';
  * Check if a user is the assigned accountant for a chat
  *
  * Matches by:
- * 1. Telegram username matches chat.accountantUsername
- * 2. User is mapped to chat.assignedAccountantId via User table
+ * 0. Telegram username in chat.accountantUsernames array (NEW - priority)
+ * 1. Telegram username matches chat.accountantUsername (LEGACY - deprecated)
+ * 2. User is mapped to chat.assignedAccountantId via User table (username)
+ * 3. User is mapped to chat.assignedAccountantId via User table (telegram ID)
  *
  * @param chatId - Telegram chat ID
  * @param username - Telegram username of the sender (without @)
@@ -65,6 +67,7 @@ export async function isAccountantForChat(
     // Log chat configuration for debugging
     logger.debug('Chat configuration for accountant check', {
       chatId: chatId.toString(),
+      accountantUsernames: chat.accountantUsernames,
       chatAccountantUsername: chat.accountantUsername,
       assignedAccountantId: chat.assignedAccountantId,
       assignedAccountantTelegramUsername: chat.assignedAccountant?.telegramUsername,
@@ -74,7 +77,37 @@ export async function isAccountantForChat(
       service: 'response-handler',
     });
 
-    // Check 1: Username matches accountantUsername field (legacy)
+    // Check 0: Username in accountantUsernames array (NEW - priority)
+    if (username && chat.accountantUsernames && chat.accountantUsernames.length > 0) {
+      const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
+
+      const isInAccountantsList = chat.accountantUsernames.some(
+        (acc) => acc.replace(/^@/, '').toLowerCase() === normalizedSenderUsername
+      );
+
+      logger.debug('Checking accountantUsernames array match', {
+        chatId: chatId.toString(),
+        accountantUsernames: chat.accountantUsernames,
+        normalizedSenderUsername,
+        isInAccountantsList,
+        service: 'response-handler',
+      });
+
+      if (isInAccountantsList) {
+        logger.info('Accountant matched by accountantUsernames array (Check 0)', {
+          chatId: chatId.toString(),
+          username,
+          matchedCheck: 'accountantUsernames_array',
+          service: 'response-handler',
+        });
+        return {
+          isAccountant: true,
+          accountantId: chat.assignedAccountantId,
+        };
+      }
+    }
+
+    // Check 1: Username matches accountantUsername field (legacy - deprecated)
     if (username && chat.accountantUsername) {
       const normalizedChatUsername = chat.accountantUsername.replace(/^@/, '').toLowerCase();
       const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
@@ -88,9 +121,10 @@ export async function isAccountantForChat(
       });
 
       if (normalizedChatUsername === normalizedSenderUsername) {
-        logger.info('Accountant matched by legacy accountantUsername field', {
+        logger.info('Accountant matched by legacy accountantUsername field (Check 1)', {
           chatId: chatId.toString(),
           username,
+          matchedCheck: 'legacy_accountantUsername',
           service: 'response-handler',
         });
         return {
@@ -114,9 +148,10 @@ export async function isAccountantForChat(
       });
 
       if (normalizedAccountantUsername === normalizedSenderUsername) {
-        logger.info('Accountant matched by assignedAccountant.telegramUsername', {
+        logger.info('Accountant matched by assignedAccountant.telegramUsername (Check 2)', {
           chatId: chatId.toString(),
           username,
+          matchedCheck: 'assignedAccountant_telegramUsername',
           service: 'response-handler',
         });
         return {
@@ -140,9 +175,10 @@ export async function isAccountantForChat(
       });
 
       if (senderTgId === accountantTgId) {
-        logger.info('Accountant matched by assignedAccountant.telegramId', {
+        logger.info('Accountant matched by assignedAccountant.telegramId (Check 3)', {
           chatId: chatId.toString(),
           telegramUserId,
+          matchedCheck: 'assignedAccountant_telegramId',
           service: 'response-handler',
         });
         return {

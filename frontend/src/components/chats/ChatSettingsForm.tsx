@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { AccountantSelect } from '@/components/chats/AccountantSelect';
+import { AccountantUsernamesInput } from '@/components/chats/AccountantUsernamesInput';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,7 @@ type ChatSettingsFormProps = {
     slaEnabled: boolean;
     slaResponseMinutes: number;
     assignedAccountantId: string | null;
+    accountantUsernames?: string[];
   };
   onSuccess?: () => void;
   className?: string;
@@ -60,6 +62,7 @@ const chatSettingsSchema = z.object({
   assignedAccountantId: z
     .union([z.string().uuid(), z.null(), z.literal('')])
     .transform((val) => (val === '' ? null : val)),
+  accountantUsernames: z.array(z.string()).optional(),
 });
 
 type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
@@ -72,6 +75,7 @@ const DEFAULT_VALUES: ChatSettingsFormData = {
   slaEnabled: true,
   slaResponseMinutes: 60,
   assignedAccountantId: null,
+  accountantUsernames: [],
 };
 
 // ============================================
@@ -142,6 +146,7 @@ export function ChatSettingsForm({
       slaEnabled: data.slaEnabled,
       slaResponseMinutes: data.slaResponseMinutes,
       assignedAccountantId: data.assignedAccountantId,
+      accountantUsernames: data.accountantUsernames,
     });
   };
 
@@ -256,6 +261,29 @@ export function ChatSettingsForm({
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
                   Бухгалтер, ответственный за этот чат
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Accountant Usernames */}
+          <FormField
+            control={form.control}
+            name="accountantUsernames"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-[var(--buh-foreground)]">
+                  Бухгалтеры (@username)
+                </FormLabel>
+                <FormControl>
+                  <AccountantUsernamesInput
+                    value={field.value ?? []}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormDescription className="text-[var(--buh-foreground-subtle)]">
+                  Укажите @username бухгалтеров, ответственных за этот чат
                 </FormDescription>
                 <FormMessage />
               </FormItem>

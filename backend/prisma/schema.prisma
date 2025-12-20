@@ -194,7 +194,8 @@ model Chat {
   id                   BigInt   @id @db.BigInt
   chatType             ChatType @map("chat_type")
   title                String?
-  accountantUsername   String?  @map("accountant_username")
+  accountantUsername   String?  @map("accountant_username") // LEGACY - single accountant
+  accountantUsernames  String[] @default([]) @map("accountant_usernames") // NEW - multiple accountants
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
   slaEnabled           Boolean  @default(true) @map("sla_enabled")
   slaResponseMinutes   Int      @default(60) @map("sla_response_minutes")

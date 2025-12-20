@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.12] - 2025-12-20
+
+### Added
+- **deploy**: add pre-flight checks for dependencies and ports (b78cac2)
+
 ## [0.9.11] - 2025-12-20
 
 ### Fixed

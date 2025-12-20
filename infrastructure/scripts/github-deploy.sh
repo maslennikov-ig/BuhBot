@@ -115,6 +115,54 @@ acquire_lock() {
 }
 
 # ============================================================================
+# Pre-flight Checks
+# ============================================================================
+
+preflight_checks() {
+    log_info "Running pre-flight checks..."
+    local errors=0
+
+    # Check required commands
+    local required_commands=("jq" "docker" "curl")
+    for cmd in "${required_commands[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            log_error "Required command not found: $cmd"
+            errors=$((errors + 1))
+        fi
+    done
+
+    # Check if ports 80/443 are available or used by our containers
+    for port in 80 443; do
+        local port_user
+        port_user=$(sudo lsof -i ":$port" -sTCP:LISTEN -t 2>/dev/null | head -1 || true)
+
+        if [ -n "$port_user" ]; then
+            local process_name
+            process_name=$(ps -p "$port_user" -o comm= 2>/dev/null || echo "unknown")
+
+            # Allow if it's docker-proxy (our containers)
+            if [[ "$process_name" != "docker-proxy" ]]; then
+                log_error "Port $port is in use by '$process_name' (PID: $port_user). Stop it before deploying."
+                errors=$((errors + 1))
+            fi
+        fi
+    done
+
+    # Check docker daemon is running
+    if ! docker info &> /dev/null; then
+        log_error "Docker daemon is not running"
+        errors=$((errors + 1))
+    fi
+
+    if [ $errors -gt 0 ]; then
+        log_error "Pre-flight checks failed with $errors error(s)"
+        exit 1
+    fi
+
+    log_success "Pre-flight checks passed"
+}
+
+# ============================================================================
 # Argument Parsing
 # ============================================================================
 
@@ -436,6 +484,11 @@ main() {
 
     # Parse arguments
     parse_arguments "$@"
+
+    # Run pre-flight checks (skip for rollback)
+    if [ "$ROLLBACK_MODE" != true ]; then
+        preflight_checks
+    fi
 
     # Acquire lock
     acquire_lock

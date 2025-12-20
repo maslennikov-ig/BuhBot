@@ -57,6 +57,7 @@ export const chatsRouter = router({
             chatType: ChatTypeSchema,
             title: z.string().nullable(),
             accountantUsername: z.string().nullable(),
+            accountantUsernames: z.array(z.string()),
             assignedAccountantId: z.string().uuid().nullable(),
             slaEnabled: z.boolean(),
             slaResponseMinutes: z.number().int(),
@@ -85,6 +86,7 @@ export const chatsRouter = router({
             chatType: true,
             title: true,
             accountantUsername: true,
+            accountantUsernames: true,
             assignedAccountantId: true,
             slaEnabled: true,
             slaResponseMinutes: true,
@@ -100,7 +102,7 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats: chats.map((chat: { id: bigint; chatType: 'private' | 'group' | 'supergroup'; title: string | null; accountantUsername: string | null; assignedAccountantId: string | null; slaEnabled: boolean; slaResponseMinutes: number; createdAt: Date }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })),
+        chats: chats.map((chat: { id: bigint; chatType: 'private' | 'group' | 'supergroup'; title: string | null; accountantUsername: string | null; accountantUsernames: string[]; assignedAccountantId: string | null; slaEnabled: boolean; slaResponseMinutes: number; createdAt: Date }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })),
         total,
       };
     }),
@@ -125,6 +127,7 @@ export const chatsRouter = router({
         chatType: ChatTypeSchema,
         title: z.string().nullable(),
         accountantUsername: z.string().nullable(),
+        accountantUsernames: z.array(z.string()),
         assignedAccountantId: z.string().uuid().nullable(),
         slaEnabled: z.boolean(),
         slaResponseMinutes: z.number().int(),
@@ -140,6 +143,7 @@ export const chatsRouter = router({
           chatType: true,
           title: true,
           accountantUsername: true,
+          accountantUsernames: true,
           assignedAccountantId: true,
           slaEnabled: true,
           slaResponseMinutes: true,
@@ -181,6 +185,7 @@ export const chatsRouter = router({
           chatType: ChatTypeSchema,
           title: z.string().nullable(),
           accountantUsername: z.string().nullable(),
+          accountantUsernames: z.array(z.string()),
           assignedAccountantId: z.string().uuid().nullable(),
           slaEnabled: z.boolean(),
           slaResponseMinutes: z.number().int(),
@@ -236,6 +241,7 @@ export const chatsRouter = router({
           chatType: chat.chatType,
           title: chat.title,
           accountantUsername: chat.accountantUsername,
+          accountantUsernames: chat.accountantUsernames,
           assignedAccountantId: chat.assignedAccountantId,
           slaEnabled: chat.slaEnabled,
           slaResponseMinutes: chat.slaResponseMinutes,
@@ -269,6 +275,17 @@ export const chatsRouter = router({
         assignedAccountantId: z.string().uuid().nullable().optional(),
         slaEnabled: z.boolean().optional(),
         slaResponseMinutes: z.number().int().min(15).max(480).optional(),
+        accountantUsernames: z
+          .array(
+            z
+              .string()
+              .transform((val) => val.startsWith('@') ? val.slice(1) : val)
+              .transform((val) => val.toLowerCase())
+              .refine((val) => /^[a-z0-9_]{5,32}$/.test(val), {
+                message: 'Неверный формат username (5-32 символа, латиница, цифры, _)',
+              })
+          )
+          .optional(),
       })
     )
     .output(
@@ -306,6 +323,9 @@ export const chatsRouter = router({
       }
       if (input.slaResponseMinutes !== undefined) {
         data.slaResponseMinutes = input.slaResponseMinutes;
+      }
+      if (input.accountantUsernames !== undefined) {
+        data.accountantUsernames = input.accountantUsernames;
       }
 
       // Update chat

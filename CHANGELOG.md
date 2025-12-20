@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9] - 2025-12-20
+
+### Added
+- **accountants**: add multiple accountant usernames support (8587966)
+- **api**: add accountantUsernames array support to chats router (048bf1c)
+- **requests**: show accountant response in requests table (2b1b06d)
+
+### Fixed
+- **api**: cascade delete chat_message when deleting client_request (5c0a272)
+
 ## [0.9.8] - 2025-12-18
 
 ### Fixed

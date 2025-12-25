@@ -260,21 +260,48 @@ jobs:
 
     steps:
       - name: Check CI status
+        id: check
         run: |
+          FAILED=""
           if [ "${{ needs.lint.result }}" != "success" ]; then
             echo "::error::Lint job failed"
-            exit 1
+            FAILED="${FAILED}lint,"
           fi
           if [ "${{ needs.type-check.result }}" != "success" ]; then
             echo "::error::Type check job failed"
-            exit 1
+            FAILED="${FAILED}type-check,"
           fi
           if [ "${{ needs.build-docker.result }}" != "success" ]; then
             echo "::error::Docker build job failed"
-            exit 1
+            FAILED="${FAILED}build-docker,"
           fi
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "::error::Test job failed"
+            FAILED="${FAILED}test,"
+          fi
+          if [ -n "$FAILED" ]; then
+            echo "failed_jobs=${FAILED%,}" >> $GITHUB_OUTPUT
             exit 1
           fi
           echo "All CI checks passed successfully!"
+
+      - name: Send Telegram notification on failure
+        if: failure() && github.ref == 'refs/heads/main'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FAILED_JOBS: ${{ steps.check.outputs.failed_jobs }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram credentials not configured, skipping notification"
+            exit 0
+          fi
+          MESSAGE="🔴 *BuhBot CI Failed*%0A%0A❌ Jobs: ${FAILED_JOBS}%0A%0A📦 Commit: \`${COMMIT_SHA:0:7}\`%0A👤 Author: $ACTOR%0A🔗 [View logs]($RUN_URL)"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "parse_mode=Markdown" \
+            -d "disable_web_page_preview=true" \
+            -d "text=${MESSAGE}"

@@ -205,7 +205,7 @@ export function AccountantSelect({
       {isOpen && (
         <div
           className={cn(
-            'absolute z-50 mt-1 w-full rounded-lg border',
+            'absolute z-[1000] mt-1 w-full rounded-lg border',
             'bg-[var(--buh-surface)] border-[var(--buh-border)]',
             'shadow-lg shadow-black/10',
             'buh-animate-fade-in-up'

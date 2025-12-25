@@ -207,7 +207,8 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 - Status: All containers deployed and healthy
 
 **Key Paths**:
-- Server credentials: `.tmp/current/vds-credentials.md`
+- Server access: `.claude/local.md` (SSH commands, containers)
+- Full credentials: `.tmp/current/vds-credentials.md`
 - Tasks: `docs/speckit/tasks.md`
 - Spec: `docs/speckit/spec.md`
 

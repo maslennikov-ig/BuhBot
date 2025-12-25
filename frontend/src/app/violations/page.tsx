@@ -429,9 +429,16 @@ export default function ViolationsPage() {
                       </td>
 
                       <td className="px-4 py-4">
-                        <span className="text-[var(--buh-foreground)]">
-                          {violation.accountantName}
-                        </span>
+                        {violation.accountantName === 'Не назначен' ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-warning)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-warning)]">
+                            <AlertTriangle className="h-3 w-3" />
+                            Не назначен
+                          </span>
+                        ) : (
+                          <span className="text-[var(--buh-foreground)]">
+                            {violation.accountantName}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

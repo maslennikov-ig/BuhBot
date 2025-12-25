@@ -274,22 +274,19 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
-              {/* Settings Form - higher z-index for dropdown to work over DangerZone */}
-              <div className="relative z-10">
-                <ChatSettingsForm
-                  chatId={chat.id}
-                  initialData={{
-                    slaEnabled: chat.slaEnabled,
-                    slaResponseMinutes: chat.slaResponseMinutes,
-                    assignedAccountantId: chat.assignedAccountantId,
-                  }}
-                />
-              </div>
+              {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
+              <ChatSettingsForm
+                chatId={chat.id}
+                initialData={{
+                  slaEnabled: chat.slaEnabled,
+                  slaResponseMinutes: chat.slaResponseMinutes,
+                  assignedAccountantId: chat.assignedAccountantId,
+                  accountantUsernames: chat.accountantUsernames ?? [],
+                }}
+              />
 
               {/* Danger Zone */}
-              <div className="relative z-0">
-                <DangerZone chatId={chat.id} chatTitle={chatTitle} />
-              </div>
+              <DangerZone chatId={chat.id} chatTitle={chatTitle} />
             </div>
           )}
 

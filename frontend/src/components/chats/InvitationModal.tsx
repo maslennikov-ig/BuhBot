@@ -84,7 +84,7 @@ export function InvitationModal({
     onSuccess: (data) => {
       setGeneratedLink(data.deepLink);
       setGeneratedCommand(data.connectCommand);
-      toast.success('Приглашение создано');
+      toast.success('Ссылка готова! Отправьте её клиенту для подключения чата');
     },
     onError: (error) => {
       console.error('Error creating invitation:', error);
@@ -165,7 +165,7 @@ export function InvitationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -174,7 +174,7 @@ export function InvitationModal({
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-lg buh-animate-fade-in-up">
+      <div className="relative w-full max-w-lg buh-animate-fade-in-up">
         <GlassCard variant="elevated" padding="lg">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -285,6 +285,9 @@ export function InvitationModal({
                         )}
                       </Button>
                     </div>
+                    <p className="text-xs text-[var(--buh-foreground-subtle)] mt-2">
+                      Чат появится в системе после того, как клиент нажмёт на ссылку и напишет боту.
+                    </p>
                   </div>
                 )}
               </div>
@@ -368,6 +371,9 @@ export function InvitationModal({
                         )}
                       </Button>
                     </div>
+                    <p className="text-xs text-[var(--buh-foreground-subtle)] mt-2">
+                      Добавьте бота в группу, отправьте этот код. Чат появится в системе после подключения.
+                    </p>
                   </div>
                 )}
               </div>

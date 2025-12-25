@@ -24,7 +24,7 @@ env:
   # Use workflow_run SHA when triggered by CI completion, otherwise current SHA
   DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  # Note: IMAGE_PREFIX is set per-job to ensure lowercase (see prepare job)
 
 jobs:
   # ==========================================================================
@@ -38,12 +38,17 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       image_tag: ${{ env.DEPLOY_SHA }}
+      image_prefix: ${{ steps.repo.outputs.prefix }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ env.DEPLOY_SHA }}
+
+      - name: Set lowercase repo name
+        id: repo
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Get version from package.json
         id: version
@@ -56,9 +61,9 @@ jobs:
         run: |
           echo "Verifying images exist in ghcr.io..."
           # Images were pushed by CI workflow, just verify they exist
-          echo "Backend: ${{ env.IMAGE_PREFIX }}/backend:${{ env.DEPLOY_SHA }}"
-          echo "Frontend: ${{ env.IMAGE_PREFIX }}/frontend:${{ env.DEPLOY_SHA }}"
-          echo "Monitoring: ${{ env.IMAGE_PREFIX }}/monitoring:${{ env.DEPLOY_SHA }}"
+          echo "Backend: ${{ steps.repo.outputs.prefix }}/backend:${{ env.DEPLOY_SHA }}"
+          echo "Frontend: ${{ steps.repo.outputs.prefix }}/frontend:${{ env.DEPLOY_SHA }}"
+          echo "Monitoring: ${{ steps.repo.outputs.prefix }}/monitoring:${{ env.DEPLOY_SHA }}"
 
   # ==========================================================================
   # Manual Approval Gate
@@ -110,22 +115,23 @@ jobs:
       - name: Pull Docker images on VDS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_PREFIX: ${{ needs.prepare.outputs.image_prefix }}
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << EOF
           set -e
 
           echo "Logging into GitHub Container Registry..."
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
           echo "Pulling Docker images from ghcr.io..."
-          docker pull ${{ env.IMAGE_PREFIX }}/backend:${{ env.DEPLOY_SHA }}
-          docker pull ${{ env.IMAGE_PREFIX }}/frontend:${{ env.DEPLOY_SHA }}
-          docker pull ${{ env.IMAGE_PREFIX }}/monitoring:${{ env.DEPLOY_SHA }}
+          docker pull ${IMAGE_PREFIX}/backend:${{ env.DEPLOY_SHA }}
+          docker pull ${IMAGE_PREFIX}/frontend:${{ env.DEPLOY_SHA }}
+          docker pull ${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}
 
           echo "Tagging images for local use..."
-          docker tag ${{ env.IMAGE_PREFIX }}/backend:${{ env.DEPLOY_SHA }} buhbot-backend:${{ env.DEPLOY_SHA }}
-          docker tag ${{ env.IMAGE_PREFIX }}/frontend:${{ env.DEPLOY_SHA }} buhbot-frontend:${{ env.DEPLOY_SHA }}
-          docker tag ${{ env.IMAGE_PREFIX }}/monitoring:${{ env.DEPLOY_SHA }} buhbot-monitoring:${{ env.DEPLOY_SHA }}
+          docker tag ${IMAGE_PREFIX}/backend:${{ env.DEPLOY_SHA }} buhbot-backend:${{ env.DEPLOY_SHA }}
+          docker tag ${IMAGE_PREFIX}/frontend:${{ env.DEPLOY_SHA }} buhbot-frontend:${{ env.DEPLOY_SHA }}
+          docker tag ${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }} buhbot-monitoring:${{ env.DEPLOY_SHA }}
 
           echo "Docker images pulled and tagged successfully"
           EOF

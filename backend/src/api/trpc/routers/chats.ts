@@ -326,7 +326,7 @@ export const chatsRouter = router({
       }
 
       // Start with input usernames
-      let finalUsernames = [...input.accountantUsernames];
+      const finalUsernames = [...input.accountantUsernames];
 
       // AUTO-ADD: If assignedAccountantId is set, add their telegramUsername to list
       if (input.assignedAccountantId) {

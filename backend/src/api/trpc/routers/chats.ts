@@ -324,9 +324,30 @@ export const chatsRouter = router({
       if (input.slaResponseMinutes !== undefined) {
         data.slaResponseMinutes = input.slaResponseMinutes;
       }
-      if (input.accountantUsernames !== undefined) {
-        data.accountantUsernames = input.accountantUsernames;
+
+      // Start with input usernames
+      let finalUsernames = [...input.accountantUsernames];
+
+      // AUTO-ADD: If assignedAccountantId is set, add their telegramUsername to list
+      if (input.assignedAccountantId) {
+        const assignedUser = await ctx.prisma.user.findUnique({
+          where: { id: input.assignedAccountantId },
+          select: { telegramUsername: true },
+        });
+
+        if (assignedUser?.telegramUsername) {
+          const normalizedUsername = assignedUser.telegramUsername
+            .replace(/^@/, '')
+            .toLowerCase();
+
+          // Add to list if not already present
+          if (!finalUsernames.includes(normalizedUsername)) {
+            finalUsernames.push(normalizedUsername);
+          }
+        }
       }
+
+      data.accountantUsernames = finalUsernames;
 
       // Update chat
       const updatedChat = await ctx.prisma.chat.update({

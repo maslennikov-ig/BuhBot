@@ -136,41 +136,77 @@ export function registerAlertCallbackHandler(): void {
       // Build keyboard with chat link
       const keyboard = buildAccountantNotificationKeyboard(String(request.chatId));
 
-      // Try to send notification
+      // Build notification message
+      const notificationMessage = formatAccountantNotification(
+        request.chat.title,
+        alert.minutesElapsed,
+        request.messageText
+      );
+
+      // Try to send notification - prefer DM to accountant, fallback to group mention
       let notificationSent = false;
 
-      try {
-        // Try to send to chat where accountant is - they should see the message
-        // We can't send to @username directly, but we can mention them in the group
-        const mentionMessage = formatAccountantNotification(
-          request.chat.title,
-          alert.minutesElapsed,
-          request.messageText
-        ) + `\n\n@${escapeHtml(accountantUsername)}`;
+      // Priority 1: Send to accountant's DM if we have their telegram_id
+      const accountantTelegramId = request.chat.assignedAccountant?.telegramId;
 
-        await bot.telegram.sendMessage(
-          String(request.chatId),
-          mentionMessage,
-          {
-            parse_mode: 'HTML',
-            ...keyboard,
-          }
-        );
+      if (accountantTelegramId) {
+        try {
+          await bot.telegram.sendMessage(
+            accountantTelegramId.toString(),
+            notificationMessage,
+            {
+              parse_mode: 'HTML',
+              ...keyboard,
+            }
+          );
 
-        notificationSent = true;
-        logger.info('Accountant notified via group mention', {
-          alertId,
-          chatId: String(request.chatId),
-          accountantUsername,
-          service: 'alert-callback',
-        });
-      } catch (error) {
-        logger.error('Failed to notify accountant in group', {
-          alertId,
-          chatId: String(request.chatId),
-          error: error instanceof Error ? error.message : String(error),
-          service: 'alert-callback',
-        });
+          notificationSent = true;
+          logger.info('Accountant notified via DM', {
+            alertId,
+            accountantTelegramId: accountantTelegramId.toString(),
+            accountantUsername,
+            service: 'alert-callback',
+          });
+        } catch (error) {
+          // DM failed - maybe bot blocked, try group mention as fallback
+          logger.warn('Failed to notify accountant via DM, trying group mention', {
+            alertId,
+            accountantTelegramId: accountantTelegramId.toString(),
+            error: error instanceof Error ? error.message : String(error),
+            service: 'alert-callback',
+          });
+        }
+      }
+
+      // Priority 2: Fallback to group mention if DM failed or no telegram_id
+      if (!notificationSent) {
+        try {
+          const mentionMessage = notificationMessage + `\n\n@${escapeHtml(accountantUsername)}`;
+
+          await bot.telegram.sendMessage(
+            String(request.chatId),
+            mentionMessage,
+            {
+              parse_mode: 'HTML',
+              ...keyboard,
+            }
+          );
+
+          notificationSent = true;
+          logger.info('Accountant notified via group mention', {
+            alertId,
+            chatId: String(request.chatId),
+            accountantUsername,
+            service: 'alert-callback',
+          });
+        } catch (error) {
+          logger.error('Failed to notify accountant in group', {
+            alertId,
+            chatId: String(request.chatId),
+            error: error instanceof Error ? error.message : String(error),
+            service: 'alert-callback',
+          });
+        }
       }
 
       if (notificationSent) {

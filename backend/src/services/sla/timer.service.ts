@@ -680,12 +680,32 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
           // Get manager IDs from chat for escalation
           const managers = await getManagersForChat(chatId);
 
-          if (managers.length > 0) {
+          let alertManagerIds = managers;
+          if (alertManagerIds.length === 0) {
+            const globalSettings = await prisma.globalSettings.findUnique({
+              where: { id: 'default' },
+            });
+            alertManagerIds = globalSettings?.globalManagerIds ?? [];
+
+            logger.warn('Using global managers for recovery breach alert', {
+              requestId: request.id,
+              chatId,
+              managerCount: alertManagerIds.length,
+              service: 'sla-timer-recovery',
+            });
+          }
+
+          if (alertManagerIds.length > 0) {
             await queueAlert({
               requestId: request.id,
               alertType: 'breach',
-              managerIds: managers,
-              escalationLevel: 0,
+              managerIds: alertManagerIds,
+              escalationLevel: 1,
+            });
+          } else {
+            logger.error('CRITICAL: No managers for recovery breach alert', {
+              requestId: request.id,
+              chatId,
             });
           }
 

@@ -178,6 +178,7 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
     // Send to each manager
     let successCount = 0;
     let failCount = 0;
+    const deliveredMessageIds: bigint[] = [];
 
     for (const managerId of managerIds) {
       try {
@@ -198,11 +199,7 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
         });
 
         successCount++;
-
-        // Update delivery status for the alert
-        if (alertId && successCount === 1) {
-          await updateDeliveryStatus(alertId, 'sent', BigInt(message.message_id));
-        }
+        deliveredMessageIds.push(BigInt(message.message_id));
       } catch (error) {
         logger.error('Failed to send alert to manager', {
           managerId,
@@ -214,10 +211,14 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
       }
     }
 
-    // Update final delivery status
+    // Single atomic update at the end with final status
     if (alertId) {
       if (successCount > 0) {
-        await updateDeliveryStatus(alertId, 'delivered');
+        await updateDeliveryStatus(
+          alertId,
+          'delivered',
+          deliveredMessageIds[0] // First message ID for reference
+        );
       } else if (failCount === managerIds.length) {
         await updateDeliveryStatus(alertId, 'failed');
       }

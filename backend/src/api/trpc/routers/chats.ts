@@ -131,6 +131,7 @@ export const chatsRouter = router({
         assignedAccountantId: z.string().uuid().nullable(),
         slaEnabled: z.boolean(),
         slaResponseMinutes: z.number().int(),
+        managerTelegramIds: z.array(z.string()),
         createdAt: z.date(),
         updatedAt: z.date(),
       })
@@ -147,6 +148,7 @@ export const chatsRouter = router({
           assignedAccountantId: true,
           slaEnabled: true,
           slaResponseMinutes: true,
+          managerTelegramIds: true,
           createdAt: true,
           updatedAt: true,
         },

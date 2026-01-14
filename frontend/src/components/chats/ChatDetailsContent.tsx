@@ -277,6 +277,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
               {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
               <ChatSettingsForm
                 chatId={chat.id}
+                managerTelegramIds={chat.managerTelegramIds ?? []}
                 initialData={{
                   slaEnabled: chat.slaEnabled,
                   slaResponseMinutes: chat.slaResponseMinutes,

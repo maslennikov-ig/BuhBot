@@ -13,7 +13,7 @@ import * as React from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Settings2, Clock, Save, Loader2 } from 'lucide-react';
+import { Settings2, Clock, Save, Loader2, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/layout/GlassCard';
@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 
 type ChatSettingsFormProps = {
   chatId: number;
+  managerTelegramIds: string[];
   initialData?: {
     slaEnabled: boolean;
     slaResponseMinutes: number;
@@ -94,6 +95,7 @@ const DEFAULT_VALUES: ChatSettingsFormData = {
  */
 export function ChatSettingsForm({
   chatId,
+  managerTelegramIds,
   initialData,
   onSuccess,
   className,
@@ -208,6 +210,22 @@ export function ChatSettingsForm({
               </FormItem>
             )}
           />
+
+          {/* Warning Banner: SLA enabled but no managers configured */}
+          {slaEnabled && (!managerTelegramIds || managerTelegramIds.length === 0) && (
+            <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-[var(--buh-warning)]">
+                  Менеджеры для уведомлений не настроены
+                </p>
+                <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
+                  SLA уведомления не будут доставлены, так как не указаны Telegram ID менеджеров.
+                  Настройте менеджеров в Глобальных настройках или добавьте их для этого чата.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* SLA Response Time */}
           <FormField

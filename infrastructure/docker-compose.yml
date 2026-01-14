@@ -98,7 +98,7 @@ services:
     image: redis:7-alpine
     container_name: buhbot-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 512mb --maxmemory-policy noeviction
     volumes:
       - redis-data:/data
     networks:

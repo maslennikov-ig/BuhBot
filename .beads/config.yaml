@@ -1,0 +1,168 @@
+# Beads Configuration File for BuhBot Project
+# ==========================================
+#
+# This is the main memory system for AI agent workflows.
+# All task tracking, dependencies, and workflow state lives here.
+#
+# Documentation: https://github.com/steveyegge/beads
+# Local guide: .claude/docs/beads-quickstart.md
+
+# =============================================================================
+# CORE SETTINGS
+# =============================================================================
+
+# Issue prefix - all issues will be buh-xxx
+issue-prefix: "buh"
+
+# Auto-start daemon when running bd commands
+auto-start-daemon: true
+
+# Debounce interval for auto-flush (how often to sync to JSONL)
+flush-debounce: "5s"
+
+# =============================================================================
+# DAEMON SETTINGS (Auto-Sync)
+# =============================================================================
+# These settings enable fully automatic synchronization:
+# - Changes are committed automatically
+# - Commits are pushed to remote automatically
+# - Remote changes are pulled automatically
+
+daemon.auto-commit: true
+daemon.auto-push: true
+daemon.auto-pull: true
+
+# =============================================================================
+# GIT INTEGRATION
+# =============================================================================
+# Git hooks are installed automatically (pre-commit, pre-push, post-merge)
+# They trigger bd sync on git operations for zero-lag synchronization
+
+# Sync branch (optional) - use separate branch for beads commits
+# Recommended for team projects to isolate beads sync from main branch
+# sync-branch: "beads-sync"
+
+# =============================================================================
+# DIRECTORY LABELS (Auto-categorization)
+# =============================================================================
+# Automatically assign labels based on file paths when creating issues
+# Usage: bd create "Fix X" --files packages/backend/src/bot/handlers.ts
+#        -> automatically gets labels: backend, bot
+
+directory-labels:
+  "packages/backend": ["backend"]
+  "packages/backend/src/bot": ["backend", "bot", "telegram"]
+  "packages/backend/src/trpc": ["backend", "api", "trpc"]
+  "packages/backend/src/services": ["backend", "services"]
+  "packages/backend/src/workers": ["backend", "workers", "bullmq"]
+  "packages/backend/prisma": ["backend", "database", "prisma"]
+  "packages/frontend": ["frontend", "nextjs"]
+  "packages/frontend/app": ["frontend", "pages"]
+  "packages/frontend/components": ["frontend", "components"]
+  "packages/shared": ["shared", "types"]
+  "supabase/migrations": ["database", "migrations"]
+  ".beads": ["beads", "config"]
+  ".claude": ["agent", "config"]
+  "docs": ["documentation"]
+
+# =============================================================================
+# EXCLUSIVE LOCK PROTOCOL (Multi-terminal safety)
+# =============================================================================
+# Prevents conflicts when multiple Claude sessions work in parallel
+# Lock is acquired when: bd update --status in_progress
+# Lock is released when: bd close or bd update --status open
+
+exclusive-lock:
+  enabled: true
+  timeout: "30m"
+  lock-file: ".beads/locks.json"
+  on-conflict: "warn"
+
+# =============================================================================
+# PROTECTED BRANCH MODE (Safe deployment)
+# =============================================================================
+# Prevents accidental pushes to main branch
+# Work happens in develop/feature branches, merge to main for deploy
+
+protected-branches:
+  enabled: true
+  production: "main"
+  development: "develop"
+
+# =============================================================================
+# PATROL PATTERN (Recurring workflows)
+# =============================================================================
+# Patrols are scheduled or on-demand recurring tasks
+# Run with: bd patrol run <name>
+
+patrols:
+  code-review:
+    description: "Code review after major implementation"
+    formula: "codereview"
+    trigger: "on_demand"
+    default-vars:
+      fix_mode: "ask"
+
+  health-check:
+    description: "Weekly codebase health check"
+    formula: "healthcheck"
+    trigger: "on_demand"
+
+# =============================================================================
+# MOLECULE BONDING (Complex feature pipelines)
+# =============================================================================
+# Bond multiple molecules into a pipeline for large features
+
+molecule-bonds:
+  bigfeature-pipeline:
+    description: "Full feature lifecycle with bonded stages"
+    stages:
+      - id: "spec"
+        formula: "exploration"
+        output: "spec.md"
+      - id: "design"
+        formula: "exploration"
+        depends_on: ["spec"]
+        output: "plan.md"
+      - id: "implement"
+        formula: "bigfeature"
+        depends_on: ["design"]
+      - id: "review"
+        formula: "codereview"
+        depends_on: ["implement"]
+      - id: "release"
+        formula: "release"
+        depends_on: ["review"]
+    auto_advance: false
+
+# =============================================================================
+# AGENT WORKFLOW NOTES
+# =============================================================================
+#
+# SessionStart hook: bd prime -> injects workflow context
+# PreCompact hook:   bd prime -> restores context after compaction
+# Stop hook:         bd sync  -> ensures all changes are synced
+#
+# Core workflow for AI agents:
+#   1. bd ready                  - Find available work
+#   2. bd update ID --status in_progress - Claim task (acquires lock)
+#   3. Do the work
+#   4. bd close ID --reason "..." - Complete task (releases lock)
+#   5. Daemon auto-syncs (or bd sync manually)
+#
+# Multi-terminal work:
+#   - Each terminal should work on DIFFERENT issues
+#   - Lock prevents two terminals from editing same issue
+#   - If locked: bd list --unlocked to find available work
+#
+# Creating new work:
+#   bd create "Title" -t feature|bug|chore -p 0-4
+#
+# Emergent work (discovered during other task):
+#   bd create "Found issue" -t bug --deps discovered-from:buh-current
+#
+# Patrols (recurring tasks):
+#   bd patrol run code-review --vars "scope=recent,topic=my-feature"
+#   bd patrol run health-check
+#
+# =============================================================================

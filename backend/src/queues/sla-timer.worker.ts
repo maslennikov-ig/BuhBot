@@ -73,38 +73,46 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       return;
     }
 
-    // 3. Mark request as breached
-    await prisma.clientRequest.update({
-      where: { id: requestId },
-      data: {
-        slaBreached: true,
-        status: 'escalated',
-      },
-    });
+    // 3. Mark request as breached and create alert atomically
+    // Using Prisma transaction to ensure data consistency:
+    // - If crash between steps, both operations roll back
+    // - Either both succeed or both fail together
+    const alert = await prisma.$transaction(async (tx) => {
+      // Step 1: Update request status (using tx, not prisma)
+      await tx.clientRequest.update({
+        where: { id: requestId },
+        data: {
+          slaBreached: true,
+          status: 'escalated',
+        },
+      });
 
-    logger.warn('SLA breach detected', {
-      requestId,
-      chatId,
-      threshold,
-      service: 'sla-timer-worker',
-    });
+      logger.warn('SLA breach detected', {
+        requestId,
+        chatId,
+        threshold,
+        service: 'sla-timer-worker',
+      });
 
-    // 4. Create SLA alert record
-    const alert = await prisma.slaAlert.create({
-      data: {
+      // Step 2: Create SLA alert record (using tx, not prisma)
+      const alert = await tx.slaAlert.create({
+        data: {
+          requestId,
+          alertType: 'breach',
+          minutesElapsed: threshold,
+          deliveryStatus: 'pending',
+          escalationLevel: 1,
+        },
+      });
+
+      logger.info('SLA alert created', {
+        alertId: alert.id,
         requestId,
         alertType: 'breach',
-        minutesElapsed: threshold,
-        deliveryStatus: 'pending',
-        escalationLevel: 1,
-      },
-    });
+        service: 'sla-timer-worker',
+      });
 
-    logger.info('SLA alert created', {
-      alertId: alert.id,
-      requestId,
-      alertType: 'breach',
-      service: 'sla-timer-worker',
+      return alert;
     });
 
     // 5. Get manager IDs for alert delivery
@@ -135,10 +143,19 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
         service: 'sla-timer-worker',
       });
     } else {
-      logger.warn('No managers configured for SLA alerts', {
+      // CRITICAL: No managers to receive alert - this is a configuration error
+      logger.error('CRITICAL: No managers configured for SLA alerts - notification cannot be delivered', {
         requestId,
         chatId,
+        alertId: alert.id,
+        threshold,
         service: 'sla-timer-worker',
+      });
+
+      // Mark alert as failed since no one can receive it
+      await prisma.slaAlert.update({
+        where: { id: alert.id },
+        data: { deliveryStatus: 'failed' },
       });
     }
   } catch (error) {

@@ -200,6 +200,26 @@ async function processInvitation(
 
       const title = sanitizeChatTitle(rawTitle);
 
+      // Try to fetch invite link from Telegram API
+      // Bot must be admin with invite_users permission
+      let inviteLink: string | null = null;
+      try {
+        inviteLink = await ctx.telegram.exportChatInviteLink(Number(chatId));
+        logger.info('Fetched invite link for chat', {
+          chatId,
+          hasInviteLink: !!inviteLink,
+          service: 'invitation-handler',
+        });
+      } catch (error) {
+        // Bot might not have permission to export invite links
+        // This is not critical - we can still register the chat
+        logger.warn('Failed to fetch invite link (bot might lack permissions)', {
+          chatId,
+          error: error instanceof Error ? error.message : String(error),
+          service: 'invitation-handler',
+        });
+      }
+
       // Upsert Chat within transaction
       await tx.chat.upsert({
         where: { id: chatId },
@@ -207,12 +227,14 @@ async function processInvitation(
           id: chatId,
           chatType: chatType as 'private' | 'group' | 'supergroup',
           title: title,
+          inviteLink: inviteLink,
           slaEnabled: true,
           monitoringEnabled: true,
           assignedAccountantId: invitation.assignedAccountantId,
         },
         update: {
           ...(invitation.assignedAccountantId && { assignedAccountantId: invitation.assignedAccountantId }),
+          ...(inviteLink && { inviteLink: inviteLink }),
           slaEnabled: true,
           monitoringEnabled: true,
           title: title,

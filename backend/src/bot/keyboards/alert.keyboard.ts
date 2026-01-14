@@ -29,6 +29,10 @@ export interface AlertKeyboardData {
   chatId: string;
   /** UUID of the ClientRequest */
   requestId: string;
+  /** Telegram invite link (optional - from exportChatInviteLink API) */
+  inviteLink?: string | null;
+  /** Chat type (optional - for fallback logic) */
+  chatType?: string;
 }
 
 /**
@@ -72,6 +76,11 @@ function formatChatIdForLink(chatId: string): string {
  * 2. "Notify accountant" - Callback to send reminder
  * 3. "Mark resolved" - Callback to resolve the alert
  *
+ * Chat Link Priority:
+ * 1. inviteLink (from exportChatInviteLink API) - works for all chat types
+ * 2. t.me/c/{chatId} - only for supergroups (chatType='supergroup')
+ * 3. Hide button - for regular groups without invite link
+ *
  * @param data - Alert keyboard data
  * @param options - Optional customization options
  * @returns Telegraf Markup with inline keyboard
@@ -82,6 +91,8 @@ function formatChatIdForLink(chatId: string): string {
  *   alertId: 'uuid-alert-123',
  *   chatId: '-100123456789',
  *   requestId: 'uuid-request-456',
+ *   inviteLink: 'https://t.me/+ABC123xyz',
+ *   chatType: 'supergroup',
  * });
  *
  * await bot.telegram.sendMessage(
@@ -104,21 +115,34 @@ export function buildAlertKeyboard(
     showResolveButton = true,
   } = options;
 
-  const { alertId, chatId } = data;
-  const formattedChatId = formatChatIdForLink(chatId);
+  const { alertId, chatId, inviteLink, chatType } = data;
 
   // Build rows of buttons
   type ButtonRow = ReturnType<typeof Markup.button.callback | typeof Markup.button.url>[];
   const rows: ButtonRow[] = [];
 
-  // Row 1: Chat link
+  // Row 1: Chat link (with priority logic)
   if (showChatLink) {
-    rows.push([
-      Markup.button.url(
-        '\uD83D\uDCAC Открыть чат', // Speech balloon
-        `https://t.me/c/${formattedChatId}`
-      ),
-    ]);
+    let chatUrl: string | null = null;
+
+    if (inviteLink) {
+      // Priority 1: Use invite link if available (works for all chat types)
+      chatUrl = inviteLink;
+    } else if (chatType === 'supergroup') {
+      // Priority 2: Use t.me/c/ link only for supergroups
+      const formattedChatId = formatChatIdForLink(chatId);
+      chatUrl = `https://t.me/c/${formattedChatId}`;
+    }
+    // Priority 3: For regular groups without invite link, chatUrl stays null (button hidden)
+
+    if (chatUrl) {
+      rows.push([
+        Markup.button.url(
+          '\uD83D\uDCAC Открыть чат', // Speech balloon
+          chatUrl
+        ),
+      ]);
+    }
   }
 
   // Row 2: Action buttons
@@ -155,21 +179,37 @@ export function buildAlertKeyboard(
  * Shows only the chat link button after an alert is resolved.
  *
  * @param chatId - Telegram chat ID as string
+ * @param inviteLink - Optional invite link (preferred over t.me/c/)
+ * @param chatType - Optional chat type (for fallback logic)
  * @returns Telegraf Markup with inline keyboard
  */
 export function buildResolvedKeyboard(
-  chatId: string
+  chatId: string,
+  inviteLink?: string | null,
+  chatType?: string
 ): Markup.Markup<InlineKeyboardMarkup> {
-  const formattedChatId = formatChatIdForLink(chatId);
+  let chatUrl: string | null = null;
 
-  return Markup.inlineKeyboard([
-    [
-      Markup.button.url(
-        '\uD83D\uDCAC Открыть чат',
-        `https://t.me/c/${formattedChatId}`
-      ),
-    ],
-  ]);
+  if (inviteLink) {
+    chatUrl = inviteLink;
+  } else if (chatType === 'supergroup') {
+    const formattedChatId = formatChatIdForLink(chatId);
+    chatUrl = `https://t.me/c/${formattedChatId}`;
+  }
+
+  if (chatUrl) {
+    return Markup.inlineKeyboard([
+      [
+        Markup.button.url(
+          '\uD83D\uDCAC Открыть чат',
+          chatUrl
+        ),
+      ],
+    ]);
+  }
+
+  // No link available - return empty keyboard
+  return Markup.inlineKeyboard([]);
 }
 
 /**
@@ -178,21 +218,37 @@ export function buildResolvedKeyboard(
  * Shows a link to the chat where client is waiting.
  *
  * @param chatId - Telegram chat ID as string
+ * @param inviteLink - Optional invite link (preferred over t.me/c/)
+ * @param chatType - Optional chat type (for fallback logic)
  * @returns Telegraf Markup with inline keyboard
  */
 export function buildAccountantNotificationKeyboard(
-  chatId: string
+  chatId: string,
+  inviteLink?: string | null,
+  chatType?: string
 ): Markup.Markup<InlineKeyboardMarkup> {
-  const formattedChatId = formatChatIdForLink(chatId);
+  let chatUrl: string | null = null;
 
-  return Markup.inlineKeyboard([
-    [
-      Markup.button.url(
-        '\uD83D\uDCAC Открыть чат и ответить',
-        `https://t.me/c/${formattedChatId}`
-      ),
-    ],
-  ]);
+  if (inviteLink) {
+    chatUrl = inviteLink;
+  } else if (chatType === 'supergroup') {
+    const formattedChatId = formatChatIdForLink(chatId);
+    chatUrl = `https://t.me/c/${formattedChatId}`;
+  }
+
+  if (chatUrl) {
+    return Markup.inlineKeyboard([
+      [
+        Markup.button.url(
+          '\uD83D\uDCAC Открыть чат и ответить',
+          chatUrl
+        ),
+      ],
+    ]);
+  }
+
+  // No link available - return empty keyboard
+  return Markup.inlineKeyboard([]);
 }
 
 /**
@@ -203,6 +259,10 @@ export interface LowRatingAlertKeyboardData {
   feedbackId: string;
   /** Telegram chat ID as string */
   chatId: string;
+  /** Telegram invite link (optional) */
+  inviteLink?: string | null;
+  /** Chat type (optional - for fallback logic) */
+  chatType?: string;
 }
 
 /**
@@ -220,6 +280,8 @@ export interface LowRatingAlertKeyboardData {
  * const keyboard = buildLowRatingAlertKeyboard({
  *   feedbackId: 'uuid-feedback-123',
  *   chatId: '-100123456789',
+ *   inviteLink: 'https://t.me/+ABC123xyz',
+ *   chatType: 'supergroup',
  * });
  *
  * await bot.telegram.sendMessage(
@@ -235,25 +297,38 @@ export interface LowRatingAlertKeyboardData {
 export function buildLowRatingAlertKeyboard(
   data: LowRatingAlertKeyboardData
 ): Markup.Markup<InlineKeyboardMarkup> {
-  const { feedbackId, chatId } = data;
-  const formattedChatId = formatChatIdForLink(chatId);
+  const { feedbackId, chatId, inviteLink, chatType } = data;
 
-  return Markup.inlineKeyboard([
-    // Row 1: Open chat
-    [
+  let chatUrl: string | null = null;
+
+  if (inviteLink) {
+    chatUrl = inviteLink;
+  } else if (chatType === 'supergroup') {
+    const formattedChatId = formatChatIdForLink(chatId);
+    chatUrl = `https://t.me/c/${formattedChatId}`;
+  }
+
+  const rows: Array<Array<ReturnType<typeof Markup.button.callback> | ReturnType<typeof Markup.button.url>>> = [];
+
+  // Row 1: Open chat (only if URL available)
+  if (chatUrl) {
+    rows.push([
       Markup.button.url(
         '\uD83D\uDCAC Открыть чат', // Speech balloon
-        `https://t.me/c/${formattedChatId}`
+        chatUrl
       ),
-    ],
-    // Row 2: View feedback details
-    [
-      Markup.button.callback(
-        '\uD83D\uDC41 Посмотреть отзыв', // Eye
-        `view_feedback_${feedbackId}`
-      ),
-    ],
+    ]);
+  }
+
+  // Row 2: View feedback details
+  rows.push([
+    Markup.button.callback(
+      '\uD83D\uDC41 Посмотреть отзыв', // Eye
+      `view_feedback_${feedbackId}`
+    ),
   ]);
+
+  return Markup.inlineKeyboard(rows);
 }
 
 export default {

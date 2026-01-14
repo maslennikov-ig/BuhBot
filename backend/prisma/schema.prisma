@@ -194,6 +194,7 @@ model Chat {
   id                   BigInt   @id @db.BigInt
   chatType             ChatType @map("chat_type")
   title                String?
+  inviteLink           String?  @map("invite_link") // Telegram invite link for "Open chat" button
   accountantUsername   String?  @map("accountant_username") // LEGACY - single accountant
   accountantUsernames  String[] @default([]) @map("accountant_usernames") // NEW - multiple accountants
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid

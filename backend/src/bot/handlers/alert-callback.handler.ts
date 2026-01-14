@@ -133,8 +133,12 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
-      // Build keyboard with chat link
-      const keyboard = buildAccountantNotificationKeyboard(String(request.chatId));
+      // Build keyboard with chat link (use invite link if available)
+      const keyboard = buildAccountantNotificationKeyboard(
+        String(request.chatId),
+        request.chat.inviteLink,
+        request.chat.chatType
+      );
 
       // Build notification message
       const notificationMessage = formatAccountantNotification(
@@ -355,8 +359,12 @@ export function registerAlertCallbackHandler(): void {
           const originalText = ctx.callbackQuery.message.text;
           const updatedText = originalText + formatResolutionConfirmation('mark_resolved');
 
-          // Build minimal keyboard with just chat link
-          const keyboard = buildResolvedKeyboard(String(request.chatId));
+          // Build minimal keyboard with just chat link (use invite link if available)
+          const keyboard = buildResolvedKeyboard(
+            String(request.chatId),
+            request.chat?.inviteLink,
+            request.chat?.chatType
+          );
 
           try {
             await ctx.editMessageText(updatedText, {

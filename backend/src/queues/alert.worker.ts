@@ -170,9 +170,15 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
       formattedMessage = formatAlertMessage(messageData);
     }
 
-    // Build keyboard
+    // Build keyboard (include invite link if available)
     const keyboard = alertId
-      ? buildAlertKeyboard({ alertId, chatId, requestId })
+      ? buildAlertKeyboard({
+          alertId,
+          chatId,
+          requestId,
+          inviteLink: request.chat?.inviteLink,
+          chatType: request.chat?.chatType,
+        })
       : undefined;
 
     // Send to each manager

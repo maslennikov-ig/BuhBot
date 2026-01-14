@@ -143,16 +143,67 @@ export function registerAlertCallbackHandler(): void {
         request.messageText
       );
 
-      // Try to send notification - prefer DM to accountant, fallback to group mention
+      // Try to send notification - prefer DM to accountant(s), fallback to group mention
       let notificationSent = false;
 
-      // Priority 1: Send to accountant's DM if we have their telegram_id
-      const accountantTelegramId = request.chat.assignedAccountant?.telegramId;
+      // Priority 1: Send to all accountants' DMs
+      // Collect all unique accountant telegram IDs
+      const accountantTelegramIds = new Set<string>();
 
-      if (accountantTelegramId) {
+      // Add assigned accountant if exists
+      if (request.chat.assignedAccountant?.telegramId) {
+        accountantTelegramIds.add(request.chat.assignedAccountant.telegramId.toString());
+      }
+
+      // Add accountants from accountantUsernames array
+      if (request.chat.accountantUsernames && request.chat.accountantUsernames.length > 0) {
+        // Query users by telegram username
+        const normalizedUsernames = request.chat.accountantUsernames.map(u => u.replace(/^@/, ''));
+
+        try {
+          const accountantUsers = await prisma.user.findMany({
+            where: {
+              telegramUsername: {
+                in: normalizedUsernames,
+              },
+            },
+            select: { telegramId: true, telegramUsername: true },
+          });
+
+          // Add found telegram IDs to set (automatic deduplication)
+          for (const user of accountantUsers) {
+            if (user.telegramId) {
+              accountantTelegramIds.add(user.telegramId.toString());
+            }
+          }
+
+          // Log if some usernames not found
+          const foundUsernames = new Set(accountantUsers.map(u => u.telegramUsername).filter((u): u is string => u !== null));
+          const notFoundUsernames = normalizedUsernames.filter(u => !foundUsernames.has(u));
+          if (notFoundUsernames.length > 0) {
+            logger.warn('Some accountant usernames not found in database', {
+              notFound: notFoundUsernames,
+              chatId: String(request.chatId),
+              service: 'alert-callback',
+            });
+          }
+        } catch (error) {
+          logger.error('Failed to lookup accountant users by username', {
+            error: error instanceof Error ? error.message : String(error),
+            usernames: normalizedUsernames,
+            service: 'alert-callback',
+          });
+        }
+      }
+
+      // Send notifications to all found accountants
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const telegramId of accountantTelegramIds) {
         try {
           await bot.telegram.sendMessage(
-            accountantTelegramId.toString(),
+            telegramId,
             notificationMessage,
             {
               parse_mode: 'HTML',
@@ -160,22 +211,34 @@ export function registerAlertCallbackHandler(): void {
             }
           );
 
-          notificationSent = true;
+          successCount++;
           logger.info('Accountant notified via DM', {
             alertId,
-            accountantTelegramId: accountantTelegramId.toString(),
-            accountantUsername,
+            accountantTelegramId: telegramId,
             service: 'alert-callback',
           });
         } catch (error) {
-          // DM failed - maybe bot blocked, try group mention as fallback
-          logger.warn('Failed to notify accountant via DM, trying group mention', {
+          failCount++;
+          // DM failed - maybe bot blocked
+          logger.warn('Failed to notify accountant via DM', {
             alertId,
-            accountantTelegramId: accountantTelegramId.toString(),
+            accountantTelegramId: telegramId,
             error: error instanceof Error ? error.message : String(error),
             service: 'alert-callback',
           });
         }
+      }
+
+      // If at least one DM succeeded, consider notification sent
+      if (successCount > 0) {
+        notificationSent = true;
+        logger.info('Accountants notified via DM', {
+          alertId,
+          successCount,
+          failCount,
+          totalAccountants: accountantTelegramIds.size,
+          service: 'alert-callback',
+        });
       }
 
       // Priority 2: Fallback to group mention if DM failed or no telegram_id

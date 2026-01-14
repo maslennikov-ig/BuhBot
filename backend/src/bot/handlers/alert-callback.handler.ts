@@ -74,11 +74,15 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
-      // Get request with chat data
+      // Get request with chat data including assigned accountant
       const request = await prisma.clientRequest.findUnique({
         where: { id: alert.requestId },
         include: {
-          chat: true,
+          chat: {
+            include: {
+              assignedAccountant: true,
+            },
+          },
         },
       });
 
@@ -92,12 +96,37 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
-      // Get accountant to notify
-      const accountantUsername = request.chat.accountantUsername;
+      // Get accountant to notify - check multiple sources in priority order:
+      // 1. assignedAccountant relation (new primary method)
+      // 2. accountantUsernames array (multiple accountants)
+      // 3. accountantUsername (legacy single field)
+      let accountantUsername: string | null = null;
+
+      if (request.chat.assignedAccountant?.telegramUsername) {
+        accountantUsername = request.chat.assignedAccountant.telegramUsername;
+        logger.debug('Using assignedAccountant.telegramUsername', {
+          accountantUsername,
+          service: 'alert-callback',
+        });
+      } else if (request.chat.accountantUsernames && request.chat.accountantUsernames.length > 0) {
+        accountantUsername = request.chat.accountantUsernames[0] ?? null;
+        logger.debug('Using accountantUsernames[0]', {
+          accountantUsername,
+          service: 'alert-callback',
+        });
+      } else if (request.chat.accountantUsername) {
+        accountantUsername = request.chat.accountantUsername;
+        logger.debug('Using legacy accountantUsername', {
+          accountantUsername,
+          service: 'alert-callback',
+        });
+      }
 
       if (!accountantUsername) {
         logger.warn('No accountant assigned to chat', {
           chatId: String(request.chatId),
+          assignedAccountantId: request.chat.assignedAccountantId,
+          accountantUsernames: request.chat.accountantUsernames,
           service: 'alert-callback',
         });
         await ctx.answerCbQuery('Бухгалтер не назначен для этого чата');

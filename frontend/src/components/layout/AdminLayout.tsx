@@ -24,6 +24,7 @@ import {
   Activity,
   AlertTriangle,
   BookOpen,
+  FileWarning,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -135,6 +136,13 @@ const navigationItems: NavItem[] = [
     labelRu: 'Пользователи',
     icon: Users,
     href: '/settings/users',
+  },
+  {
+    id: 'logs',
+    label: 'System Logs',
+    labelRu: 'Системные логи',
+    icon: FileWarning,
+    href: '/logs',
   },
   {
     id: 'settings',

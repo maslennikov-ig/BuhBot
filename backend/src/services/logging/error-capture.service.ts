@@ -25,7 +25,7 @@
  */
 
 import crypto from 'crypto';
-import { prisma } from '@/lib/prisma.js';
+import { prisma } from '../../lib/prisma.js';
 import type { ErrorStatus } from '@prisma/client';
 
 /**

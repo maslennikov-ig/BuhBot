@@ -2,7 +2,7 @@ import winston from 'winston';
 import TransportStream from 'winston-transport';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { ErrorCaptureService } from '@/services/logging/error-capture.service.js';
+import { ErrorCaptureService } from '../services/logging/error-capture.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

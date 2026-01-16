@@ -117,6 +117,65 @@ Follow command-specific instructions. See `docs/Agents Ecosystem/AGENT-ORCHESTRA
 
 ---
 
+## Beads Task Tracking (MANDATORY)
+
+All tasks MUST be tracked in Beads. This is the persistent cross-session memory system.
+
+### Quick Reference
+
+```bash
+# Session start
+bd ready                    # Find available work
+bd prime                    # Get workflow context
+
+# Working on task
+bd update <id> --status in_progress   # Claim task
+# ... do work ...
+bd close <id> --reason "Done"         # Complete task
+
+# Creating work
+bd create "Title" -t feature|bug|chore -p 0-4
+bd create "Found bug" -t bug --deps discovered-from:<current-id>
+```
+
+### Issue Prefix
+
+All issues use `buh-` prefix: `buh-abc123`
+
+### Session Close Protocol (CRITICAL)
+
+**NEVER say "done" without these steps:**
+
+```bash
+git status              # 1. What changed?
+git add <files>         # 2. Stage code
+bd sync                 # 3. Sync beads
+git commit -m "... (buh-xxx)"  # 4. Commit with issue ID
+bd sync                 # 5. Sync any new changes
+git push                # 6. Push to remote
+```
+
+**Work is NOT done until pushed!**
+
+### When to Use What
+
+| Scenario | Tool | Command |
+|----------|------|---------|
+| Big feature (>1 day) | Spec-kit → Beads | `/speckit.specify` → `/speckit.tobeads` |
+| Small feature (<1 day) | Beads | `bd create -t feature` |
+| Bug | Beads | `bd create -t bug` |
+| Tech debt | Beads | `bd create -t chore` |
+| Research/spike | Beads wisp | `bd mol wisp exploration` |
+| Hotfix (urgent!) | Beads wisp | `bd mol wisp hotfix` |
+
+### Documentation
+
+- Quick reference: `.claude/docs/beads-quickstart.md`
+- Full reference: `.claude/docs/beads-speckit-reference.md`
+- Formulas: `.beads/formulas/`
+
+---
+
 ## Project Conventions
 
 **File Organization**:

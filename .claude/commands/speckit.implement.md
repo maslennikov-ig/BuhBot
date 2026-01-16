@@ -1,5 +1,8 @@
 ---
 description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
+scripts:
+  sh: .specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks
+  ps: .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks
 ---
 
 > **ORCHESTRATION REMINDER**: You are the orchestrator, not the implementer. Delegate all complex tasks to subagents with complete context. Gather full context before delegation (read code, search patterns, review docs, check commits). Verify results thoroughly (read files, run type-check). Re-delegate with corrections if validation fails. Execute directly only for trivial tasks (1-2 line fixes, imports, single npm install).
@@ -48,6 +51,7 @@ You **MUST** consider the user input before proceeding (if not empty).
      - Automatically proceed to step 3
 
 3. Load and analyze the implementation context:
+   - **REQUIRED**: Read `.specify/memory/constitution.md` for project principles, security requirements, and quality gates
    - **REQUIRED**: Read tasks.md for the complete task list and execution plan
    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
    - **IF EXISTS**: Read data-model.md for entities and relationships
@@ -145,6 +149,15 @@ You **MUST** consider the user input before proceeding (if not empty).
       - [EXECUTOR: MAIN]? → Execute directly if trivial, else delegate
       - [EXECUTOR: subagent-name]? → Delegate to specified subagent
    3. GATHER CONTEXT: Read existing code, search patterns, review docs, check commits
+   3.5. LIBRARY SEARCH: Before writing >20 lines of new code, search for existing npm/pypi packages
+      - Use WebSearch + Context7 to find and evaluate libraries
+      - If suitable library found: install and configure instead of implementing from scratch
+      - Check: weekly downloads >1000, recent commits, TypeScript support, no critical vulnerabilities
+   3.6. FETCH LIBRARY DOCS (MANDATORY): Before writing code that uses ANY library:
+      - Call `mcp__context7__resolve-library-id` to get library ID
+      - Call `mcp__context7__get-library-docs` with relevant topic (e.g., "hooks", "routing", "auth")
+      - Use fetched docs to ensure correct API usage and avoid deprecated patterns
+      - This applies to React, Next.js, Supabase, Zod, tRPC, and ALL other libraries
    4. EXECUTE:
       - Direct: Use Edit/Write tools for trivial tasks only
       - Delegated: Launch Task tool with complete context (code snippets, file paths, patterns, validation criteria)

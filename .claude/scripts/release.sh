@@ -11,9 +11,10 @@
 # - Safe rollback with file backups (no data loss on errors)
 # - Rollback support for failed releases
 #
-# Usage: ./release.sh [patch|minor|major] [--yes]
+# Usage: ./release.sh [patch|minor|major] [--yes] [--message "commit message"]
 #        Leave empty for auto-detection from conventional commits
 #        --yes: Skip confirmation prompt (for automation)
+#        --message, -m: Custom commit message for auto-committing uncommitted changes
 #
 # Supported conventional commit types:
 #   security:   → Security section (patch version)
@@ -42,6 +43,7 @@ readonly NC='\033[0m' # No Color
 # State tracking for rollback
 CREATED_COMMIT=""
 CREATED_TAG=""
+CUSTOM_COMMIT_MSG=""  # Custom message for auto-commit (set via --message flag)
 declare -a MODIFIED_FILES=()
 declare -a BACKUP_FILES=()  # Track backup files for safe rollback
 
@@ -56,6 +58,38 @@ declare -a SECURITY_FIXES=()      # Security vulnerability fixes
 declare -a DEPRECATIONS=()        # Deprecated features
 declare -a REMOVALS=()            # Removed features
 declare -a OTHER_CHANGES=()
+
+# === SIGPIPE-SAFE UTILITIES ===
+# These functions replace head to avoid SIGPIPE errors with pipefail in bash 3.2+
+# When head closes the pipe early, the writing process receives SIGPIPE (exit 141)
+# awk reads only needed lines and exits cleanly without triggering SIGPIPE
+
+# Safe replacement for head -n N
+# Usage: command | safe_head 5
+safe_head() {
+    local n="${1:-1}"
+    awk -v n="$n" 'NR <= n {print} NR > n {exit}'
+}
+
+# Optimized version for getting first line only
+# Usage: command | safe_first
+safe_first() {
+    awk 'NR==1 {print; exit}'
+}
+
+# Get commits range handling first release edge case
+# Usage: get_commits_range "$LAST_TAG"
+get_commits_range() {
+    local last_tag="$1"
+
+    if [ -z "$last_tag" ]; then
+        # First release - use special marker to include all commits
+        # We can't use ${first_commit}^..HEAD because the first commit has no parent
+        echo "__ALL_COMMITS__"
+    else
+        echo "${last_tag}..HEAD"
+    fi
+}
 
 # === UTILITY FUNCTIONS ===
 
@@ -163,6 +197,48 @@ trap cleanup EXIT
 
 # === PRE-FLIGHT CHECKS ===
 
+# Check if remote is ahead of local to prevent push conflicts
+check_remote_status() {
+    local branch="$1"
+    local skip_check="${RELEASE_SKIP_REMOTE_CHECK:-false}"
+
+    if [ "$skip_check" = "true" ]; then
+        log_warning "Skipping remote status check (RELEASE_SKIP_REMOTE_CHECK=true)"
+        return 0
+    fi
+
+    log_info "Checking remote status..."
+
+    # Fetch latest from remote (without merging)
+    if ! git fetch origin "$branch" --quiet 2>/dev/null; then
+        log_warning "Could not fetch from remote (offline mode or no upstream)"
+        return 0
+    fi
+
+    # Check if remote branch exists
+    if ! git rev-parse "origin/$branch" >/dev/null 2>&1; then
+        log_info "Remote branch origin/$branch does not exist yet (new branch)"
+        return 0
+    fi
+
+    # Check if remote is ahead
+    local behind
+    behind=$(git rev-list --count "HEAD..origin/$branch" 2>/dev/null || echo "0")
+
+    if [ "$behind" -gt 0 ]; then
+        log_error "Remote is $behind commit(s) ahead of local"
+        echo ""
+        log_info "Please pull changes first:"
+        echo "  git pull origin $branch"
+        echo ""
+        log_info "Or skip this check with:"
+        echo "  RELEASE_SKIP_REMOTE_CHECK=true ./release.sh"
+        exit 1
+    fi
+
+    log_success "Local branch is up to date with remote"
+}
+
 run_preflight_checks() {
     log_info "Running pre-flight checks..."
     echo ""
@@ -199,15 +275,11 @@ run_preflight_checks() {
         # Get detailed file list for commit body
         FILE_LIST=$(git diff --cached --name-status | sed 's/^/  /')
 
-        # Detect commit type based on changed files
-        local commit_type="chore"
-        local commit_scope=""
-        local commit_desc="update project files"
-
         # Get file changes with status (A=added, M=modified, D=deleted)
         local file_status=$(git diff --cached --name-status)
 
-        # Count different types of changes
+        # Count ALL types of changes (added, modified, deleted)
+        # Claude/project tooling
         local new_agents=$(echo "$file_status" | grep "^A.*\.claude/agents/.*\.md$" | wc -l)
         local new_skills=$(echo "$file_status" | grep "^A.*\.claude/skills/.*/SKILL\.md$" | wc -l)
         local new_commands=$(echo "$file_status" | grep "^A.*\.claude/commands/.*\.md$" | wc -l)
@@ -217,89 +289,109 @@ run_preflight_checks() {
         local modified_commands=$(echo "$file_status" | grep "^M.*\.claude/commands/.*\.md$" | wc -l)
         local modified_docs=$(echo "$file_status" | grep "\.md$" | grep -v "\.claude/" | wc -l)
         local modified_mcp=$(echo "$file_status" | grep "mcp/.*\.json$" | wc -l)
+        local deleted_skills=$(echo "$file_status" | grep "^D.*\.claude/skills/.*/SKILL\.md$" | wc -l)
+        local deleted_templates=$(echo "$file_status" | grep "^D.*\.claude/templates/.*\.md$" | wc -l)
+        local deleted_other=$(echo "$file_status" | grep "^D" | grep -v "\.claude/skills/" | grep -v "\.claude/templates/" | wc -l)
 
-        # Priority-based commit type detection (most specific first)
+        # Source code changes (TypeScript, JavaScript, Python, etc.)
+        local new_source=$(echo "$file_status" | grep "^A" | grep -E "\.(ts|tsx|js|jsx|py|go|rs)$" | grep -v "\.test\." | grep -v "\.spec\." | wc -l)
+        local modified_source=$(echo "$file_status" | grep "^M" | grep -E "\.(ts|tsx|js|jsx|py|go|rs)$" | grep -v "\.test\." | grep -v "\.spec\." | wc -l)
+        local new_tests=$(echo "$file_status" | grep "^A" | grep -E "\.(test|spec)\.(ts|tsx|js|jsx)$" | wc -l)
+        local modified_tests=$(echo "$file_status" | grep "^M" | grep -E "\.(test|spec)\.(ts|tsx|js|jsx)$" | wc -l)
 
-        # 1. New agents (highest priority for features)
-        if [ "$new_agents" -gt 0 ]; then
+        # Try to detect scope from file paths (packages/xxx/, src/xxx/, lib/xxx/, app/xxx/)
+        local detected_scope=""
+        local scope_candidates=$(echo "$file_status" | grep -E "^[AM]" | grep -E "\.(ts|tsx|js|jsx)$" | \
+            sed -E 's/^[AM]\s+//' | \
+            sed -E 's|^packages/([^/]+)/.*|\1|; s|^src/([^/]+)/.*|\1|; s|^lib/([^/]+)/.*|\1|; s|^app/([^/]+)/.*|\1|' | \
+            sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+        if [ -n "$scope_candidates" ] && [ "$scope_candidates" != "." ]; then
+            detected_scope="$scope_candidates"
+        fi
+
+        # Build change summary array
+        local changes=()
+
+        # Source code features (new files = new functionality)
+        [ "$new_source" -gt 0 ] && changes+=("add ${new_source} source file(s)")
+        [ "$modified_source" -gt 0 ] && changes+=("update ${modified_source} source file(s)")
+        [ "$new_tests" -gt 0 ] && changes+=("add ${new_tests} test(s)")
+        [ "$modified_tests" -gt 0 ] && changes+=("update ${modified_tests} test(s)")
+
+        # Claude tooling
+        [ "$new_agents" -gt 0 ] && changes+=("add ${new_agents} agent(s)")
+        [ "$new_skills" -gt 0 ] && changes+=("add ${new_skills} skill(s)")
+        [ "$new_commands" -gt 0 ] && changes+=("add ${new_commands} command(s)")
+
+        # Updates
+        [ "$modified_scripts" -gt 0 ] && changes+=("update scripts")
+        [ "$modified_agents" -gt 0 ] && changes+=("update ${modified_agents} agent(s)")
+        [ "$modified_skills" -gt 0 ] && changes+=("update ${modified_skills} skill(s)")
+        [ "$modified_commands" -gt 0 ] && changes+=("update ${modified_commands} command(s)")
+        [ "$modified_mcp" -gt 0 ] && changes+=("update MCP configs")
+        [ "$modified_docs" -gt 0 ] && changes+=("update docs")
+
+        # Deletions
+        [ "$deleted_skills" -gt 0 ] && changes+=("remove ${deleted_skills} skill(s)")
+        [ "$deleted_templates" -gt 0 ] && changes+=("remove templates")
+        [ "$deleted_other" -gt 0 ] && changes+=("cleanup ${deleted_other} file(s)")
+
+        # Determine commit type based on what changed (prioritize source code)
+        local commit_type="chore"
+        local has_feat=false
+
+        # New source files = feature
+        if [ "$new_source" -gt 0 ]; then
             commit_type="feat"
-            commit_scope="agents"
-            local agent_file=$(echo "$file_status" | grep "^A.*\.claude/agents/.*\.md$" | head -1 | awk '{print $2}')
-            local agent_name=$(basename "$agent_file" .md)
-            if [ "$new_agents" -eq 1 ]; then
-                commit_desc="add ${agent_name} agent"
-            else
-                commit_desc="add ${new_agents} new agents (${agent_name}, ...)"
-            fi
-
-        # 2. New skills
-        elif [ "$new_skills" -gt 0 ]; then
+            has_feat=true
+        # Modified source files = fix (improvements/bug fixes)
+        elif [ "$modified_source" -gt 0 ]; then
+            commit_type="fix"
+        # New agents/skills/commands = feature
+        elif [ "$new_agents" -gt 0 ] || [ "$new_skills" -gt 0 ] || [ "$new_commands" -gt 0 ]; then
             commit_type="feat"
-            commit_scope="skills"
-            local skill_file=$(echo "$file_status" | grep "^A.*\.claude/skills/.*/SKILL\.md$" | head -1 | awk '{print $2}')
-            local skill_name=$(echo "$skill_file" | cut -d'/' -f4)
-            if [ "$new_skills" -eq 1 ]; then
-                commit_desc="add ${skill_name} skill"
-            else
-                commit_desc="add ${new_skills} new skills (${skill_name}, ...)"
-            fi
-
-        # 3. New commands
-        elif [ "$new_commands" -gt 0 ]; then
-            commit_type="feat"
-            commit_scope="commands"
-            local cmd_file=$(echo "$file_status" | grep "^A.*\.claude/commands/.*\.md$" | head -1 | awk '{print $2}')
-            local cmd_name=$(basename "$cmd_file" .md)
-            if [ "$new_commands" -eq 1 ]; then
-                commit_desc="add ${cmd_name} command"
-            else
-                commit_desc="add ${new_commands} new commands"
-            fi
-
-        # 4. Modified skills (features)
-        elif [ "$modified_skills" -gt 0 ]; then
-            commit_type="feat"
-            commit_scope="skills"
-            commit_desc="update skill implementations"
-
-        # 5. Modified commands (features)
-        elif [ "$modified_commands" -gt 0 ]; then
-            commit_type="feat"
-            commit_scope="commands"
-            commit_desc="update slash commands"
-
-        # 6. Modified scripts (chore)
-        elif [ "$modified_scripts" -gt 0 ]; then
+            has_feat=true
+        # New tests only = test
+        elif [ "$new_tests" -gt 0 ] || [ "$modified_tests" -gt 0 ]; then
+            commit_type="test"
+        # Only scripts modified = chore
+        elif [ "$modified_scripts" -gt 0 ] && [ "$modified_scripts" -eq "$TOTAL_COUNT" ]; then
             commit_type="chore"
-            commit_scope="scripts"
-            commit_desc="update automation scripts"
-
-        # 7. Modified agents (chore)
-        elif [ "$modified_agents" -gt 0 ]; then
-            commit_type="chore"
-            commit_scope="agents"
-            commit_desc="update agent configurations"
-
-        # 8. Modified MCP configs (chore)
-        elif [ "$modified_mcp" -gt 0 ]; then
-            commit_type="chore"
-            commit_scope="mcp"
-            commit_desc="update MCP server configurations"
-
-        # 9. Documentation changes
-        elif [ "$modified_docs" -gt 0 ]; then
+        # Only docs modified = docs
+        elif [ "$modified_docs" -gt 0 ] && [ "$modified_docs" -eq "$TOTAL_COUNT" ]; then
             commit_type="docs"
-            commit_desc="update documentation"
         fi
 
-        # Generate commit message with detected type
-        if [ -n "$commit_scope" ]; then
-            COMMIT_MSG="${commit_type}(${commit_scope}): ${commit_desc}"
+        # Build commit message summary
+        local commit_desc=""
+        local change_count=${#changes[@]}
+
+        if [ "$change_count" -eq 0 ]; then
+            commit_desc="update project files"
+        elif [ "$change_count" -eq 1 ]; then
+            commit_desc="${changes[0]}"
+        elif [ "$change_count" -eq 2 ]; then
+            commit_desc="${changes[0]}, ${changes[1]}"
         else
-            COMMIT_MSG="${commit_type}: ${commit_desc}"
+            # Multiple changes - create summary
+            commit_desc="${changes[0]}, ${changes[1]}, +$((change_count - 2)) more"
         fi
 
-        COMMIT_MSG="${COMMIT_MSG}
+        # Build detailed body with all changes
+        local changes_body=""
+        for change in "${changes[@]}"; do
+            changes_body="${changes_body}- ${change}\n"
+        done
+
+        # Build commit prefix with optional scope
+        local commit_prefix="${commit_type}"
+        if [ -n "$detected_scope" ]; then
+            commit_prefix="${commit_type}(${detected_scope})"
+        fi
+
+        # Use custom message if provided, otherwise auto-generate
+        if [ -n "${CUSTOM_COMMIT_MSG:-}" ]; then
+            COMMIT_MSG="${CUSTOM_COMMIT_MSG}
 
 Auto-committed ${TOTAL_COUNT} file(s) before creating release.
 
@@ -309,6 +401,21 @@ ${FILE_LIST}
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
+            log_info "Using custom commit message: ${CUSTOM_COMMIT_MSG}"
+        else
+            COMMIT_MSG="${commit_prefix}: ${commit_desc}
+
+Changes in this commit:
+$(echo -e "$changes_body")
+Auto-committed ${TOTAL_COUNT} file(s) before creating release.
+
+Files changed:
+${FILE_LIST}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+        fi
 
         # Create commit
         git commit -m "$COMMIT_MSG" >/dev/null 2>&1 || {
@@ -317,7 +424,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
         }
 
         log_success "Changes committed (${TOTAL_COUNT} files)"
-        log_info "Commit type: ${commit_type}${commit_scope:+(${commit_scope})}: ${commit_desc}"
+        log_info "Commit: ${commit_prefix}: ${commit_desc}"
     fi
 
     # Check if remote is configured
@@ -326,6 +433,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
         exit 1
     fi
     log_success "Remote configured"
+
+    # Check if remote is ahead of local
+    check_remote_status "$BRANCH"
 
     # Check for Node.js
     if ! command -v node &> /dev/null; then
@@ -343,14 +453,15 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     log_success "Current version: $CURRENT_VERSION"
 
     # Get last git tag (across all branches using --all)
-    LAST_TAG=$(git tag --sort=-version:refname | head -n 1 || echo "")
+    # Using safe_first instead of head -n 1 to avoid SIGPIPE with pipefail
+    LAST_TAG=$(git tag --sort=-version:refname | safe_first || echo "")
     if [ -z "$LAST_TAG" ]; then
         log_warning "No previous git tags found (first release)"
-        LAST_TAG="HEAD~999999" # Get all commits
-        COMMITS_RANGE="HEAD"
+        log_info "Will include all commits from repository start"
+        COMMITS_RANGE=$(get_commits_range "")
     else
         log_success "Last tag: $LAST_TAG"
-        COMMITS_RANGE="${LAST_TAG}..HEAD"
+        COMMITS_RANGE=$(get_commits_range "$LAST_TAG")
 
         # Sync package.json version with git tag if needed
         TAG_VERSION="${LAST_TAG#v}" # Remove 'v' prefix
@@ -372,7 +483,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     fi
 
     # Check for commits since last tag
-    COMMITS_COUNT=$(git rev-list $COMMITS_RANGE --count 2>/dev/null || echo "0")
+    if [ "$COMMITS_RANGE" = "__ALL_COMMITS__" ]; then
+        # First release - count all commits
+        COMMITS_COUNT=$(git rev-list HEAD --count 2>/dev/null || echo "0")
+    else
+        COMMITS_COUNT=$(git rev-list $COMMITS_RANGE --count 2>/dev/null || echo "0")
+    fi
     if [ "$COMMITS_COUNT" -eq 0 ]; then
         log_error "No commits since last release ($LAST_TAG)"
         echo "Nothing to release!"
@@ -394,7 +510,13 @@ parse_commits() {
         if [ -n "$line" ]; then
             ALL_COMMITS+=("$line")
         fi
-    done < <(git log --format="%h %s" $COMMITS_RANGE)
+    done < <(
+        if [ "$COMMITS_RANGE" = "__ALL_COMMITS__" ]; then
+            git log --format="%h %s" HEAD
+        else
+            git log --format="%h %s" $COMMITS_RANGE
+        fi
+    )
 
     # Parse and categorize each commit
     # Define regex patterns as variables for proper bash regex matching
@@ -592,6 +714,15 @@ EOF
         done
         echo ""
     fi
+
+    # Other section (chore, docs, ci, build, test, style, etc.)
+    if [ ${#OTHER_CHANGES[@]} -gt 0 ]; then
+        echo "### Other"
+        for commit in "${OTHER_CHANGES[@]}"; do
+            format_changelog_line "$commit"
+        done
+        echo ""
+    fi
 }
 
 format_changelog_line() {
@@ -616,6 +747,141 @@ format_changelog_line() {
         # Not a conventional commit, use as-is
         echo "- ${prefix}${message} (${hash})"
     fi
+}
+
+# === USER-FACING RELEASE NOTES ===
+
+# Transform technical scope to user-friendly name
+get_friendly_scope_name() {
+    local scope="$1"
+
+    case "$scope" in
+        auth|authentication) echo "Authentication" ;;
+        api) echo "API" ;;
+        ui|frontend) echo "Interface" ;;
+        db|database) echo "Database" ;;
+        perf|performance) echo "Performance" ;;
+        security|sec) echo "Security" ;;
+        agents) echo "AI Agents" ;;
+        skills) echo "Skills" ;;
+        commands) echo "Commands" ;;
+        mcp) echo "MCP Servers" ;;
+        docs) echo "Documentation" ;;
+        ci|cd) echo "CI/CD" ;;
+        *) echo "$scope" ;;
+    esac
+}
+
+# Format a commit message for user-facing notes (no hash, friendly language)
+format_user_facing_line() {
+    local commit="$1"
+    local message=$(echo "$commit" | cut -d' ' -f2-)
+
+    # Extract scope and message: "type(scope): message" -> friendly format
+    local scope_pattern='^[a-z]+(\(([^)]+)\))?!?:[ ]+(.+)$'
+    if [[ "$message" =~ $scope_pattern ]]; then
+        local scope="${BASH_REMATCH[2]}"
+        local msg="${BASH_REMATCH[3]}"
+
+        # Capitalize first letter of message
+        msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+
+        if [ -n "$scope" ]; then
+            local friendly_scope=$(get_friendly_scope_name "$scope")
+            echo "- **${friendly_scope}**: ${msg}"
+        else
+            echo "- ${msg}"
+        fi
+    else
+        # Not a conventional commit, capitalize and use as-is
+        local capitalized="$(echo "${message:0:1}" | tr '[:lower:]' '[:upper:]')${message:1}"
+        echo "- ${capitalized}"
+    fi
+}
+
+# Generate user-facing release notes (marketing format)
+generate_user_facing_notes_entry() {
+    local version="$1"
+    local date="$2"
+
+    cat << EOF
+## v${version}
+
+_Released on ${date}_
+
+EOF
+
+    # New Features (from feat commits)
+    if [ ${#FEATURES[@]} -gt 0 ]; then
+        echo "### ✨ New Features"
+        echo ""
+        for commit in "${FEATURES[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        echo ""
+    fi
+
+    # Improvements (from refactor + perf)
+    if [ ${#REFACTORS[@]} -gt 0 ] || [ ${#PERF[@]} -gt 0 ]; then
+        echo "### 🔧 Improvements"
+        echo ""
+        for commit in "${PERF[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        for commit in "${REFACTORS[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        echo ""
+    fi
+
+    # Security (from security commits)
+    if [ ${#SECURITY_FIXES[@]} -gt 0 ]; then
+        echo "### 🔒 Security"
+        echo ""
+        for commit in "${SECURITY_FIXES[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        echo ""
+    fi
+
+    # Bug Fixes
+    if [ ${#FIXES[@]} -gt 0 ]; then
+        echo "### 🐛 Bug Fixes"
+        echo ""
+        for commit in "${FIXES[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        echo ""
+    fi
+
+    # Breaking Changes (important for users!)
+    if [ ${#BREAKING_CHANGES[@]} -gt 0 ]; then
+        echo "### ⚠️ Breaking Changes"
+        echo ""
+        for commit in "${BREAKING_CHANGES[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        echo ""
+    fi
+
+    # Deprecations
+    if [ ${#DEPRECATIONS[@]} -gt 0 ]; then
+        echo "### 📦 Deprecated"
+        echo ""
+        for commit in "${DEPRECATIONS[@]}"; do
+            format_user_facing_line "$commit"
+        done
+        echo ""
+    fi
+
+    # Note: We intentionally skip OTHER_CHANGES (chore, ci, docs, etc.)
+    # as they are not relevant to end users
+
+    cat << EOF
+---
+
+_This release was automatically generated from ${#ALL_COMMITS[@]} commits._
+EOF
 }
 
 # === PACKAGE.JSON UPDATES ===
@@ -689,11 +955,12 @@ update_changelog() {
         # Insert new entry after [Unreleased] section
         if echo "$existing_content" | grep -q "## \[Unreleased\]"; then
             # Find the line number of [Unreleased]
-            local unreleased_line=$(echo "$existing_content" | grep -n "## \[Unreleased\]" | head -1 | cut -d: -f1)
+            # Using safe_first instead of head -1 to avoid SIGPIPE
+            local unreleased_line=$(echo "$existing_content" | grep -n "## \[Unreleased\]" | safe_first | cut -d: -f1)
 
             # Insert after [Unreleased] and its blank line
             {
-                echo "$existing_content" | head -n $((unreleased_line))
+                echo "$existing_content" | safe_head "$((unreleased_line))"
                 echo ""
                 echo "$new_entry"
                 echo "$existing_content" | tail -n +$((unreleased_line + 1))
@@ -701,7 +968,7 @@ update_changelog() {
         else
             # No [Unreleased] section, insert at the beginning after header
             {
-                echo "$existing_content" | head -n 6
+                echo "$existing_content" | safe_head 6
                 echo ""
                 echo "$new_entry"
                 echo "$existing_content" | tail -n +7
@@ -724,6 +991,88 @@ EOF
     fi
 
     log_success "CHANGELOG.md updated"
+    echo ""
+}
+
+# === RELEASE NOTES UPDATE ===
+
+update_release_notes() {
+    local version="$1"
+    local date="$2"
+
+    log_info "Generating RELEASE_NOTES.md..."
+
+    local release_notes_file="$PROJECT_ROOT/RELEASE_NOTES.md"
+
+    # Create backup BEFORE modifying (if exists)
+    if [ -f "$release_notes_file" ]; then
+        create_backup "$release_notes_file"
+    fi
+
+    # Track for rollback
+    MODIFIED_FILES+=("$release_notes_file")
+
+    # Generate new entry
+    local new_entry=$(generate_user_facing_notes_entry "$version" "$date")
+
+    # Read existing release notes and prepend new entry
+    if [ -f "$release_notes_file" ]; then
+        local existing_content=$(<"$release_notes_file")
+
+        # Check if file has header "# Release Notes"
+        if echo "$existing_content" | grep -q "^# Release Notes"; then
+            # Find the first ## section (first release) to insert before it
+            local first_release_line=$(echo "$existing_content" | grep -n "^## v" | safe_first | cut -d: -f1)
+
+            if [ -n "$first_release_line" ] && [ "$first_release_line" -gt 0 ]; then
+                # Insert new entry before the first release
+                {
+                    echo "$existing_content" | safe_head "$((first_release_line - 1))"
+                    echo "$new_entry"
+                    echo ""
+                    echo "$existing_content" | tail -n +"$first_release_line"
+                } > "$release_notes_file"
+            else
+                # No releases yet, append after header
+                {
+                    echo "$existing_content" | safe_head 4
+                    echo ""
+                    echo "$new_entry"
+                } > "$release_notes_file"
+            fi
+        else
+            # Old format or missing header - recreate with new structure
+            {
+                cat << EOF
+# Release Notes
+
+User-facing release notes for all versions.
+
+EOF
+                echo "$new_entry"
+                echo ""
+                # Keep old content after separator
+                echo "---"
+                echo ""
+                echo "## Previous Releases"
+                echo ""
+                echo "$existing_content"
+            } > "$release_notes_file"
+        fi
+    else
+        # Create new RELEASE_NOTES.md with header
+        {
+            cat << EOF
+# Release Notes
+
+User-facing release notes for all versions.
+
+EOF
+            echo "$new_entry"
+        } > "$release_notes_file"
+    fi
+
+    log_success "RELEASE_NOTES.md updated"
     echo ""
 }
 
@@ -768,9 +1117,13 @@ EOF
 
     cat << EOF
 
-📄 CHANGELOG.md Entry:
+📄 CHANGELOG.md Entry (Technical):
 ───────────────────────────────────────────────────────────
 $(generate_changelog_entry "$NEW_VERSION" "$DATE")───────────────────────────────────────────────────────────
+
+📣 RELEASE_NOTES.md (User-Facing):
+───────────────────────────────────────────────────────────
+$(generate_user_facing_notes_entry "$NEW_VERSION" "$DATE")───────────────────────────────────────────────────────────
 
 💬 Git Commit Message:
 ───────────────────────────────────────────────────────────
@@ -854,7 +1207,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>" || {
         log_error "Tag v$NEW_VERSION already exists!"
         echo ""
         log_info "Existing tags:"
-        git tag --sort=-version:refname | head -n 10
+        git tag --sort=-version:refname | safe_head 10
         echo ""
         log_info "Suggested actions:"
         echo "  1. Delete existing tag: git tag -d v$NEW_VERSION && git push origin :refs/tags/v$NEW_VERSION"
@@ -908,22 +1261,38 @@ main() {
     # Parse arguments
     local bump_arg=""
     local auto_confirm="false"
+    local custom_commit_msg=""
 
-    for arg in "$@"; do
-        case "$arg" in
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
             --yes|-y)
                 auto_confirm="true"
+                shift
+                ;;
+            --message|-m)
+                if [[ -n "${2:-}" && ! "$2" =~ ^- ]]; then
+                    custom_commit_msg="$2"
+                    shift 2
+                else
+                    log_error "--message requires an argument"
+                    echo "Usage: $0 [patch|minor|major] [--yes] [--message \"commit message\"]"
+                    exit 1
+                fi
                 ;;
             patch|minor|major)
-                bump_arg="$arg"
+                bump_arg="$1"
+                shift
                 ;;
             *)
-                log_error "Unknown argument: $arg"
-                echo "Usage: $0 [patch|minor|major] [--yes]"
+                log_error "Unknown argument: $1"
+                echo "Usage: $0 [patch|minor|major] [--yes] [--message \"commit message\"]"
                 exit 1
                 ;;
         esac
     done
+
+    # Export custom_commit_msg for use in run_preflight_checks
+    CUSTOM_COMMIT_MSG="$custom_commit_msg"
 
     # Run workflow
     run_preflight_checks
@@ -938,6 +1307,7 @@ main() {
     # Execute release
     update_package_files "$NEW_VERSION"
     update_changelog "$NEW_VERSION" "$DATE"
+    update_release_notes "$NEW_VERSION" "$DATE"
     execute_release
 
     echo ""
@@ -949,9 +1319,14 @@ main() {
     log_success "Tag: v$NEW_VERSION"
     log_success "Branch: $BRANCH"
     echo ""
+    log_info "Generated files:"
+    echo "  • CHANGELOG.md (technical, for developers)"
+    echo "  • RELEASE_NOTES.md (user-facing, for marketing)"
+    echo ""
     log_info "Next steps:"
     echo "  • Verify release on GitHub: git remote -v"
     echo "  • Create GitHub Release from tag (optional)"
+    echo "  • Copy RELEASE_NOTES.md content for announcements"
     echo "  • Notify team if applicable"
     echo ""
 }

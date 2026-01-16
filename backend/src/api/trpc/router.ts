@@ -32,6 +32,7 @@ import { contactRouter } from './routers/contact.js';
 import { userRouter } from './routers/user.js';
 import { notificationRouter } from './routers/notification.js';
 import { messagesRouter } from './routers/messages.js';
+import { logsRouter } from './routers/logs.js';
 
 /**
  * App router combining all sub-routers
@@ -242,6 +243,19 @@ export const appRouter = router({
    * Notification router - In-app notifications
    */
   notification: notificationRouter,
+
+  /**
+   * Logs router - System error logs management
+   *
+   * Procedures:
+   * - list: List error logs with filters and pagination
+   * - listGrouped: Group errors by fingerprint
+   * - getById: Get single error + related errors
+   * - updateStatus: Update error status/notes/assignee (admin only)
+   * - bulkUpdateStatus: Batch status updates (admin only)
+   * - delete: Delete error log (admin only)
+   */
+  logs: logsRouter,
 
   /**
    * Messages router - Chat message history

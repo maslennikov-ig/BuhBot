@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.16] - 2026-01-16
+
+### Added
+- **database**: add ErrorLog model for centralized error tracking (buh-oyj) (7830439)
+
+### Other
+- update docs (64ef484)
+- bd sync: 2026-01-16 14:05:08 (9ae6e83)
+- bd sync: 2026-01-16 14:05:01 (ee91587)
+
 ## [0.9.15] - 2026-01-16
 
 ### Added

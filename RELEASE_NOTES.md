@@ -2,6 +2,18 @@
 
 User-facing release notes for all versions.
 
+## v0.9.16
+
+_Released on 2026-01-16_
+
+### ✨ New Features
+
+- **Database**: Add ErrorLog model for centralized error tracking (buh-oyj)
+
+---
+
+_This release was automatically generated from 4 commits._
+
 ## v0.9.15
 
 _Released on 2026-01-16_

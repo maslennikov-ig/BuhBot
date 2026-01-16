@@ -138,6 +138,7 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
       {messages.map((message) => {
         const messageDate = formatDate(message.createdAt);
         const showDateDivider = messageDate !== currentDate;
+        // eslint-disable-next-line react-hooks/immutability
         currentDate = messageDate;
 
         return (

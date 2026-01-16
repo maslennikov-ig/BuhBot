@@ -15,6 +15,7 @@
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 
 /**
  * Error level schema (matches ErrorLog.level field)
@@ -88,7 +89,7 @@ export const logsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build where clause with filters
-      const where: any = {};
+      const where: Prisma.ErrorLogWhereInput = {};
 
       if (input.level) {
         where.level = input.level;
@@ -224,7 +225,7 @@ export const logsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // Build where clause with filters
-      const where: any = {};
+      const where: Prisma.ErrorLogWhereInput = {};
 
       if (input.level) {
         where.level = input.level;
@@ -504,7 +505,7 @@ export const logsRouter = router({
       }
 
       // Build update data object
-      const updateData: any = {};
+      const updateData: Prisma.ErrorLogUpdateInput = {};
 
       if (input.status !== undefined) {
         updateData.status = input.status;
@@ -515,7 +516,11 @@ export const logsRouter = router({
       }
 
       if (input.assignedTo !== undefined) {
-        updateData.assignedTo = input.assignedTo;
+        if (input.assignedTo === null) {
+          updateData.assignedUser = { disconnect: true };
+        } else {
+          updateData.assignedUser = { connect: { id: input.assignedTo } };
+        }
       }
 
       // Update error log
@@ -565,7 +570,7 @@ export const logsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       // Build update data object
-      const updateData: any = {
+      const updateData: Prisma.ErrorLogUpdateManyMutationInput = {
         status: input.status,
       };
 

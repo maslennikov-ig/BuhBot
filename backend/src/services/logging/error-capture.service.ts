@@ -69,7 +69,7 @@ export class ErrorCaptureService {
    */
   generateFingerprint(message: string, stack?: string): string {
     // Normalize message
-    let normalizedMessage = message
+    const normalizedMessage = message
       // Remove UUIDs
       .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '<UUID>')
       // Remove ISO8601 timestamps

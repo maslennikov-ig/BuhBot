@@ -69,13 +69,14 @@ class DatabaseTransport extends TransportStream {
     // Only capture errors and warnings
     if (['error', 'warn'].includes(info.level)) {
       // Extract metadata (exclude Winston internal fields)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { level, message, stack, service, timestamp, ...metadata } = info;
 
       this.errorCapture.captureError({
-        level: info.level as 'error' | 'warn',
-        message: info.message || 'Unknown error',
-        stack: info.stack,
-        service: info.service || 'buhbot-backend',
+        level: level as 'error' | 'warn',
+        message: message || 'Unknown error',
+        stack: stack,
+        service: service || 'buhbot-backend',
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined
       }).catch((err: unknown) => {
         // Fail silently to avoid logging loops

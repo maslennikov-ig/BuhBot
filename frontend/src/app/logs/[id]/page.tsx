@@ -20,10 +20,11 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 // ============================================
-// LEVEL BADGE COMPONENT
+// TYPES
 // ============================================
 
 type ErrorLevel = 'error' | 'warn' | 'info';
+type ErrorStatus = 'new' | 'in_progress' | 'resolved' | 'ignored';
 
 const levelConfig = {
   error: {
@@ -144,7 +145,7 @@ export default function LogDetailPage() {
                   <LevelBadge level={error.level as ErrorLevel} />
                 </div>
               </div>
-              <StatusBadge status={error.status as any} />
+              <StatusBadge status={error.status as ErrorStatus} />
             </div>
 
             {/* Stack trace */}
@@ -227,7 +228,7 @@ export default function LogDetailPage() {
                         </span>
                         <LevelBadge level={relErr.level as ErrorLevel} />
                       </div>
-                      <StatusBadge status={relErr.status as any} />
+                      <StatusBadge status={relErr.status as ErrorStatus} />
                     </div>
                     <p className="mt-2 truncate text-sm text-[var(--buh-foreground)]">
                       {relErr.message}

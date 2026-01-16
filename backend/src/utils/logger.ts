@@ -77,7 +77,7 @@ class DatabaseTransport extends TransportStream {
         stack: info.stack,
         service: info.service || 'buhbot-backend',
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined
-      }).catch((err) => {
+      }).catch((err: unknown) => {
         // Fail silently to avoid logging loops
         console.error('[DatabaseTransport] Failed to capture error:', err instanceof Error ? err.message : String(err));
       });

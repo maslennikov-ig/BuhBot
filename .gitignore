@@ -32,7 +32,9 @@
 
 # Logs
 *.log
-logs/
+# Winston log files (backend only)
+backend/logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

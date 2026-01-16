@@ -1,6 +1,8 @@
 import winston from 'winston';
+import TransportStream from 'winston-transport';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { ErrorCaptureService } from '@/services/logging/error-capture.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,11 +47,53 @@ const consoleFormat = winston.format.combine(
   })
 );
 
+/**
+ * Custom Winston transport for persisting errors to database
+ *
+ * Captures error and warn level logs to the database with fingerprinting
+ * for deduplication and occurrence tracking.
+ */
+class DatabaseTransport extends TransportStream {
+  private errorCapture: ErrorCaptureService;
+
+  constructor(opts?: TransportStream.TransportStreamOptions) {
+    super(opts);
+    this.errorCapture = new ErrorCaptureService();
+  }
+
+  override log(info: any, callback: () => void): void {
+    setImmediate(() => {
+      this.emit('logged', info);
+    });
+
+    // Only capture errors and warnings
+    if (['error', 'warn'].includes(info.level)) {
+      // Extract metadata (exclude Winston internal fields)
+      const { level, message, stack, service, timestamp, ...metadata } = info;
+
+      this.errorCapture.captureError({
+        level: info.level as 'error' | 'warn',
+        message: info.message || 'Unknown error',
+        stack: info.stack,
+        service: info.service || 'buhbot-backend',
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined
+      }).catch((err) => {
+        // Fail silently to avoid logging loops
+        console.error('[DatabaseTransport] Failed to capture error:', err instanceof Error ? err.message : String(err));
+      });
+    }
+
+    callback();
+  }
+}
+
 const logger = winston.createLogger({
   level: LOG_LEVEL,
   format: logFormat,
   defaultMeta: { service: 'buhbot-backend' },
   transports: [
+    // Database transport for error persistence (errors and warnings only)
+    new DatabaseTransport({}),
     // Write all logs with level 'error' and below to error.log
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/error.log'),

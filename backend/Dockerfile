@@ -13,22 +13,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json package-lock.json ./
+COPY backend/package.json backend/package-lock.json ./
 
 # Install ALL dependencies (including devDependencies for build)
 # Using --legacy-peer-deps to handle peer dependency conflicts from @prisma/client
 RUN npm install --legacy-peer-deps
 
 # Copy Prisma schema for code generation
-COPY prisma ./prisma
+COPY backend/prisma ./prisma
 
 # Generate Prisma Client (required before TypeScript compilation)
 RUN npx prisma generate
 
 # Copy TypeScript configuration and source code
-COPY tsconfig.json tsconfig.build.json ./
-COPY eslint.config.mjs ./
-COPY src ./src
+COPY backend/tsconfig.json backend/tsconfig.build.json ./
+COPY backend/eslint.config.mjs ./
+COPY backend/src ./src
 
 # Build TypeScript -> JavaScript (output to dist/) using relaxed build config
 # Continue even if there are type errors (they'll be caught in development)
@@ -53,7 +53,7 @@ RUN groupadd -g 1001 nodejs && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
+COPY backend/package.json backend/package-lock.json ./
 
 # Install ONLY production dependencies (no devDependencies)
 # Using --legacy-peer-deps to handle peer dependency conflicts from @prisma/client

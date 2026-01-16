@@ -113,6 +113,15 @@ enum DeliveryStatus {
   @@schema("public")
 }
 
+enum ErrorStatus {
+  new
+  in_progress
+  resolved
+  ignored
+
+  @@schema("public")
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -141,6 +150,7 @@ model User {
   notifications      Notification[]
   createdInvitations ChatInvitation[] @relation("InvitationCreator")
   telegramAccount    TelegramAccount?
+  assignedErrors     ErrorLog[]       @relation("ErrorLogAssignee")
 
   @@index([email])
   @@index([role])
@@ -629,5 +639,40 @@ model ChatMessage {
   @@index([chatId, createdAt(sort: Desc)], name: "idx_chat_messages_chat_created")
   @@index([chatId, isAccountant, createdAt], name: "idx_chat_messages_chat_accountant_created")
   @@map("chat_messages")
+  @@schema("public")
+}
+
+/// System error logs with fingerprint-based grouping
+model ErrorLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  timestamp   DateTime @default(now()) @db.Timestamptz(6)
+  level       String   // 'error', 'warn', 'info'
+  service     String   @default("buhbot-backend")
+  message     String
+  stack       String?  @db.Text
+  fingerprint String   // MD5 hash for grouping
+  metadata    Json?
+
+  // Status tracking
+  status      ErrorStatus @default(new)
+  assignedTo  String?  @map("assigned_to") @db.Uuid
+  notes       String?  @db.Text
+
+  // Grouping metadata
+  occurrenceCount Int      @default(1) @map("occurrence_count")
+  firstSeenAt     DateTime @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt      DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  assignedUser User? @relation("ErrorLogAssignee", fields: [assignedTo], references: [id])
+
+  @@index([fingerprint])
+  @@index([status])
+  @@index([level])
+  @@index([timestamp(sort: Desc)])
+  @@index([assignedTo])
+  @@map("error_logs")
   @@schema("public")
 }

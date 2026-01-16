@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.15] - 2026-01-16
+
+### Added
+- **.claude/skills/systematic-debugging/condition-based-waiting-example.ts**: add 17 source file(s), add 4 agent(s), +7 more (7cc7cdc)
+- add invite_link to Chat model for universal 'Open chat' button support (buh-8tp) (fbf8510)
+- notify all accountants from accountantUsernames array (buh-k5a) (484d21f)
+- **ci**: add Telegram notification on CI failure (585f6cd)
+
+### Fixed
+- **alerts**: send notification to accountant DM instead of group (3b34954)
+- **alerts**: use assignedAccountant relation for notify button (5828296)
+- **sla**: complete SLA notification system fixes and testing (9e6532a)
+- use const for finalUsernames (lint error) (96f4d92)
+- auto-add accountant username when assigned via dropdown (65cd4c9)
+- **ci**: use lowercase repository name for Docker image tags (ceb08ef)
+
+### Other
+- bd sync: 2026-01-16 12:43:49 (61d2fa2)
+- bd sync: 2026-01-14 16:45:52 (f62d7db)
+- bd sync: 2026-01-14 16:45:34 (e5317aa)
+- bd sync: 2026-01-14 16:42:26 (a2e079d)
+- bd sync: 2026-01-14 16:17:58 (3e909a4)
+- bd sync: 2026-01-14 16:05:52 (71d52d3)
+- bd sync: 2026-01-14 15:59:53 (77f05f1)
+- bd sync: 2026-01-14 13:40:41 (ad52b54)
+
 ## [0.9.14] - 2025-12-25
 
 ## [0.9.13] - 2025-12-25

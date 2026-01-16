@@ -153,3 +153,7 @@ articles/
 .claude/agents/content/
 GEMINI.md
 .claude/local.md
+
+# Environment variables
+.env
+.env.local

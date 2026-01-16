@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.17] - 2026-01-16
+
+### Added
+- **navigation**: add System Logs item to AdminLayout (buh-xla) (0e8a4f3)
+- **frontend**: add complete logs/errors UI with pages and components (buh-mgs, buh-brr) (3fe4d8e)
+- **api**: add tRPC logs router for error logs management (buh-zdc) (5e3be7e)
+- **logging**: add ErrorCaptureService with MD5 fingerprinting (buh-65g) (8e68351)
+
+### Fixed
+- **imports**: use relative paths instead of aliases for build compatibility (62e4127)
+- **docker**: add backend/ prefix to COPY paths for correct build context (9173e0d)
+
+### Other
+- update docs (c04a5b6)
+- bd sync: 2026-01-16 14:35:04 (0229d86)
+- bd sync: 2026-01-16 14:32:15 (7b47149)
+- bd sync: 2026-01-16 14:30:58 (1a17557)
+- bd sync: 2026-01-16 14:29:59 (9a14d9c)
+- bd sync: 2026-01-16 14:20:48 (8dea97a)
+- bd sync: 2026-01-16 14:15:40 (49a70e5)
+- bd sync: 2026-01-16 14:15:29 (474f35d)
+
 ## [0.9.16] - 2026-01-16
 
 ### Added

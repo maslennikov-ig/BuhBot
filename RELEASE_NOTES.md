@@ -2,6 +2,26 @@
 
 User-facing release notes for all versions.
 
+## v0.9.17
+
+_Released on 2026-01-16_
+
+### ✨ New Features
+
+- **navigation**: Add System Logs item to AdminLayout (buh-xla)
+- **Interface**: Add complete logs/errors UI with pages and components (buh-mgs, buh-brr)
+- **API**: Add tRPC logs router for error logs management (buh-zdc)
+- **logging**: Add ErrorCaptureService with MD5 fingerprinting (buh-65g)
+
+### 🐛 Bug Fixes
+
+- **imports**: Use relative paths instead of aliases for build compatibility
+- **docker**: Add backend/ prefix to COPY paths for correct build context
+
+---
+
+_This release was automatically generated from 14 commits._
+
 ## v0.9.16
 
 _Released on 2026-01-16_

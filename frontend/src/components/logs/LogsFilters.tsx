@@ -32,10 +32,10 @@ type LogsFiltersProps = {
 // ============================================
 
 export function LogsFilters({ onFiltersChange }: LogsFiltersProps) {
-  const [level, setLevel] = useState<string>('');
-  const [status, setStatus] = useState<string>('');
+  const [level, setLevel] = useState<string>('all');
+  const [status, setStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [service, setService] = useState<string>('');
+  const [service, setService] = useState<string>('all');
 
   const handleChange = (newFilters: {
     level: string;
@@ -44,10 +44,10 @@ export function LogsFilters({ onFiltersChange }: LogsFiltersProps) {
     service: string;
   }) => {
     onFiltersChange({
-      level: (newFilters.level || undefined) as ErrorLevel | undefined,
-      status: (newFilters.status || undefined) as ErrorStatus | undefined,
+      level: newFilters.level === 'all' ? undefined : (newFilters.level as ErrorLevel),
+      status: newFilters.status === 'all' ? undefined : (newFilters.status as ErrorStatus),
       search: newFilters.search || undefined,
-      service: newFilters.service || undefined,
+      service: newFilters.service === 'all' ? undefined : newFilters.service,
     });
   };
 
@@ -79,7 +79,7 @@ export function LogsFilters({ onFiltersChange }: LogsFiltersProps) {
           <SelectValue placeholder="Уровень" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Все уровни</SelectItem>
+          <SelectItem value="all">Все уровни</SelectItem>
           <SelectItem value="error">Error</SelectItem>
           <SelectItem value="warn">Warning</SelectItem>
           <SelectItem value="info">Info</SelectItem>
@@ -98,7 +98,7 @@ export function LogsFilters({ onFiltersChange }: LogsFiltersProps) {
           <SelectValue placeholder="Статус" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Все статусы</SelectItem>
+          <SelectItem value="all">Все статусы</SelectItem>
           <SelectItem value="new">Новая</SelectItem>
           <SelectItem value="in_progress">В работе</SelectItem>
           <SelectItem value="resolved">Решено</SelectItem>
@@ -118,7 +118,7 @@ export function LogsFilters({ onFiltersChange }: LogsFiltersProps) {
           <SelectValue placeholder="Сервис" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Все сервисы</SelectItem>
+          <SelectItem value="all">Все сервисы</SelectItem>
           <SelectItem value="buhbot-backend">BuhBot Backend</SelectItem>
         </SelectContent>
       </Select>

@@ -589,8 +589,8 @@ export default function AnalyticsPage() {
                 </p>
               </div>
             ) : (
-              <div className="h-80">
-                <ChartContainer config={historyChartConfig}>
+              <div className="h-80 overflow-hidden">
+                <ChartContainer config={historyChartConfig} className="!aspect-auto h-full">
                   <AreaChart
                     data={
                       historyQuery.data?.dataPoints.map((point) => ({

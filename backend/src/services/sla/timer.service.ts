@@ -51,7 +51,13 @@ export interface SlaStatus {
  * Get working schedule for a chat
  *
  * Fetches chat-specific schedule from database,
- * falling back to default Moscow timezone schedule.
+ * falling back to global settings, then to hardcoded defaults.
+ *
+ * Priority order:
+ * 1. Chat's is24x7Mode flag (if true, bypasses schedule)
+ * 2. Chat-specific WorkingSchedule records
+ * 3. GlobalSettings default values
+ * 4. Hardcoded DEFAULT_WORKING_SCHEDULE (last resort)
  *
  * @param chatId - Telegram chat ID
  * @returns Working schedule configuration
@@ -67,7 +73,8 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
     });
 
     if (!chat) {
-      return DEFAULT_WORKING_SCHEDULE;
+      // Chat not found, use global settings
+      return await getGlobalSchedule();
     }
 
     // If 24/7 mode is enabled, return schedule with is24x7 flag
@@ -119,10 +126,71 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
       };
     }
 
-    return DEFAULT_WORKING_SCHEDULE;
+    // No chat-specific schedule, use global settings
+    return await getGlobalSchedule();
   } catch (error) {
     logger.error('Error fetching schedule for chat, using default', {
       chatId,
+      error: error instanceof Error ? error.message : String(error),
+      service: 'sla-timer',
+    });
+    return DEFAULT_WORKING_SCHEDULE;
+  }
+}
+
+/**
+ * Get working schedule from global settings
+ *
+ * Reads default working hours from GlobalSettings table,
+ * falling back to hardcoded defaults if not found.
+ *
+ * @returns Working schedule from global settings
+ */
+async function getGlobalSchedule(): Promise<WorkingSchedule> {
+  try {
+    const globalSettings = await prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+      select: {
+        defaultTimezone: true,
+        defaultWorkingDays: true,
+        defaultStartTime: true,
+        defaultEndTime: true,
+      },
+    });
+
+    if (!globalSettings) {
+      logger.warn('GlobalSettings not found, using hardcoded defaults', {
+        service: 'sla-timer',
+      });
+      return DEFAULT_WORKING_SCHEDULE;
+    }
+
+    // Check if working hours span full day (00:00 to 23:59) with all days
+    // This effectively means 24/7 mode
+    const is24x7 =
+      globalSettings.defaultStartTime === '00:00' &&
+      globalSettings.defaultEndTime === '23:59' &&
+      globalSettings.defaultWorkingDays.length === 7;
+
+    logger.debug('Using global settings for working schedule', {
+      timezone: globalSettings.defaultTimezone,
+      workingDays: globalSettings.defaultWorkingDays,
+      startTime: globalSettings.defaultStartTime,
+      endTime: globalSettings.defaultEndTime,
+      is24x7,
+      service: 'sla-timer',
+    });
+
+    return {
+      timezone: globalSettings.defaultTimezone,
+      workingDays: globalSettings.defaultWorkingDays,
+      startTime: globalSettings.defaultStartTime,
+      endTime: globalSettings.defaultEndTime,
+      holidays: [], // TODO: Load global holidays
+      is24x7,
+    };
+  } catch (error) {
+    logger.error('Error fetching global settings, using hardcoded defaults', {
       error: error instanceof Error ? error.message : String(error),
       service: 'sla-timer',
     });

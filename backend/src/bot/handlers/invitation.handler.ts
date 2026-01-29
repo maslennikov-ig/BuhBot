@@ -60,7 +60,7 @@ export function registerInvitationHandler(): void {
       }
 
       logger.info('Processing invitation via /start', {
-        chatId,
+        chatId: String(chatId),
         tokenLength: payload.length,
         service: 'invitation-handler',
       });
@@ -97,7 +97,7 @@ export function registerInvitationHandler(): void {
       }
 
       logger.info('Processing invitation via /connect', {
-        chatId,
+        chatId: String(chatId),
         tokenLength: token.length,
         service: 'invitation-handler',
       });
@@ -135,8 +135,8 @@ export function registerInvitationHandler(): void {
       await ctx.reply(helpMessage, { parse_mode: 'Markdown' });
 
       logger.info('Help command processed', {
-        chatId: ctx.chat?.id,
-        userId: ctx.from?.id,
+        chatId: ctx.chat?.id ? String(ctx.chat.id) : undefined,
+        userId: ctx.from?.id ? String(ctx.from.id) : undefined,
         service: 'invitation-handler',
       });
     } catch (error) {
@@ -166,7 +166,7 @@ async function processInvitation(
   if (!isValidTokenFormat(token)) {
     logger.warn('Invalid token format attempted', {
       tokenLength: token.length,
-      chatId,
+      chatId: String(chatId),
       service: 'invitation-handler',
     });
     await ctx.reply('❌ Неверный формат кода приглашения.');
@@ -206,7 +206,7 @@ async function processInvitation(
       try {
         inviteLink = await ctx.telegram.exportChatInviteLink(Number(chatId));
         logger.info('Fetched invite link for chat', {
-          chatId,
+          chatId: String(chatId),
           hasInviteLink: !!inviteLink,
           service: 'invitation-handler',
         });
@@ -214,7 +214,7 @@ async function processInvitation(
         // Bot might not have permission to export invite links
         // This is not critical - we can still register the chat
         logger.warn('Failed to fetch invite link (bot might lack permissions)', {
-          chatId,
+          chatId: String(chatId),
           error: error instanceof Error ? error.message : String(error),
           service: 'invitation-handler',
         });
@@ -258,7 +258,7 @@ async function processInvitation(
     await ctx.reply('✅ Чат успешно подключен!\nТеперь мы на связи. История сообщений сохраняется.');
 
     logger.info('Invitation successfully processed', {
-      chatId,
+      chatId: String(chatId),
       tokenPrefix: token.substring(0, 8) + '...',
       service: 'invitation-handler'
     });
@@ -285,7 +285,7 @@ async function processInvitation(
     // Log unexpected errors
     logger.error('Unexpected error processing invitation', {
       error: errorMessage,
-      chatId,
+      chatId: String(chatId),
       service: 'invitation-handler',
     });
 

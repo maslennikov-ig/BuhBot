@@ -5,7 +5,7 @@ import logger from './utils/logger.js';
 import env, { isProduction, isDevelopment } from './config/env.js';
 import { healthHandler } from './api/health.js';
 import { metricsHandler } from './api/metrics.js';
-import { disconnectPrisma } from './lib/prisma.js';
+import { disconnectPrisma, prisma } from './lib/prisma.js';
 import { disconnectRedis } from './lib/redis.js';
 import { appRouter, createContext } from './api/trpc/index.js';
 import { registerHandlers, setupWebhook, launchPolling, stopBot } from './bot/index.js';
@@ -133,6 +133,42 @@ const registerFinalHandlers = () => {
 };
 
 const startServer = async (port: number) => {
+  // Startup validation: warn about chats with SLA enabled but no managers
+  try {
+    const chatsWithoutManagers = await prisma.chat.findMany({
+      where: {
+        slaEnabled: true,
+        managerTelegramIds: { isEmpty: true },
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    // Check if global fallback managers exist
+    const globalSettings = await prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+      select: { globalManagerIds: true },
+    });
+    const hasGlobalManagers = (globalSettings?.globalManagerIds?.length ?? 0) > 0;
+
+    if (chatsWithoutManagers.length > 0 && !hasGlobalManagers) {
+      logger.warn('Chats with SLA enabled but no managers configured (and no global fallback)', {
+        count: chatsWithoutManagers.length,
+        chatIds: chatsWithoutManagers.map((c) => c.id.toString()),
+        chatTitles: chatsWithoutManagers.map((c) => c.title).filter(Boolean),
+        service: 'startup',
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to run startup manager validation', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'startup',
+    });
+    // Don't fail startup - continue even if validation fails
+  }
+
   // Recover pending SLA timers after restart
   // This must be done after Redis/BullMQ workers are loaded
   try {

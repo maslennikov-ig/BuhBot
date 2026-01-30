@@ -44,6 +44,7 @@ type ChatSettingsFormProps = {
     slaResponseMinutes: number;
     assignedAccountantId: string | null;
     accountantUsernames?: string[];
+    notifyInChatOnBreach?: boolean;
   };
   onSuccess?: () => void;
   className?: string;
@@ -64,6 +65,7 @@ const chatSettingsSchema = z.object({
     .union([z.string().uuid(), z.null(), z.literal('')])
     .transform((val) => (val === '' ? null : val)),
   accountantUsernames: z.array(z.string()).optional(),
+  notifyInChatOnBreach: z.boolean(),
 });
 
 type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
@@ -77,6 +79,7 @@ const DEFAULT_VALUES: ChatSettingsFormData = {
   slaResponseMinutes: 60,
   assignedAccountantId: null,
   accountantUsernames: [],
+  notifyInChatOnBreach: true,
 };
 
 // ============================================
@@ -226,6 +229,53 @@ export function ChatSettingsForm({
               </div>
             </div>
           )}
+
+          {/* Notify in Chat on Breach */}
+          <FormField
+            control={form.control}
+            name="notifyInChatOnBreach"
+            render={({ field }) => (
+              <FormItem
+                className={cn(
+                  'flex items-center justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-overlay)] p-4',
+                  'transition-opacity duration-200',
+                  !slaEnabled && 'opacity-50 pointer-events-none'
+                )}
+              >
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base font-medium text-[var(--buh-foreground)]">
+                    Уведомления в чат
+                  </FormLabel>
+                  <FormDescription className="text-[var(--buh-foreground-subtle)]">
+                    Отправлять предупреждение о нарушении SLA прямо в групповой чат
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={field.value}
+                    disabled={!slaEnabled}
+                    onClick={() => field.onChange(!field.value)}
+                    className={cn(
+                      'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200',
+                      'focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent)] focus:ring-offset-2',
+                      field.value
+                        ? 'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]'
+                        : 'bg-[var(--buh-surface-elevated)]'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200',
+                        field.value ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           {/* SLA Response Time */}
           <FormField

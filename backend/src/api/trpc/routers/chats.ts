@@ -132,6 +132,7 @@ export const chatsRouter = router({
         slaEnabled: z.boolean(),
         slaResponseMinutes: z.number().int(),
         managerTelegramIds: z.array(z.string()),
+        notifyInChatOnBreach: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
       })
@@ -149,6 +150,7 @@ export const chatsRouter = router({
           slaEnabled: true,
           slaResponseMinutes: true,
           managerTelegramIds: true,
+          notifyInChatOnBreach: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -288,6 +290,7 @@ export const chatsRouter = router({
               })
           )
           .default([]),
+        notifyInChatOnBreach: z.boolean().optional(),
       })
     )
     .output(
@@ -298,6 +301,7 @@ export const chatsRouter = router({
           assignedAccountantId: z.string().uuid().nullable(),
           slaEnabled: z.boolean(),
           slaResponseMinutes: z.number().int(),
+          notifyInChatOnBreach: z.boolean(),
           updatedAt: z.date(),
         }),
       })
@@ -315,6 +319,28 @@ export const chatsRouter = router({
         });
       }
 
+      // Validate: Cannot enable SLA without managers configured
+      if (input.slaEnabled === true) {
+        // Check for chat-level managers (if provided in input, use that; otherwise use existing)
+        const chatManagers = existingChat.managerTelegramIds || [];
+
+        // Check for global fallback managers
+        const globalSettings = await ctx.prisma.globalSettings.findUnique({
+          where: { id: 'default' },
+          select: { globalManagerIds: true },
+        });
+        const globalManagers = globalSettings?.globalManagerIds || [];
+
+        const hasManagers = chatManagers.length > 0 || globalManagers.length > 0;
+
+        if (!hasManagers) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
+          });
+        }
+      }
+
       // Build update data from optional fields
       const data: Prisma.ChatUncheckedUpdateInput = {};
       if (input.assignedAccountantId !== undefined) {
@@ -325,6 +351,9 @@ export const chatsRouter = router({
       }
       if (input.slaResponseMinutes !== undefined) {
         data.slaResponseMinutes = input.slaResponseMinutes;
+      }
+      if (input.notifyInChatOnBreach !== undefined) {
+        data.notifyInChatOnBreach = input.notifyInChatOnBreach;
       }
 
       // Start with input usernames
@@ -360,6 +389,7 @@ export const chatsRouter = router({
           assignedAccountantId: true,
           slaEnabled: true,
           slaResponseMinutes: true,
+          notifyInChatOnBreach: true,
           updatedAt: true,
         },
       });

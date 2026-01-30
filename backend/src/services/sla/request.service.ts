@@ -317,7 +317,16 @@ export async function getRequestByMessage(
  * }
  * ```
  */
-export async function findOldestPendingRequest(
+/**
+ * Find the most recent pending request in a chat (LIFO order)
+ *
+ * When an accountant responds without reply-to, resolve the LATEST pending request.
+ * In real-world chat flows, accountants typically respond to the most recent question.
+ *
+ * @param chatId - Telegram chat ID
+ * @returns The most recent pending request, or null if none found
+ */
+export async function findLatestPendingRequest(
   chatId: string
 ): Promise<ClientRequest | null> {
   try {
@@ -326,13 +335,13 @@ export async function findOldestPendingRequest(
         chatId: BigInt(chatId),
         status: { in: ['pending', 'in_progress', 'escalated'] },
       },
-      orderBy: { receivedAt: 'asc' },
+      orderBy: { receivedAt: 'desc' },
       include: {
         chat: true,
       },
     });
   } catch (error) {
-    logger.error('Failed to find oldest pending request', {
+    logger.error('Failed to find latest pending request', {
       chatId,
       error: error instanceof Error ? error.message : String(error),
       service: 'request-service',
@@ -348,5 +357,5 @@ export default {
   getActiveRequests,
   getPendingRequestsForChat,
   getRequestByMessage,
-  findOldestPendingRequest,
+  findLatestPendingRequest,
 };

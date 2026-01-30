@@ -288,11 +288,52 @@ export function formatResolutionConfirmation(
   }
 }
 
+/**
+ * Data required to format a breach chat notification
+ */
+export interface BreachChatNotificationData {
+  /** Client's Telegram username (may be null) */
+  clientUsername: string | null;
+  /** Preview of the client's message (will be truncated) */
+  messagePreview: string;
+  /** SLA threshold in minutes */
+  thresholdMinutes: number;
+  /** Minutes elapsed since request received */
+  minutesElapsed: number;
+}
+
+/**
+ * Format breach notification for group chat
+ *
+ * Sent automatically to the chat when SLA is breached and notifyInChatOnBreach is enabled.
+ *
+ * @param data - Breach notification data
+ * @returns Formatted HTML string
+ */
+export function formatBreachChatNotification(data: BreachChatNotificationData): string {
+  const { clientUsername, messagePreview, thresholdMinutes, minutesElapsed } = data;
+
+  const clientInfo = clientUsername ? `@${escapeHtml(clientUsername)}` : 'Клиент';
+  const preview = truncateText(messagePreview, 100);
+
+  const lines = [
+    '\u26A0\uFE0F <b>ВНИМАНИЕ: Превышен срок ответа!</b>', // Warning sign
+    '',
+    `\uD83D\uDC64 ${clientInfo} ожидает ответа уже ${minutesElapsed} мин.`,
+    `\uD83D\uDCCA Пороговое значение: ${thresholdMinutes} мин.`,
+    '',
+    `\uD83D\uDCDD Сообщение: <i>${escapeHtml(preview)}</i>`,
+  ];
+
+  return lines.join('\n');
+}
+
 export default {
   formatAlertMessage,
   formatShortNotification,
   formatAccountantNotification,
   formatResolutionConfirmation,
+  formatBreachChatNotification,
   escapeHtml,
   truncateText,
 };

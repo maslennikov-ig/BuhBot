@@ -7,11 +7,11 @@
  * 1. Check if message is from an accountant (by Telegram username or user mapping)
  * 2. Check if message is a reply to a tracked client request
  * 3. If direct reply: stop SLA timer for that specific request
- * 4. If not a reply: stop the oldest pending request in the chat (FIFO)
+ * 4. If not a reply: stop the latest pending request in the chat (LIFO)
  *
  * Edge Cases Handled:
  * - Response outside working hours (still recorded, working minutes calculated)
- * - Multiple pending requests (FIFO resolution)
+ * - Multiple pending requests (LIFO resolution - most recent first)
  * - Reply to non-tracked message (no action)
  * - Non-accountant messages (ignored)
  *
@@ -24,7 +24,7 @@ import { prisma } from '../../lib/prisma.js';
 import { stopSlaTimer } from '../../services/sla/timer.service.js';
 import {
   getRequestByMessage,
-  findOldestPendingRequest,
+  findLatestPendingRequest,
   type ClientRequest,
 } from '../../services/sla/request.service.js';
 import logger from '../../utils/logger.js';
@@ -342,9 +342,9 @@ export function registerResponseHandler(): void {
         }
       }
 
-      // 3. If no reply or reply not to a tracked message, find oldest pending request
+      // 3. If no reply or reply not to a tracked message, find latest pending request (LIFO)
       if (!requestToResolve) {
-        requestToResolve = await findOldestPendingRequest(String(chatId));
+        requestToResolve = await findLatestPendingRequest(String(chatId));
 
         if (!requestToResolve) {
           logger.debug('No pending requests in chat to resolve', {
@@ -354,7 +354,7 @@ export function registerResponseHandler(): void {
           return;
         }
 
-        logger.info('Resolving oldest pending request (FIFO)', {
+        logger.info('Resolving latest pending request (LIFO)', {
           chatId,
           requestId: requestToResolve.id,
           service: 'response-handler',

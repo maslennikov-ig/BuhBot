@@ -25,6 +25,8 @@ import {
   type SlaTimerJobData,
 } from './setup.js';
 import { queueConfig } from '../config/queue.config.js';
+import { bot } from '../bot/bot.js';
+import { formatBreachChatNotification } from '../services/alerts/format.service.js';
 
 /**
  * Process SLA breach check job
@@ -116,7 +118,39 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       return alert;
     });
 
-    // 5. Get manager IDs for alert delivery
+    // 5. Send breach notification to group chat (if enabled)
+    if (request.chat?.notifyInChatOnBreach) {
+      try {
+        const chatNotificationMessage = formatBreachChatNotification({
+          clientUsername: request.clientUsername,
+          messagePreview: request.messageText,
+          thresholdMinutes: threshold,
+          minutesElapsed: threshold,
+        });
+
+        await bot.telegram.sendMessage(
+          String(chatId),
+          chatNotificationMessage,
+          { parse_mode: 'HTML' }
+        );
+
+        logger.info('Breach notification sent to group chat', {
+          requestId,
+          chatId,
+          service: 'sla-timer-worker',
+        });
+      } catch (chatNotifyError) {
+        // Don't fail the job if chat notification fails (bot might not have permissions)
+        logger.warn('Failed to send breach notification to group chat', {
+          requestId,
+          chatId,
+          error: chatNotifyError instanceof Error ? chatNotifyError.message : String(chatNotifyError),
+          service: 'sla-timer-worker',
+        });
+      }
+    }
+
+    // 6. Get manager IDs for alert delivery
     const managerIds = request.chat?.managerTelegramIds ?? [];
 
     // If no chat-specific managers, get global managers
@@ -128,7 +162,7 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       alertManagerIds = globalSettings?.globalManagerIds ?? [];
     }
 
-    // 6. Queue alert for delivery
+    // 7. Queue alert for delivery
     if (alertManagerIds.length > 0) {
       await queueAlert({
         requestId,

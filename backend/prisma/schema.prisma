@@ -214,10 +214,11 @@ model Chat {
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // SLA Configuration per chat (T007)
-  slaThresholdMinutes Int      @default(60) @map("sla_threshold_minutes") // SLA breach threshold
-  monitoringEnabled   Boolean  @default(true) @map("monitoring_enabled") // Enable/disable monitoring
-  is24x7Mode          Boolean  @default(false) @map("is_24x7_mode") // Ignore working hours
-  managerTelegramIds  String[] @default([]) @map("manager_telegram_ids") // Override global managers
+  slaThresholdMinutes     Int      @default(60) @map("sla_threshold_minutes") // SLA breach threshold
+  monitoringEnabled       Boolean  @default(true) @map("monitoring_enabled") // Enable/disable monitoring
+  is24x7Mode              Boolean  @default(false) @map("is_24x7_mode") // Ignore working hours
+  managerTelegramIds      String[] @default([]) @map("manager_telegram_ids") // Override global managers
+  notifyInChatOnBreach    Boolean  @default(true) @map("notify_in_chat_on_breach") // Auto-send breach notification to group chat
 
   // Relations
   assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id])

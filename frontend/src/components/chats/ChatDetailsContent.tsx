@@ -283,6 +283,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                   slaResponseMinutes: chat.slaResponseMinutes,
                   assignedAccountantId: chat.assignedAccountantId,
                   accountantUsernames: chat.accountantUsernames ?? [],
+                  notifyInChatOnBreach: chat.notifyInChatOnBreach ?? true,
                 }}
               />
 

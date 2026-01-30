@@ -160,7 +160,8 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
         escalationLevel,
         clientUsername: request.clientUsername,
         messagePreview: request.messageText.slice(0, messagePreviewLength),
-        minutesElapsed: request.slaWorkingMinutes ?? 0,
+        // Use minutesElapsed from slaAlerts (already populated) instead of slaWorkingMinutes (NULL until timer stops)
+        minutesElapsed: request.slaAlerts[0]?.minutesElapsed ?? 0,
         threshold: request.chat?.slaThresholdMinutes ?? 60,
         chatTitle: request.chat?.title ?? null,
         chatId,

@@ -57,7 +57,7 @@ const chatSettingsSchema = z.object({
   slaEnabled: z.boolean(),
   slaResponseMinutes: z
     .number()
-    .min(15, 'Минимум 15 минут')
+    .min(1, 'Минимум 1 минута')
     .max(480, 'Максимум 480 минут'),
   // Allow null, valid UUID, or empty string (transformed to null)
   assignedAccountantId: z
@@ -245,7 +245,7 @@ export function ChatSettingsForm({
                 <FormControl>
                   <Input
                     type="number"
-                    min={15}
+                    min={1}
                     max={480}
                     disabled={!slaEnabled}
                     className="bg-[var(--buh-surface)] border-[var(--buh-border)] focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]"
@@ -254,7 +254,7 @@ export function ChatSettingsForm({
                   />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                  Максимальное время для ответа клиенту (15-480 мин)
+                  Максимальное время для ответа клиенту (1-480 мин)
                 </FormDescription>
                 <FormMessage />
               </FormItem>

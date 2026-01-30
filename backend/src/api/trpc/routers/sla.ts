@@ -267,13 +267,19 @@ export const slaRouter = router({
       });
 
       if (!chat) {
+        // Fetch default SLA threshold from GlobalSettings
+        const globalSettings = await ctx.prisma.globalSettings.findUnique({
+          where: { id: 'default' },
+          select: { defaultSlaThreshold: true },
+        });
+
         // Create chat with defaults if not exists
         chat = await ctx.prisma.chat.create({
           data: {
             id: BigInt(input.chatId),
             chatType: 'group', // Default to group
             slaEnabled: true,
-            slaThresholdMinutes: 60,
+            slaThresholdMinutes: globalSettings?.defaultSlaThreshold ?? 60,
             monitoringEnabled: true,
           },
         });

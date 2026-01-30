@@ -60,6 +60,13 @@ export function registerChatEventHandler(): void {
         // Bot was ADDED to the chat
         logger.info('Bot added to chat', { chatId, title, service: 'chat-event-handler' });
 
+        // Fetch default SLA threshold from GlobalSettings
+        const globalSettings = await prisma.globalSettings.findUnique({
+          where: { id: 'default' },
+          select: { defaultSlaThreshold: true },
+        });
+        const defaultThreshold = globalSettings?.defaultSlaThreshold ?? 60;
+
         await prisma.chat.upsert({
           where: { id: BigInt(chatId) },
           create: {
@@ -69,8 +76,8 @@ export function registerChatEventHandler(): void {
             slaEnabled: false, // Default to false for safety
             monitoringEnabled: true,
             is24x7Mode: false,
-            slaThresholdMinutes: 60,
-            slaResponseMinutes: 60,
+            slaThresholdMinutes: defaultThreshold,
+            slaResponseMinutes: defaultThreshold,
           },
           update: {
             title: title,

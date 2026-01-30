@@ -14,6 +14,33 @@ const LOG_LEVEL = process.env['LOG_LEVEL'] || 'info';
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 
 /**
+ * Custom Winston format to handle BigInt serialization
+ * BigInt cannot be serialized by JSON.stringify, convert to string
+ * @see https://github.com/prisma/docs - BigInt serialization
+ */
+const bigIntFormat = winston.format((info) => {
+  // Recursively convert BigInt values to strings
+  const convertBigInt = (obj: unknown): unknown => {
+    if (typeof obj === 'bigint') {
+      return obj.toString();
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(convertBigInt);
+    }
+    if (obj !== null && typeof obj === 'object') {
+      const result: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = convertBigInt(value);
+      }
+      return result;
+    }
+    return obj;
+  };
+
+  return convertBigInt(info) as winston.Logform.TransformableInfo;
+});
+
+/**
  * Winston Logger Configuration
  *
  * Features:
@@ -29,6 +56,7 @@ const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
+  bigIntFormat(),
   winston.format.json()
 );
 
@@ -38,9 +66,9 @@ const consoleFormat = winston.format.combine(
   winston.format.printf(({ timestamp, level, message, service, ...metadata }) => {
     let msg = `${timestamp} [${level}] [${service || 'buhbot'}]: ${message}`;
 
-    // Add metadata if present
+    // Add metadata if present (use BigInt-safe replacer)
     if (Object.keys(metadata).length > 0) {
-      msg += ` ${JSON.stringify(metadata)}`;
+      msg += ` ${JSON.stringify(metadata, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`;
     }
 
     return msg;

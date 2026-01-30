@@ -276,7 +276,7 @@ export const chatsRouter = router({
         id: z.number(),
         assignedAccountantId: z.string().uuid().nullable().optional(),
         slaEnabled: z.boolean().optional(),
-        slaResponseMinutes: z.number().int().min(15).max(480).optional(),
+        slaResponseMinutes: z.number().int().min(1).max(480).optional(),
         accountantUsernames: z
           .array(
             z
@@ -533,6 +533,13 @@ export const chatsRouter = router({
       // Parse telegramChatId to BigInt for the id field
       const chatId = BigInt(input.telegramChatId);
 
+      // Fetch default SLA threshold from GlobalSettings
+      const globalSettings = await ctx.prisma.globalSettings.findUnique({
+        where: { id: 'default' },
+        select: { defaultSlaThreshold: true },
+      });
+      const defaultThreshold = globalSettings?.defaultSlaThreshold ?? 60;
+
       // Upsert: create if not exists, update if exists
       const chat = await ctx.prisma.chat.upsert({
         where: { id: chatId },
@@ -551,8 +558,8 @@ export const chatsRouter = router({
           accountantUsername: input.accountantUsername ?? null,
           // Defaults from Prisma schema
           slaEnabled: true,
-          slaResponseMinutes: 60,
-          slaThresholdMinutes: 60,
+          slaResponseMinutes: defaultThreshold,
+          slaThresholdMinutes: defaultThreshold,
           monitoringEnabled: true,
           is24x7Mode: false,
           managerTelegramIds: [],

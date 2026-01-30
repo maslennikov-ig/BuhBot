@@ -67,7 +67,7 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
     });
 
     if (!chat) {
-      return DEFAULT_WORKING_SCHEDULE;
+      return await getGlobalSchedule();
     }
 
     // If 24/7 mode is enabled, return schedule with is24x7 flag
@@ -119,10 +119,52 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
       };
     }
 
-    return DEFAULT_WORKING_SCHEDULE;
+    return await getGlobalSchedule();
   } catch (error) {
     logger.error('Error fetching schedule for chat, using default', {
       chatId,
+      error: error instanceof Error ? error.message : String(error),
+      service: 'sla-timer',
+    });
+    return await getGlobalSchedule();
+  }
+}
+
+/**
+ * Get schedule from GlobalSettings as fallback
+ */
+async function getGlobalSchedule(): Promise<WorkingSchedule> {
+  try {
+    const globalSettings = await prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+      select: {
+        defaultTimezone: true,
+        defaultWorkingDays: true,
+        defaultStartTime: true,
+        defaultEndTime: true,
+      },
+    });
+
+    if (!globalSettings) {
+      return DEFAULT_WORKING_SCHEDULE;
+    }
+
+    // Detect 24/7 mode: 00:00-23:59 with all 7 days
+    const is24x7 =
+      globalSettings.defaultStartTime === '00:00' &&
+      globalSettings.defaultEndTime === '23:59' &&
+      globalSettings.defaultWorkingDays.length === 7;
+
+    return {
+      timezone: globalSettings.defaultTimezone ?? 'Europe/Moscow',
+      workingDays: globalSettings.defaultWorkingDays ?? [1, 2, 3, 4, 5],
+      startTime: globalSettings.defaultStartTime ?? '09:00',
+      endTime: globalSettings.defaultEndTime ?? '18:00',
+      holidays: [],
+      is24x7,
+    };
+  } catch (error) {
+    logger.error('Failed to fetch GlobalSettings schedule', {
       error: error instanceof Error ? error.message : String(error),
       service: 'sla-timer',
     });

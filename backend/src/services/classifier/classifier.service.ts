@@ -39,7 +39,7 @@ import {
 export class ClassifierService {
   private prisma: PrismaClient;
   private config: ClassifierConfig;
-  private settingsCache: { apiKey?: string; model?: string; timestamp: number } | null = null;
+  private settingsCache: { apiKey?: string; model?: string; aiConfidenceThreshold?: number; timestamp: number } | null = null;
   private readonly SETTINGS_CACHE_TTL_MS = 60000; // 1 minute cache for DB settings
 
   /**
@@ -66,28 +66,29 @@ export class ClassifierService {
    *
    * @returns Settings from DB or empty object if not configured
    */
-  private async getDbSettings(): Promise<{ apiKey?: string; model?: string }> {
+  private async getDbSettings(): Promise<{ apiKey?: string; model?: string; aiConfidenceThreshold?: number }> {
     // Check cache
     if (
       this.settingsCache &&
       Date.now() - this.settingsCache.timestamp < this.SETTINGS_CACHE_TTL_MS
     ) {
-      const result: { apiKey?: string; model?: string } = {};
+      const result: { apiKey?: string; model?: string; aiConfidenceThreshold?: number } = {};
       if (this.settingsCache.apiKey) result.apiKey = this.settingsCache.apiKey;
       if (this.settingsCache.model) result.model = this.settingsCache.model;
+      if (this.settingsCache.aiConfidenceThreshold !== undefined) result.aiConfidenceThreshold = this.settingsCache.aiConfidenceThreshold;
       return result;
     }
 
     try {
       const settings = await this.prisma.globalSettings.findUnique({
         where: { id: 'default' },
-        select: { openrouterApiKey: true, openrouterModel: true },
+        select: { openrouterApiKey: true, openrouterModel: true, aiConfidenceThreshold: true },
       });
 
       // Update cache
       this.settingsCache = {
         timestamp: Date.now(),
-      } as { apiKey?: string; model?: string; timestamp: number };
+      } as { apiKey?: string; model?: string; aiConfidenceThreshold?: number; timestamp: number };
 
       if (settings?.openrouterApiKey) {
         this.settingsCache.apiKey = settings.openrouterApiKey;
@@ -95,10 +96,14 @@ export class ClassifierService {
       if (settings?.openrouterModel) {
         this.settingsCache.model = settings.openrouterModel;
       }
+      if (settings?.aiConfidenceThreshold !== undefined) {
+        this.settingsCache.aiConfidenceThreshold = settings.aiConfidenceThreshold;
+      }
 
-      const result: { apiKey?: string; model?: string } = {};
+      const result: { apiKey?: string; model?: string; aiConfidenceThreshold?: number } = {};
       if (this.settingsCache.apiKey) result.apiKey = this.settingsCache.apiKey;
       if (this.settingsCache.model) result.model = this.settingsCache.model;
+      if (this.settingsCache.aiConfidenceThreshold !== undefined) result.aiConfidenceThreshold = this.settingsCache.aiConfidenceThreshold;
       return result;
     } catch (error) {
       logger.warn('Failed to fetch OpenRouter settings from DB, using defaults', {
@@ -175,7 +180,8 @@ export class ClassifierService {
       aiResult = await classifyWithAI(text, classifierConfig);
 
       // If AI confidence is above threshold, use it
-      if (aiResult.confidence >= this.config.aiConfidenceThreshold) {
+      const effectiveThreshold = dbSettings.aiConfidenceThreshold ?? this.config.aiConfidenceThreshold;
+      if (aiResult.confidence >= effectiveThreshold) {
         await setCache(this.prisma, text, aiResult, this.config.cacheTTLHours);
 
         // Record AI success metrics
@@ -199,7 +205,7 @@ export class ClassifierService {
       // AI confidence below threshold, will use fallback
       logger.info('AI confidence below threshold, using keyword fallback', {
         aiConfidence: aiResult.confidence,
-        threshold: this.config.aiConfidenceThreshold,
+        threshold: effectiveThreshold,
         service: 'classifier',
       });
     } catch (error) {

@@ -593,6 +593,7 @@ export const chatsRouter = router({
           monitoringEnabled: true,
           is24x7Mode: false,
           managerTelegramIds: [],
+          notifyInChatOnBreach: true, // gh-17: Explicitly set to ensure group notifications work
         },
         select: {
           id: true,

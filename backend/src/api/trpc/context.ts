@@ -22,7 +22,7 @@
 
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { PrismaClient } from '@prisma/client';
-import { supabase } from '../../lib/supabase.js';
+import { supabase, isDevMode } from '../../lib/supabase.js';
 import { prisma } from '../../lib/prisma.js';
 
 /**
@@ -55,6 +55,17 @@ export interface Context {
 }
 
 /**
+ * Dev mode mock user for local development without Supabase
+ * Uses a valid UUID that matches the seeded admin user
+ */
+const DEV_MODE_USER: ContextUser = {
+  id: '11111111-1111-1111-1111-111111111111', // Matches seeded admin user
+  email: 'admin@buhbot.local',
+  role: 'admin',
+  fullName: 'Администратор',
+};
+
+/**
  * Extract JWT token from Authorization header
  *
  * @param authHeader - Authorization header value (e.g., "Bearer <token>")
@@ -78,10 +89,11 @@ function extractToken(authHeader: string | undefined): string | null {
  *
  * This function is called for every tRPC request to build the context object.
  * It handles authentication by:
- * 1. Extracting JWT from Authorization header
- * 2. Validating JWT with Supabase Auth
- * 3. Fetching user profile from database
- * 4. Building context with user info or null for unauthenticated
+ * 1. DEV MODE: If Supabase is not configured, bypass auth with mock user
+ * 2. Extracting JWT from Authorization header
+ * 3. Validating JWT with Supabase Auth
+ * 4. Fetching user profile from database
+ * 5. Building context with user info or null for unauthenticated
  *
  * Error Handling:
  * - Invalid/missing JWT → Returns unauthenticated context (user: null)
@@ -97,12 +109,41 @@ export async function createContext({
   const reqId = Math.random().toString(36).substring(7);
   const startTime = Date.now();
 
+  // DEV MODE: Bypass auth when Supabase is not configured
+  if (isDevMode) {
+    const isDevModeHeader = req.headers['x-dev-mode'] === 'true';
+    const token = extractToken(req.headers.authorization);
+
+    // In dev mode, return authenticated context with mock user
+    if (isDevModeHeader || token === 'dev-mock-token') {
+      console.log(`[CTX:${reqId}] DEV MODE: Using mock user (${Date.now() - startTime}ms)`);
+      return {
+        prisma,
+        user: DEV_MODE_USER,
+        session: {
+          accessToken: 'dev-mock-token',
+          expiresAt: Math.floor(Date.now() / 1000) + 3600,
+        },
+      };
+    }
+  }
+
   // Extract JWT from Authorization header
   const token = extractToken(req.headers.authorization);
 
   // If no token, return unauthenticated context
   if (!token) {
     console.log(`[CTX:${reqId}] No token, returning unauthenticated context (${Date.now() - startTime}ms)`);
+    return {
+      prisma,
+      user: null,
+      session: null,
+    };
+  }
+
+  // If Supabase is not configured and not in dev mode, return unauthenticated
+  if (!supabase) {
+    console.log(`[CTX:${reqId}] Supabase not configured, returning unauthenticated context`);
     return {
       prisma,
       user: null,

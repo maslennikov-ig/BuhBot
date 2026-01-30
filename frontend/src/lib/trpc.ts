@@ -10,7 +10,7 @@
 import { createTRPCReact } from '@trpc/react-query';
 import { httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../types/trpc';
-import { supabase } from './supabase';
+import { supabase, isDevMode, devMockSession } from './supabase';
 
 /**
  * tRPC React hooks
@@ -37,8 +37,8 @@ function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Default to localhost in development
-  return 'http://localhost:3001';
+  // Default to localhost in development (backend runs on port 3000)
+  return 'http://localhost:3000';
 }
 
 /**
@@ -48,6 +48,7 @@ function getBaseUrl(): string {
  * - Automatic request batching
  * - JWT token injection from localStorage
  * - Error handling middleware
+ * - DEV MODE: Uses mock token when Supabase is not configured
  */
 export function createTRPCClient() {
   return trpc.createClient({
@@ -55,8 +56,16 @@ export function createTRPCClient() {
       httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
         async headers() {
+          // DEV MODE: Use mock token when Supabase is not configured
+          if (isDevMode) {
+            return {
+              Authorization: `Bearer ${devMockSession.access_token}`,
+              'X-Dev-Mode': 'true',
+            };
+          }
+
           // Get JWT token from Supabase session (client-side only)
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && supabase) {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.access_token) {
               return {

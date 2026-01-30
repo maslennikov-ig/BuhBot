@@ -6,7 +6,7 @@ import { Menu, X, User } from 'lucide-react';
 import { ThemeLogo } from '../ThemeLogo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
+import { supabase, isDevMode, devMockSession } from '@/lib/supabase';
 
 const navLinks = [
   { name: 'Возможности', href: '#features' },
@@ -21,8 +21,8 @@ import { ProfileMenu } from '../ProfileMenu';
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(isDevMode); // In dev mode, always logged in
+  const [userEmail, setUserEmail] = useState<string | null>(isDevMode ? devMockSession.user.email : null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,6 +34,13 @@ export function Header() {
 
   // Check auth status
   useEffect(() => {
+    // DEV MODE: Skip auth check, use mock session
+    if (isDevMode || !supabase) {
+      setIsLoggedIn(true);
+      setUserEmail(devMockSession.user.email ?? 'dev@localhost');
+      return;
+    }
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session);
@@ -163,7 +170,9 @@ export function Header() {
                   </Link>
                   <button
                     onClick={async () => {
-                      await supabase.auth.signOut();
+                      if (supabase) {
+                        await supabase.auth.signOut();
+                      }
                       setIsMobileMenuOpen(false);
                       window.location.reload();
                     }}

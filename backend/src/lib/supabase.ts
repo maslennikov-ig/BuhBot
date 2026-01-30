@@ -4,6 +4,11 @@
  * Configures and exports a single Supabase client instance for server-side operations.
  * Uses the service role key for administrative operations and JWT validation.
  *
+ * DEV MODE:
+ * - When DEV_MODE=true and Supabase credentials are missing, uses placeholder values
+ * - Auth is bypassed in context.ts, so the client is never actually used for auth
+ * - This keeps the client non-nullable for TypeScript compatibility
+ *
  * SECURITY:
  * - Service role key bypasses Row Level Security (RLS) policies
  * - Only use this client for admin operations and JWT verification
@@ -13,17 +18,23 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { isDevMode } from '../config/env.js';
+import logger from '../utils/logger.js';
 
-// Validate required environment variables
-const supabaseUrl = process.env['SUPABASE_URL'];
-const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+// Get Supabase credentials or use placeholders in DEV MODE
+const supabaseUrl = process.env['SUPABASE_URL'] || 'https://placeholder.supabase.co';
+const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'placeholder-key';
 
-if (!supabaseUrl) {
-  throw new Error('Missing required environment variable: SUPABASE_URL');
-}
-
-if (!supabaseServiceKey) {
-  throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
+// Validate credentials in production mode
+if (!isDevMode) {
+  if (!process.env['SUPABASE_URL']) {
+    throw new Error('Missing required environment variable: SUPABASE_URL');
+  }
+  if (!process.env['SUPABASE_SERVICE_ROLE_KEY']) {
+    throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
+  }
+} else if (!process.env['SUPABASE_URL']) {
+  logger.warn('[Supabase] DEV MODE: Auth bypassed in context.ts, using placeholder credentials');
 }
 
 /**

@@ -18,6 +18,9 @@
  * @module lib/prisma
  */
 
+// Ensure env is loaded first
+import '../config/env.js';
+
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
@@ -45,8 +48,14 @@ declare global {
  * Direct connection bypasses this requirement and works with service credentials.
  */
 function createPool(): pg.Pool {
-  // Prefer DIRECT_URL to bypass Supabase pooler JWT requirement
-  const connectionString = process.env['DIRECT_URL'] || process.env['DATABASE_URL'];
+  const isDev = process.env['NODE_ENV'] === 'development';
+
+  // In development, prefer DATABASE_URL (local) over DIRECT_URL
+  // In production, prefer DIRECT_URL to bypass Supabase pooler JWT requirement
+  const connectionString = isDev
+    ? process.env['DATABASE_URL'] || process.env['DIRECT_URL']
+    : process.env['DIRECT_URL'] || process.env['DATABASE_URL'];
+
   if (!connectionString) {
     throw new Error('DIRECT_URL or DATABASE_URL environment variable is required');
   }
@@ -55,7 +64,8 @@ function createPool(): pg.Pool {
     connectionString,
     max: 10, // Maximum connections per constitution
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    // Longer timeout in development (WSL2, Docker, etc.)
+    connectionTimeoutMillis: isDev ? 15000 : 5000,
     // Force IPv4 DNS resolution (fixes WSL2 IPv6 connectivity issues)
     // @ts-expect-error - family is a valid option for net.connect() used by pg
     family: 4,

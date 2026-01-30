@@ -24,6 +24,9 @@ import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { PrismaClient } from '@prisma/client';
 import { supabase } from '../../lib/supabase.js';
 import { prisma } from '../../lib/prisma.js';
+import { isDevMode } from '../../config/env.js';
+import env from '../../config/env.js';
+import logger from '../../utils/logger.js';
 
 /**
  * User information extracted from session and database
@@ -34,6 +37,19 @@ interface ContextUser {
   role: 'admin' | 'manager' | 'observer'; // Role for RBAC
   fullName: string;     // Display name
 }
+
+/**
+ * Mock admin user for DEV MODE
+ *
+ * This user is used when DEV_MODE=true to bypass Supabase authentication.
+ * The UUID matches the dev user in seed.ts.
+ */
+const DEV_MODE_USER: ContextUser = {
+  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  email: env.DEV_USER_EMAIL || 'admin@buhbot.local',
+  role: 'admin',
+  fullName: 'DEV Admin',
+};
 
 /**
  * Supabase session information
@@ -96,6 +112,19 @@ export async function createContext({
 }: CreateExpressContextOptions): Promise<Context> {
   const reqId = Math.random().toString(36).substring(7);
   const startTime = Date.now();
+
+  // DEV MODE: Bypass all authentication
+  if (isDevMode) {
+    logger.debug('[context] DEV MODE: Using mock admin user', { reqId, duration: Date.now() - startTime });
+    return {
+      prisma,
+      user: DEV_MODE_USER,
+      session: {
+        accessToken: 'dev-mode-token',
+        expiresAt: Math.floor(Date.now() / 1000) + 86400, // 24 hours
+      },
+    };
+  }
 
   // Extract JWT from Authorization header
   const token = extractToken(req.headers.authorization);

@@ -11,6 +11,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import { httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../types/trpc';
 import { supabase } from './supabase';
+import { isDevMode } from './config';
 
 /**
  * tRPC React hooks
@@ -55,6 +56,14 @@ export function createTRPCClient() {
       httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
         async headers() {
+          // DEV MODE: Skip Supabase auth, send dev mode headers
+          if (isDevMode) {
+            return {
+              'X-Dev-Mode': 'true',
+              Authorization: 'Bearer dev-mode-token',
+            };
+          }
+
           // Get JWT token from Supabase session (client-side only)
           if (typeof window !== 'undefined') {
             const { data: { session } } = await supabase.auth.getSession();

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
+import { isDevMode, devMockUser } from '@/lib/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,6 +43,14 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
+      // DEV MODE: Skip Supabase auth entirely
+      if (isDevMode) {
+        toast.success(`DEV MODE: Logged in as ${devMockUser.email}`);
+        router.push('/dashboard');
+        router.refresh();
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -64,6 +73,19 @@ export function LoginForm() {
 
   return (
     <div className="bg-white/80 dark:bg-white/10 backdrop-blur-md border border-[var(--buh-border)] dark:border-white/20 rounded-2xl p-8 shadow-xl transition-colors duration-300">
+      {/* DEV MODE Banner */}
+      {isDevMode && (
+        <div className="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🛠️</span>
+            <span className="font-semibold text-yellow-800 dark:text-yellow-200">DEV MODE</span>
+          </div>
+          <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+            Supabase auth bypassed. Click sign in to continue as {devMockUser.email}
+          </p>
+        </div>
+      )}
+
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-[var(--buh-foreground)] dark:text-white mb-2">Welcome Back</h1>
         <p className="text-[var(--buh-foreground-muted)] dark:text-slate-300 text-sm">Sign in to your accountant dashboard</p>

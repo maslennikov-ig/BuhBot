@@ -117,8 +117,18 @@ async function seedHolidays(): Promise<void> {
 // TEST DATA SEED FUNCTIONS
 // ============================================================================
 
+// DEV MODE admin user (matches context.ts DEV_MODE_USER)
+const DEV_ADMIN = {
+  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  email: 'admin@buhbot.local',
+  fullName: 'DEV Admin',
+  role: 'admin' as UserRole,
+  telegramId: BigInt(100000),
+};
+
 // Test user IDs (consistent UUIDs for idempotent seeding)
 const TEST_USERS = [
+  { id: DEV_ADMIN.id, email: DEV_ADMIN.email, fullName: DEV_ADMIN.fullName, role: DEV_ADMIN.role, telegramId: DEV_ADMIN.telegramId },
   { id: '11111111-1111-1111-1111-111111111111', email: 'admin@buhbot.ru', fullName: 'Иван Администратор', role: 'admin' as UserRole, telegramId: BigInt(100001) },
   { id: '22222222-2222-2222-2222-222222222222', email: 'manager@buhbot.ru', fullName: 'Мария Менеджер', role: 'manager' as UserRole, telegramId: BigInt(100002) },
   { id: '33333333-3333-3333-3333-333333333333', email: 'accountant1@buhbot.ru', fullName: 'Анна Бухгалтер', role: 'observer' as UserRole, telegramId: BigInt(100003) },

@@ -1,0 +1,51 @@
+# BuhBot Local Development Environment
+#
+# This file provides PostgreSQL and Redis for local development without Supabase.
+# Use with DEV_MODE=true in backend/.env
+#
+# Usage:
+#   docker-compose -f docker-compose.local.yml up -d
+#   cd backend && DEV_MODE=true pnpm dev
+#
+# Connection strings for .env:
+#   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buhbot
+#   REDIS_HOST=localhost
+#   REDIS_PORT=6379
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: buhbot-postgres-local
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: buhbot
+    volumes:
+      - postgres-local-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: buhbot-redis-local
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-local-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres-local-data:
+  redis-local-data:

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
+import { supabase, isDevMode } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -81,6 +81,16 @@ export function SetPasswordForm() {
   const onSubmit = async (data: SetPasswordFormData) => {
     setIsLoading(true);
     try {
+      // DEV MODE: Skip actual password update
+      if (isDevMode || !supabase) {
+        setIsSuccess(true);
+        toast.success('DEV MODE: Пароль установлен (симуляция)');
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+        return;
+      }
+
       // Update user password using Supabase
       const { error } = await supabase.auth.updateUser({
         password: data.password,

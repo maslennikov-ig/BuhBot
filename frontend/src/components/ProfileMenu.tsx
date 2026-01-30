@@ -11,7 +11,7 @@ import {
   ChevronDown,
   HelpCircle
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isDevMode } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface ProfileMenuProps {
@@ -36,9 +36,16 @@ export function ProfileMenu({ email }: ProfileMenuProps) {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setIsOpen(false);
-    router.push('/login');
+    // In dev mode, just reload the page
+    if (isDevMode) {
+      window.location.reload();
+    } else {
+      router.push('/login');
+    }
   };
 
   const menuItems = [

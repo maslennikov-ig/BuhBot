@@ -112,7 +112,7 @@ describe('SLA Timer Worker - Group Notifications', () => {
       };
 
       mockPrisma.clientRequest.findUnique.mockResolvedValue(mockRequest);
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.$transaction.mockImplementation(async (_callback) => {
         // Simulate transaction execution
         return mockAlert;
       });
@@ -207,7 +207,6 @@ describe('SLA Timer Worker - Group Notifications', () => {
     it('should handle sendMessage errors gracefully without failing the job', async () => {
       const chatId = '-1001234567890';
       const requestId = 'test-request-id';
-      const threshold = 60;
 
       const mockRequest = {
         id: requestId,

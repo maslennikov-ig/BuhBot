@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.18] - 2026-01-30
+
+### Added
+- add 1 skill(s), update docs (40c751a)
+- implement 4 GitHub issues (gh-8, gh-12, gh-13, gh-15) (a1caee9)
+
+### Changed
+- **queues**: centralize BullMQ configuration in queue.config.ts (buh-xch) (2fc9c86)
+
+### Fixed
+- resolve 6 P1-P2 production bugs (02e5827)
+- **frontend**: fix response time chart overflow on analytics page (5fa9ff8)
+- **frontend**: replace empty string values in Select components (922cf38)
+- **docker**: revert COPY paths to match CI build context (ce2c8f9)
+- **deps**: add winston-transport as direct dependency (15f713f)
+- **lint**: resolve TypeScript and ESLint errors for CI (5e91a99)
+
+### Other
+- bd sync: 2026-01-30 13:53:46 (5e51087)
+- bd sync: 2026-01-30 13:53:20 (013e833)
+- bd sync: 2026-01-30 13:26:29 (62901a5)
+- bd sync: 2026-01-30 13:25:36 (58e3b22)
+- bd sync: 2026-01-30 13:10:32 (60ced73)
+- bd sync: 2026-01-30 13:09:26 (b5c4cb5)
+
 ## [0.9.17] - 2026-01-16
 
 ### Added

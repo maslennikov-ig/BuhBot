@@ -2,6 +2,32 @@
 
 User-facing release notes for all versions.
 
+## v0.9.18
+
+_Released on 2026-01-30_
+
+### ✨ New Features
+
+- Add 1 skill(s), update docs
+- Implement 4 GitHub issues (gh-8, gh-12, gh-13, gh-15)
+
+### 🔧 Improvements
+
+- **queues**: Centralize BullMQ configuration in queue.config.ts (buh-xch)
+
+### 🐛 Bug Fixes
+
+- Resolve 6 P1-P2 production bugs
+- **Interface**: Fix response time chart overflow on analytics page
+- **Interface**: Replace empty string values in Select components
+- **docker**: Revert COPY paths to match CI build context
+- **deps**: Add winston-transport as direct dependency
+- **lint**: Resolve TypeScript and ESLint errors for CI
+
+---
+
+_This release was automatically generated from 15 commits._
+
 ## v0.9.17
 
 _Released on 2026-01-16_

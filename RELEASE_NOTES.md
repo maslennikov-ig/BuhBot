@@ -2,6 +2,18 @@
 
 User-facing release notes for all versions.
 
+## v0.9.19
+
+_Released on 2026-01-30_
+
+### 🐛 Bug Fixes
+
+- **sla**: Fix notifyInChatOnBreach and global threshold update (gh-16, gh-17)
+
+---
+
+_This release was automatically generated from 4 commits._
+
 ## v0.9.18
 
 _Released on 2026-01-30_

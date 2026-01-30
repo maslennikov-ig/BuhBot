@@ -15,6 +15,7 @@
 import { Queue, QueueEvents } from 'bullmq';
 import { redis } from '../lib/redis.js';
 import logger from '../utils/logger.js';
+import { queueConfig } from '../config/queue.config.js';
 
 // ============================================================================
 // JOB DATA TYPES
@@ -79,13 +80,13 @@ export const SURVEY_QUEUE_NAME = 'surveys';
 export const surveyQueue = new Queue<SurveyJobData>(SURVEY_QUEUE_NAME, {
   connection: redis,
   defaultJobOptions: {
-    attempts: 5,
+    attempts: queueConfig.surveyAttempts,
     backoff: {
       type: 'exponential',
-      delay: 1000, // 1 second base, will increase exponentially
+      delay: queueConfig.defaultBackoffDelay, // 1 second base, will increase exponentially
     },
-    removeOnComplete: 100,
-    removeOnFail: 1000,
+    removeOnComplete: queueConfig.defaultRemoveOnComplete,
+    removeOnFail: queueConfig.defaultRemoveOnFail,
   },
 });
 

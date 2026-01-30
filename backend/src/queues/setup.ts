@@ -17,6 +17,7 @@ import { redis } from '../lib/redis.js';
 import logger from '../utils/logger.js';
 import { redisQueueLength } from '../utils/metrics.js';
 import { closeSurveyQueue } from './survey.queue.js';
+import { queueConfig } from '../config/queue.config.js';
 
 // ============================================================================
 // JOB DATA TYPES
@@ -87,13 +88,13 @@ export interface DataRetentionJobData {
  * - Keeps last 1000 failed jobs
  */
 export const defaultJobOptions = {
-  attempts: 3,
+  attempts: queueConfig.defaultAttempts,
   backoff: {
     type: 'exponential' as const,
-    delay: 1000,
+    delay: queueConfig.defaultBackoffDelay,
   },
-  removeOnComplete: 100,
-  removeOnFail: 1000,
+  removeOnComplete: queueConfig.defaultRemoveOnComplete,
+  removeOnFail: queueConfig.defaultRemoveOnFail,
 };
 
 /**
@@ -133,8 +134,8 @@ export const slaTimerQueue = new Queue<SlaTimerJobData>(QUEUE_NAMES.SLA_TIMERS, 
   defaultJobOptions: {
     ...defaultJobOptions,
     // SLA timer jobs should not retry - if missed, create a new one
-    attempts: 1,
-    removeOnComplete: 50,
+    attempts: queueConfig.slaAttempts,
+    removeOnComplete: queueConfig.slaRemoveOnComplete,
   },
 });
 
@@ -181,10 +182,10 @@ export const dataRetentionQueue = new Queue<DataRetentionJobData>(
     defaultJobOptions: {
       ...defaultJobOptions,
       // Data retention jobs can take longer
-      attempts: 2,
+      attempts: queueConfig.dataRetentionAttempts,
       backoff: {
         type: 'exponential' as const,
-        delay: 5000,
+        delay: queueConfig.dataRetentionBackoffDelay,
       },
     },
   }
@@ -373,7 +374,7 @@ export async function setupQueues(): Promise<void> {
  *
  * @param timeout - Maximum time to wait for workers to finish (default: 10000ms)
  */
-export async function closeQueues(timeout: number = 10000): Promise<void> {
+export async function closeQueues(timeout: number = queueConfig.workerShutdownTimeout): Promise<void> {
   logger.info('Closing BullMQ queues and workers...', {
     workerCount: registeredWorkers.length,
     timeout,
@@ -578,7 +579,7 @@ export async function cancelEscalation(
  * @returns The created job
  */
 export async function scheduleDataRetention() {
-  const repeatPattern = '0 0 * * *'; // Daily at midnight UTC (3 AM Moscow)
+  const repeatPattern = queueConfig.dataRetentionSchedule; // Daily at midnight UTC (3 AM Moscow)
 
   // Remove any existing repeatable job first
   await dataRetentionQueue.removeRepeatable('cleanup', {

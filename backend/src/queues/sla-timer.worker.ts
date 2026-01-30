@@ -24,6 +24,7 @@ import {
   queueAlert,
   type SlaTimerJobData,
 } from './setup.js';
+import { queueConfig } from '../config/queue.config.js';
 
 /**
  * Process SLA breach check job
@@ -181,10 +182,10 @@ export const slaTimerWorker = new Worker<SlaTimerJobData>(
   processSlaTimer,
   {
     connection: redis,
-    concurrency: 5,
+    concurrency: queueConfig.slaConcurrency,
     limiter: {
-      max: 10,
-      duration: 1000, // Max 10 jobs per second
+      max: queueConfig.slaRateLimitMax,
+      duration: queueConfig.slaRateLimitDuration, // Max 10 jobs per second
     },
   }
 );
@@ -219,7 +220,7 @@ registerWorker(slaTimerWorker);
 
 logger.info('SLA timer worker initialized', {
   queue: QUEUE_NAMES.SLA_TIMERS,
-  concurrency: 5,
+  concurrency: queueConfig.slaConcurrency,
   service: 'sla-timer-worker',
 });
 

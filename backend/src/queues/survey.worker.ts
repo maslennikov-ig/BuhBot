@@ -32,17 +32,18 @@ import {
   SURVEY_MESSAGE_TEXT,
   SURVEY_REMINDER_TEXT,
 } from '../bot/keyboards/survey.keyboard.js';
+import { queueConfig, getSurveyReminderDelayMs, getSurveyManagerNotifyDelayMs } from '../config/queue.config.js';
 import type { DeliveryStatus } from '@prisma/client';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-/** Delay before sending reminder (2 days) */
-const REMINDER_DELAY_MS = 2 * 24 * 60 * 60 * 1000;
+/** Delay before sending reminder (configurable, default 2 days) */
+const REMINDER_DELAY_MS = getSurveyReminderDelayMs();
 
-/** Delay before notifying manager about non-response (5 days after reminder = 7 days total) */
-const MANAGER_NOTIFY_DELAY_MS = 5 * 24 * 60 * 60 * 1000;
+/** Delay before notifying manager about non-response (configurable, default 5 days after reminder = 7 days total) */
+const MANAGER_NOTIFY_DELAY_MS = getSurveyManagerNotifyDelayMs();
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -183,7 +184,7 @@ async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Promise<v
     });
 
     // If max retries reached (5 attempts per NFR-006), mark as failed
-    if (job.attemptsMade + 1 >= 5) {
+    if (job.attemptsMade + 1 >= queueConfig.surveyAttempts) {
       await prisma.surveyDelivery.update({
         where: { id: deliveryId },
         data: {
@@ -430,10 +431,10 @@ export const surveyWorker = new Worker<SurveyJobData>(
   processJob,
   {
     connection: redis,
-    concurrency: 5, // Process up to 5 jobs concurrently
+    concurrency: queueConfig.surveyConcurrency, // Process up to 5 jobs concurrently
     limiter: {
-      max: 30, // Max 30 jobs
-      duration: 1000, // Per second (Telegram rate limit ~30 msg/sec)
+      max: queueConfig.surveyRateLimitMax, // Max 30 jobs
+      duration: queueConfig.surveyRateLimitDuration, // Per second (Telegram rate limit ~30 msg/sec)
     },
   }
 );

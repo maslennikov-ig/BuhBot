@@ -29,6 +29,7 @@ import { updateDeliveryStatus } from '../services/alerts/alert.service.js';
 import { scheduleNextEscalation } from '../services/alerts/escalation.service.js';
 import { sendLowRatingAlert } from '../services/feedback/alert.service.js';
 import logger from '../utils/logger.js';
+import { queueConfig } from '../config/queue.config.js';
 
 /**
  * Extended job data that may include formatted content
@@ -282,10 +283,10 @@ export const alertWorker = new Worker<AlertWorkerJobData>(
   processAlertJob,
   {
     connection: redis,
-    concurrency: 3, // Process up to 3 alerts concurrently
+    concurrency: queueConfig.alertConcurrency, // Process up to 3 alerts concurrently
     limiter: {
-      max: 30,      // Max 30 jobs
-      duration: 1000, // Per second (Telegram rate limit ~30 msg/sec)
+      max: queueConfig.alertRateLimitMax, // Max 30 jobs
+      duration: queueConfig.alertRateLimitDuration, // Per second (Telegram rate limit ~30 msg/sec)
     },
   }
 );

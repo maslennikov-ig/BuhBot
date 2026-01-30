@@ -82,9 +82,13 @@ BuhBot/
 
 - Node.js 18+
 - PostgreSQL 14+
-- Telegram Bot Token
+- Telegram Bot Token (с отключённым Privacy Mode!)
 - Yandex Cloud аккаунт
 - Yandex GPT API ключ
+
+> ⚠️ **ВАЖНО**: В BotFather необходимо отключить Privacy Mode для бота.
+> Иначе бот не будет получать сообщения в групповых чатах.
+> BotFather → `/mybots` → Ваш бот → Bot Settings → Group Privacy → Turn off
 
 ### Установка
 

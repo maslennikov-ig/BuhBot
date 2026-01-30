@@ -168,6 +168,67 @@ docker ps | grep bot-backend
 
 ---
 
+### Bot Not Reading Group Messages (Privacy Mode)
+
+**Symptoms**:
+- Bot receives commands and mentions but ignores regular messages
+- SLA monitoring doesn't trigger for client messages
+- No violations are recorded
+- `getMe` API shows `can_read_all_group_messages: false`
+
+**Root Cause**:
+Telegram bots have Privacy Mode enabled by default. With Privacy Mode ON, bots only receive:
+- Direct messages (private chats)
+- Commands (messages starting with `/`)
+- Mentions (messages containing `@botname`)
+- Replies to bot's messages
+
+Regular group messages are **silently dropped by Telegram** and never reach the bot.
+
+**Step 1: Verify Privacy Mode Status**
+
+```bash
+# Check bot configuration
+curl "https://api.telegram.org/bot$TOKEN/getMe" | jq '.result.can_read_all_group_messages'
+```
+
+**Expected Result**:
+- `true` — Privacy Mode OFF (correct)
+- `false` — Privacy Mode ON (problem!)
+
+**Step 2: Disable Privacy Mode in BotFather**
+
+1. Open Telegram and search for `@BotFather`
+2. Send `/mybots`
+3. Select your bot from the list
+4. Click **Bot Settings**
+5. Click **Group Privacy**
+6. Click **Turn off**
+
+**Expected confirmation**: "Privacy mode is disabled for YourBotName"
+
+**Step 3: Remove and Re-add Bot to Groups**
+
+⚠️ **IMPORTANT**: After changing Privacy Mode, you must:
+1. Remove the bot from all group chats
+2. Add the bot back to each group
+
+This is required because Telegram caches the bot's permissions at the time of adding.
+
+**Step 4: Verify Fix**
+
+```bash
+# Re-check configuration
+curl "https://api.telegram.org/bot$TOKEN/getMe" | jq '.result.can_read_all_group_messages'
+# Should now return: true
+```
+
+**Prevention**:
+- Add Privacy Mode check to your deployment checklist
+- Include verification script in CI/CD pipeline
+
+---
+
 ### Bot Slow Response Times
 
 **Symptoms**:

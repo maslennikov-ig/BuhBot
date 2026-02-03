@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **docs**: DEV MODE documentation — README section and [docs/infrastructure/dev-mode.md](docs/infrastructure/dev-mode.md) for local development without Supabase
 - Pre-commit hooks with Husky and lint-staged (ESLint + Prettier on staged files) (3888a6e)
 - commitlint and commit-msg hook for conventional commits (9f37772)
 - Commit conventions doc and agent wiring for Release Please (5b4a989)

@@ -128,6 +128,22 @@ pnpm type-check
 
 При каждом коммите автоматически запускаются ESLint и Prettier на измененных файлах.
 
+### DEV MODE — локальная разработка без Supabase
+
+Для разработки без настройки Supabase можно использовать **DEV MODE**: аутентификация подменяется mock-пользователем, все запросы считаются авторизованными.
+
+**Быстрый старт:**
+
+1. Запустите локальные PostgreSQL и Redis (из корня репозитория):
+   ```bash
+   docker compose -f infrastructure/docker-compose.local.yml up -d
+   ```
+2. В **backend**: скопируйте `backend/.env.example` в `backend/.env`, задайте `DEV_MODE=true`, `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buhbot`, `REDIS_HOST=localhost`, и обязательные переменные (например, `TELEGRAM_BOT_TOKEN`).
+3. В **frontend**: скопируйте `frontend/.env.example` в `frontend/.env.local`, задайте `NEXT_PUBLIC_DEV_MODE=true` и при необходимости `NEXT_PUBLIC_API_URL=http://localhost:3000`.
+4. Запустите backend и frontend: `pnpm dev` в `backend` и `frontend`.
+
+Подробная настройка: [DEV MODE — Local Development Without Supabase](docs/infrastructure/dev-mode.md).
+
 ---
 
 ## 📊 Метрики и ROI
@@ -161,6 +177,7 @@ Phase 1 Infrastructure Foundation completed. Technology stack: Supabase (Postgre
 - [Monitoring & Alerting Guide](docs/infrastructure/monitoring-guide.md) - Observability setup
 - [Backup & Disaster Recovery](docs/infrastructure/disaster-recovery.md) - Data protection strategy
 - [Troubleshooting Guide](docs/infrastructure/troubleshooting.md) - Common issues and solutions
+- [DEV MODE — Local Development Without Supabase](docs/infrastructure/dev-mode.md) - Run locally without Supabase auth
 - [Project Specification](specs/001-infrastructure-setup/) - Detailed infrastructure specs
 
 ---

@@ -98,6 +98,7 @@ When invoked, you must follow these steps:
       pnpm type-check && pnpm build
       ```
    4. **If validation FAILS**:
+
       ```bash
       cp .tmp/current/backups/.rollback/package.json.backup package.json
       cp .tmp/current/backups/.rollback/pnpm-lock.yaml.backup pnpm-lock.yaml
@@ -107,6 +108,7 @@ When invoked, you must follow these steps:
       - Mark as "requires manual update"
       - Document error
       - Skip to next package
+
    5. **If validation PASSES**:
       - Log change in dependency-changes.json
       - Mark task completed

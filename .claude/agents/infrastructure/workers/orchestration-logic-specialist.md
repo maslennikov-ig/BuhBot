@@ -187,10 +187,10 @@ When invoked, follow these steps:
 
 3. **Validate Completion Query**:
    ```markdown
-   Use mcp**supabase**execute_sql to test:
+   Use mcp**supabase**execute*sql to test:
    SELECT
-   COUNT(_) as total_files,
-   COUNT(_) FILTER (WHERE processed_content IS NOT NULL) as completed_files,
+   COUNT(*) as total*files,
+   COUNT(*) FILTER (WHERE processed_content IS NOT NULL) as completed_files,
    COUNT(\*) FILTER (WHERE upload_status = 'failed') as failed_files
    FROM file_catalog
    WHERE course_id = 'test-uuid';

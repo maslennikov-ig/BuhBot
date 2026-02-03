@@ -524,6 +524,7 @@ All modifications logged for transparency and rollback capability.
    - Server should be running at http://localhost:3000
 
 4. **Verify Health Endpoint**
+
    ```bash
    curl http://localhost:3000/health
    ```

@@ -9,3 +9,7 @@ coverage
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Release Please–generated; avoid format check failures on release PRs
+CHANGELOG.md
+.release-please-manifest.json

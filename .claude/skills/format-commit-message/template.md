@@ -1,5 +1,7 @@
 # Commit Message Template
 
+See [docs/COMMIT_CONVENTIONS.md](../../../docs/COMMIT_CONVENTIONS.md) for full rules and Release Please–specific requirements.
+
 ## Format
 
 ```
@@ -14,26 +16,27 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## Valid Types
 
-- **feat**: New feature
-- **fix**: Bug fix
-- **chore**: Maintenance tasks, dependency updates
-- **docs**: Documentation changes
-- **refactor**: Code refactoring without behavior change
+- **feat**: New feature (changelog: Added)
+- **fix**: Bug fix (changelog: Fixed)
+- **chore**: Maintenance, deps, config (do not use scope `release` for normal commits)
+- **docs**: Documentation only
+- **refactor**: Code change, no behavior change
 - **test**: Adding or updating tests
-- **style**: Code style changes (formatting, whitespace)
-- **perf**: Performance improvements
+- **style**: Formatting, whitespace
+- **perf**: Performance improvement
+- **ci**: CI/config
 
-## Guidelines
+## Guidelines (Release Please–friendly)
 
-1. **Type** (required): Use lowercase
-2. **Scope** (optional): Component or area affected (lowercase, no spaces)
-3. **Description** (required): Brief summary (< 72 chars, lowercase, no period)
-4. **Body** (optional): Detailed explanation, wrap at 72 characters
+1. **Type** (required): Lowercase
+2. **Scope** (optional): Lowercase, no spaces. Never use `chore(release):` for non-release commits.
+3. **Subject** (required): Imperative mood, lowercase, no period, ≤ 72 chars
+4. **Body** (optional): Wrap at 72 characters
 5. **Footer** (auto-added): Claude Code attribution
 
 ## Breaking Changes
 
-Add "BREAKING CHANGE: " prefix to body or as separate footer section.
+Use "BREAKING CHANGE: " in body/footer, or `type!` / `type(scope)!:` in subject.
 
 ## Examples
 

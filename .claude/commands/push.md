@@ -23,7 +23,7 @@ Execute the release automation script with auto-confirmation for Claude Code.
 - Skips technical commits (chore, ci, docs) not relevant to users
 - Ready to copy for announcements, app stores, emails
 
-**Tip:** Use `-m` with `feat:` or `fix:` prefix to include your changes in RELEASE_NOTES:
+**Tip:** Use `-m` with a message that follows [docs/COMMIT_CONVENTIONS.md](../../docs/COMMIT_CONVENTIONS.md) so Release Please and changelogs parse correctly. Prefer the **format-commit-message** skill to generate the message:
 ```bash
 /push patch -m "feat(worker): add worker readiness pre-flight system"
 ```

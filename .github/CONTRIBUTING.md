@@ -56,7 +56,7 @@ pnpm lint
 ## 📝 Стандарты кода
 
 - Используйте **ESLint** и **Prettier** для форматирования
-- Пишите **понятные commit messages** (см. [Conventional Commits](https://www.conventionalcommits.org/))
+- Пишите commit messages по [Commit Conventions](docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please)
 - Добавляйте **тесты** для новой функциональности
 - Обновляйте **документацию** при необходимости
 
@@ -70,17 +70,19 @@ pnpm lint
 
 ## 📋 Commit Message Convention
 
-Используйте префиксы:
-- `feat:` - новая функциональность
-- `fix:` - исправление бага
-- `docs:` - изменения в документации
-- `refactor:` - рефакторинг кода
-- `test:` - добавление/изменение тестов
-- `chore:` - обновление зависимостей, конфигурации и т.д.
+Полные правила: **[docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md)** (Conventional Commits + правила для Release Please).
+
+Кратко:
+- `feat:` — новая функциональность
+- `fix:` — исправление бага
+- `docs:` — только документация
+- `refactor:` / `test:` / `chore:` / `style:` / `perf:` / `ci:` — см. [COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md)
+
+Subject: imperative, lowercase, без точки в конце, до 72 символов. Не используйте `chore(release):` — это зарезервировано для релизов.
 
 Пример:
 ```
-feat: add SLA monitoring for accountant response time
+feat(sla): add SLA monitoring for accountant response time
 
 - Implement webhook processing for Telegram API
 - Add timer logic with working hours calculation

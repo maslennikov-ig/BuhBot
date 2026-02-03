@@ -56,6 +56,8 @@ Run `/push patch` after EACH completed task:
 - Update TodoWrite to completed
 - Then `/push patch`
 
+Commit messages MUST follow [docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please). Use the **format-commit-message** skill for every commit (including when passing `-m "..."` to `/push`).
+
 **6. EXECUTION PATTERN**
 
 ```

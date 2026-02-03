@@ -97,10 +97,33 @@ BuhBot/
 git clone https://github.com/maslennikov-ig/BuhBot.git
 cd BuhBot
 
+# Установка зависимостей (автоматически настраивает pre-commit hooks)
+pnpm install
+
 # Настройка переменных окружения
 cp .env.example .env.local
 # Отредактируйте .env.local с вашими credentials
 ```
+
+### Разработка
+
+Проект использует pre-commit hooks для автоматической проверки качества кода:
+
+```bash
+# Запуск линтера
+pnpm lint
+
+# Проверка форматирования
+pnpm format:check
+
+# Автоформатирование кода
+pnpm format
+
+# Проверка типов
+pnpm type-check
+```
+
+При каждом коммите автоматически запускаются ESLint и Prettier на измененных файлах.
 
 ---
 
@@ -122,6 +145,7 @@ cp .env.example .env.local
 - [Детальное предложение с часами](docs/Final-Modular-Offer-With-Hours.md)
 - [Архитектура агентной системы](docs/Agents%20Ecosystem/ARCHITECTURE.md)
 - [Правила оркестрации](CLAUDE.md)
+- [Архитектурные решения (ADR)](docs/adr/) - Architecture Decision Records
 
 ### Infrastructure Documentation
 

@@ -7,23 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **docs**: DEV MODE documentation — README section and [docs/infrastructure/dev-mode.md](docs/infrastructure/dev-mode.md) for local development without Supabase
-- Pre-commit hooks with Husky and lint-staged (ESLint + Prettier on staged files) (3888a6e)
-- commitlint and commit-msg hook for conventional commits (9f37772)
-- Commit conventions doc and agent wiring for Release Please (5b4a989)
-
-### Changed
-
-- **ci**: add format check job (Prettier) (b9c1cec)
-
-### Other
-
-- ADR-001: pre-commit hooks with Husky; CONTRIBUTING and README updates (87fba45)
-- chore: add .pnpm-store to .gitignore (f2bf257)
-- style: format codebase with Prettier (9a19b09)
-
 ## [0.9.19] - 2026-01-30
 
 ### Fixed

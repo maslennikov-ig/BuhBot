@@ -182,10 +182,12 @@ const AlertStatsOutput = z.object({
 // ============================================================================
 
 type AlertWithRelations = SlaAlert & {
-  request?: (ClientRequest & {
-    chat: Chat;
-    assignedUser?: User | null;
-  }) | null;
+  request?:
+    | (ClientRequest & {
+        chat: Chat;
+        assignedUser?: User | null;
+      })
+    | null;
   acknowledgedUser?: User | null;
 };
 

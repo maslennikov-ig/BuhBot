@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 import packageJson from './package.json' with { type: 'json' };
 
 // Backend URL from environment or default

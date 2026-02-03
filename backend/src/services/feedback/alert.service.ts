@@ -215,7 +215,7 @@ interface LowRatingMessageData {
  */
 function getRatingStars(rating: number): string {
   const filled = '\u2B50'; // Star
-  const empty = '\u2606';  // White star (outline)
+  const empty = '\u2606'; // White star (outline)
   return filled.repeat(rating) + empty.repeat(5 - rating);
 }
 

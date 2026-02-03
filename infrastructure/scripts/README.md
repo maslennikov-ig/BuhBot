@@ -9,17 +9,20 @@ Production-grade Bash scripts for VDS setup and application deployment.
 **Purpose**: Initial VDS setup - install Docker, configure firewall, create buhbot user
 
 **Usage**:
+
 ```bash
 sudo ./bootstrap-vds.sh
 ```
 
 **Requirements**:
+
 - Ubuntu 22.04 LTS (or compatible Debian-based system)
 - Root privileges
 - Internet connection
 - At least 10GB free disk space
 
 **What it does**:
+
 1. Updates system packages
 2. Installs Docker CE and Docker Compose from official repository
 3. Configures UFW firewall:
@@ -37,6 +40,7 @@ sudo ./bootstrap-vds.sh
 9. Verifies installation
 
 **Features**:
+
 - Idempotent (safe to run multiple times)
 - Color-coded progress messages
 - Comprehensive logging to `/var/log/buhbot-bootstrap-*.log`
@@ -45,10 +49,12 @@ sudo ./bootstrap-vds.sh
 - Post-installation verification
 
 **Output**:
+
 - Log file: `/var/log/buhbot-bootstrap-YYYYMMDD-HHMMSS.log`
 - Application directory: `/home/buhbot/BuhBot`
 
 **Important**:
+
 - Test SSH access as `buhbot` user BEFORE closing root session
 - Root SSH login will be disabled after running this script
 - Ensure SSH keys are properly configured before disconnecting
@@ -60,6 +66,7 @@ sudo ./bootstrap-vds.sh
 **Purpose**: Deploy or update BuhBot application with health checks and automatic rollback
 
 **Usage**:
+
 ```bash
 # Normal deployment (with confirmation)
 ./deploy.sh
@@ -72,6 +79,7 @@ sudo ./bootstrap-vds.sh
 ```
 
 **Requirements**:
+
 - Docker and Docker Compose installed
 - Application files in `/home/buhbot/BuhBot` (or current directory)
 - Environment files configured:
@@ -81,6 +89,7 @@ sudo ./bootstrap-vds.sh
 - Can run as `buhbot` user (no root required)
 
 **What it does**:
+
 1. Pre-flight checks:
    - Verifies Docker is running
    - Checks docker-compose.yml files exist
@@ -105,6 +114,7 @@ sudo ./bootstrap-vds.sh
 10. Shows deployment summary
 
 **Features**:
+
 - **Dry-run mode**: Test deployment without making changes
 - **Force mode**: Skip confirmation prompts (CI/CD friendly)
 - **Health checks**: Waits for all services to become healthy
@@ -115,10 +125,12 @@ sudo ./bootstrap-vds.sh
 - **Backup creation**: Automatic pre-deployment backup
 
 **Output**:
+
 - Log file: `/var/log/buhbot-deploy-YYYYMMDD-HHMMSS.log`
 - Backup directory: `/var/backups/buhbot-pre-deploy-YYYYMMDD-HHMMSS/`
 
 **Exit codes**:
+
 - `0`: Success
 - `1`: Error
 - `2`: Validation failure
@@ -130,28 +142,33 @@ sudo ./bootstrap-vds.sh
 ### Initial VDS Setup
 
 1. **SSH into VDS as root**:
+
    ```bash
    ssh root@your-vds-ip
    ```
 
 2. **Download or create bootstrap script**:
+
    ```bash
    curl -o bootstrap-vds.sh https://raw.githubusercontent.com/maslennikov-ig/BuhBot/main/infrastructure/scripts/bootstrap-vds.sh
    chmod +x bootstrap-vds.sh
    ```
 
 3. **Run bootstrap script**:
+
    ```bash
    sudo ./bootstrap-vds.sh
    ```
 
 4. **Test SSH access as buhbot user** (before closing root session):
+
    ```bash
    # From your local machine
    ssh buhbot@your-vds-ip
    ```
 
 5. **Clone repository**:
+
    ```bash
    cd /home/buhbot
    git clone https://github.com/maslennikov-ig/BuhBot.git
@@ -172,17 +189,20 @@ sudo ./bootstrap-vds.sh
 ### Application Deployment
 
 1. **SSH into VDS as buhbot user**:
+
    ```bash
    ssh buhbot@your-vds-ip
    cd /home/buhbot/BuhBot
    ```
 
 2. **Pull latest code**:
+
    ```bash
    git pull origin main
    ```
 
 3. **Run deployment script**:
+
    ```bash
    # Test deployment (dry run)
    ./infrastructure/scripts/deploy.sh --dry-run
@@ -192,6 +212,7 @@ sudo ./bootstrap-vds.sh
    ```
 
 4. **Monitor deployment**:
+
    ```bash
    # Check container status
    docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml ps
@@ -249,11 +270,13 @@ jobs:
 ### Bootstrap Issues
 
 **Error: "Docker installation failed"**
+
 - Check internet connection
 - Verify Ubuntu version is 22.04 LTS
 - Review log file: `/var/log/buhbot-bootstrap-*.log`
 
 **Error: "SSH key setup failed"**
+
 - Manually copy SSH keys to `/home/buhbot/.ssh/authorized_keys`
 - Set permissions: `chmod 600 /home/buhbot/.ssh/authorized_keys`
 - Set ownership: `chown -R buhbot:buhbot /home/buhbot/.ssh`
@@ -261,18 +284,21 @@ jobs:
 ### Deployment Issues
 
 **Error: "Docker daemon is not running"**
+
 ```bash
 sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
 **Error: "Health checks failed"**
+
 - Check container logs: `docker compose logs`
 - Verify environment variables in `.env` files
 - Check disk space: `df -h`
 - Review deployment log: `/var/log/buhbot-deploy-*.log`
 
 **Error: "Deployment lock exists"**
+
 ```bash
 # Check if deployment is actually running
 ps aux | grep deploy.sh
@@ -282,6 +308,7 @@ rm -f /tmp/buhbot-deploy.lock
 ```
 
 **Rollback manually**:
+
 ```bash
 cd /home/buhbot/BuhBot/infrastructure
 
@@ -302,12 +329,14 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ## Security Considerations
 
 ### Bootstrap Script
+
 - Disables root SSH login
 - Disables password authentication
 - Configures fail2ban to prevent brute-force attacks
 - Minimal firewall rules (only 22, 80, 443)
 
 ### Deployment Script
+
 - Can run as non-root user (buhbot)
 - Creates backups before deployment
 - Automatic rollback on failure
@@ -319,10 +348,12 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ## Logging
 
 All scripts log to `/var/log/` with timestamps:
+
 - Bootstrap: `/var/log/buhbot-bootstrap-YYYYMMDD-HHMMSS.log`
 - Deployment: `/var/log/buhbot-deploy-YYYYMMDD-HHMMSS.log`
 
 **View recent logs**:
+
 ```bash
 # Bootstrap logs
 ls -lt /var/log/buhbot-bootstrap-*.log | head -1 | xargs tail -f

@@ -33,6 +33,9 @@ export default defineConfig({
   // Datasource configuration for migrations
   // Uses DIRECT_URL for migrations (bypasses connection pooler)
   datasource: {
-    url: process.env.DIRECT_URL || process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy",
+    url:
+      process.env.DIRECT_URL ||
+      process.env.DATABASE_URL ||
+      'postgresql://dummy:dummy@localhost:5432/dummy',
   },
 });

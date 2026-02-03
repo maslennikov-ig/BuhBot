@@ -19,10 +19,10 @@
 
 **Purpose**: Prepare for implementation by analyzing requirements, creating necessary agents, and assigning executors.
 
-- [X] P001 Analyze all tasks and identify required agent types and capabilities
-- [X] P002 Create missing agents (SKIPPED - all required agents exist)
-- [X] P003 Assign executors to all tasks: sla-backend-specialist, api-builder, telegraf-bot-middleware-specialist, fullstack-nextjs-specialist, MAIN
-- [X] P004 Resolve research tasks (SKIPPED - no complex research needed, all decisions in research.md)
+- [x] P001 Analyze all tasks and identify required agent types and capabilities
+- [x] P002 Create missing agents (SKIPPED - all required agents exist)
+- [x] P003 Assign executors to all tasks: sla-backend-specialist, api-builder, telegraf-bot-middleware-specialist, fullstack-nextjs-specialist, MAIN
+- [x] P004 Resolve research tasks (SKIPPED - no complex research needed, all decisions in research.md)
 
 **Agent Assignments**:
 | Agent | Capabilities |
@@ -39,24 +39,24 @@
 
 **Purpose**: Database schema changes and shared infrastructure for feedback system
 
-- [X] T001 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add SurveyStatus and DeliveryStatus enums to backend/prisma/schema.prisma
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T002 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add FeedbackSurvey model to backend/prisma/schema.prisma per data-model.md
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T003 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add SurveyDelivery model to backend/prisma/schema.prisma per data-model.md
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T004 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Extend FeedbackResponse model with surveyId, deliveryId, clientUsername in backend/prisma/schema.prisma
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T005 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Extend GlobalSettings model with survey config fields in backend/prisma/schema.prisma
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T006 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add User relation for SurveyClosedBy in backend/prisma/schema.prisma
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T007 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add Chat relation for SurveyDelivery in backend/prisma/schema.prisma
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
-- [X] T008 [EXECUTOR: MAIN] [SEQUENTIAL] Run prisma migrate dev to create migration in backend/prisma/migrations/
-  → Artifacts: [migration.sql](backend/prisma/migrations/20241124130000_add_feedback_survey_system/migration.sql)
-- [X] T009 [EXECUTOR: MAIN] [SEQUENTIAL] Run prisma generate to update generated client in backend/src/generated/prisma/
-  → Artifacts: [generated/prisma/](backend/src/generated/prisma/)
+- [x] T001 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add SurveyStatus and DeliveryStatus enums to backend/prisma/schema.prisma
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T002 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add FeedbackSurvey model to backend/prisma/schema.prisma per data-model.md
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T003 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add SurveyDelivery model to backend/prisma/schema.prisma per data-model.md
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T004 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Extend FeedbackResponse model with surveyId, deliveryId, clientUsername in backend/prisma/schema.prisma
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T005 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Extend GlobalSettings model with survey config fields in backend/prisma/schema.prisma
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T006 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add User relation for SurveyClosedBy in backend/prisma/schema.prisma
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T007 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-1] Add Chat relation for SurveyDelivery in backend/prisma/schema.prisma
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma)
+- [x] T008 [EXECUTOR: MAIN] [SEQUENTIAL] Run prisma migrate dev to create migration in backend/prisma/migrations/
+      → Artifacts: [migration.sql](backend/prisma/migrations/20241124130000_add_feedback_survey_system/migration.sql)
+- [x] T009 [EXECUTOR: MAIN] [SEQUENTIAL] Run prisma generate to update generated client in backend/src/generated/prisma/
+      → Artifacts: [generated/prisma/](backend/src/generated/prisma/)
 
 ---
 
@@ -66,16 +66,16 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T010 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey queue configuration in backend/src/queues/survey.queue.ts
-  → Artifacts: [survey.queue.ts](backend/src/queues/survey.queue.ts)
-- [X] T011 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey keyboard builder in backend/src/bot/keyboards/survey.keyboard.ts
-  → Artifacts: [survey.keyboard.ts](backend/src/bot/keyboards/survey.keyboard.ts)
-- [X] T012 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create analytics service for NPS calculation in backend/src/services/feedback/analytics.service.ts
-  → Artifacts: [analytics.service.ts](backend/src/services/feedback/analytics.service.ts)
-- [X] T013 [EXECUTOR: MAIN] [SEQUENTIAL] Register survey queue in backend/src/queues/setup.ts (add to QUEUE_NAMES, create instance)
-  → Artifacts: [setup.ts](backend/src/queues/setup.ts)
-- [X] T014 [EXECUTOR: MAIN] [SEQUENTIAL] Add feedback and survey routers to backend/src/api/trpc/router.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts), [survey.ts](backend/src/api/trpc/routers/survey.ts), [router.ts](backend/src/api/trpc/router.ts)
+- [x] T010 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey queue configuration in backend/src/queues/survey.queue.ts
+      → Artifacts: [survey.queue.ts](backend/src/queues/survey.queue.ts)
+- [x] T011 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create survey keyboard builder in backend/src/bot/keyboards/survey.keyboard.ts
+      → Artifacts: [survey.keyboard.ts](backend/src/bot/keyboards/survey.keyboard.ts)
+- [x] T012 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-2] Create analytics service for NPS calculation in backend/src/services/feedback/analytics.service.ts
+      → Artifacts: [analytics.service.ts](backend/src/services/feedback/analytics.service.ts)
+- [x] T013 [EXECUTOR: MAIN] [SEQUENTIAL] Register survey queue in backend/src/queues/setup.ts (add to QUEUE_NAMES, create instance)
+      → Artifacts: [setup.ts](backend/src/queues/setup.ts)
+- [x] T014 [EXECUTOR: MAIN] [SEQUENTIAL] Add feedback and survey routers to backend/src/api/trpc/router.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts), [survey.ts](backend/src/api/trpc/routers/survey.ts), [router.ts](backend/src/api/trpc/router.ts)
 
 **Checkpoint**: Foundation ready - user story implementation can begin
 
@@ -89,24 +89,24 @@
 
 ### Implementation for User Story 1
 
-- [X] T015 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey service with campaign logic in backend/src/services/feedback/survey.service.ts
-  → Artifacts: [survey.service.ts](backend/src/services/feedback/survey.service.ts)
-- [X] T016 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey worker for delivery processing in backend/src/queues/survey.worker.ts (include 5 retries over 1 hour with exponential backoff per NFR-006)
-  → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts)
-- [X] T017 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US1] Create survey callback handler for rating buttons in backend/src/bot/handlers/survey.handler.ts
-  → Artifacts: [survey.handler.ts](backend/src/bot/handlers/survey.handler.ts)
-- [X] T018 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement submitRating procedure in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
-- [X] T019 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement addComment procedure in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
-- [X] T020 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Register survey handler in backend/src/bot/handlers/index.ts
-  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
-- [X] T021 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Add survey reminder job scheduling in backend/src/queues/survey.worker.ts
-  → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts) (included in T016)
-- [X] T022 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Implement manager notification for non-response in backend/src/queues/survey.worker.ts
-  → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts) (included in T016)
-- [X] T022a [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Configure quarterly cron job for automatic survey scheduling (first Monday of Jan/Apr/Jul/Oct) in backend/src/queues/survey.queue.ts
-  → Artifacts: [survey.queue.ts](backend/src/queues/survey.queue.ts) - cron scheduling ready, job needs to be scheduled at startup
+- [x] T015 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey service with campaign logic in backend/src/services/feedback/survey.service.ts
+      → Artifacts: [survey.service.ts](backend/src/services/feedback/survey.service.ts)
+- [x] T016 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-3] [US1] Create survey worker for delivery processing in backend/src/queues/survey.worker.ts (include 5 retries over 1 hour with exponential backoff per NFR-006)
+      → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts)
+- [x] T017 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US1] Create survey callback handler for rating buttons in backend/src/bot/handlers/survey.handler.ts
+      → Artifacts: [survey.handler.ts](backend/src/bot/handlers/survey.handler.ts)
+- [x] T018 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement submitRating procedure in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T019 [EXECUTOR: api-builder] [SEQUENTIAL] [US1] Implement addComment procedure in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T020 [EXECUTOR: MAIN] [SEQUENTIAL] [US1] Register survey handler in backend/src/bot/handlers/index.ts
+      → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [x] T021 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Add survey reminder job scheduling in backend/src/queues/survey.worker.ts
+      → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts) (included in T016)
+- [x] T022 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Implement manager notification for non-response in backend/src/queues/survey.worker.ts
+      → Artifacts: [survey.worker.ts](backend/src/queues/survey.worker.ts) (included in T016)
+- [x] T022a [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US1] Configure quarterly cron job for automatic survey scheduling (first Monday of Jan/Apr/Jul/Oct) in backend/src/queues/survey.queue.ts
+      → Artifacts: [survey.queue.ts](backend/src/queues/survey.queue.ts) - cron scheduling ready, job needs to be scheduled at startup
 
 **Checkpoint**: Clients can receive surveys, rate, and add comments. Reminders, non-response notifications, and quarterly automation work.
 
@@ -120,20 +120,20 @@
 
 ### Implementation for User Story 2
 
-- [X] T023 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getAll procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
-- [X] T024 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getById procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
-- [X] T025 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement exportCsv procedure in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
-- [X] T026 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create FeedbackTable component for manager view in frontend/src/components/feedback/FeedbackTable.tsx
-  → Artifacts: [FeedbackTable.tsx](frontend/src/components/feedback/FeedbackTable.tsx)
-- [X] T027 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create NPSWidget component with trend charts in frontend/src/components/feedback/NPSWidget.tsx
-  → Artifacts: [NPSWidget.tsx](frontend/src/components/feedback/NPSWidget.tsx)
-- [X] T028 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create feedback dashboard page in frontend/src/app/feedback/page.tsx
-  → Artifacts: [page.tsx](frontend/src/app/feedback/page.tsx), [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx)
-- [X] T029 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Add role-based rendering logic to show manager view in frontend/src/app/feedback/page.tsx
-  → Artifacts: [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx)
+- [x] T023 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getAll procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T024 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement getById procedure (manager only) in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T025 [EXECUTOR: api-builder] [PARALLEL-GROUP-4] [US2] Implement exportCsv procedure in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T026 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create FeedbackTable component for manager view in frontend/src/components/feedback/FeedbackTable.tsx
+      → Artifacts: [FeedbackTable.tsx](frontend/src/components/feedback/FeedbackTable.tsx)
+- [x] T027 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create NPSWidget component with trend charts in frontend/src/components/feedback/NPSWidget.tsx
+      → Artifacts: [NPSWidget.tsx](frontend/src/components/feedback/NPSWidget.tsx)
+- [x] T028 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Create feedback dashboard page in frontend/src/app/feedback/page.tsx
+      → Artifacts: [page.tsx](frontend/src/app/feedback/page.tsx), [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx)
+- [x] T029 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US2] Add role-based rendering logic to show manager view in frontend/src/app/feedback/page.tsx
+      → Artifacts: [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx)
 
 **Checkpoint**: Managers can view full feedback details, filter, and export data.
 
@@ -147,14 +147,14 @@
 
 ### Implementation for User Story 3
 
-- [X] T030 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Implement getAggregates procedure (all roles) in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts) (implemented in Phase 2)
-- [X] T031 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Create FeedbackAggregates component for accountant view in frontend/src/components/feedback/FeedbackAggregates.tsx
-  → Artifacts: [NPSWidget.tsx](frontend/src/components/feedback/NPSWidget.tsx) (NPSWidget serves as aggregate view for all roles)
-- [X] T032 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Add role-based rendering logic to show accountant view in frontend/src/app/feedback/page.tsx
-  → Artifacts: [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx) (role-based rendering implemented in T029)
-- [X] T033 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Add RLS policy comments and tRPC middleware for role enforcement in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T030 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Implement getAggregates procedure (all roles) in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts) (implemented in Phase 2)
+- [x] T031 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Create FeedbackAggregates component for accountant view in frontend/src/components/feedback/FeedbackAggregates.tsx
+      → Artifacts: [NPSWidget.tsx](frontend/src/components/feedback/NPSWidget.tsx) (NPSWidget serves as aggregate view for all roles)
+- [x] T032 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] [US3] Add role-based rendering logic to show accountant view in frontend/src/app/feedback/page.tsx
+      → Artifacts: [feedback-content.tsx](frontend/src/app/feedback/feedback-content.tsx) (role-based rendering implemented in T029)
+- [x] T033 [EXECUTOR: api-builder] [SEQUENTIAL] [US3] Add RLS policy comments and tRPC middleware for role enforcement in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
 
 **Checkpoint**: Accountants see aggregate-only view, role enforcement prevents data leakage.
 
@@ -168,14 +168,14 @@
 
 ### Implementation for User Story 4
 
-- [X] T034 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Extend alert service for low-rating alerts in backend/src/services/feedback/alert.service.ts
-  → Artifacts: [alert.service.ts](backend/src/services/feedback/alert.service.ts)
-- [X] T035 [EXECUTOR: api-builder] [SEQUENTIAL] [US4] Add low-rating check in submitRating procedure in backend/src/api/trpc/routers/feedback.ts
-  → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
-- [X] T036 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Create alert keyboard with chat link in backend/src/bot/keyboards/alert.keyboard.ts (extend existing)
-  → Artifacts: [alert.keyboard.ts](backend/src/bot/keyboards/alert.keyboard.ts)
-- [X] T037 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Queue low-rating alert job in backend/src/queues/alert.queue.ts
-  → Artifacts: [setup.ts](backend/src/queues/setup.ts), [alert.worker.ts](backend/src/queues/alert.worker.ts)
+- [x] T034 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Extend alert service for low-rating alerts in backend/src/services/feedback/alert.service.ts
+      → Artifacts: [alert.service.ts](backend/src/services/feedback/alert.service.ts)
+- [x] T035 [EXECUTOR: api-builder] [SEQUENTIAL] [US4] Add low-rating check in submitRating procedure in backend/src/api/trpc/routers/feedback.ts
+      → Artifacts: [feedback.ts](backend/src/api/trpc/routers/feedback.ts)
+- [x] T036 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Create alert keyboard with chat link in backend/src/bot/keyboards/alert.keyboard.ts (extend existing)
+      → Artifacts: [alert.keyboard.ts](backend/src/bot/keyboards/alert.keyboard.ts)
+- [x] T037 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US4] Queue low-rating alert job in backend/src/queues/alert.queue.ts
+      → Artifacts: [setup.ts](backend/src/queues/setup.ts), [alert.worker.ts](backend/src/queues/alert.worker.ts)
 
 **Checkpoint**: Low ratings trigger immediate manager alerts with chat link.
 
@@ -189,20 +189,20 @@
 
 ### Implementation for User Story 5
 
-- [X] T038 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US5] Create client menu keyboard in backend/src/bot/keyboards/client-menu.keyboard.ts
-  → Artifacts: [client-menu.keyboard.ts](backend/src/bot/keyboards/client-menu.keyboard.ts)
-- [X] T039 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Create menu command handler in backend/src/bot/handlers/menu.handler.ts
-  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
-- [X] T040 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement document status callback in backend/src/bot/handlers/menu.handler.ts
-  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
-- [X] T041 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement contact accountant callback in backend/src/bot/handlers/menu.handler.ts
-  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
-- [X] T042 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement request service callback in backend/src/bot/handlers/menu.handler.ts
-  → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
-- [X] T043 [EXECUTOR: MAIN] [SEQUENTIAL] [US5] Register menu handler in backend/src/bot/handlers/index.ts
-  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
-- [X] T044 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US5] Set persistent menu on bot startup in backend/src/bot/index.ts
-  → Artifacts: [webhook.ts](backend/src/bot/webhook.ts)
+- [x] T038 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US5] Create client menu keyboard in backend/src/bot/keyboards/client-menu.keyboard.ts
+      → Artifacts: [client-menu.keyboard.ts](backend/src/bot/keyboards/client-menu.keyboard.ts)
+- [x] T039 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Create menu command handler in backend/src/bot/handlers/menu.handler.ts
+      → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [x] T040 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement document status callback in backend/src/bot/handlers/menu.handler.ts
+      → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [x] T041 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement contact accountant callback in backend/src/bot/handlers/menu.handler.ts
+      → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [x] T042 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US5] Implement request service callback in backend/src/bot/handlers/menu.handler.ts
+      → Artifacts: [menu.handler.ts](backend/src/bot/handlers/menu.handler.ts)
+- [x] T043 [EXECUTOR: MAIN] [SEQUENTIAL] [US5] Register menu handler in backend/src/bot/handlers/index.ts
+      → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [x] T044 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US5] Set persistent menu on bot startup in backend/src/bot/index.ts
+      → Artifacts: [webhook.ts](backend/src/bot/webhook.ts)
 
 **Checkpoint**: Clients see persistent menu, all three buttons functional.
 
@@ -216,16 +216,16 @@
 
 ### Implementation for User Story 6
 
-- [X] T045 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US6] Create variable substitution service in backend/src/services/templates/variable.service.ts
-  → Artifacts: [variable.service.ts](backend/src/services/templates/variable.service.ts)
-- [X] T046 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Create template command handler in backend/src/bot/handlers/template.handler.ts
-  → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
-- [X] T047 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement /template list response in backend/src/bot/handlers/template.handler.ts
-  → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
-- [X] T048 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement template send with variable substitution in backend/src/bot/handlers/template.handler.ts
-  → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
-- [X] T049 [EXECUTOR: MAIN] [SEQUENTIAL] [US6] Register template handler in backend/src/bot/handlers/index.ts
-  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [x] T045 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US6] Create variable substitution service in backend/src/services/templates/variable.service.ts
+      → Artifacts: [variable.service.ts](backend/src/services/templates/variable.service.ts)
+- [x] T046 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Create template command handler in backend/src/bot/handlers/template.handler.ts
+      → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
+- [x] T047 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement /template list response in backend/src/bot/handlers/template.handler.ts
+      → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
+- [x] T048 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US6] Implement template send with variable substitution in backend/src/bot/handlers/template.handler.ts
+      → Artifacts: [template.handler.ts](backend/src/bot/handlers/template.handler.ts)
+- [x] T049 [EXECUTOR: MAIN] [SEQUENTIAL] [US6] Register template handler in backend/src/bot/handlers/index.ts
+      → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
 
 **Checkpoint**: /template command works, variables are substituted correctly.
 
@@ -239,14 +239,14 @@
 
 ### Implementation for User Story 7
 
-- [X] T050 [EXECUTOR: telegraf-bot-middleware-specialist] [PARALLEL-GROUP-5] [US7] Create file handler for document/photo messages in backend/src/bot/handlers/file.handler.ts
-  → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
-- [X] T051 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Implement file metadata extraction (name, size, type) in backend/src/bot/handlers/file.handler.ts
-  → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
-- [X] T052 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Format confirmation message with Russian text in backend/src/bot/handlers/file.handler.ts
-  → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
-- [X] T053 [EXECUTOR: MAIN] [SEQUENTIAL] [US7] Register file handler in backend/src/bot/handlers/index.ts
-  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [x] T050 [EXECUTOR: telegraf-bot-middleware-specialist] [PARALLEL-GROUP-5] [US7] Create file handler for document/photo messages in backend/src/bot/handlers/file.handler.ts
+      → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
+- [x] T051 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Implement file metadata extraction (name, size, type) in backend/src/bot/handlers/file.handler.ts
+      → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
+- [x] T052 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US7] Format confirmation message with Russian text in backend/src/bot/handlers/file.handler.ts
+      → Artifacts: [file.handler.ts](backend/src/bot/handlers/file.handler.ts)
+- [x] T053 [EXECUTOR: MAIN] [SEQUENTIAL] [US7] Register file handler in backend/src/bot/handlers/index.ts
+      → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
 
 **Checkpoint**: File uploads trigger immediate confirmation with metadata.
 
@@ -260,16 +260,16 @@
 
 ### Implementation for User Story 8
 
-- [X] T054 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US8] Create FAQ matcher service with keyword search in backend/src/services/faq/matcher.service.ts
-  → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
-- [X] T055 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US8] Create FAQ handler for message interception in backend/src/bot/handlers/faq.handler.ts
-  → Artifacts: [faq.handler.ts](backend/src/bot/handlers/faq.handler.ts)
-- [X] T056 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Implement keyword matching with usage_count tiebreaker in backend/src/services/faq/matcher.service.ts
-  → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
-- [X] T057 [EXECUTOR: MAIN] [SEQUENTIAL] [US8] Register FAQ handler in backend/src/bot/handlers/index.ts (before message handler)
-  → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
-- [X] T058 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Increment FAQ usage count after match in backend/src/services/faq/matcher.service.ts
-  → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
+- [x] T054 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-5] [US8] Create FAQ matcher service with keyword search in backend/src/services/faq/matcher.service.ts
+      → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
+- [x] T055 [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL] [US8] Create FAQ handler for message interception in backend/src/bot/handlers/faq.handler.ts
+      → Artifacts: [faq.handler.ts](backend/src/bot/handlers/faq.handler.ts)
+- [x] T056 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Implement keyword matching with usage_count tiebreaker in backend/src/services/faq/matcher.service.ts
+      → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
+- [x] T057 [EXECUTOR: MAIN] [SEQUENTIAL] [US8] Register FAQ handler in backend/src/bot/handlers/index.ts (before message handler)
+      → Artifacts: [index.ts](backend/src/bot/handlers/index.ts)
+- [x] T058 [EXECUTOR: sla-backend-specialist] [SEQUENTIAL] [US8] Increment FAQ usage count after match in backend/src/services/faq/matcher.service.ts
+      → Artifacts: [matcher.service.ts](backend/src/services/faq/matcher.service.ts)
 
 **Checkpoint**: FAQ keywords trigger auto-responses, usage tracking works.
 
@@ -281,28 +281,28 @@
 
 ### Implementation
 
-- [X] T059 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.list procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T060 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.getById procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T061 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.create procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T062 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.close procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T063 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.sendNow procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T064 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.getDeliveries procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T065 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.getSettings procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts) (already implemented)
-- [X] T066 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.updateSettings procedure in backend/src/api/trpc/routers/survey.ts
-  → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
-- [X] T067 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] Create survey list page in frontend/src/app/settings/survey/page.tsx
-  → Artifacts: [page.tsx](frontend/src/app/settings/survey/page.tsx), [survey-list-content.tsx](frontend/src/app/settings/survey/survey-list-content.tsx)
-- [X] T068 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] Create survey detail page in frontend/src/app/settings/survey/[id]/page.tsx
-  → Artifacts: [page.tsx](frontend/src/app/settings/survey/[id]/page.tsx), [survey-detail-content.tsx](frontend/src/app/settings/survey/[id]/survey-detail-content.tsx)
-- [X] T069 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] Create survey settings form in frontend/src/app/settings/survey/settings.tsx
-  → Artifacts: [page.tsx](frontend/src/app/settings/survey/settings/page.tsx), [survey-settings-content.tsx](frontend/src/app/settings/survey/settings/survey-settings-content.tsx)
+- [x] T059 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.list procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T060 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.getById procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T061 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.create procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T062 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.close procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T063 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.sendNow procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T064 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.getDeliveries procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T065 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.getSettings procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts) (already implemented)
+- [x] T066 [EXECUTOR: api-builder] [PARALLEL-GROUP-6] Implement survey.updateSettings procedure in backend/src/api/trpc/routers/survey.ts
+      → Artifacts: [survey.ts](backend/src/api/trpc/routers/survey.ts)
+- [x] T067 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] Create survey list page in frontend/src/app/settings/survey/page.tsx
+      → Artifacts: [page.tsx](frontend/src/app/settings/survey/page.tsx), [survey-list-content.tsx](frontend/src/app/settings/survey/survey-list-content.tsx)
+- [x] T068 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] Create survey detail page in frontend/src/app/settings/survey/[id]/page.tsx
+      → Artifacts: [page.tsx](frontend/src/app/settings/survey/[id]/page.tsx), [survey-detail-content.tsx](frontend/src/app/settings/survey/[id]/survey-detail-content.tsx)
+- [x] T069 [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL] Create survey settings form in frontend/src/app/settings/survey/settings.tsx
+      → Artifacts: [page.tsx](frontend/src/app/settings/survey/settings/page.tsx), [survey-settings-content.tsx](frontend/src/app/settings/survey/settings/survey-settings-content.tsx)
 
 **Checkpoint**: Survey campaigns fully manageable from Admin Panel.
 
@@ -312,20 +312,20 @@
 
 **Purpose**: Final improvements affecting multiple user stories
 
-- [X] T070 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-7] Add Prometheus metrics for survey delivery rate in backend/src/utils/metrics.ts
-  → Artifacts: [metrics.ts](backend/src/utils/metrics.ts)
-- [X] T071 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-7] Add Prometheus metrics for feedback response rate in backend/src/utils/metrics.ts
-  → Artifacts: [metrics.ts](backend/src/utils/metrics.ts)
-- [X] T072 [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7] Add navigation link to Feedback page in frontend/src/components/layout/AdminLayout.tsx
-  → Artifacts: [AdminLayout.tsx](frontend/src/components/layout/AdminLayout.tsx)
-- [X] T073 [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7] Add navigation link to Survey settings in frontend/src/components/layout/AdminLayout.tsx
-  → Artifacts: [AdminLayout.tsx](frontend/src/components/layout/AdminLayout.tsx)
-- [X] T074 [EXECUTOR: MAIN] [SEQUENTIAL] Run type-check and fix any errors across all new files
-  → Artifacts: Backend and frontend type-check passed
-- [X] T075 [EXECUTOR: MAIN] [SEQUENTIAL] Run build verification for backend and frontend
-  → Artifacts: Both builds successful, all routes generated
-- [X] T076 [EXECUTOR: MAIN] [SEQUENTIAL] Validate quickstart.md scenarios manually
-  → Artifacts: N/A - Manual testing deferred to deployment
+- [x] T070 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-7] Add Prometheus metrics for survey delivery rate in backend/src/utils/metrics.ts
+      → Artifacts: [metrics.ts](backend/src/utils/metrics.ts)
+- [x] T071 [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-7] Add Prometheus metrics for feedback response rate in backend/src/utils/metrics.ts
+      → Artifacts: [metrics.ts](backend/src/utils/metrics.ts)
+- [x] T072 [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7] Add navigation link to Feedback page in frontend/src/components/layout/AdminLayout.tsx
+      → Artifacts: [AdminLayout.tsx](frontend/src/components/layout/AdminLayout.tsx)
+- [x] T073 [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7] Add navigation link to Survey settings in frontend/src/components/layout/AdminLayout.tsx
+      → Artifacts: [AdminLayout.tsx](frontend/src/components/layout/AdminLayout.tsx)
+- [x] T074 [EXECUTOR: MAIN] [SEQUENTIAL] Run type-check and fix any errors across all new files
+      → Artifacts: Backend and frontend type-check passed
+- [x] T075 [EXECUTOR: MAIN] [SEQUENTIAL] Run build verification for backend and frontend
+      → Artifacts: Both builds successful, all routes generated
+- [x] T076 [EXECUTOR: MAIN] [SEQUENTIAL] Validate quickstart.md scenarios manually
+      → Artifacts: N/A - Manual testing deferred to deployment
 
 ---
 
@@ -344,26 +344,28 @@
 
 ### User Story Dependencies
 
-| Story | Priority | Depends On | Can Start After |
-|-------|----------|------------|-----------------|
-| US1 (Survey Delivery) | P1 | Foundation | Phase 2 |
-| US2 (Manager View) | P1 | US1 (data exists) | T022 |
-| US3 (Accountant View) | P1 | US2 (shares page) | T029 |
-| US4 (Low Rating Alert) | P1 | US1 (rating flow) | T019 |
-| US5 (Client Menu) | P2 | Foundation only | Phase 2 |
-| US6 (Templates) | P2 | Foundation only | Phase 2 |
-| US7 (File Confirm) | P2 | Foundation only | Phase 2 |
-| US8 (FAQ) | P3 | Foundation only | Phase 2 |
+| Story                  | Priority | Depends On        | Can Start After |
+| ---------------------- | -------- | ----------------- | --------------- |
+| US1 (Survey Delivery)  | P1       | Foundation        | Phase 2         |
+| US2 (Manager View)     | P1       | US1 (data exists) | T022            |
+| US3 (Accountant View)  | P1       | US2 (shares page) | T029            |
+| US4 (Low Rating Alert) | P1       | US1 (rating flow) | T019            |
+| US5 (Client Menu)      | P2       | Foundation only   | Phase 2         |
+| US6 (Templates)        | P2       | Foundation only   | Phase 2         |
+| US7 (File Confirm)     | P2       | Foundation only   | Phase 2         |
+| US8 (FAQ)              | P3       | Foundation only   | Phase 2         |
 
 ### Parallel Opportunities
 
 **Phase 2 (Foundation)**:
+
 ```
 Parallel: T010, T011, T012 (different files)
 Sequential: T013, T014 (modify setup.ts, router.ts)
 ```
 
 **Phase 3-6 (P1 Stories)**:
+
 ```
 US1: T015, T016 parallel → T017-T022 sequential
 US2: T023, T024, T025 parallel → T026-T029 sequential
@@ -372,6 +374,7 @@ US4: T034 → T035-T037 sequential
 ```
 
 **Phase 7-10 (P2/P3 Stories)**:
+
 ```
 All P2 stories (US5, US6, US7) can run fully in parallel
 US8 can run in parallel with above

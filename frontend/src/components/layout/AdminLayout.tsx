@@ -254,9 +254,12 @@ function Sidebar({
               const isActive = isExactMatch || (isPartialMatch && !pathnameMatchesAnyNavItem);
 
               // Dynamic badge for alerts
-              const badge = item.id === 'alerts' && alertCount && alertCount > 0
-                ? alertCount > 99 ? '99+' : alertCount.toString()
-                : item.badge;
+              const badge =
+                item.id === 'alerts' && alertCount && alertCount > 0
+                  ? alertCount > 99
+                    ? '99+'
+                    : alertCount.toString()
+                  : item.badge;
 
               return (
                 <li
@@ -282,7 +285,9 @@ function Sidebar({
                       <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[var(--buh-accent)] to-[var(--buh-primary)]" />
                     )}
 
-                    <Icon className={cn('h-5 w-5 shrink-0', isActive && 'text-[var(--buh-primary)]')} />
+                    <Icon
+                      className={cn('h-5 w-5 shrink-0', isActive && 'text-[var(--buh-primary)]')}
+                    />
 
                     {!collapsed && (
                       <>
@@ -407,8 +412,12 @@ function Header({
           )}
           aria-label="Toggle theme"
         >
-           {mounted ? (
-            resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />
+          {mounted ? (
+            resolvedTheme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )
           ) : (
             <div className="h-5 w-5" /> // Placeholder to avoid mismatch
           )}
@@ -464,7 +473,9 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');
       } else {
@@ -533,15 +544,14 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
 
         {/* Main content */}
         <main className="flex-1 p-4 lg:p-6">
-          <div className="mx-auto max-w-7xl buh-stagger">
-            {children}
-          </div>
+          <div className="mx-auto max-w-7xl buh-stagger">{children}</div>
         </main>
 
         {/* Footer */}
         <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-3 lg:px-6">
           <p className="text-center text-sm text-[var(--buh-foreground-subtle)]">
-            &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v{process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0'}
+            &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v
+            {process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0'}
           </p>
         </footer>
       </div>
@@ -554,8 +564,5 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
 // ============================================
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  return (
-    <AdminLayoutContent>{children}</AdminLayoutContent>
-  );
+  return <AdminLayoutContent>{children}</AdminLayoutContent>;
 }
-

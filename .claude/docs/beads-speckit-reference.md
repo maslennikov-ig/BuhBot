@@ -61,15 +61,15 @@
 
 ### Decision Matrix
 
-| Scenario | Tool | Rationale |
-|----------|------|-----------|
-| Feature requiring design/planning | Spec-kit → Beads | Need structured planning artifacts |
-| Feature with clear requirements | Beads only | Direct execution |
-| Bug fix | Beads | Track origin with `discovered-from` |
-| Tech debt | Beads | Type `chore` |
-| Research/spike | Beads wisp | Can be burned or squashed |
-| Hotfix (emergency) | Beads wisp | Fast track, document later |
-| Release | Beads wisp | `/push` handles most of it |
+| Scenario                          | Tool             | Rationale                           |
+| --------------------------------- | ---------------- | ----------------------------------- |
+| Feature requiring design/planning | Spec-kit → Beads | Need structured planning artifacts  |
+| Feature with clear requirements   | Beads only       | Direct execution                    |
+| Bug fix                           | Beads            | Track origin with `discovered-from` |
+| Tech debt                         | Beads            | Type `chore`                        |
+| Research/spike                    | Beads wisp       | Can be burned or squashed           |
+| Hotfix (emergency)                | Beads wisp       | Fast track, document later          |
+| Release                           | Beads wisp       | `/push` handles most of it          |
 
 ---
 
@@ -80,6 +80,7 @@
 Beads is a git-backed graph issue tracker designed for AI agents, created by Steve Yegge.
 
 **Key characteristics**:
+
 - Issues stored in `.beads/issues.jsonl` (git-tracked)
 - SQLite cache in `.beads/beads.db` (gitignored)
 - Daemon process for performance
@@ -142,24 +143,24 @@ bd close <id> --reason "Not needed" --wontfix
 
 #### Types (`-t`)
 
-| Type | Use Case |
-|------|----------|
-| `feature` | New functionality |
-| `bug` | Bug fixes |
-| `chore` | Tech debt, refactoring, configs |
-| `docs` | Documentation |
-| `test` | Test improvements |
-| `epic` | Group of related tasks |
+| Type      | Use Case                        |
+| --------- | ------------------------------- |
+| `feature` | New functionality               |
+| `bug`     | Bug fixes                       |
+| `chore`   | Tech debt, refactoring, configs |
+| `docs`    | Documentation                   |
+| `test`    | Test improvements               |
+| `epic`    | Group of related tasks          |
 
 #### Priorities (`-p`)
 
-| Priority | Meaning |
-|----------|---------|
-| P0 | Critical - blocks everything |
-| P1 | Critical - blocks release |
-| P2 | High - fix soon |
-| P3 | Medium - normal (default) |
-| P4 | Low - backlog |
+| Priority | Meaning                      |
+| -------- | ---------------------------- |
+| P0       | Critical - blocks everything |
+| P1       | Critical - blocks release    |
+| P2       | High - fix soon              |
+| P3       | Medium - normal (default)    |
+| P4       | Low - backlog                |
 
 #### Dependencies
 
@@ -174,13 +175,13 @@ bd dep add <issue> <depends-on>    # issue depends on depends-on
 bd blocked                          # All blocked issues
 ```
 
-| Type | Meaning |
-|------|---------|
-| `blocks:<id>` | This task blocks another |
-| `blocked-by:<id>` | This task is blocked by another |
+| Type                   | Meaning                             |
+| ---------------------- | ----------------------------------- |
+| `blocks:<id>`          | This task blocks another            |
+| `blocked-by:<id>`      | This task is blocked by another     |
 | `discovered-from:<id>` | Found while working on another task |
-| `parent:<id>` | Child of an epic |
-| `related:<id>` | Informational relationship |
+| `parent:<id>`          | Child of an epic                    |
+| `related:<id>`         | Informational relationship          |
 
 ### Molecules (Workflows)
 
@@ -219,6 +220,7 @@ bd sync --force            # Force reload from JSONL
 ```
 
 **Auto-sync triggers**:
+
 - `/push` command runs `bd sync` automatically
 - Git hooks sync on commit
 
@@ -253,6 +255,7 @@ bd daemon start
 Spec-kit is a specification-driven development toolkit that generates structured planning artifacts.
 
 **Key characteristics**:
+
 - Constitution-based principles
 - Template-driven artifact generation
 - Phases: specify → clarify → plan → tasks → implement
@@ -260,17 +263,17 @@ Spec-kit is a specification-driven development toolkit that generates structured
 
 ### Commands
 
-| Command | Purpose | Output |
-|---------|---------|--------|
-| `/speckit.specify` | Create requirements | `spec.md` |
-| `/speckit.clarify` | Q&A for requirements | Updates `spec.md` |
-| `/speckit.plan` | Create technical design | `plan.md` |
-| `/speckit.tasks` | Generate task breakdown | `tasks.md` |
-| `/speckit.implement` | Execute tasks | Code changes |
-| `/speckit.analyze` | Check consistency | Report |
-| `/speckit.checklist` | Quality gates | Checklist |
-| `/speckit.tobeads` | Convert to Beads issues | Beads issues |
-| `/speckit.taskstoissues` | Convert to GitHub issues | GitHub issues |
+| Command                  | Purpose                  | Output            |
+| ------------------------ | ------------------------ | ----------------- |
+| `/speckit.specify`       | Create requirements      | `spec.md`         |
+| `/speckit.clarify`       | Q&A for requirements     | Updates `spec.md` |
+| `/speckit.plan`          | Create technical design  | `plan.md`         |
+| `/speckit.tasks`         | Generate task breakdown  | `tasks.md`        |
+| `/speckit.implement`     | Execute tasks            | Code changes      |
+| `/speckit.analyze`       | Check consistency        | Report            |
+| `/speckit.checklist`     | Quality gates            | Checklist         |
+| `/speckit.tobeads`       | Convert to Beads issues  | Beads issues      |
+| `/speckit.taskstoissues` | Convert to GitHub issues | GitHub issues     |
 
 ### Artifact Locations
 
@@ -365,23 +368,23 @@ bd create "Found: Missing validation" -t bug --deps discovered-from:buh-current-
 
 Location: `.beads/formulas/`
 
-| Formula | File | Purpose | Phase |
-|---------|------|---------|-------|
-| `bigfeature` | `bigfeature.formula.toml` | Spec-kit → Beads pipeline | liquid |
-| `bugfix` | `bugfix.formula.toml` | Standard bug fix process | liquid |
-| `hotfix` | `hotfix.formula.toml` | Emergency production fix | vapor |
-| `techdebt` | `techdebt.formula.toml` | Technical debt remediation | liquid |
-| `healthcheck` | `healthcheck.formula.toml` | Bug-hunter → fix cycle | vapor |
-| `codereview` | `codereview.formula.toml` | Code review workflow | liquid |
-| `release` | `release.formula.toml` | Version release process | vapor |
-| `exploration` | `exploration.formula.toml` | Research/spike | vapor |
+| Formula       | File                       | Purpose                    | Phase  |
+| ------------- | -------------------------- | -------------------------- | ------ |
+| `bigfeature`  | `bigfeature.formula.toml`  | Spec-kit → Beads pipeline  | liquid |
+| `bugfix`      | `bugfix.formula.toml`      | Standard bug fix process   | liquid |
+| `hotfix`      | `hotfix.formula.toml`      | Emergency production fix   | vapor  |
+| `techdebt`    | `techdebt.formula.toml`    | Technical debt remediation | liquid |
+| `healthcheck` | `healthcheck.formula.toml` | Bug-hunter → fix cycle     | vapor  |
+| `codereview`  | `codereview.formula.toml`  | Code review workflow       | liquid |
+| `release`     | `release.formula.toml`     | Version release process    | vapor  |
+| `exploration` | `exploration.formula.toml` | Research/spike             | vapor  |
 
 ### Phase Meanings
 
-| Phase | Meaning | Use Case |
-|-------|---------|----------|
-| `vapor` | Ephemeral (wisp) | Exploration, hotfix, can be discarded |
-| `liquid` | Persistent (mol) | Features, bugs, must complete |
+| Phase    | Meaning          | Use Case                              |
+| -------- | ---------------- | ------------------------------------- |
+| `vapor`  | Ephemeral (wisp) | Exploration, hotfix, can be discarded |
+| `liquid` | Persistent (mol) | Features, bugs, must complete         |
 
 ### Using Formulas
 
@@ -476,6 +479,7 @@ docs/speckit/
 ### Official Documentation
 
 **Beads**:
+
 - Repository: https://github.com/steveyegge/beads
 - CLI Reference: https://github.com/steveyegge/beads/blob/main/docs/CLI_REFERENCE.md
 - Architecture: https://github.com/steveyegge/beads/blob/main/docs/ARCHITECTURE.md
@@ -485,11 +489,11 @@ docs/speckit/
 
 ### BuhBot Project Files
 
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Agent orchestration rules |
-| `.claude/docs/beads-quickstart.md` | User quick reference (Russian) |
-| `.claude/docs/beads-speckit-reference.md` | Full reference (this file) |
+| File                                      | Purpose                        |
+| ----------------------------------------- | ------------------------------ |
+| `CLAUDE.md`                               | Agent orchestration rules      |
+| `.claude/docs/beads-quickstart.md`        | User quick reference (Russian) |
+| `.claude/docs/beads-speckit-reference.md` | Full reference (this file)     |
 
 ### Quick Commands Reference
 
@@ -525,14 +529,14 @@ bd daemon restart
 
 ### Common Issues
 
-| Problem | Solution |
-|---------|----------|
-| `bd ready` empty but issues exist | `bd sync` or `bd daemon restart` |
-| Daemon won't start | `rm .beads/daemon.lock && bd daemon start` |
-| Sync conflicts | `git status .beads/` → resolve → `bd sync` |
-| Issue not found | `bd sync --force` |
-| Formula not loading | Check TOML syntax in `.beads/formulas/` |
-| Spec-kit command fails | Check `docs/speckit/` directory exists |
+| Problem                           | Solution                                   |
+| --------------------------------- | ------------------------------------------ |
+| `bd ready` empty but issues exist | `bd sync` or `bd daemon restart`           |
+| Daemon won't start                | `rm .beads/daemon.lock && bd daemon start` |
+| Sync conflicts                    | `git status .beads/` → resolve → `bd sync` |
+| Issue not found                   | `bd sync --force`                          |
+| Formula not loading               | Check TOML syntax in `.beads/formulas/`    |
+| Spec-kit command fails            | Check `docs/speckit/` directory exists     |
 
 ### Diagnostic Commands
 
@@ -553,4 +557,4 @@ bd formula show <name>
 
 ---
 
-*This document serves as the authoritative reference for the BuhBot Beads + Spec-kit integration.*
+_This document serves as the authoritative reference for the BuhBot Beads + Spec-kit integration._

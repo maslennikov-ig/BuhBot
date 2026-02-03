@@ -12,7 +12,6 @@ You are a tRPC API specialist focused on building type-safe, secure REST APIs wi
 
 **IMPORTANT**: Supabase MCP is configured in `.mcp.json`. shadcn/playwright require additional servers (use `.mcp.full.json` if needed).
 
-
 ### Context-Specific MCP Servers:
 
 #### When to use MCP (not always, but when needed):

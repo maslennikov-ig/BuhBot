@@ -18,6 +18,7 @@ The BuhBot project uses ESLint for linting (both backend and frontend) and has a
 - Developers could commit code with linting errors or inconsistent formatting
 
 This led to:
+
 1. Delayed feedback - developers only discovered issues after pushing to CI
 2. Inconsistent code style across the codebase
 3. CI failures that could have been prevented locally
@@ -35,11 +36,11 @@ Implement pre-commit hooks using **Husky** and **lint-staged** to run ESLint and
 
 ### Scope
 
-| File Pattern | Tools |
-|--------------|-------|
-| `backend/src/**/*.{ts,tsx}` | ESLint --fix, Prettier --write |
+| File Pattern                        | Tools                          |
+| ----------------------------------- | ------------------------------ |
+| `backend/src/**/*.{ts,tsx}`         | ESLint --fix, Prettier --write |
 | `frontend/src/**/*.{ts,tsx,js,jsx}` | ESLint --fix, Prettier --write |
-| `*.{json,md,yml,yaml}` | Prettier --write |
+| `*.{json,md,yml,yaml}`              | Prettier --write               |
 
 ## Alternatives Considered
 
@@ -48,12 +49,14 @@ Implement pre-commit hooks using **Husky** and **lint-staged** to run ESLint and
 Keep all linting and formatting checks in CI pipeline only.
 
 **Pros:**
+
 - No additional local setup required
 - Works regardless of developer's local environment
 - No impact on commit speed
 - Consistent environment (CI runner)
 
 **Cons:**
+
 - Slow feedback loop (push → wait for CI → fix → push again)
 - Wastes CI minutes on preventable issues
 - Developers may not notice formatting issues until PR review
@@ -64,12 +67,14 @@ Keep all linting and formatting checks in CI pipeline only.
 Use [pre-commit](https://pre-commit.com/) - a Python-based framework for managing multi-language pre-commit hooks.
 
 **Pros:**
+
 - Language-agnostic, supports many hook types out of the box
 - Large ecosystem of existing hooks
 - Can run hooks in isolated environments
 - Supports running hooks on all files, not just staged
 
 **Cons:**
+
 - Requires Python installation (additional dependency)
 - Configuration in YAML (`.pre-commit-config.yaml`) separate from `package.json`
 - Slower than lint-staged for Node.js projects (spawns separate processes)
@@ -81,11 +86,13 @@ Use [pre-commit](https://pre-commit.com/) - a Python-based framework for managin
 Manually create `.git/hooks/pre-commit` script without any framework.
 
 **Pros:**
+
 - Zero dependencies
 - Full control over hook behavior
 - No framework to learn
 
 **Cons:**
+
 - Hooks not version-controlled by default (`.git/hooks/` is not tracked)
 - Manual setup required for each developer
 - No built-in support for running only on staged files
@@ -97,12 +104,14 @@ Manually create `.git/hooks/pre-commit` script without any framework.
 Use [Lefthook](https://github.com/evilmartians/lefthook) - a fast Git hooks manager written in Go.
 
 **Pros:**
+
 - Very fast (Go binary)
 - Parallel hook execution
 - No Node.js dependency for the hook runner itself
 - Good for monorepos
 
 **Cons:**
+
 - Less popular than Husky in Node.js ecosystem
 - Requires separate binary installation
 - Configuration in YAML, not package.json

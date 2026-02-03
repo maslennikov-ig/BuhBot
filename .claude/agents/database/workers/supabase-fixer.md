@@ -36,6 +36,7 @@ mcp__supabase__list_tables({schemas: ["public"]})
 ### Context7 Integration (RECOMMENDED)
 
 Use Context7 for Supabase best practices:
+
 ```bash
 mcp__context7__resolve-library-id({libraryName: "supabase"})
 mcp__context7__get-library-docs({
@@ -64,6 +65,7 @@ When invoked, follow these phases systematically:
 3. **Adjust fix scope** based on plan configuration
 
 **If no plan file** is provided:
+
 - Use default report path: `.tmp/current/reports/supabase-audit-report.md`
 - Fix all critical and high priority issues
 - Apply all categories
@@ -75,10 +77,12 @@ When invoked, follow these phases systematically:
    - If unavailable: Log error, report to user, exit
 
 2. **Read Audit Report**:
+
    ```markdown
    Read report from: {config.reportPath}
 
    Expected format:
+
    - YAML frontmatter with metadata
    - Issues organized by severity
    - Each issue has:
@@ -89,8 +93,10 @@ When invoked, follow these phases systematically:
    ```
 
 3. **Parse Issues**:
+
    ```markdown
    Extract all issues from report:
+
    - Group by severity: Critical → High → Medium → Low
    - Group by category: RLS, Indexes, Constraints, Schema
    - Extract recommended migrations
@@ -106,11 +112,12 @@ When invoked, follow these phases systematically:
 ### Phase 2: Generate Migrations
 
 5. **For Each Issue in Fix Queue** (by priority):
+
    ```markdown
    FOR severity IN ["critical", "high", "medium"]:
-     FOR issue IN issues[severity]:
-       IF issue.category NOT IN config.categories:
-         SKIP issue
+   FOR issue IN issues[severity]:
+   IF issue.category NOT IN config.categories:
+   SKIP issue
 
        IF fixes_applied >= config.maxFixes:
          BREAK
@@ -120,13 +127,15 @@ When invoked, follow these phases systematically:
        - Extract SQL from audit report
        - Validate SQL syntax (basic check)
        - Add to migration queue
-     END
+
+   END
    END
    ```
 
 6. **Migration Generation by Category**:
 
    **RLS Fixes**:
+
    ```sql
    -- Enable RLS on table
    ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY;
@@ -139,6 +148,7 @@ When invoked, follow these phases systematically:
    ```
 
    **Index Fixes**:
+
    ```sql
    -- Create missing index
    CREATE INDEX IF NOT EXISTS idx_{table}_{column}
@@ -149,6 +159,7 @@ When invoked, follow these phases systematically:
    ```
 
    **Constraint Fixes**:
+
    ```sql
    -- Add foreign key
    ALTER TABLE {table_name}
@@ -163,6 +174,7 @@ When invoked, follow these phases systematically:
    ```
 
    **Schema Fixes**:
+
    ```sql
    -- Add primary key
    ALTER TABLE {table_name}
@@ -185,8 +197,10 @@ When invoked, follow these phases systematically:
 ### Phase 3: Apply Migrations
 
 8. **Pre-Apply Validation**:
+
    ```markdown
    BEFORE applying migrations:
+
    - Check database connectivity
    - Verify no active write operations (check locks)
    - Create backup metadata (list affected tables)
@@ -194,24 +208,27 @@ When invoked, follow these phases systematically:
    ```
 
 9. **Apply Migrations One-by-One**:
+
    ```markdown
    FOR EACH migration IN migration_queue:
-     1. Log migration start
-     2. Apply migration via mcp__supabase__apply_migration
-     3. Check for errors
-     4. If error:
-        - Log error details
-        - Mark fix as failed
-        - CONTINUE to next (don't stop entire process)
-     5. If success:
-        - Log success
-        - Mark fix as completed
-        - Record in changes log
-     6. Increment fixes_applied counter
-   END
+
+   1. Log migration start
+   2. Apply migration via mcp**supabase**apply_migration
+   3. Check for errors
+   4. If error:
+      - Log error details
+      - Mark fix as failed
+      - CONTINUE to next (don't stop entire process)
+   5. If success:
+      - Log success
+      - Mark fix as completed
+      - Record in changes log
+   6. Increment fixes_applied counter
+      END
    ```
 
 10. **Use MCP for Migration Application**:
+
     ```bash
     mcp__supabase__apply_migration({
       name: "fix_rls_users_table_20251217_143000",
@@ -222,17 +239,19 @@ When invoked, follow these phases systematically:
 11. **Handle Migration Errors**:
     ```markdown
     IF migration fails:
-      - Capture error message
-      - Parse error type (syntax, permission, conflict)
-      - Log to changes log
-      - Add to failed_fixes array
-      - DO NOT stop entire workflow
-      - CONTINUE to next fix
+
+    - Capture error message
+    - Parse error type (syntax, permission, conflict)
+    - Log to changes log
+    - Add to failed_fixes array
+    - DO NOT stop entire workflow
+    - CONTINUE to next fix
     ```
 
 ### Phase 4: Post-Fix Validation
 
 12. **Run Advisory Checks** (if skipValidation = false):
+
     ```bash
     # Security validation
     mcp__supabase__get_advisors({type: "security"})
@@ -242,23 +261,24 @@ When invoked, follow these phases systematically:
     ```
 
 13. **Verify Fixes Applied**:
+
     ```markdown
     FOR EACH completed_fix:
-      Run verification query:
+    Run verification query:
 
-      RLS fixes:
-        SELECT rowsecurity FROM pg_tables
-        WHERE tablename = '{table}';
+    RLS fixes:
+    SELECT rowsecurity FROM pg_tables
+    WHERE tablename = '{table}';
 
-      Index fixes:
-        SELECT indexname FROM pg_indexes
-        WHERE tablename = '{table}';
+    Index fixes:
+    SELECT indexname FROM pg_indexes
+    WHERE tablename = '{table}';
 
-      Constraint fixes:
-        SELECT constraint_name FROM information_schema.table_constraints
-        WHERE table_name = '{table}';
+    Constraint fixes:
+    SELECT constraint_name FROM information_schema.table_constraints
+    WHERE table_name = '{table}';
 
-      Compare with expected state.
+    Compare with expected state.
     ```
 
 14. **Check for New Issues**:
@@ -271,14 +291,17 @@ When invoked, follow these phases systematically:
 ### Phase 5: Generate Report
 
 15. **Use generate-report-header Skill**:
+
     ```markdown
     Use generate-report-header Skill with:
+
     - report_type: "supabase-fix"
     - workflow: "database"
     - phase: "fix"
     ```
 
 16. **Compile Fix Results**:
+
     ```markdown
     - Fixes attempted: {count}
     - Fixes successful: {count}
@@ -292,6 +315,7 @@ When invoked, follow these phases systematically:
 ### Phase 6: Cleanup & Return
 
 18. **Cleanup Temporary Files**:
+
     ```markdown
     - Keep changes log for rollback capability
     - Remove temporary migration files
@@ -299,6 +323,7 @@ When invoked, follow these phases systematically:
     ```
 
 19. **Report Summary to User**:
+
     ```
     ✅ Supabase Fix Complete
 
@@ -323,20 +348,20 @@ When invoked, follow these phases systematically:
 
 Follow REPORT-TEMPLATE-STANDARD.md with these domain-specific sections:
 
-```markdown
+````markdown
 ---
 report_type: supabase-fix
-generated: {ISO-8601 timestamp}
-version: {date or phase identifier}
+generated: { ISO-8601 timestamp }
+version: { date or phase identifier }
 status: success | partial | failed
 agent: supabase-fixer
-duration: {execution time}
-audit_report: {path to audit report}
-fixes_attempted: {count}
-fixes_successful: {count}
-fixes_failed: {count}
-priorities_fixed: {array}
-categories_fixed: {array}
+duration: { execution time }
+audit_report: { path to audit report }
+fixes_attempted: { count }
+fixes_successful: { count }
+fixes_failed: { count }
+priorities_fixed: { array }
+categories_fixed: { array }
 ---
 
 # Supabase Fix Report: {Phase}
@@ -375,11 +400,13 @@ Automated database fixes applied based on audit report.
 #### 1. RLS Enabled on `users` Table
 
 **Original Issue**:
+
 - **Severity**: Critical
 - **Category**: RLS
 - **Description**: RLS disabled on users table
 
 **Fix Applied**:
+
 ```sql
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
@@ -391,12 +418,14 @@ CREATE POLICY "Users can update own profile"
 ON users FOR UPDATE
 USING (auth.uid() = id);
 ```
+````
 
 **Migration Name**: `fix_rls_users_table_20251217_143000`
 
 **Status**: ✅ SUCCESS
 
 **Validation**:
+
 ```sql
 SELECT rowsecurity FROM pg_tables WHERE tablename = 'users';
 -- Result: true
@@ -409,11 +438,13 @@ SELECT rowsecurity FROM pg_tables WHERE tablename = 'users';
 #### 2. Foreign Key Added to `course_modules.course_id`
 
 **Original Issue**:
+
 - **Severity**: Critical
 - **Category**: Constraints
 - **Description**: Missing FK constraint on course_modules
 
 **Fix Applied**:
+
 ```sql
 ALTER TABLE course_modules
 ADD CONSTRAINT fk_course_modules_course_id
@@ -427,6 +458,7 @@ ON DELETE CASCADE;
 **Status**: ✅ SUCCESS
 
 **Validation**:
+
 ```sql
 SELECT constraint_name FROM information_schema.table_constraints
 WHERE table_name = 'course_modules' AND constraint_type = 'FOREIGN KEY';
@@ -442,11 +474,13 @@ WHERE table_name = 'course_modules' AND constraint_type = 'FOREIGN KEY';
 #### 1. Index Created on `enrollments.user_id`
 
 **Original Issue**:
+
 - **Severity**: High
 - **Category**: Indexes
 - **Description**: Missing index on FK column
 
 **Fix Applied**:
+
 ```sql
 CREATE INDEX IF NOT EXISTS idx_enrollments_user_id
 ON enrollments(user_id);
@@ -457,6 +491,7 @@ ON enrollments(user_id);
 **Status**: ✅ SUCCESS
 
 **Validation**:
+
 ```sql
 SELECT indexname FROM pg_indexes
 WHERE tablename = 'enrollments' AND indexname = 'idx_enrollments_user_id';
@@ -472,11 +507,13 @@ WHERE tablename = 'enrollments' AND indexname = 'idx_enrollments_user_id';
 #### 1. Unused Index Removed: `idx_courses_legacy_id`
 
 **Original Issue**:
+
 - **Severity**: Medium
 - **Category**: Indexes
 - **Description**: Unused index consuming space
 
 **Fix Applied**:
+
 ```sql
 DROP INDEX IF EXISTS idx_courses_legacy_id;
 ```
@@ -486,6 +523,7 @@ DROP INDEX IF EXISTS idx_courses_legacy_id;
 **Status**: ✅ SUCCESS
 
 **Validation**:
+
 ```sql
 SELECT indexname FROM pg_indexes
 WHERE indexname = 'idx_courses_legacy_id';
@@ -501,11 +539,13 @@ WHERE indexname = 'idx_courses_legacy_id';
 ### 1. Primary Key Addition Failed
 
 **Original Issue**:
+
 - **Severity**: Critical
 - **Category**: Schema
 - **Description**: Missing primary key on audit_logs table
 
 **Attempted Fix**:
+
 ```sql
 ALTER TABLE audit_logs ADD COLUMN id UUID PRIMARY KEY DEFAULT gen_random_uuid();
 ```
@@ -515,6 +555,7 @@ ALTER TABLE audit_logs ADD COLUMN id UUID PRIMARY KEY DEFAULT gen_random_uuid();
 **Status**: ❌ FAILED
 
 **Error**:
+
 ```
 ERROR: column "id" already exists
 DETAIL: Cannot add column that already exists
@@ -537,10 +578,12 @@ DETAIL: Cannot add column that already exists
 **Status**: ✅ IMPROVED
 
 **Before Fixes**:
+
 - 3 critical warnings (RLS disabled)
 - 2 high warnings (missing policies)
 
 **After Fixes**:
+
 - 0 critical warnings
 - 0 high warnings
 - 1 medium warning (token expiration)
@@ -554,10 +597,12 @@ DETAIL: Cannot add column that already exists
 **Status**: ✅ IMPROVED
 
 **Before Fixes**:
+
 - 2 high warnings (missing indexes)
 - 1 medium warning (dead tuples)
 
 **After Fixes**:
+
 - 0 high warnings
 - 1 medium warning (dead tuples - requires VACUUM)
 
@@ -628,23 +673,23 @@ All critical issues resolved.
 
 Total: {count} migrations
 
-| Migration Name | Category | Status | Timestamp |
-|----------------|----------|--------|-----------|
-| fix_rls_users_table_20251217_143000 | RLS | ✅ SUCCESS | 2025-12-17 14:30:00 |
-| add_fk_course_modules_20251217_143030 | Constraints | ✅ SUCCESS | 2025-12-17 14:30:30 |
-| create_idx_enrollments_user_id_20251217_143100 | Indexes | ✅ SUCCESS | 2025-12-17 14:31:00 |
-| drop_unused_idx_courses_legacy_20251217_143130 | Indexes | ✅ SUCCESS | 2025-12-17 14:31:30 |
-| add_pk_audit_logs_20251217_143200 | Schema | ❌ FAILED | 2025-12-17 14:32:00 |
+| Migration Name                                 | Category    | Status     | Timestamp           |
+| ---------------------------------------------- | ----------- | ---------- | ------------------- |
+| fix_rls_users_table_20251217_143000            | RLS         | ✅ SUCCESS | 2025-12-17 14:30:00 |
+| add_fk_course_modules_20251217_143030          | Constraints | ✅ SUCCESS | 2025-12-17 14:30:30 |
+| create_idx_enrollments_user_id_20251217_143100 | Indexes     | ✅ SUCCESS | 2025-12-17 14:31:00 |
+| drop_unused_idx_courses_legacy_20251217_143130 | Indexes     | ✅ SUCCESS | 2025-12-17 14:31:30 |
+| add_pk_audit_logs_20251217_143200              | Schema      | ❌ FAILED  | 2025-12-17 14:32:00 |
 
 ### Tables Modified
 
-| Table | Operations | Status |
-|-------|------------|--------|
-| users | RLS enabled, 2 policies created | ✅ |
-| course_modules | FK constraint added | ✅ |
-| enrollments | Index created | ✅ |
-| courses | Unused index dropped | ✅ |
-| audit_logs | PK addition failed | ❌ |
+| Table          | Operations                      | Status |
+| -------------- | ------------------------------- | ------ |
+| users          | RLS enabled, 2 policies created | ✅     |
+| course_modules | FK constraint added             | ✅     |
+| enrollments    | Index created                   | ✅     |
+| courses        | Unused index dropped            | ✅     |
+| audit_logs     | PK addition failed              | ❌     |
 
 ---
 
@@ -738,17 +783,20 @@ Database migrations cannot be automatically rolled back. Each fix requires manua
 2. **Create rollback migrations** for each applied fix:
 
    RLS Rollback:
+
    ```sql
    DROP POLICY IF EXISTS "policy_name" ON table_name;
    ALTER TABLE table_name DISABLE ROW LEVEL SECURITY;
    ```
 
    Index Rollback:
+
    ```sql
    DROP INDEX IF EXISTS idx_name;
    ```
 
    Constraint Rollback:
+
    ```sql
    ALTER TABLE table_name DROP CONSTRAINT constraint_name;
    ```
@@ -769,6 +817,7 @@ Database migrations cannot be automatically rolled back. Each fix requires manua
 ⚠️ {failed_fixes} fixes failed. See "Failed Fixes" section.
 
 🔄 Next: Re-run supabase-auditor to verify improvements.
+
 ```
 
 ## Output Example
@@ -776,16 +825,19 @@ Database migrations cannot be automatically rolled back. Each fix requires manua
 When successfully invoked, the agent will produce:
 
 ```
+
 ✅ Supabase Fix Complete
 
 Audit Report: .tmp/current/reports/supabase-audit-report.md
 
 Fixes Applied: 15/17 (88%)
+
 - Critical: 3/3 fixed ✅
 - High: 7/8 fixed ⚠️
 - Medium: 5/6 fixed ⚠️
 
 Failed Fixes: 2
+
 - audit_logs primary key (column exists)
 - courses policy (requires manual review)
 
@@ -794,16 +846,19 @@ Status: ⚠️ PARTIAL SUCCESS
 Report Location: .tmp/current/reports/supabase-fix-report.md
 
 Post-Fix Validation:
+
 - Security Advisors: 5 → 1 warnings (✅ +80%)
 - Performance Advisors: 3 → 1 warnings (✅ +66%)
 
 Next Steps:
+
 1. Re-run supabase-auditor to verify fixes
 2. Test application functionality
 3. Review failed fixes
 
 Returning control to main session.
-```
+
+````
 
 ## Error Handling
 
@@ -821,7 +876,7 @@ To run fixes, switch to Supabase-enabled config:
 4. Re-invoke supabase-fixer
 
 Fix workflow aborted.
-```
+````
 
 ### Audit Report Not Found
 
@@ -831,11 +886,13 @@ Fix workflow aborted.
 Expected report at: {config.reportPath}
 
 Possible causes:
+
 1. supabase-auditor not run yet
 2. Report path incorrect in plan file
 3. Report deleted or moved
 
 Recommended actions:
+
 1. Run supabase-auditor first
 2. Verify report path
 3. Check .tmp/current/reports/ directory
@@ -857,6 +914,7 @@ The fix workflow will CONTINUE with remaining fixes.
 Failed migrations are logged in the report.
 
 Action Required:
+
 - Review error in fix report
 - Manually investigate and fix if needed
 - Re-run fixer after resolution
@@ -868,6 +926,7 @@ Action Required:
 ⚠️ Partial Fix Completion
 
 Some fixes failed or were skipped:
+
 - Fixes successful: {count}/{total}
 - Fixes failed: {count}
 - Fixes skipped: {count}
@@ -877,6 +936,7 @@ Report generated with all details: .tmp/current/reports/supabase-fix-report.md
 Validation Status: PARTIAL
 
 Action Required:
+
 - Review failed fixes
 - Re-run audit to verify improvements
 - Manually fix remaining issues
@@ -896,35 +956,35 @@ Use supabase-fixer agent with plan file: .tmp/current/plans/.supabase-fix-plan.j
 
 ### Orchestrator Integration
 
-```markdown
+````markdown
 ## Phase 2: Database Fix (in /health-database workflow)
 
 Orchestrator creates plan file:
 \```json
 {
-  "phase": 2,
-  "config": {
-    "reportPath": ".tmp/current/reports/supabase-audit-report.md",
-    "priorities": ["critical", "high"],
-    "categories": ["rls", "indexes", "constraints"],
-    "maxFixes": 20,
-    "skipValidation": false,
-    "dryRun": false
-  },
-  "validation": {
-    "required": ["migrations_applied", "advisors_improved"],
-    "optional": ["all_fixes_successful"]
-  },
-  "mcpGuidance": {
-    "recommended": ["mcp__supabase__*"],
-    "reason": "Required for applying migrations and validating fixes"
-  },
-  "nextAgent": "supabase-fixer"
+"phase": 2,
+"config": {
+"reportPath": ".tmp/current/reports/supabase-audit-report.md",
+"priorities": ["critical", "high"],
+"categories": ["rls", "indexes", "constraints"],
+"maxFixes": 20,
+"skipValidation": false,
+"dryRun": false
+},
+"validation": {
+"required": ["migrations_applied", "advisors_improved"],
+"optional": ["all_fixes_successful"]
+},
+"mcpGuidance": {
+"recommended": ["mcp__supabase__*"],
+"reason": "Required for applying migrations and validating fixes"
+},
+"nextAgent": "supabase-fixer"
 }
 \```
 
 Main session invokes supabase-fixer → applies fixes → orchestrator validates
-```
+````
 
 ### Iterative Fix Workflow
 
@@ -977,12 +1037,14 @@ Use supabase-fixer agent with dryRun: true
 ### 1. RLS (Row-Level Security)
 
 **Capabilities**:
+
 - Enable RLS on tables
 - Create SELECT/INSERT/UPDATE/DELETE policies
 - Add auth.uid() conditions
 - Fix overly permissive policies
 
 **Example**:
+
 ```sql
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "users_select_own" ON users FOR SELECT USING (auth.uid() = id);
@@ -993,12 +1055,14 @@ CREATE POLICY "users_select_own" ON users FOR SELECT USING (auth.uid() = id);
 ### 2. Indexes
 
 **Capabilities**:
+
 - Create missing indexes on FK columns
 - Create composite indexes for common queries
 - Drop unused indexes (idx_scan = 0)
 - Remove redundant indexes
 
 **Example**:
+
 ```sql
 CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments(user_id);
 DROP INDEX IF EXISTS idx_old_unused;
@@ -1009,12 +1073,14 @@ DROP INDEX IF EXISTS idx_old_unused;
 ### 3. Constraints
 
 **Capabilities**:
+
 - Add foreign key constraints
 - Add NOT NULL constraints
 - Add CHECK constraints
 - Add UNIQUE constraints
 
 **Example**:
+
 ```sql
 ALTER TABLE course_modules
 ADD CONSTRAINT fk_course_modules_course_id
@@ -1026,12 +1092,14 @@ FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE;
 ### 4. Schema
 
 **Capabilities**:
+
 - Add primary keys
 - Add audit columns (created_at, updated_at)
 - Add default values
 - Alter column types (with caution)
 
 **Example**:
+
 ```sql
 ALTER TABLE audit_logs ADD PRIMARY KEY (id);
 ALTER TABLE users ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();

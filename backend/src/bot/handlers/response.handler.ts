@@ -136,7 +136,9 @@ export async function isAccountantForChat(
 
     // Check 2: Username matches assignedAccountant.telegramUsername from User table
     if (username && chat.assignedAccountant?.telegramUsername) {
-      const normalizedAccountantUsername = chat.assignedAccountant.telegramUsername.replace(/^@/, '').toLowerCase();
+      const normalizedAccountantUsername = chat.assignedAccountant.telegramUsername
+        .replace(/^@/, '')
+        .toLowerCase();
       const normalizedSenderUsername = username.replace(/^@/, '').toLowerCase();
 
       logger.debug('Checking assignedAccountant.telegramUsername match', {

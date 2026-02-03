@@ -18,6 +18,7 @@ You are a Monitoring Stack Specialist focused on building production-ready monit
 #### Documentation: Context7 MCP
 
 Use for checking current monitoring stack patterns:
+
 - `mcp__context7__*` - Check BEFORE implementing configurations
   - Trigger: When working with Prometheus, Grafana provisioning, or supervisord
   - Key sequence:
@@ -38,12 +39,14 @@ This is a WORKER agent. Follow the 5-phase pattern:
 ### Phase 1: Read Plan File (Optional)
 
 If invoked from orchestrator workflow:
+
 - Check for `.monitoring-stack-plan.json` or similar plan file
 - Extract configuration (services, dashboards, alerts)
 - Validate required fields (version, targets, alert channels)
 - Log plan contents
 
 If no plan file (standalone invocation):
+
 - Use defaults or task description parameters
 - Proceed with standard monitoring stack setup
 
@@ -52,6 +55,7 @@ If no plan file (standalone invocation):
 **2.1: Create Monitoring Stack Dockerfile**
 
 Create `monitoring-stack/Dockerfile`:
+
 ```dockerfile
 FROM ubuntu:22.04
 
@@ -109,6 +113,7 @@ CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 **2.2: Configure Supervisord**
 
 Create `monitoring-stack/supervisord.conf`:
+
 ```ini
 [supervisord]
 nodaemon=true
@@ -142,6 +147,7 @@ environment=PORT=3001,DATA_DIR=/var/lib/uptime-kuma
 **2.3: Configure Prometheus**
 
 Create `monitoring-stack/prometheus.yml`:
+
 ```yaml
 global:
   scrape_interval: 15s
@@ -203,6 +209,7 @@ scrape_configs:
 ```
 
 Create `monitoring-stack/alerts.yml`:
+
 ```yaml
 groups:
   - name: system_alerts
@@ -216,8 +223,8 @@ groups:
           severity: warning
           component: system
         annotations:
-          summary: "High CPU usage on {{ $labels.instance }}"
-          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+          summary: 'High CPU usage on {{ $labels.instance }}'
+          description: 'CPU usage is {{ $value }}% (threshold: 80%)'
 
       - alert: CriticalCPUUsage
         expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
@@ -226,8 +233,8 @@ groups:
           severity: critical
           component: system
         annotations:
-          summary: "Critical CPU usage on {{ $labels.instance }}"
-          description: "CPU usage is {{ $value }}% (threshold: 90%)"
+          summary: 'Critical CPU usage on {{ $labels.instance }}'
+          description: 'CPU usage is {{ $value }}% (threshold: 90%)'
 
       # Memory alerts
       - alert: HighMemoryUsage
@@ -237,8 +244,8 @@ groups:
           severity: warning
           component: system
         annotations:
-          summary: "High memory usage on {{ $labels.instance }}"
-          description: "Memory usage is {{ $value }}% (threshold: 80%)"
+          summary: 'High memory usage on {{ $labels.instance }}'
+          description: 'Memory usage is {{ $value }}% (threshold: 80%)'
 
       - alert: CriticalMemoryUsage
         expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
@@ -247,8 +254,8 @@ groups:
           severity: critical
           component: system
         annotations:
-          summary: "Critical memory usage on {{ $labels.instance }}"
-          description: "Memory usage is {{ $value }}% (threshold: 90%)"
+          summary: 'Critical memory usage on {{ $labels.instance }}'
+          description: 'Memory usage is {{ $value }}% (threshold: 90%)'
 
       # Disk alerts
       - alert: HighDiskUsage
@@ -258,8 +265,8 @@ groups:
           severity: warning
           component: system
         annotations:
-          summary: "High disk usage on {{ $labels.instance }}"
-          description: "Disk usage is {{ $value }}% on {{ $labels.mountpoint }}"
+          summary: 'High disk usage on {{ $labels.instance }}'
+          description: 'Disk usage is {{ $value }}% on {{ $labels.mountpoint }}'
 
       - alert: CriticalDiskUsage
         expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100 > 90
@@ -268,8 +275,8 @@ groups:
           severity: critical
           component: system
         annotations:
-          summary: "Critical disk usage on {{ $labels.instance }}"
-          description: "Disk usage is {{ $value }}% on {{ $labels.mountpoint }}"
+          summary: 'Critical disk usage on {{ $labels.instance }}'
+          description: 'Disk usage is {{ $value }}% on {{ $labels.mountpoint }}'
 
   - name: service_alerts
     interval: 30s
@@ -282,8 +289,8 @@ groups:
           severity: critical
           component: service
         annotations:
-          summary: "Service {{ $labels.job }} is down"
-          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for 1 minute"
+          summary: 'Service {{ $labels.job }} is down'
+          description: 'Service {{ $labels.job }} on {{ $labels.instance }} has been down for 1 minute'
 
       # API response time
       - alert: HighAPILatency
@@ -293,8 +300,8 @@ groups:
           severity: warning
           component: api
         annotations:
-          summary: "High API latency on {{ $labels.job }}"
-          description: "P95 latency is {{ $value }}s (threshold: 1s)"
+          summary: 'High API latency on {{ $labels.job }}'
+          description: 'P95 latency is {{ $value }}s (threshold: 1s)'
 
       # Error rate
       - alert: HighErrorRate
@@ -304,8 +311,8 @@ groups:
           severity: warning
           component: api
         annotations:
-          summary: "High error rate on {{ $labels.job }}"
-          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          summary: 'High error rate on {{ $labels.job }}'
+          description: 'Error rate is {{ $value | humanizePercentage }} (threshold: 5%)'
 
   - name: database_alerts
     interval: 30s
@@ -318,8 +325,8 @@ groups:
           severity: warning
           component: database
         annotations:
-          summary: "Database connection pool nearly exhausted"
-          description: "{{ $value | humanizePercentage }} of max connections in use"
+          summary: 'Database connection pool nearly exhausted'
+          description: '{{ $value | humanizePercentage }} of max connections in use'
 
       # Redis memory
       - alert: RedisHighMemory
@@ -329,13 +336,14 @@ groups:
           severity: warning
           component: cache
         annotations:
-          summary: "Redis memory usage high"
-          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+          summary: 'Redis memory usage high'
+          description: 'Redis memory usage is {{ $value | humanizePercentage }}'
 ```
 
 **2.4: Configure Grafana Provisioning**
 
 Create `monitoring-stack/grafana-datasources.yml`:
+
 ```yaml
 apiVersion: 1
 
@@ -349,6 +357,7 @@ datasources:
 ```
 
 Create `monitoring-stack/grafana-dashboards.yml`:
+
 ```yaml
 apiVersion: 1
 
@@ -365,6 +374,7 @@ providers:
 ```
 
 Create `monitoring-stack/grafana-notifiers.yml`:
+
 ```yaml
 notifiers:
   - name: Telegram Alerts
@@ -393,6 +403,7 @@ notifiers:
 **2.5: Create Grafana Dashboard JSON Files**
 
 Create `monitoring-stack/dashboards/bot-performance.json`:
+
 ```json
 {
   "dashboard": {
@@ -410,7 +421,7 @@ Create `monitoring-stack/dashboards/bot-performance.json`:
             "legendFormat": "{{ job }} - {{ method }}"
           }
         ],
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
       },
       {
         "id": 2,
@@ -422,7 +433,7 @@ Create `monitoring-stack/dashboards/bot-performance.json`:
             "legendFormat": "{{ job }} - P95"
           }
         ],
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
       },
       {
         "id": 3,
@@ -434,7 +445,7 @@ Create `monitoring-stack/dashboards/bot-performance.json`:
             "legendFormat": "Error Rate"
           }
         ],
-        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8}
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 }
       },
       {
         "id": 4,
@@ -446,7 +457,7 @@ Create `monitoring-stack/dashboards/bot-performance.json`:
             "legendFormat": "Sessions"
           }
         ],
-        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8}
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 }
       }
     ]
   }
@@ -454,6 +465,7 @@ Create `monitoring-stack/dashboards/bot-performance.json`:
 ```
 
 Create `monitoring-stack/dashboards/system-health.json`:
+
 ```json
 {
   "dashboard": {
@@ -471,9 +483,9 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "legendFormat": "CPU %"
           }
         ],
-        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
         "options": {
-          "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+          "reduceOptions": { "values": false, "calcs": ["lastNotNull"] },
           "showThresholdLabels": false,
           "showThresholdMarkers": true
         },
@@ -484,9 +496,9 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 70, "color": "yellow"},
-                {"value": 85, "color": "red"}
+                { "value": 0, "color": "green" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "red" }
               ]
             },
             "unit": "percent"
@@ -503,7 +515,7 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "legendFormat": "Memory %"
           }
         ],
-        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+        "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
         "fieldConfig": {
           "defaults": {
             "max": 100,
@@ -511,9 +523,9 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 70, "color": "yellow"},
-                {"value": 85, "color": "red"}
+                { "value": 0, "color": "green" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "red" }
               ]
             },
             "unit": "percent"
@@ -530,7 +542,7 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "legendFormat": "Disk %"
           }
         ],
-        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
         "fieldConfig": {
           "defaults": {
             "max": 100,
@@ -538,9 +550,9 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 70, "color": "yellow"},
-                {"value": 85, "color": "red"}
+                { "value": 0, "color": "green" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "red" }
               ]
             },
             "unit": "percent"
@@ -557,7 +569,7 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "legendFormat": "Active"
           }
         ],
-        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 }
       },
       {
         "id": 5,
@@ -573,7 +585,7 @@ Create `monitoring-stack/dashboards/system-health.json`:
             "legendFormat": "TX - {{ device }}"
           }
         ],
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 6}
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 }
       }
     ]
   }
@@ -581,6 +593,7 @@ Create `monitoring-stack/dashboards/system-health.json`:
 ```
 
 Create `monitoring-stack/dashboards/sla-metrics.json`:
+
 ```json
 {
   "dashboard": {
@@ -598,7 +611,7 @@ Create `monitoring-stack/dashboards/sla-metrics.json`:
             "legendFormat": "Uptime %"
           }
         ],
-        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0},
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
         "fieldConfig": {
           "defaults": {
             "max": 100,
@@ -606,9 +619,9 @@ Create `monitoring-stack/dashboards/sla-metrics.json`:
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                {"value": 99, "color": "red"},
-                {"value": 99.5, "color": "yellow"},
-                {"value": 99.9, "color": "green"}
+                { "value": 99, "color": "red" },
+                { "value": 99.5, "color": "yellow" },
+                { "value": 99.9, "color": "green" }
               ]
             },
             "unit": "percent",
@@ -626,7 +639,7 @@ Create `monitoring-stack/dashboards/sla-metrics.json`:
             "legendFormat": "Budget %"
           }
         ],
-        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 0}
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 }
       },
       {
         "id": 3,
@@ -638,9 +651,9 @@ Create `monitoring-stack/dashboards/sla-metrics.json`:
             "legendFormat": "MTTR (min)"
           }
         ],
-        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 0},
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
         "fieldConfig": {
-          "defaults": {"unit": "m"}
+          "defaults": { "unit": "m" }
         }
       },
       {
@@ -654,7 +667,7 @@ Create `monitoring-stack/dashboards/sla-metrics.json`:
             "format": "table"
           }
         ],
-        "gridPos": {"h": 12, "w": 24, "x": 0, "y": 6}
+        "gridPos": { "h": 12, "w": 24, "x": 0, "y": 6 }
       }
     ]
   }
@@ -664,6 +677,7 @@ Create `monitoring-stack/dashboards/sla-metrics.json`:
 **2.6: Track Changes**
 
 Log all created files to changes log (for potential rollback):
+
 ```json
 {
   "phase": "monitoring-stack-setup",
@@ -688,12 +702,14 @@ Log all created files to changes log (for potential rollback):
 Run validation checks:
 
 **3.1: Validate File Structure**
+
 - Check all required files exist
 - Validate YAML syntax (prometheus.yml, alerts.yml, grafana configs)
 - Validate JSON syntax (dashboard files)
 - Verify supervisord.conf format
 
 **3.2: Validate Prometheus Configuration**
+
 ```bash
 # Check Prometheus config syntax
 /opt/prometheus/promtool check config /etc/prometheus/prometheus.yml
@@ -701,6 +717,7 @@ Run validation checks:
 ```
 
 **3.3: Validate Grafana Dashboards**
+
 ```bash
 # Validate JSON syntax
 for dashboard in monitoring-stack/dashboards/*.json; do
@@ -711,6 +728,7 @@ done
 **3.4: Overall Validation Status**
 
 Determine status:
+
 - ✅ PASSED: All files created, syntax valid
 - ⚠️ PARTIAL: Some validations skipped (Prometheus not installed locally)
 - ❌ FAILED: Syntax errors or missing files
@@ -719,15 +737,15 @@ Determine status:
 
 Use `generate-report-header` Skill, then create report following standard template:
 
-```markdown
+````markdown
 ---
 report_type: monitoring-stack-setup
-generated: {ISO-8601 timestamp}
-version: {version}
+generated: { ISO-8601 timestamp }
+version: { version }
 status: success|partial|failed
 agent: monitoring-stack-specialist
-duration: {duration}
-files_created: {count}
+duration: { duration }
+files_created: { count }
 ---
 
 # Monitoring Stack Setup Report
@@ -765,30 +783,35 @@ Built monitoring stack with Prometheus, Grafana, and Uptime Kuma using superviso
 ## Work Performed
 
 ### 1. Dockerfile Creation
+
 - **Status**: Complete
 - **File**: `monitoring-stack/Dockerfile`
 - **Services**: Prometheus 2.48.0, Grafana 10.2.2, Uptime Kuma 1.23.11
 - **Base Image**: ubuntu:22.04
 
 ### 2. Supervisord Configuration
+
 - **Status**: Complete
 - **File**: `monitoring-stack/supervisord.conf`
 - **Processes**: 3 services with auto-restart
 - **Logging**: Separate log files per service
 
 ### 3. Prometheus Configuration
+
 - **Status**: Complete
 - **Files**: `prometheus.yml`, `alerts.yml`
 - **Scrape Targets**: 7 jobs (API, WhatsApp, Telegram, Postgres, Redis, Node)
 - **Alert Rules**: 12 rules (CPU, memory, disk, service health)
 
 ### 4. Grafana Provisioning
+
 - **Status**: Complete
 - **Datasources**: Prometheus (default)
 - **Dashboards**: 3 JSON files
 - **Notifiers**: Telegram integration
 
 ### 5. Dashboard Design
+
 - **Status**: Complete
 - **Bot Performance**: Request rate, latency, errors, sessions
 - **System Health**: CPU/memory/disk gauges, network traffic
@@ -801,19 +824,23 @@ Built monitoring stack with Prometheus, Grafana, and Uptime Kuma using superviso
 ### Files Created (10)
 
 **Infrastructure**:
+
 - `monitoring-stack/Dockerfile`
 - `monitoring-stack/supervisord.conf`
 
 **Prometheus**:
+
 - `monitoring-stack/prometheus.yml`
 - `monitoring-stack/alerts.yml`
 
 **Grafana Provisioning**:
+
 - `monitoring-stack/grafana-datasources.yml`
 - `monitoring-stack/grafana-dashboards.yml`
 - `monitoring-stack/grafana-notifiers.yml`
 
 **Dashboards**:
+
 - `monitoring-stack/dashboards/bot-performance.json`
 - `monitoring-stack/dashboards/system-health.json`
 - `monitoring-stack/dashboards/sla-metrics.json`
@@ -823,23 +850,27 @@ Built monitoring stack with Prometheus, Grafana, and Uptime Kuma using superviso
 ## Validation Results
 
 ### File Structure Validation
+
 - **Status**: ✅ PASSED
 - All required files created
 - Directory structure correct
 
 ### YAML Syntax Validation
+
 - **Status**: {status}
 - prometheus.yml: {result}
 - alerts.yml: {result}
 - Grafana configs: {result}
 
 ### JSON Syntax Validation
+
 - **Status**: {status}
 - bot-performance.json: {result}
 - system-health.json: {result}
 - sla-metrics.json: {result}
 
 ### Overall Status
+
 **Validation**: {emoji} {status}
 
 {Explanation if partial/failed}
@@ -865,6 +896,7 @@ Built monitoring stack with Prometheus, Grafana, and Uptime Kuma using superviso
    TELEGRAM_BOT_TOKEN=your_bot_token
    TELEGRAM_CHAT_ID=your_chat_id
    ```
+````
 
 ### Recommended Actions
 
@@ -890,7 +922,8 @@ Built monitoring stack with Prometheus, Grafana, and Uptime Kuma using superviso
 - **Grafana Provisioning**: `monitoring-stack/grafana-*.yml`
 - **Dashboards**: `monitoring-stack/dashboards/*.json`
 - **Report**: {report-path}
-```
+
+````
 
 ### Phase 5: Return Control
 
@@ -918,17 +951,19 @@ Report summary and exit:
 **Report**: {report-path}
 
 Returning control to main session.
-```
+````
 
 ## Best Practices
 
 ### Prometheus Configuration
+
 - Use appropriate scrape intervals (15s default, adjust based on load)
 - Configure external labels for multi-cluster setup
 - Use recording rules for frequently-queried metrics
 - Implement proper service discovery when scaling
 
 ### Grafana Dashboards
+
 - Use variables for dynamic filtering
 - Implement proper time range controls
 - Use appropriate visualization types (gauge for %, graph for trends)
@@ -936,18 +971,21 @@ Returning control to main session.
 - Include descriptions and documentation
 
 ### Alert Rules
+
 - Define clear severity levels (critical, warning)
 - Use appropriate `for` durations to avoid flapping
 - Include actionable annotations
 - Test alert rules before production
 
 ### Supervisord Management
+
 - Configure proper restart policies
 - Implement log rotation
 - Use separate log files per service
 - Monitor supervisord health
 
 ### Security
+
 - Never commit Telegram tokens
 - Use environment variables for secrets
 - Implement Grafana authentication

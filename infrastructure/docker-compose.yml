@@ -22,7 +22,7 @@ services:
     container_name: buhbot-bot-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - ../backend/.env
     environment:
@@ -38,14 +38,14 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 30s
       timeout: 3s
       start_period: 10s
       retries: 3
     labels:
-      - "com.buhbot.service=bot-backend"
-      - "com.buhbot.description=Telegram bot and tRPC API server"
+      - 'com.buhbot.service=bot-backend'
+      - 'com.buhbot.description=Telegram bot and tRPC API server'
 
   # ==========================================================================
   # Frontend Service
@@ -65,7 +65,7 @@ services:
     container_name: buhbot-frontend
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - '3001:3000'
     env_file:
       - ../frontend/.env.local
     environment:
@@ -78,14 +78,18 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\" || exit 1"]
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "require(''http'').get(''http://localhost:3000/api/health'', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1',
+        ]
       interval: 30s
       timeout: 3s
       start_period: 40s
       retries: 3
     labels:
-      - "com.buhbot.service=frontend"
-      - "com.buhbot.description=Next.js admin panel"
+      - 'com.buhbot.service=frontend'
+      - 'com.buhbot.description=Next.js admin panel'
 
   # ==========================================================================
   # Redis Service
@@ -104,14 +108,14 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       start_period: 5s
       retries: 3
     labels:
-      - "com.buhbot.service=redis"
-      - "com.buhbot.description=Redis cache and queue (Bull MQ)"
+      - 'com.buhbot.service=redis'
+      - 'com.buhbot.description=Redis cache and queue (Bull MQ)'
 
   # ==========================================================================
   # Monitoring Stack Service
@@ -128,9 +132,9 @@ services:
     container_name: buhbot-monitoring-stack
     restart: unless-stopped
     ports:
-      - "9090:9090"  # Prometheus
-      - "3002:3000"  # Grafana (mapped to 3002 on host to avoid conflict)
-      - "3003:3001"  # Uptime Kuma (mapped to 3003 on host)
+      - '9090:9090' # Prometheus
+      - '3002:3000' # Grafana (mapped to 3002 on host to avoid conflict)
+      - '3003:3001' # Uptime Kuma (mapped to 3003 on host)
     volumes:
       - prometheus-data:/prometheus
       - grafana-data:/var/lib/grafana
@@ -140,14 +144,14 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      test: ['CMD', '/usr/local/bin/healthcheck.sh']
       interval: 30s
       timeout: 10s
       start_period: 60s
       retries: 3
     labels:
-      - "com.buhbot.service=monitoring-stack"
-      - "com.buhbot.description=Prometheus + Grafana + Uptime Kuma"
+      - 'com.buhbot.service=monitoring-stack'
+      - 'com.buhbot.description=Prometheus + Grafana + Uptime Kuma'
 
   # ==========================================================================
   # Nginx Service
@@ -163,8 +167,8 @@ services:
     container_name: buhbot-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     depends_on:
       bot-backend:
         condition: service_healthy
@@ -179,14 +183,18 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/health || wget -q --spider http://localhost/health || exit 1"]
+      test:
+        [
+          'CMD-SHELL',
+          'curl -f http://localhost/health || wget -q --spider http://localhost/health || exit 1',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 10s
       retries: 3
     labels:
-      - "com.buhbot.service=nginx"
-      - "com.buhbot.description=Reverse proxy with HTTPS termination"
+      - 'com.buhbot.service=nginx'
+      - 'com.buhbot.description=Reverse proxy with HTTPS termination'
 
 # ============================================================================
 # Networks
@@ -196,8 +204,8 @@ networks:
     driver: bridge
     name: buhbot-network
     labels:
-      - "com.buhbot.network=main"
-      - "com.buhbot.description=Main bridge network for BuhBot services"
+      - 'com.buhbot.network=main'
+      - 'com.buhbot.description=Main bridge network for BuhBot services'
 
 # ============================================================================
 # Volumes
@@ -207,33 +215,33 @@ volumes:
     driver: local
     name: buhbot-redis-data
     labels:
-      - "com.buhbot.volume=redis-data"
-      - "com.buhbot.description=Redis persistent storage (AOF)"
+      - 'com.buhbot.volume=redis-data'
+      - 'com.buhbot.description=Redis persistent storage (AOF)'
 
   prometheus-data:
     driver: local
     name: buhbot-prometheus-data
     labels:
-      - "com.buhbot.volume=prometheus-data"
-      - "com.buhbot.description=Prometheus metrics storage (TSDB)"
+      - 'com.buhbot.volume=prometheus-data'
+      - 'com.buhbot.description=Prometheus metrics storage (TSDB)'
 
   grafana-data:
     driver: local
     name: buhbot-grafana-data
     labels:
-      - "com.buhbot.volume=grafana-data"
-      - "com.buhbot.description=Grafana database and dashboards"
+      - 'com.buhbot.volume=grafana-data'
+      - 'com.buhbot.description=Grafana database and dashboards'
 
   uptime-kuma-data:
     driver: local
     name: buhbot-uptime-kuma-data
     labels:
-      - "com.buhbot.volume=uptime-kuma-data"
-      - "com.buhbot.description=Uptime Kuma monitors database"
+      - 'com.buhbot.volume=uptime-kuma-data'
+      - 'com.buhbot.description=Uptime Kuma monitors database'
 
   certbot-data:
     driver: local
     name: buhbot-certbot-data
     labels:
-      - "com.buhbot.volume=certbot-data"
+      - 'com.buhbot.volume=certbot-data'
       - "com.buhbot.description=Let's Encrypt SSL certificates"

@@ -22,6 +22,7 @@ Detection → Validate → Fix by Priority → Verify → Repeat if needed
 ## Phase 1: Pre-flight
 
 1. **Setup directories**:
+
    ```bash
    mkdir -p .tmp/current/{plans,changes,backups}
    ```
@@ -33,12 +34,16 @@ Detection → Validate → Fix by Priority → Verify → Repeat if needed
 3. **Initialize TodoWrite**:
    ```json
    [
-     {"content": "Bug detection", "status": "in_progress", "activeForm": "Detecting bugs"},
-     {"content": "Fix critical bugs", "status": "pending", "activeForm": "Fixing critical bugs"},
-     {"content": "Fix high priority bugs", "status": "pending", "activeForm": "Fixing high bugs"},
-     {"content": "Fix medium priority bugs", "status": "pending", "activeForm": "Fixing medium bugs"},
-     {"content": "Fix low priority bugs", "status": "pending", "activeForm": "Fixing low bugs"},
-     {"content": "Verification scan", "status": "pending", "activeForm": "Verifying fixes"}
+     { "content": "Bug detection", "status": "in_progress", "activeForm": "Detecting bugs" },
+     { "content": "Fix critical bugs", "status": "pending", "activeForm": "Fixing critical bugs" },
+     { "content": "Fix high priority bugs", "status": "pending", "activeForm": "Fixing high bugs" },
+     {
+       "content": "Fix medium priority bugs",
+       "status": "pending",
+       "activeForm": "Fixing medium bugs"
+     },
+     { "content": "Fix low priority bugs", "status": "pending", "activeForm": "Fixing low bugs" },
+     { "content": "Verification scan", "status": "pending", "activeForm": "Verifying fixes" }
    ]
    ```
 
@@ -64,6 +69,7 @@ prompt: |
 ```
 
 **After bug-hunter returns**:
+
 1. Read `bug-hunting-report.md`
 2. Parse bug counts by priority
 3. If zero bugs → skip to Final Summary
@@ -95,6 +101,7 @@ pnpm build
 2. **Update TodoWrite**: mark current priority in_progress
 
 3. **Invoke bug-fixer** via Task tool:
+
    ```
    subagent_type: "bug-fixer"
    description: "Fix {priority} bugs"
@@ -112,6 +119,7 @@ pnpm build
    ```
 
 4. **Quality Gate** (inline):
+
    ```bash
    pnpm type-check
    pnpm build
@@ -133,6 +141,7 @@ After all priorities fixed:
 1. **Update TodoWrite**: mark verification in_progress
 
 2. **Invoke bug-hunter** (verification mode):
+
    ```
    subagent_type: "bug-hunter"
    description: "Verification scan"
@@ -164,21 +173,25 @@ Generate summary for user:
 **Status**: {SUCCESS/PARTIAL}
 
 ### Results
+
 - Found: {total} bugs
 - Fixed: {fixed} ({percentage}%)
 - Remaining: {remaining}
 
 ### By Priority
+
 - Critical: {fixed}/{total}
 - High: {fixed}/{total}
 - Medium: {fixed}/{total}
 - Low: {fixed}/{total}
 
 ### Validation
+
 - Type Check: {status}
 - Build: {status}
 
 ### Artifacts
+
 - Detection: `bug-hunting-report.md`
 - Fixes: `bug-fixes-implemented.md`
 ```
@@ -188,6 +201,7 @@ Generate summary for user:
 ## Error Handling
 
 **If quality gate fails**:
+
 ```
 Rollback available: .tmp/current/changes/bug-changes.json
 
@@ -198,6 +212,7 @@ To rollback:
 ```
 
 **If worker fails**:
+
 - Report error to user
 - Suggest manual intervention
 - Exit workflow
@@ -206,13 +221,13 @@ To rollback:
 
 ## Key Differences from Old Approach
 
-| Old (Orchestrator Agent) | New (Inline Skill) |
-|--------------------------|-------------------|
-| 9+ orchestrator calls | 0 orchestrator calls |
-| ~1400 lines (cmd + agent) | ~150 lines |
-| Context reload each call | Single session context |
-| Plan files for each phase | Direct execution |
-| ~10,000+ tokens overhead | ~500 tokens |
+| Old (Orchestrator Agent)  | New (Inline Skill)     |
+| ------------------------- | ---------------------- |
+| 9+ orchestrator calls     | 0 orchestrator calls   |
+| ~1400 lines (cmd + agent) | ~150 lines             |
+| Context reload each call  | Single session context |
+| Plan files for each phase | Direct execution       |
+| ~10,000+ tokens overhead  | ~500 tokens            |
 
 ---
 

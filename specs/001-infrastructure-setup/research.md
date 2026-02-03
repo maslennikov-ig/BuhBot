@@ -15,6 +15,7 @@ This document consolidates technical research for infrastructure setup decisions
 ### Decision: **Prisma**
 
 ### Rationale:
+
 - **Type Safety**: Prisma generates TypeScript types automatically from schema, reducing runtime errors
 - **Developer Experience**: Intuitive schema syntax, excellent VS Code integration, auto-completion
 - **Migration Management**: Declarative migrations with `prisma migrate`, easy rollback support
@@ -23,11 +24,13 @@ This document consolidates technical research for infrastructure setup decisions
 - **Community**: Active development, extensive documentation, large ecosystem
 
 ### Alternatives Considered:
+
 - **TypeORM**: Decorator-based, more complex setup, less type-safe than Prisma
 - **Drizzle ORM**: Lightweight but smaller community, less mature for production use
 - **Raw SQL**: Maximum control but high maintenance burden, no type safety
 
 ### Implementation Notes:
+
 - Use Prisma schema at `backend/prisma/schema.prisma`
 - Configure connection string via `DATABASE_URL` environment variable (Supabase connection string)
 - Enable Prisma Studio for database inspection during development
@@ -40,6 +43,7 @@ This document consolidates technical research for infrastructure setup decisions
 ### Decision: **Telegraf**
 
 ### Rationale:
+
 - **Modern Architecture**: Middleware-based design, cleaner separation of concerns
 - **Scene Management**: Built-in conversation flow management (multi-step dialogs)
 - **TypeScript Support**: First-class TypeScript support with accurate type definitions
@@ -48,10 +52,12 @@ This document consolidates technical research for infrastructure setup decisions
 - **Active Maintenance**: Regular updates, responsive maintainers, production-ready
 
 ### Alternatives Considered:
+
 - **node-telegram-bot-api**: Older, callback-based API, less TypeScript-friendly
 - **grammY**: Modern but smaller community, less battle-tested in production
 
 ### Implementation Notes:
+
 - Use Telegraf v4.15+
 - Configure webhook mode (not polling) for VDS deployment
 - Implement middleware for: logging, error handling, rate limiting, analytics
@@ -65,6 +71,7 @@ This document consolidates technical research for infrastructure setup decisions
 ### Decision: **tRPC** (with REST fallback for Telegram webhook)
 
 ### Rationale:
+
 - **Type Safety**: End-to-end type safety between backend and frontend (no code generation)
 - **Developer Velocity**: Faster development with autocomplete, refactoring support
 - **BuhBot Context**: Admin panel is internal tool with controlled client (Next.js), perfect for tRPC
@@ -72,10 +79,12 @@ This document consolidates technical research for infrastructure setup decisions
 - **Performance**: Batching, caching, optimistic updates out of the box
 
 ### Alternatives Considered:
+
 - **REST API**: More universal but requires manual typing, API versioning overhead
 - **GraphQL**: Overkill for internal admin panel, complex caching strategies
 
 ### Implementation Notes:
+
 - **Telegram Webhook**: Use Express.js REST endpoint (Telegraf handles webhook validation)
 - **Admin Panel API**: Use tRPC for all admin panel operations
 - tRPC router structure: `settings`, `analytics`, `templates`, `feedback`
@@ -87,6 +96,7 @@ This document consolidates technical research for infrastructure setup decisions
 ## 4. Docker Base Images
 
 ### Decision:
+
 - **Node.js Backend**: `node:20-alpine` (minimal, secure, 40MB compressed)
 - **Next.js Frontend**: `node:20-alpine` for build, `node:20-alpine` for runtime (or static export to Nginx)
 - **Redis**: `redis:7-alpine` (official, well-maintained)
@@ -94,11 +104,13 @@ This document consolidates technical research for infrastructure setup decisions
 - **Monitoring Stack**: Custom multi-service image based on `ubuntu:22.04` (Prometheus + Grafana + Uptime Kuma)
 
 ### Rationale:
+
 - **Alpine Linux**: Minimal attack surface, smaller image sizes, faster deployments
 - **Node.js 20**: LTS version with long-term support until 2026-04-30
 - **Official Images**: Security updates, best practices, community validation
 
 ### Implementation Notes:
+
 - Use multi-stage builds for backend/frontend (build stage + runtime stage)
 - Non-root user in all containers (security best practice)
 - Health checks for all services (Docker Compose `healthcheck` directive)
@@ -111,12 +123,14 @@ This document consolidates technical research for infrastructure setup decisions
 ### Decision: **Shared monitoring-stack container** (Prometheus + Grafana + Uptime Kuma)
 
 ### Rationale:
+
 - **Resource Efficiency**: Single VDS with limited resources (4-8 GB RAM) - bundling reduces overhead
 - **Operational Simplicity**: Single container restart instead of managing 3 separate services
 - **Network Optimization**: All monitoring tools share local network, reduced latency
 - **Clarification Context**: User explicitly chose Option A in clarification session
 
 ### Implementation Details:
+
 - **Base Image**: `ubuntu:22.04` with supervisord for process management
 - **Prometheus**: Port 9090 (internal), scrapes metrics from bot, redis, nginx
 - **Grafana**: Port 3000 (exposed via Nginx reverse proxy at `/grafana`)
@@ -125,14 +139,15 @@ This document consolidates technical research for infrastructure setup decisions
 - **Healthcheck**: Combined script checking all 3 services via HTTP endpoints
 
 ### Configuration:
+
 ```yaml
 # docker-compose.yml snippet
 monitoring-stack:
   build: ./infrastructure/monitoring
   ports:
-    - "9090:9090"  # Prometheus (internal)
-    - "3000:3000"  # Grafana
-    - "3001:3001"  # Uptime Kuma
+    - '9090:9090' # Prometheus (internal)
+    - '3000:3000' # Grafana
+    - '3001:3001' # Uptime Kuma
   volumes:
     - prometheus-data:/prometheus
     - grafana-data:/var/lib/grafana
@@ -147,16 +162,19 @@ monitoring-stack:
 ### Decision: **Certbot with Nginx plugin** (automated renewal)
 
 ### Rationale:
+
 - **Industry Standard**: Most widely used ACME client, battle-tested in production
 - **Nginx Integration**: Official nginx plugin for seamless certificate installation
 - **Auto-Renewal**: Systemd timer or cron job for automatic 90-day renewals
 - **Wildcard Support**: Can issue wildcard certificates if needed for subdomains
 
 ### Alternatives Considered:
+
 - **acme.sh**: Shell script alternative, less integration with Nginx
 - **Traefik**: Would require replacing Nginx, too complex for this use case
 
 ### Implementation Notes:
+
 - Install certbot via Docker container (avoid VDS package dependencies)
 - Initial certificate issuance: `certbot certonly --webroot --webroot-path=/var/www/certbot`
 - Renewal cron job: `0 0,12 * * * docker exec nginx-certbot certbot renew --quiet && docker exec nginx nginx -s reload`
@@ -170,12 +188,14 @@ monitoring-stack:
 ### Decision: **Environment Variables via `.env` files** (not committed to git)
 
 ### Rationale:
+
 - **Simplicity**: No external secret management service needed for Phase 1 (single VDS)
 - **Docker Compose Integration**: Native support via `env_file` directive
 - **Security**: `.env` files excluded via `.gitignore`, only `.env.example` committed
 - **Constitution Compliance**: Aligns with "No hardcoded credentials" requirement
 
 ### Secrets Inventory:
+
 ```bash
 # .env.production (example structure)
 # Supabase
@@ -199,6 +219,7 @@ GRAFANA_ADMIN_PASSWORD="[SECURE_PASSWORD]"
 ```
 
 ### Implementation Notes:
+
 - Use `dotenv` package (Node.js) to load variables at runtime
 - Validate required environment variables at application startup (fail-fast)
 - Separate `.env` files for dev/staging/production
@@ -209,15 +230,18 @@ GRAFANA_ADMIN_PASSWORD="[SECURE_PASSWORD]"
 ## 8. Backup Strategy
 
 ### Decision:
+
 - **Supabase**: Automatic daily backups (Free tier) + manual PITR exports before schema changes
 - **VDS**: Weekly cron job backing up Docker volumes + configs to `/var/backups/` + optional S3 upload
 
 ### Rationale:
+
 - **Layered Defense**: Database backups (Supabase) + application state backups (VDS)
 - **RPO=24h**: Daily Supabase backups + weekly VDS backups meet recovery point objective
 - **RTO=4h**: Documented restore procedures enable 4-hour recovery time objective
 
 ### Backup Script Design:
+
 ```bash
 #!/bin/bash
 # /infrastructure/scripts/backup.sh
@@ -239,6 +263,7 @@ find $BACKUP_DIR -name "*.tar.gz" -mtime +28 -delete
 ```
 
 ### Cron Configuration:
+
 ```cron
 # Weekly backups: Sunday 3 AM Moscow time
 0 3 * * 0 /infrastructure/scripts/backup.sh >> /var/log/backup.log 2>&1
@@ -251,30 +276,32 @@ find $BACKUP_DIR -name "*.tar.gz" -mtime +28 -delete
 ### Decision: Custom metrics + Node.js runtime metrics + Redis metrics
 
 ### Metrics Inventory:
+
 ```typescript
 // Bot Application Metrics
-bot_messages_received_total       // Counter: total incoming messages
-bot_messages_processed_total      // Counter: successfully processed messages
-bot_message_processing_duration   // Histogram: processing time in seconds
-bot_webhook_signature_failures    // Counter: invalid signature attempts
+bot_messages_received_total; // Counter: total incoming messages
+bot_messages_processed_total; // Counter: successfully processed messages
+bot_message_processing_duration; // Histogram: processing time in seconds
+bot_webhook_signature_failures; // Counter: invalid signature attempts
 
 // Redis Queue Metrics (BullMQ)
-redis_queue_length                // Gauge: pending jobs in queue
-redis_queue_processing_time       // Histogram: job processing duration
-redis_connection_errors           // Counter: Redis connection failures
+redis_queue_length; // Gauge: pending jobs in queue
+redis_queue_processing_time; // Histogram: job processing duration
+redis_connection_errors; // Counter: Redis connection failures
 
 // Supabase Metrics
-supabase_query_duration           // Histogram: database query latency
-supabase_connection_errors        // Counter: failed database connections
-supabase_connection_pool_size     // Gauge: active connections
+supabase_query_duration; // Histogram: database query latency
+supabase_connection_errors; // Counter: failed database connections
+supabase_connection_pool_size; // Gauge: active connections
 
 // System Metrics (from node-exporter or custom)
-system_cpu_usage_percent          // Gauge: CPU utilization
-system_memory_usage_bytes         // Gauge: RAM usage
-system_disk_usage_percent         // Gauge: Disk utilization
+system_cpu_usage_percent; // Gauge: CPU utilization
+system_memory_usage_bytes; // Gauge: RAM usage
+system_disk_usage_percent; // Gauge: Disk utilization
 ```
 
 ### Implementation:
+
 - Use `prom-client` library in Node.js backend
 - Expose `/metrics` endpoint on port 9100 (scraped by Prometheus)
 - Configure Prometheus scrape interval: 15 seconds (per spec PM-006)
@@ -286,6 +313,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
 ### Decision: 3 dashboards matching spec requirements
 
 ### Dashboard 1: Bot Performance
+
 - **Purpose**: Monitor bot responsiveness and message processing
 - **Panels**:
   1. Messages Received (rate over 5m) - line graph
@@ -295,6 +323,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
   5. Error Rate (% of failed messages) - line graph with 5% threshold
 
 ### Dashboard 2: System Health
+
 - **Purpose**: Monitor VDS resource utilization and service health
 - **Panels**:
   1. CPU Usage - gauge (alert at 80%)
@@ -305,6 +334,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
   6. Supabase Query Latency - histogram (p95 < 100ms target)
 
 ### Dashboard 3: SLA Metrics
+
 - **Purpose**: Track SLA compliance (response times, uptime)
 - **Panels**:
   1. Uptime % (last 7 days) - stat panel with 99.5% target
@@ -322,6 +352,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
 ### Decision: Two-workflow approach (CI + CD with manual approval)
 
 ### Workflow 1: CI (Continuous Integration)
+
 - **Trigger**: Pull request to `main` branch
 - **Jobs**:
   1. **Lint**: Run ESLint + Prettier
@@ -331,6 +362,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
   5. **Security Scan**: Run `npm audit` for dependency vulnerabilities
 
 ### Workflow 2: CD (Continuous Deployment)
+
 - **Trigger**: Push to `main` branch (after PR merge)
 - **Jobs**:
   1. **Build**: Build production Docker images, push to Docker Hub or GitHub Container Registry
@@ -340,6 +372,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
   5. **Rollback on Failure**: Automatic rollback to previous images if health check fails
 
 ### Implementation Notes:
+
 - Store SSH private key in GitHub Secrets (`VDS_SSH_KEY`)
 - Use GitHub Environments for approval gates (e.g., `production` environment)
 - Zero-downtime deployment via graceful shutdown (SIGTERM, 30-second timeout)
@@ -354,6 +387,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
 ### Recovery Scenarios:
 
 #### Scenario 1: VDS Complete Failure
+
 1. **Provision New VDS** (30 min): FirstVDS dashboard, same specs (2-4 vCPU, 4-8 GB RAM)
 2. **Install Docker + Docker Compose** (10 min): Run bootstrap script
 3. **Restore Configs** (15 min): Download latest backup from `/var/backups/` or S3
@@ -364,6 +398,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
 8. **Total**: ~2 hours (within RTO)
 
 #### Scenario 2: Database Corruption (Supabase)
+
 1. **Identify Last Good Backup** (10 min): Check Supabase dashboard, daily backups
 2. **Restore Database** (30 min): Supabase dashboard → Backups → Restore
 3. **Verify Data Integrity** (20 min): Query critical tables, check row counts
@@ -371,6 +406,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
 5. **Total**: ~1 hour (within RTO)
 
 #### Scenario 3: Let's Encrypt Certificate Expired
+
 1. **Manual Certificate Renewal** (5 min): `docker exec nginx-certbot certbot renew --force-renewal`
 2. **Reload Nginx** (1 min): `docker exec nginx nginx -s reload`
 3. **Verify HTTPS** (2 min): `curl -I https://bot.example.com`
@@ -385,6 +421,7 @@ system_disk_usage_percent         // Gauge: Disk utilization
 ### Decision: **Nginx rate limiting** (IP-based) + **Application-level throttling** (Telegraf middleware)
 
 ### Nginx Rate Limiting:
+
 ```nginx
 # nginx.conf
 limit_req_zone $binary_remote_addr zone=webhook_limit:10m rate=100r/m;
@@ -396,20 +433,22 @@ location /webhook {
 ```
 
 ### Application-Level Throttling:
+
 ```typescript
 // Telegraf middleware
 import rateLimit from 'telegraf-ratelimit';
 
 const limiter = rateLimit({
   window: 60000, // 1 minute
-  limit: 10,     // 10 messages per user per minute
-  onLimitExceeded: (ctx) => ctx.reply('Слишком много запросов, подождите минуту.')
+  limit: 10, // 10 messages per user per minute
+  onLimitExceeded: (ctx) => ctx.reply('Слишком много запросов, подождите минуту.'),
 });
 
 bot.use(limiter);
 ```
 
 ### Rationale:
+
 - **Defense in Depth**: Nginx blocks IP-based floods, Telegraf blocks user-based spam
 - **Telegram API Compliance**: Respects 30 messages/second bot-wide limit
 - **User Experience**: Polite error messages in Russian for legitimate users hitting limits
@@ -419,6 +458,7 @@ bot.use(limiter);
 ## Research Summary
 
 All technical decisions resolved. Key choices:
+
 - **ORM**: Prisma (type safety, Supabase integration)
 - **Bot**: Telegraf (modern, TypeScript-first)
 - **API**: tRPC (end-to-end type safety for admin panel)

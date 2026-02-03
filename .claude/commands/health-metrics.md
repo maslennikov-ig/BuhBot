@@ -15,6 +15,7 @@ Generate comprehensive monthly metrics report showing agent performance, quality
 **User can specify**: Previous month or specific month
 
 **Examples**:
+
 - `/health-metrics` → Current month (2025-10)
 - `/health-metrics 2025-09` → September 2025
 - `/health-metrics last-month` → Previous month
@@ -22,21 +23,25 @@ Generate comprehensive monthly metrics report showing agent performance, quality
 ### Step 2: Read Metrics Files
 
 **Current Month**:
+
 ```
 File: .tmp/metrics/YYYY-MM.json
 ```
 
 **Previous Month** (for comparison):
+
 ```
 File: .tmp/metrics/YYYY-(MM-1).json
 ```
 
 **If file doesn't exist**:
+
 - Report: "No metrics data for {month}"
 - Suggest: "Run agent workflows to generate metrics first"
 - Exit gracefully
 
 **If file corrupt**:
+
 - Attempt to read backup: `.tmp/metrics/YYYY-MM.json.backup`
 - If backup also corrupt: Report error and exit
 - Log corruption incident
@@ -48,11 +53,13 @@ Calculate key insights from metrics data.
 #### Agent Performance Analysis
 
 **For each agent**:
+
 - **Success Rate**: `(successes / invocations) * 100`
 - **Performance Trend**: Compare avg_duration vs previous month
 - **Value Delivered**: Count of bugs/vulnerabilities/issues found
 
 **Categorize Agents**:
+
 - **Top Performers**: Success rate >= 90%
 - **Needs Improvement**: Success rate < 70%
 - **Underutilized**: Invocations < 5 per month
@@ -60,6 +67,7 @@ Calculate key insights from metrics data.
 #### Orchestrator Performance Analysis
 
 **For each orchestrator**:
+
 - **Success Rate**: `(completed / runs) * 100`
 - **Abort Rate**: `(aborted / runs) * 100`
 - **Iteration Efficiency**: avg_iterations (lower is better)
@@ -68,6 +76,7 @@ Calculate key insights from metrics data.
 #### Quality Gates Analysis
 
 **For each gate (type-check, build, tests)**:
+
 - **Pass Rate**: Already calculated in metrics
 - **Trend**: Compare pass rate vs previous month
 - **Flag Concerns**: Pass rate < 85%
@@ -75,6 +84,7 @@ Calculate key insights from metrics data.
 #### Complexity Distribution
 
 **Analyze complexity levels**:
+
 - **Percentage by level**: Calculate % for trivial/moderate/high/critical
 - **Research Usage**: % of high/critical that triggered research
 - **Average Score**: Indicates overall task difficulty
@@ -82,6 +92,7 @@ Calculate key insights from metrics data.
 #### Context7 Integration Health
 
 **Metrics**:
+
 - **Success Rate**: `(successful_queries / total_queries) * 100`
 - **Availability**: `100 - (unavailable_events / total_invocations * 100)`
 - **Performance**: avg_response_time_ms
@@ -90,15 +101,18 @@ Calculate key insights from metrics data.
 #### Behavioral OS Health
 
 **Fallback Frequency**:
+
 - Count total fallbacks
 - Calculate % of invocations that triggered fallbacks
 - Flag if any fallback > 5% frequency
 
 **Emergency Incidents**:
+
 - Count each emergency type
 - Flag if any emergency occurred (should be rare)
 
 **Prime Directive Violations**:
+
 - Should be 0 (self-diagnostics prevent violations)
 - If > 0: Critical issue, needs investigation
 
@@ -107,6 +121,7 @@ Calculate key insights from metrics data.
 Compare current month vs previous month (if available).
 
 **Metrics to Compare**:
+
 - Total invocations (growth indicator)
 - Overall success rate (reliability trend)
 - Quality gate pass rates (code health trend)
@@ -114,6 +129,7 @@ Compare current month vs previous month (if available).
 - Research phases triggered (complexity trend)
 
 **Change Indicators**:
+
 - ⬆️ Increase
 - ⬇️ Decrease
 - ➡️ No change (within 2%)
@@ -123,16 +139,19 @@ Compare current month vs previous month (if available).
 Based on data analysis, provide actionable recommendations.
 
 **High Priority** (Success rate < 70%, emergency incidents):
+
 - Specific agent improvements needed
 - Quality gate investigations required
 - System reliability issues
 
 **Medium Priority** (Pass rate < 85%, underutilization):
+
 - Agent discoverability improvements
 - Documentation updates
 - Workflow optimizations
 
 **Low Priority** (Nice-to-have optimizations):
+
 - Token efficiency improvements
 - Performance optimizations
 - Feature requests
@@ -142,12 +161,13 @@ Based on data analysis, provide actionable recommendations.
 **Location**: `docs/reports/metrics/YYYY-MM-ecosystem-health.md`
 
 **Directory Creation**:
+
 - If `docs/reports/metrics/` doesn't exist: create it
 - Ensure parent directories exist
 
 **Report Format**:
 
-```markdown
+````markdown
 # Agent Ecosystem Health Report — {Month} {Year}
 
 **Generated**: {timestamp}
@@ -161,16 +181,19 @@ Based on data analysis, provide actionable recommendations.
 **Overall Health**: ✅ **GOOD** | ⚠️ **FAIR** | ❌ **POOR** ({success_rate}% success rate)
 
 **Determination**:
-- >= 90% success rate: GOOD ✅
-- >= 75% success rate: FAIR ⚠️
+
+- > = 90% success rate: GOOD ✅
+- > = 75% success rate: FAIR ⚠️
 - < 75% success rate: POOR ❌
 
 **Highlights**:
+
 - Most used agent: {agent_name} ({invocations} invocations)
 - Best performer: {agent_name} ({success_rate}% success rate)
 - Top concern: {agent_name} ({issue_description})
 
 **Key Metrics**:
+
 - Total bugs found: {count}
 - Total vulnerabilities found: {count}
 - Context7 queries: {count} ({success_rate}% success rate)
@@ -185,6 +208,7 @@ Based on data analysis, provide actionable recommendations.
 For each agent with >= 90% success rate:
 
 #### {Agent Name}
+
 - **Success Rate**: {percent}% ({successes}/{invocations})
 - **Avg Duration**: {minutes} minutes
 - **Value**: {metric description}
@@ -196,6 +220,7 @@ For each agent with >= 90% success rate:
 For each agent with < 70% success rate:
 
 #### {Agent Name}
+
 - **Success Rate**: {percent}% ({successes}/{invocations})
 - **Avg Duration**: {minutes} minutes
 - **Failures**: {count} ({failure_rate}%)
@@ -207,6 +232,7 @@ For each agent with < 70% success rate:
 For each agent with < 5 invocations:
 
 #### {Agent Name}
+
 - **Invocations**: Only {count} (lowest usage)
 - **Success Rate**: {percent}% ({successes}/{invocations})
 - **Value**: {metric description}
@@ -216,11 +242,12 @@ For each agent with < 5 invocations:
 
 ## Orchestrator Performance
 
-| Orchestrator | Runs | Completed | Aborted | Success Rate | Avg Duration | Avg Iterations |
-|--------------|------|-----------|---------|--------------|--------------|----------------|
-| {name} | {runs} | {completed} | {aborted} | {percent}% | {minutes} min | {iterations} |
+| Orchestrator | Runs   | Completed   | Aborted   | Success Rate | Avg Duration  | Avg Iterations |
+| ------------ | ------ | ----------- | --------- | ------------ | ------------- | -------------- |
+| {name}       | {runs} | {completed} | {aborted} | {percent}%   | {minutes} min | {iterations}   |
 
 **Insights**:
+
 - {Analysis of orchestrator patterns}
 - {Concerns about abort rates or iterations}
 - {Recommendations for improvements}
@@ -229,19 +256,21 @@ For each agent with < 5 invocations:
 
 ## Quality Gates
 
-| Gate | Runs | Passes | Failures | Pass Rate | Avg Duration |
-|------|------|--------|----------|-----------|--------------|
-| type-check | {runs} | {passes} | {failures} | {percent}% {status} | {seconds}s |
-| build | {runs} | {passes} | {failures} | {percent}% {status} | {seconds}s |
-| tests | {runs} | {passes} | {failures} | {percent}% {status} | {seconds}s |
+| Gate       | Runs   | Passes   | Failures   | Pass Rate           | Avg Duration |
+| ---------- | ------ | -------- | ---------- | ------------------- | ------------ |
+| type-check | {runs} | {passes} | {failures} | {percent}% {status} | {seconds}s   |
+| build      | {runs} | {passes} | {failures} | {percent}% {status} | {seconds}s   |
+| tests      | {runs} | {passes} | {failures} | {percent}% {status} | {seconds}s   |
 
 **Status Indicators**:
+
 - ✅ Pass rate >= 90%
 - ⚠️ Pass rate 75-89%
 - ❌ Pass rate < 75%
 
 **Concerns**:
 For each gate with pass rate < 85%:
+
 - **{Gate Name}**: {percent}% pass rate (below 90% target)
   - Investigation needed: {reason for failures}
   - Recommendation: {specific action}
@@ -252,19 +281,21 @@ For each gate with pass rate < 85%:
 
 **Tasks Analyzed**: {count}
 
-| Level | Count | % | Research Triggered |
-|-------|-------|---|--------------------|
-| Trivial (0-3) | {count} | {percent}% | {count} |
-| Moderate (4-6) | {count} | {percent}% | {count} |
-| High (7-8) | {count} | {percent}% | {count} |
-| Critical (9-10) | {count} | {percent}% | {count} |
+| Level           | Count   | %          | Research Triggered |
+| --------------- | ------- | ---------- | ------------------ |
+| Trivial (0-3)   | {count} | {percent}% | {count}            |
+| Moderate (4-6)  | {count} | {percent}% | {count}            |
+| High (7-8)      | {count} | {percent}% | {count}            |
+| Critical (9-10) | {count} | {percent}% | {count}            |
 
 **Insights**:
+
 - Most tasks are {level} complexity ({percent}%)
 - Research phase used {appropriately|too often|too rarely}
 - Avg complexity score: {score} ({level})
 
 **Analysis**:
+
 - If avg score > 6: Codebase has many complex issues, consider dedicated research time
 - If avg score < 4: Mostly simple fixes, direct workflow is efficient
 - If research triggered for trivial/moderate: Scoring calibration needed
@@ -279,6 +310,7 @@ For each gate with pass rate < 85%:
 **Unavailable Events**: {count} ({percent}% of time)
 
 **Top Libraries Queried**:
+
 1. {Library}: {count} queries ({percent}%)
 2. {Library}: {count} queries ({percent}%)
 3. {Library}: {count} queries ({percent}%)
@@ -288,12 +320,14 @@ For each gate with pass rate < 85%:
 **Performance**: {EXCELLENT|GOOD|FAIR|POOR}
 
 **Determination**:
+
 - Success rate >= 95% AND response time < 2s: EXCELLENT ✅
 - Success rate >= 90% AND response time < 3s: GOOD ✅
 - Success rate >= 80% OR response time < 5s: FAIR ⚠️
 - Otherwise: POOR ❌
 
 **Concerns** (if any):
+
 - If success rate < 95%: {analysis and recommendation}
 - If response time > 2s: {analysis and recommendation}
 - If unavailable > 1%: {analysis and recommendation}
@@ -307,11 +341,13 @@ For each gate with pass rate < 85%:
 **Full MCP Mode**: {count} ({percent}%)
 
 **Token Savings**:
+
 - Avg tokens saved per conversation: ~{count}
 - Total tokens saved (estimated): ~{count}
 - **ROI**: Minimal MCP mode reduces token usage by ~{percent}% per conversation
 
 **Analysis**:
+
 - {percent}% of conversations use minimal mode (target: >85%)
 - Estimated savings: {count} tokens/month
 - {Recommendations for optimizing MCP usage}
@@ -322,45 +358,49 @@ For each gate with pass rate < 85%:
 
 ### Fallback Strategies Triggered
 
-| Fallback | Count | % of Invocations |
-|----------|-------|------------------|
-| Context7 unavailable | {count} | {percent}% |
-| Quality gate failure | {count} | {percent}% |
-| Max iterations reached | {count} | {percent}% |
-| Worker failure | {count} | {percent}% |
-| Plan invalid | {count} | {percent}% |
+| Fallback               | Count   | % of Invocations |
+| ---------------------- | ------- | ---------------- |
+| Context7 unavailable   | {count} | {percent}%       |
+| Quality gate failure   | {count} | {percent}%       |
+| Max iterations reached | {count} | {percent}%       |
+| Worker failure         | {count} | {percent}%       |
+| Plan invalid           | {count} | {percent}%       |
 
 **Analysis**: {HEALTHY|CONCERNING|CRITICAL}
 
 **Determination**:
+
 - All fallbacks < 5%: HEALTHY ✅
 - Any fallback 5-10%: CONCERNING ⚠️
 - Any fallback > 10%: CRITICAL ❌
 
 **Concerns** (if any):
 For each fallback > 5%:
+
 - **{Fallback Type}**: {percent}% frequency
   - Root cause: {analysis}
   - Recommendation: {action to reduce frequency}
 
 ### Emergency Protocols Triggered
 
-| Emergency | Count |
-|-----------|-------|
-| Infinite loop | {count} |
-| File corruption | {count} |
-| Token exhaustion | {count} |
+| Emergency           | Count   |
+| ------------------- | ------- |
+| Infinite loop       | {count} |
+| File corruption     | {count} |
+| Token exhaustion    | {count} |
 | Concurrent conflict | {count} |
 
 **Analysis**: {EXCELLENT|CONCERNING|CRITICAL}
 
 **Determination**:
+
 - Zero emergencies: EXCELLENT ✅
 - 1-2 emergencies: CONCERNING ⚠️
 - > 2 emergencies: CRITICAL ❌
 
 **Incidents** (if any):
 For each emergency > 0:
+
 - **{Emergency Type}**: {count} incident(s)
   - Details: {from emergency metadata if available}
   - Impact: {analysis}
@@ -371,11 +411,13 @@ For each emergency > 0:
 **Count**: {count} {flagged and prevented|CRITICAL - violations occurred}
 
 **Status**:
+
 - 0 violations: ✅ **EXCELLENT** (self-diagnostics working)
 - > 0 violations: ❌ **CRITICAL** (system integrity compromised)
 
 **Details** (if > 0):
 For each violation:
+
 1. {PD-X violation description}
    - Agent: {name}
    - When: {timestamp}
@@ -420,20 +462,22 @@ For optimizations (nice-to-have improvements):
 
 ## Trend Analysis (vs. {Previous Month})
 
-| Metric | {Current Month} | {Previous Month} | Change |
-|--------|-----------------|------------------|--------|
-| Total invocations | {count} | {count} | {percent}% {indicator} |
-| Success rate | {percent}% | {percent}% | {percent}% {indicator} |
-| Context7 usage | {percent}% | {percent}% | {percent}% {indicator} |
-| Quality gate pass rate | {percent}% | {percent}% | {percent}% {indicator} |
-| Research phases | {count} | {count} | {percent}% {indicator} |
+| Metric                 | {Current Month} | {Previous Month} | Change                 |
+| ---------------------- | --------------- | ---------------- | ---------------------- |
+| Total invocations      | {count}         | {count}          | {percent}% {indicator} |
+| Success rate           | {percent}%      | {percent}%       | {percent}% {indicator} |
+| Context7 usage         | {percent}%      | {percent}%       | {percent}% {indicator} |
+| Quality gate pass rate | {percent}%      | {percent}%       | {percent}% {indicator} |
+| Research phases        | {count}         | {count}          | {percent}% {indicator} |
 
 **Insights**:
+
 - Ecosystem usage {growing|stable|declining} ({indicator} invocations)
 - Reliability {improving|stable|declining} ({indicator} success rate)
 - Complexity {increasing|stable|decreasing} ({indicator} research phases)
 
 **Analysis**:
+
 - {Interpretation of trends}
 - {What's working well}
 - {What needs attention}
@@ -445,6 +489,7 @@ For optimizations (nice-to-have improvements):
 **Overall Status**: {HEALTHY AND IMPROVING|HEALTHY|NEEDS ATTENTION|CRITICAL}
 
 **Determination**:
+
 - Success rate >= 90% AND no emergencies AND positive trends: HEALTHY AND IMPROVING ✅
 - Success rate >= 80% AND < 2 emergencies: HEALTHY ✅
 - Success rate 70-79% OR 2-5 emergencies: NEEDS ATTENTION ⚠️
@@ -454,6 +499,7 @@ For optimizations (nice-to-have improvements):
 {1-2 paragraph summary of ecosystem health, key achievements, main concerns, and overall trajectory}
 
 **Next Steps**:
+
 1. {Most important action item with timeline}
 2. {Second most important action with timeline}
 3. {When to re-evaluate metrics}
@@ -465,14 +511,18 @@ For optimizations (nice-to-have improvements):
 **Metrics File**: `.tmp/metrics/{YYYY-MM}.json`
 
 To view detailed raw metrics:
+
 ```bash
 cat .tmp/metrics/{YYYY-MM}.json | jq .
 ```
+````
 
 To compare with previous month:
+
 ```bash
 diff <(cat .tmp/metrics/{YYYY-MM-1}.json | jq .) <(cat .tmp/metrics/{YYYY-MM}.json | jq .)
 ```
+
 ```
 
 ### Step 7: Display Report Location
@@ -481,11 +531,13 @@ Report successful generation to user.
 
 **Message**:
 ```
+
 ✅ Metrics report generated successfully
 
 Report: docs/reports/metrics/{YYYY-MM}-ecosystem-health.md
 
 Summary:
+
 - Overall Health: {status}
 - Total Invocations: {count}
 - Success Rate: {percent}%
@@ -494,6 +546,7 @@ Summary:
 
 View full report:
 cat docs/reports/metrics/{YYYY-MM}-ecosystem-health.md
+
 ```
 
 ---
@@ -506,6 +559,7 @@ cat docs/reports/metrics/{YYYY-MM}-ecosystem-health.md
 
 **Action**:
 ```
+
 ❌ No metrics data for {month}
 
 Metrics file not found: .tmp/metrics/{YYYY-MM}.json
@@ -513,11 +567,13 @@ Metrics file not found: .tmp/metrics/{YYYY-MM}.json
 This means no agent workflows were run during {month}.
 
 To generate metrics:
+
 1. Run agent workflows: /health-bugs, /health-security, etc.
 2. Agents automatically record metrics via record-metrics Skill
 3. Re-run /health-metrics after workflows complete
 
 Note: Metrics are stored monthly in .tmp/metrics/ directory.
+
 ```
 
 ### Corrupt Metrics File
@@ -526,39 +582,47 @@ Note: Metrics are stored monthly in .tmp/metrics/ directory.
 
 **Action**:
 ```
+
 ⛔ Metrics file corrupt
 
 File: .tmp/metrics/{YYYY-MM}.json
 Error: Invalid JSON (SyntaxError: ...)
 
 Attempting to read backup...
+
 ```
 
 If backup exists and valid:
 ```
+
 ✅ Restored from backup
 
 Backup: .tmp/metrics/{YYYY-MM}.json.backup
 Status: Valid
 
 Generating report from backup data...
+
 ```
 
 If backup also corrupt:
 ```
+
 ❌ Backup also corrupt or not found
 
 Cannot generate report from corrupted data.
 
 Options:
+
 1. Review .tmp/metrics/{YYYY-MM}.json manually
 2. Delete corrupt file and start fresh next month
 3. Report this issue (file corruption shouldn't happen)
 
 File corruption may indicate:
+
 - Concurrent write conflict
 - Disk I/O error
 - System crash during metrics recording
+
 ```
 
 ### Report Generation Failed
@@ -567,20 +631,24 @@ File corruption may indicate:
 
 **Action**:
 ```
+
 ⛔ Report generation failed
 
 Target: docs/reports/metrics/{YYYY-MM}-ecosystem-health.md
 Error: {error message}
 
 Possible causes:
+
 - Insufficient disk space
 - Permission denied (check docs/reports/metrics/ permissions)
 - Disk I/O error
 
 Recommendation:
+
 1. Check disk space: df -h
 2. Check permissions: ls -la docs/reports/
 3. Retry after resolving issue
+
 ```
 
 ---
@@ -602,11 +670,13 @@ Recommendation:
 
 **Output**:
 ```
+
 ✅ Metrics report generated successfully
 
 Report: docs/reports/metrics/2025-10-ecosystem-health.md
 
 Summary:
+
 - Overall Health: HEALTHY AND IMPROVING ✅
 - Total Invocations: 150
 - Success Rate: 91%
@@ -615,6 +685,7 @@ Summary:
 
 View full report:
 cat docs/reports/metrics/2025-10-ecosystem-health.md
+
 ```
 
 ### Example 2: Previous Month Report
@@ -629,16 +700,19 @@ cat docs/reports/metrics/2025-10-ecosystem-health.md
 
 **Output**:
 ```
+
 ✅ Metrics report generated successfully
 
 Report: docs/reports/metrics/2025-09-ecosystem-health.md
 
 Summary:
+
 - Overall Health: HEALTHY ✅
 - Total Invocations: 132
 - Success Rate: 88%
 - Top Performer: security-scanner (100% success rate)
 - Top Concern: dependency-updater (65% success rate)
+
 ```
 
 ### Example 3: Specific Month
@@ -661,6 +735,7 @@ Summary:
 
 **Output**:
 ```
+
 ❌ No metrics data for July 2025
 
 Metrics file not found: .tmp/metrics/2025-07.json
@@ -668,9 +743,11 @@ Metrics file not found: .tmp/metrics/2025-07.json
 This means no agent workflows were run during July 2025.
 
 To generate metrics:
+
 1. Run agent workflows: /health-bugs, /health-security, etc.
 2. Agents automatically record metrics via record-metrics Skill
 3. Re-run /health-metrics after workflows complete
+
 ```
 
 ---
@@ -681,18 +758,22 @@ To generate metrics:
 
 **Current Month**:
 ```
+
 Today: 2025-10-21
 Current month: 2025-10
+
 ```
 
 **Previous Month**:
 ```
+
 Current: 2025-10
 Previous: 2025-09
 
 Edge case (January):
 Current: 2025-01
 Previous: 2024-12
+
 ```
 
 ### Health Status Determination
@@ -720,11 +801,13 @@ Previous: 2024-12
 
 **Calculation**:
 ```
-Change % = ((New - Old) / Old) * 100
+
+Change % = ((New - Old) / Old) \* 100
 
 If change > 2%: ⬆️ (increase)
 If change < -2%: ⬇️ (decrease)
 If change between -2% and 2%: ➡️ (stable)
+
 ```
 
 ---
@@ -745,3 +828,4 @@ If change between -2% and 2%: ➡️ (stable)
 - `record-metrics` Skill: Records events that populate metrics files
 - `.tmp/metrics/YYYY-MM.json`: Monthly metrics data files
 - CLAUDE.md PART 5: Self-Diagnostics uses metrics for validation
+```

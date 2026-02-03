@@ -25,7 +25,7 @@ async function testErrorCapture() {
       stack: error instanceof Error ? error.stack : undefined,
       userId: '123e4567-e89b-12d3-a456-426614174000',
       timestamp: '2024-01-16T12:00:00Z',
-      attemptCount: 1
+      attemptCount: 1,
     });
   }
 
@@ -33,7 +33,7 @@ async function testErrorCapture() {
 
   // Wait 2 seconds to allow database write
   console.log('Waiting 2 seconds for database write...\n');
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   // Test 2: Trigger same error with different UUID/timestamp
   console.log('Test 2: Triggering same error with different dynamic values...');
@@ -44,7 +44,7 @@ async function testErrorCapture() {
       stack: error instanceof Error ? error.stack : undefined,
       userId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
       timestamp: '2024-01-16T12:05:00Z',
-      attemptCount: 2
+      attemptCount: 2,
     });
   }
 
@@ -52,20 +52,20 @@ async function testErrorCapture() {
 
   // Wait 2 seconds to allow database write
   console.log('Waiting 2 seconds for database write...\n');
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   // Test 3: Different error (should create new entry)
   console.log('Test 3: Triggering different error...');
   logger.error('Different error message for testing', {
     errorCode: 'DB_CONNECTION_FAILED',
-    retryCount: 3
+    retryCount: 3,
   });
 
   console.log('✓ Different error logged (should create new entry)\n');
 
   // Wait 2 seconds to allow database write
   console.log('Waiting 2 seconds for final database write...\n');
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   console.log('=== Test Complete ===\n');
   console.log('Verify in database:');

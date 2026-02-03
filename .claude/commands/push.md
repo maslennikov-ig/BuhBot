@@ -6,6 +6,7 @@ argument-hint: [patch|minor|major] [-m "message"]
 Execute the release automation script with auto-confirmation for Claude Code.
 
 **Features:**
+
 - Auto-syncs package.json versions with latest git tag (prevents version conflicts)
 - Analyzes commits since last release
 - Auto-detects version bump type from conventional commits
@@ -18,12 +19,14 @@ Execute the release automation script with auto-confirmation for Claude Code.
 - **Custom commit message** for uncommitted changes via `--message` / `-m` flag
 
 **Generated RELEASE_NOTES.md format:**
+
 - Friendly scope names (auth → Authentication, db → Database)
 - Emojis for visual clarity (✨ Features, 🐛 Fixes, 🔒 Security)
 - Skips technical commits (chore, ci, docs) not relevant to users
 - Ready to copy for announcements, app stores, emails
 
 **Tip:** Use `-m` with a message that follows [docs/COMMIT_CONVENTIONS.md](../../docs/COMMIT_CONVENTIONS.md) so Release Please and changelogs parse correctly. Prefer the **format-commit-message** skill to generate the message:
+
 ```bash
 /push patch -m "feat(worker): add worker readiness pre-flight system"
 ```
@@ -31,5 +34,6 @@ Execute the release automation script with auto-confirmation for Claude Code.
 **Usage:**
 
 # Navigate to project root first
+
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 cd "$PROJECT_ROOT" && bash .claude/scripts/release.sh $ARGUMENTS --yes

@@ -100,10 +100,7 @@ function getDefaultContext(context: VariableContext): Record<string, string> {
  * // Returns: "Hello John, your request from 15.11.2025 is processed."
  * ```
  */
-export function substituteVariables(
-  template: string,
-  context: VariableContext
-): string {
+export function substituteVariables(template: string, context: VariableContext): string {
   const values = getDefaultContext(context);
 
   return template.replace(VARIABLE_PATTERN, (match, variableName: string) => {

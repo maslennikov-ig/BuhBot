@@ -28,7 +28,11 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <GlassCard variant="elevated" padding="lg" className="w-full max-w-md relative animate-in fade-in zoom-in duration-200">
+      <GlassCard
+        variant="elevated"
+        padding="lg"
+        className="w-full max-w-md relative animate-in fade-in zoom-in duration-200"
+      >
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
@@ -47,8 +51,12 @@ export function ConfirmDialog({
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>{cancelText}</Button>
-          <Button variant="destructive" onClick={onConfirm}>{confirmText}</Button>
+          <Button variant="ghost" onClick={onClose}>
+            {cancelText}
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            {confirmText}
+          </Button>
         </div>
       </GlassCard>
     </div>

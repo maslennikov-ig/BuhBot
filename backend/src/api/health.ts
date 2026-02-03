@@ -175,10 +175,7 @@ export async function healthHandler(_req: Request, res: Response): Promise<void>
 
   try {
     // Run health checks in parallel with 5s timeout
-    const [databaseCheck, redisCheck] = await Promise.all([
-      checkDatabase(5000),
-      checkRedis(5000),
-    ]);
+    const [databaseCheck, redisCheck] = await Promise.all([checkDatabase(5000), checkRedis(5000)]);
 
     const checks = {
       database: databaseCheck,

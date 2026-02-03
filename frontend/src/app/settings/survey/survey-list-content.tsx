@@ -156,16 +156,11 @@ function CreateSurveyModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md rounded-xl border border-[var(--buh-border)] bg-[var(--buh-surface)] p-6 shadow-xl">
-        <h2 className="mb-4 text-xl font-semibold text-[var(--buh-foreground)]">
-          Создать опрос
-        </h2>
+        <h2 className="mb-4 text-xl font-semibold text-[var(--buh-foreground)]">Создать опрос</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Quarter Select */}
@@ -204,9 +199,7 @@ function CreateSurveyModal({
                   onChange={() => setIsImmediate(true)}
                   className="h-4 w-4 accent-[var(--buh-accent)]"
                 />
-                <span className="text-sm text-[var(--buh-foreground)]">
-                  Запустить сразу
-                </span>
+                <span className="text-sm text-[var(--buh-foreground)]">Запустить сразу</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -215,9 +208,7 @@ function CreateSurveyModal({
                   onChange={() => setIsImmediate(false)}
                   className="h-4 w-4 accent-[var(--buh-accent)]"
                 />
-                <span className="text-sm text-[var(--buh-foreground)]">
-                  Запланировать
-                </span>
+                <span className="text-sm text-[var(--buh-foreground)]">Запланировать</span>
               </label>
             </div>
           </div>
@@ -422,9 +413,7 @@ export function SurveyListContent() {
               <ClipboardList className="h-5 w-5 text-[var(--buh-primary)]" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--buh-foreground)]">
-                Опросы
-              </h3>
+              <h3 className="text-base font-semibold text-[var(--buh-foreground)]">Опросы</h3>
               <p className="text-xs text-[var(--buh-foreground-subtle)]">
                 Всего: {pagination.totalItems}
               </p>
@@ -568,9 +557,7 @@ export function SurveyListContent() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
               <ClipboardList className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
             </div>
-            <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
-              Нет опросов
-            </p>
+            <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет опросов</p>
             <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
               Создайте первый опрос, чтобы начать сбор отзывов
             </p>
@@ -630,4 +617,3 @@ export function SurveyListContent() {
     </AdminLayout>
   );
 }
-

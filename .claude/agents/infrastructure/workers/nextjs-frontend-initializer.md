@@ -29,6 +29,7 @@ This worker follows the standard 5-phase pattern for workers.
 **Objective**: Load configuration from plan file
 
 **Steps**:
+
 1. Check for `.frontend-init-plan.json` in `.tmp/current/plans/`
 2. Extract configuration:
    - `projectName`: Next.js project name (default: "frontend")
@@ -40,6 +41,7 @@ This worker follows the standard 5-phase pattern for workers.
 4. If plan file missing: Use defaults and log warning
 
 **Plan File Schema**:
+
 ```json
 {
   "workflow": "infrastructure-setup",
@@ -63,6 +65,7 @@ This worker follows the standard 5-phase pattern for workers.
 ```
 
 **Error Handling**:
+
 - Missing plan file → Create default config, proceed with warning
 - Invalid JSON → Report error, suggest fix, exit
 - Missing required fields → Use sensible defaults, log warnings
@@ -78,6 +81,7 @@ This worker follows the standard 5-phase pattern for workers.
 **MCP Guidance**: Check Context7 for Next.js 14+ App Router patterns if needed
 
 **Actions**:
+
 ```bash
 # Create Next.js 14+ project with App Router
 npx create-next-app@latest frontend \
@@ -92,12 +96,14 @@ cd frontend
 ```
 
 **Configuration**:
+
 - TypeScript: Strict mode enabled
 - ESLint: Next.js recommended config
 - App Router: Default (src/app directory)
 - Import alias: `@/*` maps to `src/*`
 
 **Validations**:
+
 - Verify `package.json` created
 - Verify `tsconfig.json` has strict mode
 - Verify `src/app` directory exists
@@ -107,6 +113,7 @@ cd frontend
 **MCP Guidance**: Use Context7 for @supabase/supabase-js, @trpc/client patterns
 
 **Core Dependencies**:
+
 ```bash
 npm install @supabase/supabase-js @tanstack/react-query
 npm install @trpc/client @trpc/server @trpc/react-query
@@ -114,17 +121,20 @@ npm install -D @types/node
 ```
 
 **Development Dependencies**:
+
 ```bash
 npm install -D eslint-config-next typescript
 ```
 
 **Optional Dependencies** (from plan file):
+
 ```bash
 # Install additional deps if specified in plan
 npm install ${additionalDeps.join(' ')}
 ```
 
 **Validations**:
+
 - Run `npm list` to verify installations
 - Check `package.json` for all dependencies
 - Verify no peer dependency warnings
@@ -132,9 +142,11 @@ npm install ${additionalDeps.join(' ')}
 #### Step 2.3: Configure Tailwind CSS
 
 **Actions**:
+
 1. **Update `tailwind.config.ts`**:
+
 ```typescript
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -156,11 +168,12 @@ const config: Config = {
     },
   },
   plugins: [],
-}
-export default config
+};
+export default config;
 ```
 
 2. **Update `src/app/globals.css`**:
+
 ```css
 @tailwind base;
 @tailwind components;
@@ -176,6 +189,7 @@ export default config
 ```
 
 **Validations**:
+
 - Verify Tailwind config syntax
 - Check CSS file includes all directives
 - Test build with `npm run build` (partial)
@@ -194,6 +208,7 @@ mkdir -p src/utils
 ```
 
 **Structure**:
+
 ```
 frontend/
 ├── src/
@@ -211,6 +226,7 @@ frontend/
 ```
 
 **Validations**:
+
 - Verify all directories created
 - Check directory permissions
 
@@ -219,32 +235,34 @@ frontend/
 **MCP Guidance**: Use Context7 for @supabase/supabase-js browser client patterns
 
 **Create `src/lib/supabase.ts`**:
-```typescript
-import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  throw new Error('Missing Supabase environment variables');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-})
+    detectSessionInUrl: true,
+  },
+});
 ```
 
 **Create `src/lib/supabase-server.ts`** (for Server Components):
+
 ```typescript
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
 export const createServerClient = () => {
-  const cookieStore = cookies()
+  const cookieStore = cookies();
 
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -252,15 +270,16 @@ export const createServerClient = () => {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          return cookieStore.get(name)?.value;
         },
       },
     }
-  )
-}
+  );
+};
 ```
 
 **Validations**:
+
 - Verify TypeScript compilation
 - Check environment variable usage
 - Ensure no hardcoded credentials
@@ -270,12 +289,15 @@ export const createServerClient = () => {
 **MCP Guidance**: Requires `.mcp.full.json` for shadcn MCP, otherwise use CLI
 
 **Actions**:
+
 1. **Initialize shadcn/ui**:
+
 ```bash
 npx shadcn-ui@latest init
 ```
 
 Configuration prompts:
+
 - Style: Default
 - Base color: Slate
 - CSS variables: Yes
@@ -283,12 +305,14 @@ Configuration prompts:
 - Components directory: `src/components/ui`
 
 2. **Install Initial Components** (from plan file):
+
 ```bash
 # Install components specified in plan
 npx shadcn-ui@latest add button form card
 ```
 
 3. **Create `components.json`** (if not auto-created):
+
 ```json
 {
   "$schema": "https://ui.shadcn.com/schema.json",
@@ -309,6 +333,7 @@ npx shadcn-ui@latest add button form card
 ```
 
 **Validations**:
+
 - Verify `components.json` created
 - Check `src/components/ui/` has components
 - Verify `src/lib/utils.ts` exists (cn utility)
@@ -316,6 +341,7 @@ npx shadcn-ui@latest add button form card
 #### Step 2.7: Configure Environment Variables
 
 **Create `.env.local`**:
+
 ```bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
@@ -326,6 +352,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 **Create `.env.example`**:
+
 ```bash
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=
@@ -336,6 +363,7 @@ NEXT_PUBLIC_API_URL=
 ```
 
 **Update `.gitignore`**:
+
 ```
 # Environment variables
 .env*.local
@@ -343,6 +371,7 @@ NEXT_PUBLIC_API_URL=
 ```
 
 **Validations**:
+
 - Verify `.env.local` created (not committed)
 - Check `.env.example` has all variables
 - Ensure `.gitignore` includes env files
@@ -350,6 +379,7 @@ NEXT_PUBLIC_API_URL=
 #### Step 2.8: Track Changes
 
 **Create changes log** (`.tmp/current/changes/frontend-init-changes.json`):
+
 ```json
 {
   "phase": "frontend-initialization",
@@ -388,16 +418,19 @@ NEXT_PUBLIC_API_URL=
 #### Step 3.1: Type Check
 
 **Command**:
+
 ```bash
 cd frontend && npm run type-check || npx tsc --noEmit
 ```
 
 **Pass Criteria**:
+
 - Exit code: 0
 - No TypeScript errors
 - All imports resolve correctly
 
 **Failure Actions**:
+
 - Log errors to changes log
 - Report specific file/line issues
 - Mark validation status: FAILED
@@ -405,16 +438,19 @@ cd frontend && npm run type-check || npx tsc --noEmit
 #### Step 3.2: Build Validation
 
 **Command**:
+
 ```bash
 cd frontend && npm run build
 ```
 
 **Pass Criteria**:
+
 - Exit code: 0
 - Build output generated in `.next/` directory
 - No build errors or warnings (critical)
 
 **Expected Output**:
+
 ```
 ✓ Compiled successfully
 ✓ Linting and checking validity of types
@@ -423,6 +459,7 @@ cd frontend && npm run build
 ```
 
 **Failure Actions**:
+
 - Capture build errors
 - Check for missing dependencies
 - Verify environment variables
@@ -431,26 +468,31 @@ cd frontend && npm run build
 #### Step 3.3: Lint Check (Optional)
 
 **Command**:
+
 ```bash
 cd frontend && npm run lint
 ```
 
 **Pass Criteria**:
+
 - Exit code: 0 (or warnings only)
 - No critical lint errors
 
 **Failure Actions**:
+
 - Log warnings (non-blocking)
 - Report issues in validation section
 
 #### Step 3.4: Dependency Validation
 
 **Actions**:
+
 1. Verify `package-lock.json` exists and is valid
 2. Check for peer dependency warnings
 3. Ensure no critical vulnerabilities: `npm audit`
 
 **Pass Criteria**:
+
 - No missing dependencies
 - No critical vulnerabilities
 - Lock file consistent
@@ -586,6 +628,7 @@ Next.js 14+ frontend project initialized successfully with App Router, TypeScrip
 ### Dependencies Installed (12)
 
 **Production**:
+
 - `next@^14.x`
 - `react@^18.x`
 - `react-dom@^18.x`
@@ -597,6 +640,7 @@ Next.js 14+ frontend project initialized successfully with App Router, TypeScrip
 - `tailwindcss@^3.x`
 
 **Development**:
+
 - `typescript@^5.x`
 - `eslint@^8.x`
 - `eslint-config-next@^14.x`
@@ -613,9 +657,11 @@ Next.js 14+ frontend project initialized successfully with App Router, TypeScrip
 
 **Output**:
 ```
+
 TypeScript 5.x
 Checked 15 files
 No errors found
+
 ```
 
 **Exit Code**: 0
@@ -628,15 +674,17 @@ No errors found
 
 **Output**:
 ```
+
 ✓ Compiled successfully
 ✓ Linting and checking validity of types
 ✓ Collecting page data
 ✓ Generating static pages (5/5)
 ✓ Finalizing page optimization
 
-Route (app)                Size     First Load JS
-┌ ○ /                      1.2 kB         85.3 kB
-└ ○ /favicon.ico           0 B            0 B
+Route (app) Size First Load JS
+┌ ○ / 1.2 kB 85.3 kB
+└ ○ /favicon.ico 0 B 0 B
+
 ```
 
 **Exit Code**: 0
@@ -649,7 +697,9 @@ Route (app)                Size     First Load JS
 
 **Output**:
 ```
+
 ✔ No ESLint warnings or errors
+
 ```
 
 **Exit Code**: 0
@@ -662,8 +712,10 @@ Route (app)                Size     First Load JS
 
 **Output**:
 ```
+
 found 0 vulnerabilities
-```
+
+````
 
 ### Overall Status
 
@@ -714,7 +766,7 @@ cd frontend && npm run type-check
 
 # Lint
 cd frontend && npm run lint
-```
+````
 
 ### Recommended Actions
 
@@ -767,6 +819,7 @@ cd frontend && npm run lint
 - Supabase JavaScript client docs (Context7)
 - shadcn/ui docs (MCP or official site)
 - Tailwind CSS docs (cached knowledge)
+
 ```
 
 **Save Location**: `frontend-initialization-report.md` (temporary, root directory)
@@ -783,9 +836,11 @@ cd frontend && npm run lint
 
 1. **Report Summary to User**:
 ```
+
 ✅ Frontend Initialization Complete!
 
 Summary:
+
 - Next.js 14+ project: frontend/
 - Dependencies installed: 12
 - shadcn/ui components: 3 (button, form, card)
@@ -796,26 +851,30 @@ Report: frontend-initialization-report.md
 Changes Log: .tmp/current/changes/frontend-init-changes.json
 
 Next Steps:
+
 1. Configure actual Supabase credentials in frontend/.env.local
 2. Start dev server: cd frontend && npm run dev
 3. Proceed to tRPC client configuration or API integration
 
 Returning control to orchestrator.
-```
+
+````
 
 2. **Cleanup Temporary Files** (if validation passed):
 ```bash
 # Keep plan file for orchestrator reference
 # Keep changes log for potential rollback
 # Keep report for archival
-```
+````
 
 3. **Exit Agent**:
+
 - Return control to main session
 - Orchestrator will resume and validate report
 - No further action needed from this worker
 
 **Error Exit**:
+
 - If validation failed: Report failure status
 - Keep all temporary files for debugging
 - Suggest rollback with `rollback-changes` Skill
@@ -828,6 +887,7 @@ Returning control to orchestrator.
 ### Standard Tools
 
 **Primary**:
+
 - `Read` - Read existing configs and documentation
 - `Write` - Create new files (configs, clients, components)
 - `Edit` - Modify generated files (tailwind.config, tsconfig)
@@ -836,6 +896,7 @@ Returning control to orchestrator.
 ### MCP Servers
 
 **Context7 MCP** (`mcp__context7__*`):
+
 - **When**: BEFORE implementing Next.js, Supabase, or tRPC integrations
 - **Usage**:
   1. `mcp__context7__resolve-library-id` for "nextjs" or "@supabase/supabase-js"
@@ -844,11 +905,13 @@ Returning control to orchestrator.
 - **Fallback**: Use cached Next.js 14 knowledge, log warning
 
 **shadcn MCP** (`mcp__shadcn__*`):
+
 - **Required**: `.mcp.full.json` configuration
 - **When**: Installing shadcn/ui components
 - **Fallback**: Use CLI (`npx shadcn-ui@latest`) if MCP unavailable
 
 **Sequential Thinking MCP** (`mcp__sequential-thinking__*`):
+
 - **When**: Complex configuration decisions or troubleshooting
 - **Optional**: Use for planning multi-step setup
 
@@ -877,31 +940,39 @@ Returning control to orchestrator.
 ### Common Errors
 
 #### Error: create-next-app fails
+
 **Cause**: Network issues, npm cache corruption
 **Resolution**:
+
 1. Clear npm cache: `npm cache clean --force`
 2. Retry with npx: `npx create-next-app@latest --reset-preferences`
 3. If still fails: Report error, suggest manual setup
 
 #### Error: TypeScript compilation fails
+
 **Cause**: Missing dependencies, incorrect tsconfig
 **Resolution**:
+
 1. Verify all dependencies installed: `npm install`
 2. Check `tsconfig.json` syntax
 3. Run `npm run type-check` for detailed errors
 4. Report specific errors in validation section
 
 #### Error: Build fails
+
 **Cause**: Missing env variables, import errors, configuration issues
 **Resolution**:
+
 1. Check `.env.local` exists with required variables
 2. Verify all imports resolve correctly
 3. Check `next.config.js` syntax
 4. Capture build output, report in validation section
 
 #### Error: shadcn/ui installation fails
+
 **Cause**: Tailwind not configured, components.json missing
 **Resolution**:
+
 1. Verify Tailwind CSS installed and configured
 2. Re-run `npx shadcn-ui@latest init`
 3. Manually create `components.json` if needed
@@ -910,18 +981,21 @@ Returning control to orchestrator.
 ### Rollback Strategy
 
 **When to Rollback**:
+
 - Type check fails with critical errors
 - Build fails with blocking issues
 - Supabase client configuration invalid
 - Environment variables missing/incorrect
 
 **Rollback Actions**:
+
 1. Use `rollback-changes` Skill with changes log
 2. Remove `frontend/` directory
 3. Report rollback in report
 4. Suggest fixes and retry
 
 **Partial Success**:
+
 - If build passes but lint has warnings: Mark PARTIAL, continue
 - If optional deps fail: Mark PARTIAL, document missing deps
 - If shadcn components partially installed: Mark PARTIAL, list missing
@@ -931,12 +1005,14 @@ Returning control to orchestrator.
 ## Delegation Rules
 
 **DO NOT delegate**:
+
 - Next.js project initialization (core responsibility)
 - Tailwind CSS configuration (core responsibility)
 - Supabase client setup (core responsibility)
 - shadcn/ui initialization (core responsibility)
 
 **DO delegate**:
+
 - **Backend API routes** → `api-builder` agent
 - **Database schema design** → `database-architect` agent
 - **tRPC router implementation** → `api-builder` agent
@@ -944,6 +1020,7 @@ Returning control to orchestrator.
 - **Authentication flow implementation** → Auth specialists
 
 **Coordination**:
+
 - After frontend initialization: Orchestrator coordinates API integration
 - Share environment variables with backend agents
 - Provide Supabase URL to database-architect
@@ -975,7 +1052,7 @@ Returning control to orchestrator.
 
 4. **Security**:
    - Never commit `.env.local`
-   - Use NEXT_PUBLIC_ prefix only for client-safe variables
+   - Use NEXT*PUBLIC* prefix only for client-safe variables
    - Validate all user inputs
    - Implement CSRF protection
 
@@ -1029,9 +1106,9 @@ const nextConfig = {
   experimental: {
     serverActions: true,
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
 ```
 
 ### TypeScript Config (`tsconfig.json`)
@@ -1084,11 +1161,13 @@ module.exports = nextConfig
 If plan file includes localization config:
 
 **Install i18n**:
+
 ```bash
 npm install next-intl
 ```
 
 **Create Locale Structure**:
+
 ```
 src/
 ├── i18n/
@@ -1097,6 +1176,7 @@ src/
 ```
 
 **Configure Next.js i18n** (if needed):
+
 ```javascript
 // next.config.js
 module.exports = {
@@ -1104,12 +1184,13 @@ module.exports = {
     locales: ['ru', 'en'],
     defaultLocale: 'ru',
   },
-}
+};
 ```
 
 ### BuhBot Design System
 
 **Color Palette** (default if not in plan):
+
 ```typescript
 colors: {
   primary: '#2563eb',    // Blue for trust
@@ -1122,6 +1203,7 @@ colors: {
 ```
 
 **Typography**:
+
 - Primary font: Inter (professional, clean)
 - Monospace: JetBrains Mono (for code/numbers)
 
@@ -1130,6 +1212,7 @@ colors: {
 ## Summary
 
 This agent initializes production-ready Next.js 14+ frontends with:
+
 - ✅ App Router and TypeScript strict mode
 - ✅ Tailwind CSS with custom design system
 - ✅ Supabase client (browser + server)

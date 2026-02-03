@@ -225,8 +225,7 @@ function HeroSection({
           className="mb-4 text-4xl md:text-5xl font-bold text-[var(--buh-foreground)] buh-animate-fade-in-up"
           style={{ animationDelay: '0.2s' }}
         >
-          Центр справки{' '}
-          <span className="buh-text-gradient">BuhBot</span>
+          Центр справки <span className="buh-text-gradient">BuhBot</span>
         </h1>
 
         {/* Description */}
@@ -234,7 +233,8 @@ function HeroSection({
           className="mb-8 max-w-2xl text-lg text-[var(--buh-foreground-muted)] buh-animate-fade-in-up"
           style={{ animationDelay: '0.3s' }}
         >
-          Полное руководство по работе с платформой автоматизации коммуникаций для бухгалтерских фирм
+          Полное руководство по работе с платформой автоматизации коммуникаций для бухгалтерских
+          фирм
         </p>
 
         {/* Search */}
@@ -298,7 +298,9 @@ function SectionCard({ section, index }: { section: HelpSection; index: number }
               <div
                 className={`inline-flex h-14 w-14 items-center justify-center rounded-xl ${config.iconBgLight} dark:${config.iconBgDark} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}
               >
-                <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-300`} />
+                <div
+                  className={`absolute inset-0 rounded-xl bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-300`}
+                />
                 <Icon className="relative h-7 w-7 text-[var(--buh-foreground)]" />
               </div>
             </div>
@@ -356,18 +358,15 @@ function CategorySection({
   const CategoryIcon = config.icon;
 
   return (
-    <div
-      className="mb-12 buh-animate-fade-in-up"
-      style={{ animationDelay: `${delay}s` }}
-    >
+    <div className="mb-12 buh-animate-fade-in-up" style={{ animationDelay: `${delay}s` }}>
       {/* Category Header */}
       <div className="mb-6 flex items-center gap-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${config.iconBgLight} dark:${config.iconBgDark}`}>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-lg ${config.iconBgLight} dark:${config.iconBgDark}`}
+        >
           <CategoryIcon className="h-5 w-5 text-[var(--buh-foreground)]" />
         </div>
-        <h2 className="text-2xl font-bold text-[var(--buh-foreground)]">
-          {config.title}
-        </h2>
+        <h2 className="text-2xl font-bold text-[var(--buh-foreground)]">{config.title}</h2>
         <div className={`ml-2 h-px flex-1 bg-gradient-to-r ${config.gradient} opacity-30`} />
       </div>
 
@@ -405,10 +404,7 @@ function QuickTips() {
   ];
 
   return (
-    <div
-      className="mt-16 buh-animate-fade-in-up"
-      style={{ animationDelay: '0.6s' }}
-    >
+    <div className="mt-16 buh-animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
       <GlassCard variant="elevated" padding="none" className="overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] p-6">
@@ -418,9 +414,7 @@ function QuickTips() {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Быстрые советы</h3>
-              <p className="text-sm text-white/80">
-                Полезные подсказки для эффективной работы
-              </p>
+              <p className="text-sm text-white/80">Полезные подсказки для эффективной работы</p>
             </div>
           </div>
         </div>
@@ -434,12 +428,12 @@ function QuickTips() {
                 key={index}
                 className="group flex items-start gap-4 p-6 transition-colors duration-200 hover:bg-[var(--buh-surface-elevated)]"
               >
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${tip.gradient} shadow-lg`}>
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${tip.gradient} shadow-lg`}
+                >
                   <TipIcon className="h-5 w-5 text-white" />
                 </div>
-                <p className="flex-1 text-[var(--buh-foreground)] leading-relaxed">
-                  {tip.text}
-                </p>
+                <p className="flex-1 text-[var(--buh-foreground)] leading-relaxed">{tip.text}</p>
               </div>
             );
           })}

@@ -3,19 +3,18 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-const Tabs = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
-      className
-    )}
-    {...props}
-  />
-));
+const Tabs = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+        className
+      )}
+      {...props}
+    />
+  )
+);
 Tabs.displayName = 'Tabs';
 
 interface TabsContextValue {
@@ -41,19 +40,18 @@ const TabsRoot = React.forwardRef<
 });
 TabsRoot.displayName = 'TabsRoot';
 
-const TabsList = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      'inline-flex h-10 items-center justify-center rounded-md bg-[var(--buh-surface-elevated)] p-1 text-[var(--buh-foreground-muted)] border border-[var(--buh-border)]',
-      className
-    )}
-    {...props}
-  />
-));
+const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        'inline-flex h-10 items-center justify-center rounded-md bg-[var(--buh-surface-elevated)] p-1 text-[var(--buh-foreground-muted)] border border-[var(--buh-border)]',
+        className
+      )}
+      {...props}
+    />
+  )
+);
 TabsList.displayName = 'TabsList';
 
 const TabsTrigger = React.forwardRef<

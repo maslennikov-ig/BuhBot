@@ -5,11 +5,7 @@ import { GlassCard } from '@/components/layout/GlassCard';
 import { Clock, TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 // ============================================
@@ -55,14 +51,14 @@ const cardVariants = {
     transition: {
       duration: 0.5,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
   hover: {
     y: -4,
     transition: {
       duration: 0.2,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -75,7 +71,7 @@ const iconVariants = {
       delay: 0.2,
       duration: 0.4,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -88,7 +84,7 @@ const metricVariants = {
       delay: 0.1,
       duration: 0.5,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -101,7 +97,7 @@ const chartVariants = {
       delay: 0.3,
       duration: 0.6,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -121,7 +117,7 @@ export function ResponseTimeWidget({
   const TrendIcon = trend.direction === 'up' ? TrendingUp : TrendingDown;
 
   // Calculate min/max for better chart visualization
-  const values = chartData.map(d => d['Время ответа']).filter(v => v > 0);
+  const values = chartData.map((d) => d['Время ответа']).filter((v) => v > 0);
   const minValue = values.length > 0 ? Math.min(...values) : 0;
   const maxValue = values.length > 0 ? Math.max(...values) : 0;
   const chartPadding = maxValue > minValue ? (maxValue - minValue) * 0.2 : 5;
@@ -131,7 +127,7 @@ export function ResponseTimeWidget({
       variants={cardVariants}
       initial="initial"
       animate="animate"
-      whileHover={onClick ? "hover" : undefined}
+      whileHover={onClick ? 'hover' : undefined}
       className={cn('h-full', className)}
     >
       <GlassCard
@@ -159,9 +155,7 @@ export function ResponseTimeWidget({
             </h3>
             <div className="flex items-center gap-2">
               <Activity className="h-3.5 w-3.5 text-[var(--buh-accent)]" />
-              <p className="text-xs text-[var(--buh-foreground-subtle)]">
-                За последние 7 дней
-              </p>
+              <p className="text-xs text-[var(--buh-foreground-subtle)]">За последние 7 дней</p>
             </div>
           </div>
           <motion.div
@@ -173,17 +167,12 @@ export function ResponseTimeWidget({
         </div>
 
         {/* Main metric with enhanced styling */}
-        <motion.div
-          className="mb-6 flex items-end gap-3"
-          variants={metricVariants}
-        >
+        <motion.div className="mb-6 flex items-end gap-3" variants={metricVariants}>
           <div className="flex items-baseline gap-2">
             <span className="buh-animate-count text-5xl font-bold tracking-tight text-[var(--buh-foreground)]">
               {averageTime}
             </span>
-            <span className="text-xl font-medium text-[var(--buh-foreground-muted)]">
-              мин
-            </span>
+            <span className="text-xl font-medium text-[var(--buh-foreground-muted)]">мин</span>
           </div>
 
           {/* Enhanced trend indicator */}
@@ -204,27 +193,13 @@ export function ResponseTimeWidget({
         </motion.div>
 
         {/* Enhanced Chart with recharts */}
-        <motion.div
-          className="h-32 -mx-2 flex-1 min-h-[8rem]"
-          variants={chartVariants}
-        >
+        <motion.div className="h-32 -mx-2 flex-1 min-h-[8rem]" variants={chartVariants}>
           <ChartContainer config={chartConfig}>
-            <AreaChart
-              data={chartData}
-              margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-            >
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
               <defs>
                 <linearGradient id="colorResponseTime" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--buh-accent)"
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--buh-accent)"
-                    stopOpacity={0}
-                  />
+                  <stop offset="5%" stopColor="var(--buh-accent)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="var(--buh-accent)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -233,14 +208,8 @@ export function ResponseTimeWidget({
                 stroke="var(--buh-border)"
                 opacity={0.3}
               />
-              <XAxis
-                dataKey="time"
-                hide
-              />
-              <YAxis
-                hide
-                domain={[minValue - chartPadding, maxValue + chartPadding]}
-              />
+              <XAxis dataKey="time" hide />
+              <YAxis hide domain={[minValue - chartPadding, maxValue + chartPadding]} />
               <ChartTooltip
                 content={<ChartTooltipContent />}
                 cursor={{ stroke: 'var(--buh-accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
@@ -265,9 +234,7 @@ export function ResponseTimeWidget({
               <Zap className="h-3.5 w-3.5" />
               <span>Лучший: {minValue} мин</span>
             </div>
-            <div className="text-[var(--buh-foreground-subtle)]">
-              Худший: {maxValue} мин
-            </div>
+            <div className="text-[var(--buh-foreground-subtle)]">Худший: {maxValue} мин</div>
           </div>
         )}
 
@@ -281,11 +248,10 @@ export function ResponseTimeWidget({
           transition={{
             duration: 4,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: 'easeInOut',
           }}
         />
       </GlassCard>
     </motion.div>
   );
 }
-

@@ -30,11 +30,10 @@ export default function LogsPage() {
   }>({});
 
   // Query based on view mode
-  const { data: groupedData, refetch: refetchGrouped } =
-    trpc.logs.listGrouped.useQuery(
-      { ...filters, limit: 50, offset: 0 },
-      { enabled: viewMode === 'grouped' }
-    );
+  const { data: groupedData, refetch: refetchGrouped } = trpc.logs.listGrouped.useQuery(
+    { ...filters, limit: 50, offset: 0 },
+    { enabled: viewMode === 'grouped' }
+  );
 
   const { data: flatData, refetch: refetchFlat } = trpc.logs.list.useQuery(
     { ...filters, limit: 50 },
@@ -59,22 +58,18 @@ export default function LogsPage() {
           // Add group metadata
           totalOccurrences: g.totalOccurrences,
         })) || []
-      : (flatData?.errors.map((err) => ({
+      : flatData?.errors.map((err) => ({
           ...err,
           level: err.level as ErrorLevel,
           status: err.status as ErrorStatus,
-        })) || []);
+        })) || [];
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <LogsHeader viewMode={viewMode} onViewModeChange={setViewMode} />
         <LogsFilters onFiltersChange={setFilters} />
-        <LogsTable
-          errors={errors}
-          viewMode={viewMode}
-          onRefresh={handleRefresh}
-        />
+        <LogsTable errors={errors} viewMode={viewMode} onRefresh={handleRefresh} />
       </div>
     </AdminLayout>
   );

@@ -96,9 +96,7 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
           <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
             {chat.title || `Чат #${chat.id}`}
           </h2>
-          <p className="text-sm text-[var(--buh-foreground-muted)]">
-            ID: {chat.id}
-          </p>
+          <p className="text-sm text-[var(--buh-foreground-muted)]">ID: {chat.id}</p>
         </div>
       </div>
 
@@ -129,9 +127,7 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
                 ID: {chat.assignedAccountantId}
               </span>
             ) : (
-              <span className="text-[var(--buh-foreground-subtle)] italic">
-                Не назначен
-              </span>
+              <span className="text-[var(--buh-foreground-subtle)] italic">Не назначен</span>
             )}
           </p>
         </div>
@@ -245,8 +241,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
         actions={
           <Button asChild variant="outline">
             <Link href="/chats">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              К списку чатов
+              <ArrowLeft className="mr-2 h-4 w-4" />К списку чатов
             </Link>
           </Button>
         }
@@ -358,12 +353,8 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
             <AlertTriangle className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-[var(--buh-foreground)]">
-              Опасная зона
-            </h3>
-            <p className="text-sm text-[var(--buh-foreground-muted)]">
-              Необратимые действия
-            </p>
+            <h3 className="text-xl font-semibold text-[var(--buh-foreground)]">Опасная зона</h3>
+            <p className="text-sm text-[var(--buh-foreground-muted)]">Необратимые действия</p>
           </div>
         </div>
 
@@ -374,9 +365,7 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
               <Trash2 className="h-4 w-4 text-[var(--buh-error)]" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-[var(--buh-foreground)] mb-1.5">
-                Удалить чат
-              </h4>
+              <h4 className="font-semibold text-[var(--buh-foreground)] mb-1.5">Удалить чат</h4>
               <p className="text-sm text-[var(--buh-foreground-muted)] leading-relaxed">
                 Будут удалены все данные: запросы клиентов, SLA оповещения, расписание и статистика.
                 Это действие нельзя отменить.
@@ -437,4 +426,3 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
     </GlassCard>
   );
 }
-

@@ -7,16 +7,19 @@ description: Clean up stale worktree administrative files and optionally remove 
 Очищает устаревшие административные файлы git worktrees и опционально удаляет пустые директории.
 
 **Что делает команда:**
+
 - Находит и удаляет административные файлы для несуществующих worktrees
 - Опционально удаляет пустые директории в `megacampus2-worktrees/`
 - Проверяет целостность worktrees
 - Восстанавливает поврежденные worktrees (если возможно)
 
 **Аргументы:**
+
 - `[--dry-run]` - показать что будет удалено без удаления (опционально)
 - `[--remove-dirs]` - удалить пустые директории (опционально)
 
 **Примеры:**
+
 ```bash
 /worktree-cleanup
 /worktree-cleanup --dry-run
@@ -31,6 +34,7 @@ description: Clean up stale worktree administrative files and optionally remove 
 ### Step 1: Получение аргументов
 
 Извлеки флаги из запроса пользователя:
+
 - `--dry-run` - только показать, не удалять (опциональный)
 - `--remove-dirs` - удалить пустые директории (опциональный)
 
@@ -39,11 +43,13 @@ description: Clean up stale worktree administrative files and optionally remove 
 ### Step 2: Анализ текущего состояния
 
 1. **Получить список worktrees**
+
    ```bash
    git worktree list --porcelain
    ```
 
 2. **Проверить директорию worktrees**
+
    ```bash
    ls -la ../megacampus2-worktrees/ 2>/dev/null
    ```
@@ -70,6 +76,7 @@ description: Clean up stale worktree administrative files and optionally remove 
 ### Step 4: Git Worktree Prune
 
 1. **Проверить что будет удалено** (если --dry-run)
+
    ```bash
    git worktree prune --dry-run --verbose
    ```
@@ -86,17 +93,20 @@ description: Clean up stale worktree administrative files and optionally remove 
 Для каждой orphaned директории:
 
 1. **Проверить содержимое**
+
    ```bash
    ls -la ../megacampus2-worktrees/DIRNAME/
    ```
 
 2. **Проверить git статус**
+
    ```bash
    cd ../megacampus2-worktrees/DIRNAME && git status 2>&1
    ```
 
 3. **Если директория валидна, но не зарегистрирована:**
    - Попытаться восстановить через `git worktree repair`
+
    ```bash
    git worktree repair ../megacampus2-worktrees/DIRNAME
    ```
@@ -113,6 +123,7 @@ description: Clean up stale worktree administrative files and optionally remove 
 ### Step 6: Проверка целостности
 
 1. **Проверить все зарегистрированные worktrees**
+
    ```bash
    git worktree list --porcelain
    ```
@@ -126,33 +137,40 @@ description: Clean up stale worktree administrative files and optionally remove 
 ### Step 7: Вывод отчета
 
 **Dry-run режим:**
-```markdown
+
+````markdown
 # Worktree Cleanup Report (DRY RUN)
 
 ## Что будет выполнено:
 
 ### Git Worktree Prune
+
 - 🗑️ Будет удалено административных записей: N
   - worktree-1: /путь/к/worktree-1 (директория не существует)
   - worktree-2: /путь/к/worktree-2 (директория удалена)
 
 ### Orphaned Directories [если --remove-dirs]
+
 - 🗑️ Будет удалено директорий: N
   - ../megacampus2-worktrees/old-feature (не зарегистрирован в git)
   - ../megacampus2-worktrees/test (пустая директория)
 
 ### Восстановимые Worktrees
+
 - 🔧 Будет восстановлено: N
   - ../megacampus2-worktrees/recoverable-feature (можно восстановить через repair)
 
 ---
 
 💡 **Для выполнения cleanup:**
+
 ```bash
 /worktree-cleanup  # выполнить prune
 /worktree-cleanup --remove-dirs  # выполнить prune + удалить директории
 ```
-```
+````
+
+````
 
 **Обычный режим:**
 ```markdown
@@ -179,14 +197,18 @@ description: Clean up stale worktree administrative files and optionally remove 
 ## 📊 Текущее состояние
 
 **Активные worktrees:** N
-```
+````
+
 [вывод git worktree list]
+
 ```
 
 **Директории в megacampus2-worktrees/:** N
 ```
+
 [список директорий]
-```
+
+````
 
 **Все соответствует зарегистрированным worktrees:** ✅
 
@@ -210,19 +232,22 @@ description: Clean up stale worktree administrative files and optionally remove 
   Удалить:
   ```bash
   git worktree remove worktree-name
-  ```
+````
 
 **Подозрительные директории:** [если не был --remove-dirs]
+
 - ../megacampus2-worktrees/suspicious-dir
 
   Проверить и удалить вручную:
+
   ```bash
   cd ../megacampus2-worktrees/suspicious-dir
   git status  # проверить содержимое
   cd ../../megacampus2
   /worktree-remove suspicious-dir  # если не нужен
   ```
-```
+
+````
 
 **Если ничего не найдено:**
 ```markdown
@@ -241,8 +266,10 @@ description: Clean up stale worktree administrative files and optionally remove 
 ## 📊 Текущее состояние
 
 **Активные worktrees:** N
-```
+````
+
 [вывод git worktree list]
+
 ```
 
 **Директории в megacampus2-worktrees/:** N (все валидны)
@@ -260,7 +287,8 @@ description: Clean up stale worktree administrative files and optionally remove 
 ## Обработка ошибок
 
 **Если директория megacampus2-worktrees не существует:**
-```markdown
+
+````markdown
 ℹ️ Директория worktrees не существует
 
 Путь: `/home/me/code/megacampus2-worktrees/`
@@ -268,10 +296,13 @@ description: Clean up stale worktree administrative files and optionally remove 
 Это нормально, если вы еще не создавали worktrees.
 
 **Создать первый worktree:**
+
 ```bash
 /worktree-create <feature-name>
 ```
-```
+````
+
+````
 
 **Если нет прав доступа:**
 ```markdown
@@ -283,8 +314,9 @@ description: Clean up stale worktree administrative files and optionally remove 
 ```bash
 ls -la ../megacampus2-worktrees/
 chmod -R u+rwx ../megacampus2-worktrees/
-```
-```
+````
+
+````
 
 **Если git worktree repair не сработал:**
 ```markdown
@@ -298,9 +330,10 @@ Worktree: `../megacampus2-worktrees/DIRNAME`
    ```bash
    rm -rf ../megacampus2-worktrees/DIRNAME
    /worktree-create DIRNAME
-   ```
+````
 
 2. **Вручную удалить запись:**
+
    ```bash
    git worktree remove --force DIRNAME
    ```
@@ -311,7 +344,8 @@ Worktree: `../megacampus2-worktrees/DIRNAME`
    git status
    # Сохранить важные изменения, затем удалить
    ```
-```
+
+````
 
 ---
 
@@ -363,9 +397,10 @@ Orphaned directories - это директории в `megacampus2-worktrees/`, 
 
 # Полная очистка (включая директории)
 /worktree-cleanup --remove-dirs
-```
+````
 
 **Когда запускать:**
+
 - После удаления worktrees вручную
 - При проблемах с git worktree commands
 - Периодически (раз в неделю/месяц)

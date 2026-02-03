@@ -92,9 +92,7 @@ function calculateSlaRemaining(
 ): string | undefined {
   const received = new Date(receivedAt);
   const now = new Date();
-  const elapsedMinutes = Math.floor(
-    (now.getTime() - received.getTime()) / (1000 * 60)
-  );
+  const elapsedMinutes = Math.floor((now.getTime() - received.getTime()) / (1000 * 60));
   const remaining = thresholdMinutes - elapsedMinutes;
 
   if (remaining <= 0) {
@@ -216,10 +214,8 @@ export function DashboardContent() {
 
     return {
       compliance: data.slaCompliancePercent ?? emptySlaData.compliance,
-      compliantCount:
-        compliantCount > 0 ? compliantCount : emptySlaData.compliantCount,
-      violatedCount:
-        violatedCount > 0 ? violatedCount : emptySlaData.violatedCount,
+      compliantCount: compliantCount > 0 ? compliantCount : emptySlaData.compliantCount,
+      violatedCount: violatedCount > 0 ? violatedCount : emptySlaData.violatedCount,
     };
   }, [data]);
 
@@ -229,19 +225,17 @@ export function DashboardContent() {
     // Determine trend direction based on responseTimeTrend
     // Positive trend = time increased (bad), negative = decreased (good)
     const trendValue = Math.abs(data.responseTimeTrend ?? 0);
-    const trendDirection: 'up' | 'down' =
-      (data.responseTimeTrend ?? 0) > 0 ? 'up' : 'down';
+    const trendDirection: 'up' | 'down' = (data.responseTimeTrend ?? 0) > 0 ? 'up' : 'down';
 
     // Transform API chart data to widget format
-    const chartData = data.responseTimeChartData?.map((point) => ({
-      time: point.dayLabel,
-      'Время ответа': point.avgResponseMinutes,
-    })) ?? emptyResponseTimeData.chartData;
+    const chartData =
+      data.responseTimeChartData?.map((point) => ({
+        time: point.dayLabel,
+        'Время ответа': point.avgResponseMinutes,
+      })) ?? emptyResponseTimeData.chartData;
 
     return {
-      averageTime: Math.round(
-        data.avgResponseTimeMinutes ?? emptyResponseTimeData.averageTime
-      ),
+      averageTime: Math.round(data.avgResponseTimeMinutes ?? emptyResponseTimeData.averageTime),
       trend: {
         value: Math.round(trendValue),
         direction: trendDirection,
@@ -272,8 +266,7 @@ export function DashboardContent() {
 
     // Estimate severity counts from active alerts and recent requests
     const totalAlerts = data.activeAlertsCount ?? 0;
-    const breachedRequests =
-      data.recentRequests?.filter((r) => r.breached) ?? [];
+    const breachedRequests = data.recentRequests?.filter((r) => r.breached) ?? [];
 
     // Critical = breached requests, Warning = active non-breached, Info = rest
     const criticalCount = Math.min(breachedRequests.length, totalAlerts);
@@ -321,8 +314,7 @@ export function DashboardContent() {
       criticalCount,
       warningCount,
       infoCount,
-      recentAlerts:
-        recentAlerts.length > 0 ? recentAlerts : emptyAlertsData.recentAlerts,
+      recentAlerts: recentAlerts.length > 0 ? recentAlerts : emptyAlertsData.recentAlerts,
     };
   }, [data]);
 
@@ -417,4 +409,3 @@ export function DashboardContent() {
     </AdminLayout>
   );
 }
-

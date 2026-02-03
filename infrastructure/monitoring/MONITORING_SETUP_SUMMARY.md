@@ -9,6 +9,7 @@
 ## Files Created
 
 ### 1. Prometheus Configuration
+
 - **File**: `infrastructure/monitoring/prometheus.yml`
 - **Purpose**: Main Prometheus configuration with scrape targets and retention settings
 - **Key Features**:
@@ -20,6 +21,7 @@
   - Local TSDB storage (no remote write/read)
 
 ### 2. Prometheus Alert Rules
+
 - **File**: `infrastructure/monitoring/prometheus/alerts.yml`
 - **Purpose**: Alert rules for system resources, bot health, and Supabase connectivity
 - **Alert Groups**:
@@ -32,6 +34,7 @@
 - **Annotations**: Summary and actionable descriptions for each alert
 
 ### 3. Grafana Datasource
+
 - **File**: `infrastructure/monitoring/grafana/datasources/prometheus.yml`
 - **Purpose**: Auto-provisioned Prometheus datasource for Grafana
 - **Configuration**:
@@ -44,6 +47,7 @@
   - Time interval: 15s
 
 ### 4. Grafana Dashboard - Bot Performance
+
 - **File**: `infrastructure/monitoring/grafana/dashboards/bot-performance.json`
 - **UID**: `buhbot-bot-performance`
 - **Purpose**: Monitor bot responsiveness and message processing
@@ -58,6 +62,7 @@
 - **Time Range**: Last 24 hours (default)
 
 ### 5. Grafana Dashboard - System Health
+
 - **File**: `infrastructure/monitoring/grafana/dashboards/system-health.json`
 - **UID**: `buhbot-system-health`
 - **Purpose**: Monitor VDS resource utilization and service health
@@ -74,6 +79,7 @@
 - **Time Range**: Last 24 hours
 
 ### 6. Grafana Dashboard - SLA Metrics
+
 - **File**: `infrastructure/monitoring/grafana/dashboards/sla-metrics.json`
 - **UID**: `buhbot-sla-metrics`
 - **Purpose**: Track SLA compliance (uptime, response times)
@@ -93,16 +99,19 @@
 ## Validation Results
 
 ### YAML Syntax Validation
+
 - ✓ `prometheus.yml` - Valid YAML
 - ✓ `prometheus/alerts.yml` - Valid YAML
 - ✓ `grafana/datasources/prometheus.yml` - Valid YAML
 
 ### JSON Syntax Validation
+
 - ✓ `grafana/dashboards/bot-performance.json` - Valid JSON
 - ✓ `grafana/dashboards/system-health.json` - Valid JSON
 - ✓ `grafana/dashboards/sla-metrics.json` - Valid JSON
 
 ### File Structure
+
 ```
 infrastructure/monitoring/
 ├── prometheus.yml                          (T035 - Prometheus config)
@@ -118,6 +127,7 @@ infrastructure/monitoring/
 ```
 
 ### Promtool Validation
+
 Note: `promtool` validation requires Prometheus to be installed. Run the following commands after Prometheus deployment:
 
 ```bash
@@ -133,6 +143,7 @@ promtool check rules infrastructure/monitoring/prometheus/alerts.yml
 ## Metrics Reference
 
 ### Bot Backend Metrics (Expected)
+
 - `bot_messages_received_total` - Counter of messages received by channel
 - `bot_message_processing_duration_bucket` - Histogram of message processing time
 - `bot_webhook_signature_failures_total` - Counter of webhook signature failures
@@ -140,6 +151,7 @@ promtool check rules infrastructure/monitoring/prometheus/alerts.yml
 - `bot_failed_requests_total{reason}` - Counter of failed requests by reason (spam, errors, timeouts)
 
 ### Redis Metrics (via redis_exporter)
+
 - `redis_sessions_count` - Gauge of active session count
 - `redis_connected_clients` - Gauge of connected clients
 - `redis_memory_used_bytes` - Gauge of memory usage
@@ -147,10 +159,12 @@ promtool check rules infrastructure/monitoring/prometheus/alerts.yml
 - `redis_config_maxclients` - Gauge of max clients config
 
 ### Supabase Metrics (Expected from bot-backend)
+
 - `supabase_query_duration_bucket` - Histogram of query latency
 - `supabase_connection_errors_total` - Counter of connection errors
 
 ### Node Exporter Metrics (System)
+
 - `node_cpu_seconds_total` - Counter of CPU time by mode
 - `node_memory_MemTotal_bytes` - Gauge of total memory
 - `node_memory_MemAvailable_bytes` - Gauge of available memory
@@ -160,6 +174,7 @@ promtool check rules infrastructure/monitoring/prometheus/alerts.yml
 - `node_network_transmit_bytes_total` - Counter of transmitted network bytes
 
 ### SLA Metrics (Expected from bot-backend)
+
 - `sla_alert_response_duration_bucket` - Histogram of alert response time
 
 ---
@@ -167,6 +182,7 @@ promtool check rules infrastructure/monitoring/prometheus/alerts.yml
 ## Next Steps
 
 ### 1. Deploy Monitoring Stack
+
 ```bash
 # Start monitoring containers
 docker-compose up -d prometheus grafana
@@ -180,29 +196,35 @@ curl http://localhost:9090/api/v1/targets
 ```
 
 ### 2. Configure Grafana
+
 - Import dashboards (auto-provisioned from JSON files)
 - Verify Prometheus datasource connection
 - Setup notification channels (Telegram, email, etc.)
 - Create additional custom dashboards as needed
 
 ### 3. Instrument Bot Backend
+
 Add Prometheus metrics to bot-backend application:
+
 - Install `prom-client` (Node.js) or equivalent
 - Expose `/metrics` endpoint on port 9100
 - Implement required metrics (see Metrics Reference above)
 - Add custom business metrics as needed
 
 ### 4. Deploy Exporters
+
 - **redis_exporter**: Monitor Redis cache performance
 - **node_exporter**: Collect system-level metrics (CPU, memory, disk, network)
 
 ### 5. Configure Alerting
+
 - Deploy Alertmanager (optional)
 - Configure notification channels (Telegram, email)
 - Test alert rules by simulating threshold breaches
 - Setup on-call rotation and escalation policies
 
 ### 6. Tune and Optimize
+
 - Adjust scrape intervals based on load
 - Add recording rules for frequently-queried metrics
 - Implement proper service discovery for multi-instance deployments
@@ -213,6 +235,7 @@ Add Prometheus metrics to bot-backend application:
 ## Dashboard Access
 
 After deployment, dashboards will be accessible at:
+
 - **Bot Performance**: http://localhost:3000/d/buhbot-bot-performance
 - **System Health**: http://localhost:3000/d/buhbot-system-health
 - **SLA Metrics**: http://localhost:3000/d/buhbot-sla-metrics
@@ -222,17 +245,21 @@ After deployment, dashboards will be accessible at:
 ## Configuration Notes
 
 ### Prometheus Retention
+
 - **Setting**: 15 days
 - **Reason**: Free tier disk space constraints
 - **Recommendation**: Monitor disk usage, adjust if needed
 
 ### Scrape Interval
+
 - **Setting**: 15 seconds
 - **Reason**: Spec PM-006 requirement
 - **Trade-off**: Higher resolution = more disk usage
 
 ### Alert Thresholds
+
 All thresholds are configurable in `prometheus/alerts.yml`:
+
 - **CPU**: 80% (5 minutes)
 - **Memory**: 80% (5 minutes)
 - **Disk**: 85% (10 minutes)
@@ -240,6 +267,7 @@ All thresholds are configurable in `prometheus/alerts.yml`:
 - **Supabase Errors**: 10 in 5 minutes
 
 ### Dashboard Variables
+
 All dashboards include `$instance` variable for multi-instance filtering.
 Default: "All" (shows data from all instances)
 
@@ -248,24 +276,28 @@ Default: "All" (shows data from all instances)
 ## Troubleshooting
 
 ### Prometheus Not Scraping Targets
+
 1. Check target status: http://localhost:9090/targets
 2. Verify network connectivity between containers
 3. Check service ports are exposed correctly
 4. Review Prometheus logs: `docker logs prometheus`
 
 ### Grafana Dashboards Not Loading
+
 1. Verify datasource connection in Grafana UI
 2. Check provisioning logs: `docker logs grafana`
 3. Ensure dashboard JSON files are mounted correctly
 4. Refresh browser cache
 
 ### Alerts Not Firing
+
 1. Verify alert rules loaded: http://localhost:9090/rules
 2. Check metric data is being scraped
 3. Test alert expressions in Prometheus UI
 4. Review Alertmanager configuration (if deployed)
 
 ### Missing Metrics
+
 1. Verify exporter is running and reachable
 2. Check scrape configuration in `prometheus.yml`
 3. Review exporter logs for errors

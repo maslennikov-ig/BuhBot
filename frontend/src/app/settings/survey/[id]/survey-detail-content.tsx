@@ -186,7 +186,9 @@ function LoadingSkeleton() {
 
 export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
   const [deliveryPage, setDeliveryPage] = React.useState(1);
-  const [deliveryStatusFilter, setDeliveryStatusFilter] = React.useState<DeliveryStatus | 'all'>('all');
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = React.useState<DeliveryStatus | 'all'>(
+    'all'
+  );
 
   // Fetch survey details
   const {
@@ -408,7 +410,11 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
           icon={<TrendingUp className="h-6 w-6" />}
           change={
             surveyData.averageRating
-              ? { value: Math.round(surveyData.averageRating * 10), label: 'ср. оценка', type: surveyData.averageRating >= 4 ? 'increase' : 'neutral' }
+              ? {
+                  value: Math.round(surveyData.averageRating * 10),
+                  label: 'ср. оценка',
+                  type: surveyData.averageRating >= 4 ? 'increase' : 'neutral',
+                }
               : undefined
           }
         />
@@ -426,9 +432,7 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
               <Users className="h-5 w-5 text-[var(--buh-primary)]" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--buh-foreground)]">
-                Доставки
-              </h3>
+              <h3 className="text-base font-semibold text-[var(--buh-foreground)]">Доставки</h3>
               <p className="text-xs text-[var(--buh-foreground-subtle)]">
                 Всего: {deliveryPagination.totalItems}
               </p>
@@ -529,7 +533,10 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
                     <td className="whitespace-nowrap px-6 py-4">
                       <DeliveryStatusBadge status={delivery.status as DeliveryStatus} />
                       {delivery.errorMessage && (
-                        <p className="mt-1 text-xs text-[var(--buh-error)]" title={delivery.errorMessage}>
+                        <p
+                          className="mt-1 text-xs text-[var(--buh-error)]"
+                          title={delivery.errorMessage}
+                        >
                           {delivery.errorMessage.length > 30
                             ? `${delivery.errorMessage.slice(0, 30)}...`
                             : delivery.errorMessage}
@@ -577,9 +584,7 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
               <Users className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
             </div>
-            <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
-              Нет доставок
-            </p>
+            <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет доставок</p>
             <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
               {deliveryStatusFilter !== 'all'
                 ? 'Попробуйте изменить фильтр'
@@ -593,8 +598,8 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
           <div className="flex items-center justify-between border-t border-[var(--buh-border)] px-6 py-4">
             <p className="text-sm text-[var(--buh-foreground-muted)]">
               Показано {(deliveryPage - 1) * deliveryPagination.pageSize + 1} -{' '}
-              {Math.min(deliveryPage * deliveryPagination.pageSize, deliveryPagination.totalItems)} из{' '}
-              {deliveryPagination.totalItems}
+              {Math.min(deliveryPage * deliveryPagination.pageSize, deliveryPagination.totalItems)}{' '}
+              из {deliveryPagination.totalItems}
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -613,7 +618,9 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
                 {deliveryPage} / {deliveryPagination.totalPages}
               </span>
               <button
-                onClick={() => setDeliveryPage((p) => Math.min(deliveryPagination.totalPages, p + 1))}
+                onClick={() =>
+                  setDeliveryPage((p) => Math.min(deliveryPagination.totalPages, p + 1))
+                }
                 disabled={deliveryPage === deliveryPagination.totalPages}
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--buh-border)]',
@@ -641,4 +648,3 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
     </AdminLayout>
   );
 }
-

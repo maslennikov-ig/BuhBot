@@ -31,15 +31,17 @@
 - [x] P004 Resolve research tasks: simple (solve with tools now), complex (create prompts in research/)
 
 **Rules**:
+
 - **MAIN executor**: ONLY for trivial tasks (1-2 line fixes, simple imports, single npm install)
 - **Existing agents**: ONLY if 100% capability match after thorough examination
 - **Agent creation**: Launch all meta-agent-v3 calls in single message for parallel execution
 - **After P002**: Must restart claude-code before proceeding to P003
 
 **Artifacts**:
+
 - Updated tasks.md with [EXECUTOR: name], [SEQUENTIAL]/[PARALLEL-GROUP-X] annotations
 - .claude/agents/{domain}/{type}/{name}.md (if new agents created)
-- research/*.md (if complex research identified)
+- research/\*.md (if complex research identified)
 
 ---
 
@@ -161,7 +163,7 @@
 - [x] T039 Verify all content is in Russian language
 - [x] T040 Run type-check and build verification
 - [x] T041 Run quickstart.md validation checklist
-- [x] T042 Verify existing authenticated routes work unchanged (/dashboard, /feedback, /settings/*) - FR-016
+- [x] T042 Verify existing authenticated routes work unchanged (/dashboard, /feedback, /settings/\*) - FR-016
 - [x] T043 Add robots.txt and sitemap.xml for SEO per TZ requirements
 
 ---
@@ -200,12 +202,14 @@ Phase 1 (Setup)
 ### Parallel Opportunities
 
 **Phase 1 (Setup)**:
+
 ```
 T004 Create landing components directory    [PARALLEL-GROUP-1]
 T005 Create login page directory            [PARALLEL-GROUP-1]
 ```
 
 **Phase 3 (User Story 1)**:
+
 ```
 T010 Header.tsx     [PARALLEL-GROUP-2]
 T011 Hero.tsx       [PARALLEL-GROUP-2]
@@ -216,6 +220,7 @@ T015 Footer.tsx     [PARALLEL-GROUP-2]
 ```
 
 **Cross-Phase Parallel**:
+
 - Phase 3 (US1) and Phase 5 (US3) can run in parallel after Setup
 - Phase 2 (Backend) can run in parallel with Phase 3 component creation
 

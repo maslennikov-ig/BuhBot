@@ -26,109 +26,115 @@ The BuhBot landing page implementation is **largely complete** with all core fun
 
 ### Phase 1: Setup (Shared Infrastructure)
 
-| Task | Status | Finding |
-|------|--------|---------|
-| T001 | ✅ PASS | ContactRequest model exists in schema.prisma with correct structure (lines 470-484) |
-| T002 | ❌ FAIL | Migration not found - `grep` search for contact_request in migrations returned no results |
-| T003 | ⚠️  SKIP | Cannot verify Prisma client generation due to missing migration |
-| T004 | ✅ PASS | Directory exists: `frontend/src/components/landing/` with 9 components |
-| T005 | ✅ PASS | Directory exists: `frontend/src/app/login/` with page.tsx |
-| T006-A | ✅ PASS | framer-motion v12.23.24 installed in frontend/package.json |
+| Task   | Status  | Finding                                                                                   |
+| ------ | ------- | ----------------------------------------------------------------------------------------- |
+| T001   | ✅ PASS | ContactRequest model exists in schema.prisma with correct structure (lines 470-484)       |
+| T002   | ❌ FAIL | Migration not found - `grep` search for contact_request in migrations returned no results |
+| T003   | ⚠️ SKIP | Cannot verify Prisma client generation due to missing migration                           |
+| T004   | ✅ PASS | Directory exists: `frontend/src/components/landing/` with 9 components                    |
+| T005   | ✅ PASS | Directory exists: `frontend/src/app/login/` with page.tsx                                 |
+| T006-A | ✅ PASS | framer-motion v12.23.24 installed in frontend/package.json                                |
 
 **Critical Issue (T002)**: No migration file found containing ContactRequest table creation. The model exists in schema.prisma but migration appears missing or not applied.
 
 ### Phase 2: Backend (Foundational)
 
-| Task | Status | Finding |
-|------|--------|---------|
+| Task | Status  | Finding                                                                                 |
+| ---- | ------- | --------------------------------------------------------------------------------------- |
 | T006 | ✅ PASS | contact.ts router exists with submit mutation (backend/src/api/trpc/routers/contact.ts) |
-| T007 | ✅ PASS | contactRouter registered in router.ts at line 31 and exported at line 227 |
-| T008 | ✅ PASS | ContactNotificationService implemented (backend/src/services/notification/contact.ts) |
-| T009 | ✅ PASS | Zod schema exists at frontend/src/lib/schemas/contact.ts with honeypot field |
+| T007 | ✅ PASS | contactRouter registered in router.ts at line 31 and exported at line 227               |
+| T008 | ✅ PASS | ContactNotificationService implemented (backend/src/services/notification/contact.ts)   |
+| T009 | ✅ PASS | Zod schema exists at frontend/src/lib/schemas/contact.ts with honeypot field            |
 
 **Notes**:
+
 - Backend API complete and properly integrated
 - Telegram notification uses both DB settings and ENV fallback
 - Form validation schema includes 152-FZ consent requirement
 
 ### Phase 3: User Story 1 - Landing Components (P1 MVP)
 
-| Task | Status | Finding |
-|------|--------|---------|
-| T010 | ✅ PASS | Header.tsx exists with logo and navigation (lines 9-14 define navLinks) |
-| T011 | ✅ PASS | Hero.tsx exists with headline, subheadline, CTAs (lines 63-100) |
-| T012 | ✅ PASS | Features.tsx exists with 6 feature cards (lines 7-38 define features array) |
-| T013 | ✅ PASS | HowItWorks.tsx exists with 4 steps (lines 7-32 define steps array) |
-| T014 | ✅ PASS | Benefits.tsx exists with 4 stats (lines 6-27 define stats array) |
-| T015 | ✅ PASS | Footer.tsx exists with links and copyright |
+| Task | Status  | Finding                                                                      |
+| ---- | ------- | ---------------------------------------------------------------------------- |
+| T010 | ✅ PASS | Header.tsx exists with logo and navigation (lines 9-14 define navLinks)      |
+| T011 | ✅ PASS | Hero.tsx exists with headline, subheadline, CTAs (lines 63-100)              |
+| T012 | ✅ PASS | Features.tsx exists with 6 feature cards (lines 7-38 define features array)  |
+| T013 | ✅ PASS | HowItWorks.tsx exists with 4 steps (lines 7-32 define steps array)           |
+| T014 | ✅ PASS | Benefits.tsx exists with 4 stats (lines 6-27 define stats array)             |
+| T015 | ✅ PASS | Footer.tsx exists with links and copyright                                   |
 | T016 | ✅ PASS | Barrel export exists at frontend/src/components/landing/index.ts (9 exports) |
-| T017 | ✅ PASS | page.tsx replaced with landing layout (frontend/src/app/page.tsx) |
-| T018 | ✅ PASS | Responsive styles verified with Tailwind breakpoints (md:, lg:, sm:) |
+| T017 | ✅ PASS | page.tsx replaced with landing layout (frontend/src/app/page.tsx)            |
+| T018 | ✅ PASS | Responsive styles verified with Tailwind breakpoints (md:, lg:, sm:)         |
 
 **Extra Components** (Not in spec, but acceptable enhancements):
+
 - PainPoints.tsx - Pain point cards section (enhances UX)
 - Testimonials.tsx - Customer testimonials section (builds trust)
 
 ### Phase 4: User Story 2 - Contact Form (P1)
 
-| Task | Status | Finding |
-|------|--------|---------|
-| T019 | ✅ PASS | ContactForm.tsx exists with React Hook Form integration |
-| T020 | ✅ PASS | Zod validation implemented using contactFormSchema |
-| T021 | ✅ PASS | Honeypot field present (line 176: hidden website field) |
+| Task | Status  | Finding                                                                 |
+| ---- | ------- | ----------------------------------------------------------------------- |
+| T019 | ✅ PASS | ContactForm.tsx exists with React Hook Form integration                 |
+| T020 | ✅ PASS | Zod validation implemented using contactFormSchema                      |
+| T021 | ✅ PASS | Honeypot field present (line 176: hidden website field)                 |
 | T022 | ✅ PASS | tRPC mutation call present (line 15: trpc.contact.submit.useMutation()) |
-| T023 | ✅ PASS | Success/error states in Russian (lines 65-68, 203-207) |
-| T024 | ✅ PASS | ContactForm in page.tsx (line 36-38: section id="contact") |
-| T025 | ✅ PASS | Hero CTA scrolls to contact form (line 86: onClick scrollIntoView) |
+| T023 | ✅ PASS | Success/error states in Russian (lines 65-68, 203-207)                  |
+| T024 | ✅ PASS | ContactForm in page.tsx (line 36-38: section id="contact")              |
+| T025 | ✅ PASS | Hero CTA scrolls to contact form (line 86: onClick scrollIntoView)      |
 
 **Notes**:
+
 - Full form validation with Russian error messages
 - Success state shows confirmation message
 - 152-FZ consent checkbox required (lines 183-200)
 
 ### Phase 5: User Story 3 - Login (P1)
 
-| Task | Status | Finding |
-|------|--------|---------|
-| T026 | ✅ PASS | login/page.tsx exists with Supabase auth redirect logic |
-| T027 | ✅ PASS | Login button in Header (line 71-75: /login link) |
-| T028 | ✅ PASS | Login in mobile menu (lines 109-115) |
+| Task | Status  | Finding                                                             |
+| ---- | ------- | ------------------------------------------------------------------- |
+| T026 | ✅ PASS | login/page.tsx exists with Supabase auth redirect logic             |
+| T027 | ✅ PASS | Login button in Header (line 71-75: /login link)                    |
+| T028 | ✅ PASS | Login in mobile menu (lines 109-115)                                |
 | T029 | ✅ PASS | Dashboard redirect logic present (line 16: redirects to /dashboard) |
 
 **Notes**:
+
 - Login page checks session and redirects accordingly
 - Mobile menu closes on login link click
 
 ### Phase 6: User Story 4 - Navigation (P2)
 
-| Task | Status | Finding |
-|------|--------|---------|
+| Task | Status  | Finding                                                                                          |
+| ---- | ------- | ------------------------------------------------------------------------------------------------ |
 | T030 | ✅ PASS | Section IDs present (hero, pain-points, features, how-it-works, benefits, testimonials, contact) |
-| T031 | ✅ PASS | Smooth scroll implemented in Header.tsx (line 33: scrollIntoView behavior: 'smooth') |
-| T032 | ✅ PASS | Sticky header with scroll detection (lines 17-26: isScrolled state) |
-| T033 | ✅ PASS | Mobile hamburger menu implemented (lines 79-85, 89-119) |
-| T034 | ✅ PASS | Close-on-click for mobile menu (line 30: setIsMobileMenuOpen(false)) |
+| T031 | ✅ PASS | Smooth scroll implemented in Header.tsx (line 33: scrollIntoView behavior: 'smooth')             |
+| T032 | ✅ PASS | Sticky header with scroll detection (lines 17-26: isScrolled state)                              |
+| T033 | ✅ PASS | Mobile hamburger menu implemented (lines 79-85, 89-119)                                          |
+| T034 | ✅ PASS | Close-on-click for mobile menu (line 30: setIsMobileMenuOpen(false))                             |
 
 **Notes**:
+
 - Navigation fully functional
 - Smooth scroll works for all sections
 - Mobile menu has proper animations with framer-motion
 
 ### Phase 7: Polish & Cross-Cutting Concerns
 
-| Task | Status | Finding |
-|------|--------|---------|
-| T035 | ⚠️  WARN | No Next.js Image components found - using icons only, no actual images present |
+| Task | Status  | Finding                                                                                 |
+| ---- | ------- | --------------------------------------------------------------------------------------- |
+| T035 | ⚠️ WARN | No Next.js Image components found - using icons only, no actual images present          |
 | T036 | ❌ FAIL | Meta tags minimal - only title and description in layout.tsx, no page-specific metadata |
-| T037 | ⚠️  WARN | Limited keyboard navigation - only 1 aria-label found (Header menu button) |
-| T038 | ⚠️  SKIP | Cannot verify Lighthouse audit without running server |
-| T039 | ✅ PASS | All content in Russian - no English text found in components |
-| T040 | ⚠️  WARN | No type-check script in package.json - only build, dev, start, lint |
-| T041 | ✅ PASS | Quickstart.md exists with validation checklist |
-| T042 | ✅ PASS | Existing routes unchanged (/dashboard, /feedback, /settings directories exist) |
-| T043 | ✅ PASS | robots.txt and sitemap.xml exist in frontend/public/ |
+| T037 | ⚠️ WARN | Limited keyboard navigation - only 1 aria-label found (Header menu button)              |
+| T038 | ⚠️ SKIP | Cannot verify Lighthouse audit without running server                                   |
+| T039 | ✅ PASS | All content in Russian - no English text found in components                            |
+| T040 | ⚠️ WARN | No type-check script in package.json - only build, dev, start, lint                     |
+| T041 | ✅ PASS | Quickstart.md exists with validation checklist                                          |
+| T042 | ✅ PASS | Existing routes unchanged (/dashboard, /feedback, /settings directories exist)          |
+| T043 | ✅ PASS | robots.txt and sitemap.xml exist in frontend/public/                                    |
 
 **Notes**:
+
 - No images used in landing page (icon-based design)
 - Type-check can be run via `npx tsc --noEmit` but no npm script defined
 - Accessibility could be improved with more aria-labels
@@ -141,6 +147,7 @@ The BuhBot landing page implementation is **largely complete** with all core fun
 
 **Impact**: Form submissions will fail in production
 **Evidence**:
+
 ```bash
 $ grep -r "contact_request" backend/prisma/migrations/*/migration.sql
 # No results
@@ -149,12 +156,14 @@ $ grep -r "contact_request" backend/prisma/migrations/*/migration.sql
 **Root Cause**: Migration file not created or not committed
 
 **Required Action**:
+
 ```bash
 cd backend
 pnpm prisma migrate dev --name add_contact_requests
 ```
 
 This will generate:
+
 ```sql
 CREATE TABLE "contact_requests" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -175,16 +184,18 @@ CREATE TABLE "contact_requests" (
 **Evidence**: layout.tsx only has generic metadata, no page-specific OpenGraph/Twitter cards
 
 **Required Action**: Add metadata export to page.tsx:
+
 ```typescript
 export const metadata: Metadata = {
-  title: "BuhBot - Автоматизация коммуникаций для бухгалтерских фирм",
-  description: "SLA-мониторинг ответов бухгалтеров в Telegram. Контролируйте время реакции на обращения клиентов.",
-  keywords: ["бухгалтерия", "telegram", "sla", "автоматизация"],
+  title: 'BuhBot - Автоматизация коммуникаций для бухгалтерских фирм',
+  description:
+    'SLA-мониторинг ответов бухгалтеров в Telegram. Контролируйте время реакции на обращения клиентов.',
+  keywords: ['бухгалтерия', 'telegram', 'sla', 'автоматизация'],
   openGraph: {
-    title: "BuhBot - Контроль времени ответа бухгалтеров",
-    description: "Автоматическое отслеживание SLA в Telegram-чатах",
-    url: "https://buhbot.aidevteam.ru",
-    type: "website",
+    title: 'BuhBot - Контроль времени ответа бухгалтеров',
+    description: 'Автоматическое отслеживание SLA в Telegram-чатах',
+    url: 'https://buhbot.aidevteam.ru',
+    type: 'website',
   },
 };
 ```
@@ -197,11 +208,13 @@ export const metadata: Metadata = {
 
 **Impact**: Reduced usability for screen reader users
 **Findings**:
+
 - Only 1 aria-label found (mobile menu toggle)
 - No alt text (no images used, so N/A)
 - Form labels present but could add aria-describedby for errors
 
 **Recommendation**: Add aria-labels to interactive elements:
+
 ```tsx
 // Hero CTA buttons
 <button aria-label="Запросить демонстрацию BuhBot">
@@ -214,6 +227,7 @@ export const metadata: Metadata = {
 **Impact**: CI/CD pipeline may not catch TypeScript errors
 **Current**: Must run `npx tsc --noEmit` manually
 **Recommendation**: Add to frontend/package.json:
+
 ```json
 "scripts": {
   "type-check": "tsc --noEmit"
@@ -250,15 +264,15 @@ export const metadata: Metadata = {
 
 ## Comparison Against Specification
 
-| Specification Section | Implementation Status |
-|----------------------|----------------------|
-| User Story 1 (Visitor Explores) | ✅ Complete + enhancements |
-| User Story 2 (Lead Requests Demo) | ✅ Complete (pending migration) |
-| User Story 3 (Login Access) | ✅ Complete |
-| User Story 4 (Navigation) | ✅ Complete |
-| Functional Requirements | ✅ All met |
-| Non-Functional Requirements | ⚠️  SEO/accessibility partial |
-| Technical Requirements | ✅ Stack correct (Next.js 16, React 19, tRPC, Prisma) |
+| Specification Section             | Implementation Status                                 |
+| --------------------------------- | ----------------------------------------------------- |
+| User Story 1 (Visitor Explores)   | ✅ Complete + enhancements                            |
+| User Story 2 (Lead Requests Demo) | ✅ Complete (pending migration)                       |
+| User Story 3 (Login Access)       | ✅ Complete                                           |
+| User Story 4 (Navigation)         | ✅ Complete                                           |
+| Functional Requirements           | ✅ All met                                            |
+| Non-Functional Requirements       | ⚠️ SEO/accessibility partial                          |
+| Technical Requirements            | ✅ Stack correct (Next.js 16, React 19, tRPC, Prisma) |
 
 ---
 
@@ -266,15 +280,15 @@ export const metadata: Metadata = {
 
 ### Manual Validation (Code Review)
 
-| Test Case | Result |
-|-----------|--------|
+| Test Case              | Result  |
+| ---------------------- | ------- |
 | Landing page structure | ✅ PASS |
-| Component integration | ✅ PASS |
-| Form validation logic | ✅ PASS |
-| Backend API endpoints | ✅ PASS |
-| Routing configuration | ✅ PASS |
+| Component integration  | ✅ PASS |
+| Form validation logic  | ✅ PASS |
+| Backend API endpoints  | ✅ PASS |
+| Routing configuration  | ✅ PASS |
 | Responsive breakpoints | ✅ PASS |
-| Language consistency | ✅ PASS |
+| Language consistency   | ✅ PASS |
 
 ### Cannot Test (Server Not Running)
 
@@ -312,7 +326,7 @@ export const metadata: Metadata = {
 
 **For team to resolve blocking issues:**
 
-```
+````
 Execute the following tasks to complete landing page implementation:
 
 1. **Database Migration** (CRITICAL - BLOCKING):
@@ -320,30 +334,34 @@ Execute the following tasks to complete landing page implementation:
    cd /home/me/code/bobabuh/backend
    pnpm prisma migrate dev --name add_contact_requests
    pnpm prisma generate
-   ```
-   Verify migration creates contact_requests table.
+````
+
+Verify migration creates contact_requests table.
 
 2. **SEO Metadata** (HIGH PRIORITY):
    Add to frontend/src/app/page.tsx:
+
    ```typescript
    export const metadata: Metadata = {
-     title: "BuhBot - Автоматизация коммуникаций для бухгалтерских фирм",
-     description: "SLA-мониторинг ответов бухгалтеров в Telegram. Контролируйте время реакции на обращения клиентов.",
-     keywords: ["бухгалтерия", "telegram", "sla", "автоматизация", "мониторинг"],
-     authors: [{ name: "BuhBot Team" }],
+     title: 'BuhBot - Автоматизация коммуникаций для бухгалтерских фирм',
+     description:
+       'SLA-мониторинг ответов бухгалтеров в Telegram. Контролируйте время реакции на обращения клиентов.',
+     keywords: ['бухгалтерия', 'telegram', 'sla', 'автоматизация', 'мониторинг'],
+     authors: [{ name: 'BuhBot Team' }],
      openGraph: {
-       title: "BuhBot - Контроль времени ответа бухгалтеров",
-       description: "Автоматическое отслеживание SLA в Telegram-чатах с умными алертами",
-       url: "https://buhbot.aidevteam.ru",
-       siteName: "BuhBot",
-       locale: "ru_RU",
-       type: "website",
+       title: 'BuhBot - Контроль времени ответа бухгалтеров',
+       description: 'Автоматическое отслеживание SLA в Telegram-чатах с умными алертами',
+       url: 'https://buhbot.aidevteam.ru',
+       siteName: 'BuhBot',
+       locale: 'ru_RU',
+       type: 'website',
      },
    };
    ```
 
 3. **Type-Check Script** (MEDIUM PRIORITY):
    Add to frontend/package.json scripts:
+
    ```json
    "type-check": "tsc --noEmit"
    ```
@@ -361,6 +379,7 @@ Execute the following tasks to complete landing page implementation:
    - Test contact form submission
    - Verify Telegram notification received
    - Run `pnpm type-check` (after adding script)
+
 ```
 
 ---
@@ -429,3 +448,4 @@ Execute the following tasks to complete landing page implementation:
 **Report Generated**: 2025-11-25 06:15:00 UTC
 **Validator**: integration-tester (Claude Code)
 **Next Steps**: Execute fixup prompt to resolve blocking issues
+```

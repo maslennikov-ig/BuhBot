@@ -41,16 +41,19 @@ Use "BREAKING CHANGE: " in body/footer, or `type!` / `type(scope)!:` in subject.
 ## Examples
 
 ### Simple
+
 ```
 feat: add user authentication
 ```
 
 ### With Scope
+
 ```
 fix(api): resolve CORS configuration error
 ```
 
 ### With Body
+
 ```
 refactor(database): optimize query performance
 
@@ -59,6 +62,7 @@ Reduced average query time by 60%.
 ```
 
 ### Breaking Change
+
 ```
 feat(api): migrate to REST API v2
 

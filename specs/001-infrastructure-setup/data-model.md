@@ -121,20 +121,22 @@ erDiagram
 
 **Purpose**: Store admin panel users (accountants, managers, observers). Synchronized with Supabase Auth.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY | References `auth.users.id` in Supabase Auth |
-| email | text | NOT NULL, UNIQUE | User email (from Supabase Auth) |
-| full_name | text | NOT NULL | Display name |
-| role | text | NOT NULL, CHECK IN ('admin', 'manager', 'observer') | RBAC role |
-| created_at | timestamptz | NOT NULL, DEFAULT now() | Account creation timestamp |
-| updated_at | timestamptz | NOT NULL, DEFAULT now() | Last update timestamp |
+| Column     | Type        | Constraints                                         | Description                                 |
+| ---------- | ----------- | --------------------------------------------------- | ------------------------------------------- |
+| id         | uuid        | PRIMARY KEY                                         | References `auth.users.id` in Supabase Auth |
+| email      | text        | NOT NULL, UNIQUE                                    | User email (from Supabase Auth)             |
+| full_name  | text        | NOT NULL                                            | Display name                                |
+| role       | text        | NOT NULL, CHECK IN ('admin', 'manager', 'observer') | RBAC role                                   |
+| created_at | timestamptz | NOT NULL, DEFAULT now()                             | Account creation timestamp                  |
+| updated_at | timestamptz | NOT NULL, DEFAULT now()                             | Last update timestamp                       |
 
 **Indexes**:
+
 - `idx_users_email` on `email`
 - `idx_users_role` on `role`
 
 **RLS Policies**:
+
 - **SELECT**: All authenticated users can read all users (for assignment dropdowns)
 - **INSERT**: Only admins can create users
 - **UPDATE**: Admins can update all, users can update their own `full_name`
@@ -146,23 +148,25 @@ erDiagram
 
 **Purpose**: Store Telegram chat metadata for SLA tracking and accountant assignments.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | bigint | PRIMARY KEY | Telegram chat ID (unique per chat) |
-| chat_type | text | NOT NULL, CHECK IN ('private', 'group', 'supergroup') | Chat type |
-| title | text | NULL | Chat title (for groups) or client name (for private) |
-| accountant_username | text | NULL | Telegram username of assigned accountant |
-| assigned_accountant_id | uuid | FOREIGN KEY → users(id) | Assigned accountant for this chat |
-| sla_enabled | boolean | NOT NULL, DEFAULT true | Enable SLA monitoring for this chat |
-| sla_response_minutes | int | NOT NULL, DEFAULT 60 | SLA threshold in working minutes |
-| created_at | timestamptz | NOT NULL, DEFAULT now() | First message timestamp |
-| updated_at | timestamptz | NOT NULL, DEFAULT now() | Last update timestamp |
+| Column                 | Type        | Constraints                                           | Description                                          |
+| ---------------------- | ----------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| id                     | bigint      | PRIMARY KEY                                           | Telegram chat ID (unique per chat)                   |
+| chat_type              | text        | NOT NULL, CHECK IN ('private', 'group', 'supergroup') | Chat type                                            |
+| title                  | text        | NULL                                                  | Chat title (for groups) or client name (for private) |
+| accountant_username    | text        | NULL                                                  | Telegram username of assigned accountant             |
+| assigned_accountant_id | uuid        | FOREIGN KEY → users(id)                               | Assigned accountant for this chat                    |
+| sla_enabled            | boolean     | NOT NULL, DEFAULT true                                | Enable SLA monitoring for this chat                  |
+| sla_response_minutes   | int         | NOT NULL, DEFAULT 60                                  | SLA threshold in working minutes                     |
+| created_at             | timestamptz | NOT NULL, DEFAULT now()                               | First message timestamp                              |
+| updated_at             | timestamptz | NOT NULL, DEFAULT now()                               | Last update timestamp                                |
 
 **Indexes**:
+
 - `idx_chats_assigned_accountant` on `assigned_accountant_id`
 - `idx_chats_sla_enabled` on `sla_enabled` WHERE `sla_enabled = true`
 
 **RLS Policies**:
+
 - **SELECT**:
   - Admins: all chats
   - Managers: all chats
@@ -176,23 +180,24 @@ erDiagram
 
 **Purpose**: Track incoming client messages for SLA monitoring and analytics.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique request ID |
-| chat_id | bigint | NOT NULL, FOREIGN KEY → chats(id) | Chat where request originated |
-| message_id | bigint | NOT NULL | Telegram message ID |
-| message_text | text | NOT NULL | Original message content |
-| client_username | text | NULL | Client's Telegram username |
-| received_at | timestamptz | NOT NULL, DEFAULT now() | Message receipt timestamp |
-| assigned_to | uuid | FOREIGN KEY → users(id) | Accountant assigned to this request |
-| response_at | timestamptz | NULL | Timestamp of first response |
-| response_time_minutes | int | NULL | Working minutes from received_at to response_at |
-| status | text | NOT NULL, DEFAULT 'pending', CHECK IN ('pending', 'in_progress', 'answered', 'escalated') | Request lifecycle status |
-| is_spam | boolean | NOT NULL, DEFAULT false | Flagged as spam by AI filter |
-| created_at | timestamptz | NOT NULL, DEFAULT now() | Record creation timestamp |
-| updated_at | timestamptz | NOT NULL, DEFAULT now() | Last update timestamp |
+| Column                | Type        | Constraints                                                                               | Description                                     |
+| --------------------- | ----------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| id                    | uuid        | PRIMARY KEY, DEFAULT uuid_generate_v4()                                                   | Unique request ID                               |
+| chat_id               | bigint      | NOT NULL, FOREIGN KEY → chats(id)                                                         | Chat where request originated                   |
+| message_id            | bigint      | NOT NULL                                                                                  | Telegram message ID                             |
+| message_text          | text        | NOT NULL                                                                                  | Original message content                        |
+| client_username       | text        | NULL                                                                                      | Client's Telegram username                      |
+| received_at           | timestamptz | NOT NULL, DEFAULT now()                                                                   | Message receipt timestamp                       |
+| assigned_to           | uuid        | FOREIGN KEY → users(id)                                                                   | Accountant assigned to this request             |
+| response_at           | timestamptz | NULL                                                                                      | Timestamp of first response                     |
+| response_time_minutes | int         | NULL                                                                                      | Working minutes from received_at to response_at |
+| status                | text        | NOT NULL, DEFAULT 'pending', CHECK IN ('pending', 'in_progress', 'answered', 'escalated') | Request lifecycle status                        |
+| is_spam               | boolean     | NOT NULL, DEFAULT false                                                                   | Flagged as spam by AI filter                    |
+| created_at            | timestamptz | NOT NULL, DEFAULT now()                                                                   | Record creation timestamp                       |
+| updated_at            | timestamptz | NOT NULL, DEFAULT now()                                                                   | Last update timestamp                           |
 
 **Indexes**:
+
 - `idx_client_requests_chat_id` on `chat_id`
 - `idx_client_requests_assigned_to` on `assigned_to`
 - `idx_client_requests_status` on `status`
@@ -200,6 +205,7 @@ erDiagram
 - `idx_client_requests_is_spam` on `is_spam` WHERE `is_spam = true`
 
 **RLS Policies**:
+
 - **SELECT**:
   - Admins/Managers: all requests
   - Observers: all requests (read-only)
@@ -215,23 +221,25 @@ erDiagram
 
 **Purpose**: Log SLA warnings and breaches for monitoring and compliance reporting.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique alert ID |
-| request_id | uuid | NOT NULL, FOREIGN KEY → client_requests(id) | Related client request |
-| alert_type | text | NOT NULL, CHECK IN ('warning', 'breach') | Warning (80% threshold) or breach (100%) |
-| minutes_elapsed | int | NOT NULL | Working minutes elapsed at alert time |
-| alert_sent_at | timestamptz | NOT NULL, DEFAULT now() | When alert was triggered |
-| acknowledged_at | timestamptz | NULL | When accountant acknowledged alert |
-| acknowledged_by | uuid | FOREIGN KEY → users(id) | User who acknowledged alert |
-| resolution_notes | text | NULL | Notes added during acknowledgment |
+| Column           | Type        | Constraints                                 | Description                              |
+| ---------------- | ----------- | ------------------------------------------- | ---------------------------------------- |
+| id               | uuid        | PRIMARY KEY, DEFAULT uuid_generate_v4()     | Unique alert ID                          |
+| request_id       | uuid        | NOT NULL, FOREIGN KEY → client_requests(id) | Related client request                   |
+| alert_type       | text        | NOT NULL, CHECK IN ('warning', 'breach')    | Warning (80% threshold) or breach (100%) |
+| minutes_elapsed  | int         | NOT NULL                                    | Working minutes elapsed at alert time    |
+| alert_sent_at    | timestamptz | NOT NULL, DEFAULT now()                     | When alert was triggered                 |
+| acknowledged_at  | timestamptz | NULL                                        | When accountant acknowledged alert       |
+| acknowledged_by  | uuid        | FOREIGN KEY → users(id)                     | User who acknowledged alert              |
+| resolution_notes | text        | NULL                                        | Notes added during acknowledgment        |
 
 **Indexes**:
+
 - `idx_sla_alerts_request_id` on `request_id`
 - `idx_sla_alerts_alert_type` on `alert_type`
 - `idx_sla_alerts_alert_sent_at` on `alert_sent_at`
 
 **RLS Policies**:
+
 - **SELECT**: All authenticated users
 - **INSERT**: Bot application (service role key)
 - **UPDATE**: Admins/Managers (for acknowledgment)
@@ -243,21 +251,23 @@ erDiagram
 
 **Purpose**: Store client satisfaction ratings and feedback comments.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique feedback ID |
-| chat_id | bigint | NOT NULL, FOREIGN KEY → chats(id) | Chat where feedback was given |
-| request_id | uuid | FOREIGN KEY → client_requests(id) | Related request (optional) |
-| rating | int | NOT NULL, CHECK (rating >= 1 AND rating <= 5) | Star rating (1-5) |
-| comment | text | NULL | Optional text feedback |
-| submitted_at | timestamptz | NOT NULL, DEFAULT now() | Submission timestamp |
+| Column       | Type        | Constraints                                   | Description                   |
+| ------------ | ----------- | --------------------------------------------- | ----------------------------- |
+| id           | uuid        | PRIMARY KEY, DEFAULT uuid_generate_v4()       | Unique feedback ID            |
+| chat_id      | bigint      | NOT NULL, FOREIGN KEY → chats(id)             | Chat where feedback was given |
+| request_id   | uuid        | FOREIGN KEY → client_requests(id)             | Related request (optional)    |
+| rating       | int         | NOT NULL, CHECK (rating >= 1 AND rating <= 5) | Star rating (1-5)             |
+| comment      | text        | NULL                                          | Optional text feedback        |
+| submitted_at | timestamptz | NOT NULL, DEFAULT now()                       | Submission timestamp          |
 
 **Indexes**:
+
 - `idx_feedback_chat_id` on `chat_id`
 - `idx_feedback_rating` on `rating`
 - `idx_feedback_submitted_at` on `submitted_at`
 
 **RLS Policies**:
+
 - **SELECT**: All authenticated users
 - **INSERT**: Bot application (service role key)
 - **UPDATE/DELETE**: Admins only
@@ -268,23 +278,26 @@ erDiagram
 
 **Purpose**: Define working hours per chat for accurate SLA calculation (exclude weekends/off-hours).
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique schedule ID |
-| chat_id | bigint | NOT NULL, FOREIGN KEY → chats(id) | Chat this schedule applies to |
-| day_of_week | int | NOT NULL, CHECK (day_of_week >= 1 AND day_of_week <= 7) | 1=Monday, 7=Sunday |
-| start_time | time | NOT NULL | Working hours start (e.g., 09:00:00) |
-| end_time | time | NOT NULL | Working hours end (e.g., 18:00:00) |
-| is_active | boolean | NOT NULL, DEFAULT true | Enable/disable this schedule |
+| Column      | Type    | Constraints                                             | Description                          |
+| ----------- | ------- | ------------------------------------------------------- | ------------------------------------ |
+| id          | uuid    | PRIMARY KEY, DEFAULT uuid_generate_v4()                 | Unique schedule ID                   |
+| chat_id     | bigint  | NOT NULL, FOREIGN KEY → chats(id)                       | Chat this schedule applies to        |
+| day_of_week | int     | NOT NULL, CHECK (day_of_week >= 1 AND day_of_week <= 7) | 1=Monday, 7=Sunday                   |
+| start_time  | time    | NOT NULL                                                | Working hours start (e.g., 09:00:00) |
+| end_time    | time    | NOT NULL                                                | Working hours end (e.g., 18:00:00)   |
+| is_active   | boolean | NOT NULL, DEFAULT true                                  | Enable/disable this schedule         |
 
 **Indexes**:
+
 - `idx_working_schedules_chat_id` on `chat_id`
 - `idx_working_schedules_day` on `day_of_week`
 
 **Constraints**:
+
 - `UNIQUE (chat_id, day_of_week)` - one schedule per day per chat
 
 **RLS Policies**:
+
 - **SELECT**: All authenticated users
 - **INSERT/UPDATE/DELETE**: Admins and managers only
 
@@ -294,23 +307,25 @@ erDiagram
 
 **Purpose**: Store reusable message templates for quick responses.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique template ID |
-| title | text | NOT NULL | Short descriptive title (e.g., "Greeting - Morning") |
-| content | text | NOT NULL | Template message content (supports {{variables}}) |
-| category | text | NOT NULL, CHECK IN ('greeting', 'status', 'document_request', 'reminder', 'closing') | Template category |
-| created_by | uuid | NOT NULL, FOREIGN KEY → users(id) | User who created template |
-| usage_count | int | NOT NULL, DEFAULT 0 | Track popularity for analytics |
-| created_at | timestamptz | NOT NULL, DEFAULT now() | Creation timestamp |
-| updated_at | timestamptz | NOT NULL, DEFAULT now() | Last modification timestamp |
+| Column      | Type        | Constraints                                                                          | Description                                          |
+| ----------- | ----------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| id          | uuid        | PRIMARY KEY, DEFAULT uuid_generate_v4()                                              | Unique template ID                                   |
+| title       | text        | NOT NULL                                                                             | Short descriptive title (e.g., "Greeting - Morning") |
+| content     | text        | NOT NULL                                                                             | Template message content (supports {{variables}})    |
+| category    | text        | NOT NULL, CHECK IN ('greeting', 'status', 'document_request', 'reminder', 'closing') | Template category                                    |
+| created_by  | uuid        | NOT NULL, FOREIGN KEY → users(id)                                                    | User who created template                            |
+| usage_count | int         | NOT NULL, DEFAULT 0                                                                  | Track popularity for analytics                       |
+| created_at  | timestamptz | NOT NULL, DEFAULT now()                                                              | Creation timestamp                                   |
+| updated_at  | timestamptz | NOT NULL, DEFAULT now()                                                              | Last modification timestamp                          |
 
 **Indexes**:
+
 - `idx_templates_category` on `category`
 - `idx_templates_usage_count` on `usage_count DESC` (for "most used" queries)
 - `idx_templates_created_by` on `created_by`
 
 **RLS Policies**:
+
 - **SELECT**: All authenticated users
 - **INSERT**: Admins and managers
 - **UPDATE**:
@@ -324,23 +339,25 @@ erDiagram
 
 **Purpose**: Store frequently asked questions and answers for inline button quick replies.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique FAQ ID |
-| question | text | NOT NULL | Question text (shown in button) |
-| answer | text | NOT NULL | Answer text (sent to client) |
-| keywords | text[] | NOT NULL, DEFAULT '{}' | Search keywords for matching |
-| usage_count | int | NOT NULL, DEFAULT 0 | Track how often FAQ is used |
-| created_by | uuid | NOT NULL, FOREIGN KEY → users(id) | User who created FAQ |
-| created_at | timestamptz | NOT NULL, DEFAULT now() | Creation timestamp |
-| updated_at | timestamptz | NOT NULL, DEFAULT now() | Last modification timestamp |
+| Column      | Type        | Constraints                             | Description                     |
+| ----------- | ----------- | --------------------------------------- | ------------------------------- |
+| id          | uuid        | PRIMARY KEY, DEFAULT uuid_generate_v4() | Unique FAQ ID                   |
+| question    | text        | NOT NULL                                | Question text (shown in button) |
+| answer      | text        | NOT NULL                                | Answer text (sent to client)    |
+| keywords    | text[]      | NOT NULL, DEFAULT '{}'                  | Search keywords for matching    |
+| usage_count | int         | NOT NULL, DEFAULT 0                     | Track how often FAQ is used     |
+| created_by  | uuid        | NOT NULL, FOREIGN KEY → users(id)       | User who created FAQ            |
+| created_at  | timestamptz | NOT NULL, DEFAULT now()                 | Creation timestamp              |
+| updated_at  | timestamptz | NOT NULL, DEFAULT now()                 | Last modification timestamp     |
 
 **Indexes**:
+
 - `idx_faq_keywords` GIN index on `keywords` (for fast array searches)
 - `idx_faq_usage_count` on `usage_count DESC`
 - `idx_faq_created_by` on `created_by`
 
 **RLS Policies**:
+
 - **SELECT**: All authenticated users
 - **INSERT**: Admins and managers
 - **UPDATE**:
@@ -452,6 +469,7 @@ $$ LANGUAGE plpgsql;
 ## Row-Level Security (RLS) Policies Summary
 
 ### Role Definitions (from Supabase Auth):
+
 - **admin**: Full access to all tables (CRUD)
 - **manager**: Read all, modify settings (templates, FAQ, schedules), update assignments
 - **observer**: Read-only access to all tables
@@ -513,6 +531,7 @@ USING (
 ## Initial Seed Data
 
 ### Default Admin User:
+
 ```sql
 -- Inserted after first Supabase Auth user creation
 INSERT INTO users (id, email, full_name, role)
@@ -525,6 +544,7 @@ VALUES (
 ```
 
 ### Default Working Schedule (Mon-Fri 9-18):
+
 ```sql
 -- Example for chat_id = 123456789 (replace with actual chat)
 INSERT INTO working_schedules (chat_id, day_of_week, start_time, end_time, is_active) VALUES
@@ -536,6 +556,7 @@ INSERT INTO working_schedules (chat_id, day_of_week, start_time, end_time, is_ac
 ```
 
 ### Sample Templates:
+
 ```sql
 INSERT INTO templates (title, content, category, created_by) VALUES
 ('Morning Greeting', 'Доброе утро! Чем могу помочь сегодня?', 'greeting', '00000000-0000-0000-0000-000000000001'),

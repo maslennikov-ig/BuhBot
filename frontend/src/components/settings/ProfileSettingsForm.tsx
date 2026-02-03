@@ -26,11 +26,11 @@ import { TelegramAccountCard } from '../telegram/TelegramAccountCard';
 
 const profileSchema = z.object({
   fullName: z.string().min(1, 'Имя обязательно'),
-  // telegramUsername is no longer manually editable for linking, 
+  // telegramUsername is no longer manually editable for linking,
   // but we keep it in schema if backend requires it, or remove it.
   // The backend updateProfile still accepts it, but we want to rely on the linked account.
   // However, for backward compatibility or display preference, we might keep it.
-  // The spec says "Replace manual Telegram username input". 
+  // The spec says "Replace manual Telegram username input".
   // So we remove it from the form UI, but maybe keep it in schema as optional/hidden if needed.
   // For now, let's remove it from UI.
 });
@@ -73,20 +73,27 @@ export function ProfileSettingsForm() {
   };
 
   // Memoize to prevent TelegramLoginButton re-initialization on every render
-  const handleTelegramAuth = useCallback((telegramUser: TelegramUser) => {
-    linkTelegram.mutate(telegramUser, {
-      onSuccess: () => {
-        toast.success('Telegram аккаунт успешно привязан');
-        utils.auth.me.invalidate();
-      },
-      onError: (error) => {
-        toast.error(`Ошибка привязки Telegram: ${error.message}`);
-      },
-    });
-  }, [linkTelegram, utils.auth.me]);
+  const handleTelegramAuth = useCallback(
+    (telegramUser: TelegramUser) => {
+      linkTelegram.mutate(telegramUser, {
+        onSuccess: () => {
+          toast.success('Telegram аккаунт успешно привязан');
+          utils.auth.me.invalidate();
+        },
+        onError: (error) => {
+          toast.error(`Ошибка привязки Telegram: ${error.message}`);
+        },
+      });
+    },
+    [linkTelegram, utils.auth.me]
+  );
 
   const handleDisconnect = useCallback(() => {
-    if (confirm('Вы уверены, что хотите отвязать Telegram аккаунт? Вы перестанете получать уведомления.')) {
+    if (
+      confirm(
+        'Вы уверены, что хотите отвязать Telegram аккаунт? Вы перестанете получать уведомления.'
+      )
+    ) {
       unlinkTelegram.mutate(undefined, {
         onSuccess: () => {
           toast.success('Telegram аккаунт отвязан');
@@ -138,9 +145,7 @@ export function ProfileSettingsForm() {
                       value={field.value || ''}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Ваше имя, которое будет отображаться в системе.
-                  </FormDescription>
+                  <FormDescription>Ваше имя, которое будет отображаться в системе.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -153,12 +158,12 @@ export function ProfileSettingsForm() {
                 className="bg-[var(--buh-primary)] text-white hover:bg-[var(--buh-primary-dark)]"
               >
                 {updateProfile.isPending ? (
-                    <>Сохранение...</>
+                  <>Сохранение...</>
                 ) : (
-                    <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Сохранить изменения
-                    </>
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Сохранить изменения
+                  </>
                 )}
               </Button>
             </div>
@@ -192,7 +197,9 @@ export function ProfileSettingsForm() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-lg bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-[var(--buh-foreground)]">Статус подключения:</span>
+                <span className="font-medium text-[var(--buh-foreground)]">
+                  Статус подключения:
+                </span>
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-600 text-xs font-medium">
                   <AlertCircle className="w-3 h-3" />
                   Не подключено

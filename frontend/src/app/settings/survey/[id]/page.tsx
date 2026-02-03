@@ -23,11 +23,7 @@ export const metadata: Metadata = {
  * Renders the survey detail page with metadata.
  * Uses AdminLayout for consistent premium admin UI.
  */
-export default async function SurveyDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function SurveyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return <SurveyDetailContent surveyId={id} />;
 }

@@ -24,17 +24,17 @@ All agents and contributors MUST follow these rules when writing commit messages
 
 ### Allowed Types
 
-| Type       | Changelog / Release Please | Use for |
-|-----------|----------------------------|---------|
-| `feat`    | **Added** (minor bump)     | New user-facing or API feature |
-| `fix`     | **Fixed** (patch bump)     | Bug fix |
-| `docs`    | Often omitted or "Other"  | Documentation only |
-| `refactor`| Often omitted or "Changed"| Code change, no behavior/API change |
-| `test`    | Omitted                   | Adding or updating tests |
-| `chore`   | Omitted                   | Build, config, deps, tooling |
-| `style`   | Omitted                    | Formatting, whitespace, no code change |
-| `perf`    | **Changed** (patch)        | Performance improvement |
-| `ci`      | Omitted                    | CI/config changes |
+| Type       | Changelog / Release Please | Use for                                |
+| ---------- | -------------------------- | -------------------------------------- |
+| `feat`     | **Added** (minor bump)     | New user-facing or API feature         |
+| `fix`      | **Fixed** (patch bump)     | Bug fix                                |
+| `docs`     | Often omitted or "Other"   | Documentation only                     |
+| `refactor` | Often omitted or "Changed" | Code change, no behavior/API change    |
+| `test`     | Omitted                    | Adding or updating tests               |
+| `chore`    | Omitted                    | Build, config, deps, tooling           |
+| `style`    | Omitted                    | Formatting, whitespace, no code change |
+| `perf`     | **Changed** (patch)        | Performance improvement                |
+| `ci`       | Omitted                    | CI/config changes                      |
 
 **Reserved:** Do **not** use `chore(release):` for normal commits. Release Please creates `chore(release): vX.Y.Z` for release commits; that pattern is reserved for automation.
 
@@ -57,13 +57,13 @@ BREAKING CHANGE: Authentication tokens from v1 are invalid. Use /auth/v2 to obta
 
 These rules ensure Release Please (and similar tools) parse commits correctly and produce clean changelogs.
 
-| Rule | Requirement |
-|------|--------------|
-| **Subject format** | Imperative mood, lowercase, no period at end, ≤ 72 chars. |
-| **One logical change per commit** | Prefer one fix/feature per commit. Avoid "fix: resolve 6 bugs" when you can split; each commit becomes one changelog line. |
-| **No meta commits in changelog** | Avoid commits that only say "bd sync", "update docs", or "chore: update project files" if they add no user-facing meaning. Use descriptive messages or accept they may appear under "Other". |
-| **Reserve chore(release)** | Only Release Please (or the release script) should create `chore(release): vX.Y.Z`. Never use `chore(release):` for other changes. |
-| **Merge commits** | Prefer squash or linear history so one change = one commit. Merge commit messages like "Merge PR #18" are often ignored or produce noisy changelog entries. |
+| Rule                              | Requirement                                                                                                                                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Subject format**                | Imperative mood, lowercase, no period at end, ≤ 72 chars.                                                                                                                                    |
+| **One logical change per commit** | Prefer one fix/feature per commit. Avoid "fix: resolve 6 bugs" when you can split; each commit becomes one changelog line.                                                                   |
+| **No meta commits in changelog**  | Avoid commits that only say "bd sync", "update docs", or "chore: update project files" if they add no user-facing meaning. Use descriptive messages or accept they may appear under "Other". |
+| **Reserve chore(release)**        | Only Release Please (or the release script) should create `chore(release): vX.Y.Z`. Never use `chore(release):` for other changes.                                                           |
+| **Merge commits**                 | Prefer squash or linear history so one change = one commit. Merge commit messages like "Merge PR #18" are often ignored or produce noisy changelog entries.                                  |
 
 ### Good Examples
 

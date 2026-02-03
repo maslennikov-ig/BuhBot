@@ -6,11 +6,7 @@ import { GlassCard } from '@/components/layout/GlassCard';
 import { AlertTriangle, TrendingUp, TrendingDown, Minus, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
 // ============================================
@@ -47,14 +43,14 @@ const cardVariants = {
     transition: {
       duration: 0.5,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
   hover: {
     y: -4,
     transition: {
       duration: 0.2,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -68,7 +64,7 @@ const iconVariants = {
       delay: 0.2,
       duration: 0.4,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -81,7 +77,7 @@ const metricVariants = {
       delay: 0.1,
       duration: 0.5,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -94,7 +90,7 @@ const chartVariants = {
       delay: 0.3,
       duration: 0.6,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -162,11 +158,7 @@ export function ViolationsWidget({
   const isPositive = changeDirection === 'down';
 
   const TrendIcon =
-    changeDirection === 'up'
-      ? TrendingUp
-      : changeDirection === 'down'
-        ? TrendingDown
-        : Minus;
+    changeDirection === 'up' ? TrendingUp : changeDirection === 'down' ? TrendingDown : Minus;
 
   // Determine severity
   const getSeverity = React.useCallback((value: number) => {
@@ -209,9 +201,11 @@ export function ViolationsWidget({
         <motion.div
           className={cn(
             'absolute inset-x-0 top-0 h-1 transition-opacity duration-300',
-            severity === 'success' && 'bg-gradient-to-r from-[var(--buh-success)] to-[var(--buh-success)]',
-            severity === 'warning' && 'bg-gradient-to-r from-[var(--buh-warning)] to-[var(--buh-error)]',
-            severity === 'error' && 'bg-gradient-to-r from-[var(--buh-error)] to-[var(--buh-error)]',
+            severity === 'success' &&
+              'bg-gradient-to-r from-[var(--buh-success)] to-[var(--buh-success)]',
+            severity === 'warning' &&
+              'bg-gradient-to-r from-[var(--buh-warning)] to-[var(--buh-error)]',
+            severity === 'error' && 'bg-gradient-to-r from-[var(--buh-error)] to-[var(--buh-error)]'
           )}
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
@@ -224,9 +218,7 @@ export function ViolationsWidget({
             <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)] mb-1">
               Нарушения сегодня
             </h3>
-            <p className="text-xs text-[var(--buh-foreground-subtle)]">
-              Превышение SLA
-            </p>
+            <p className="text-xs text-[var(--buh-foreground-subtle)]">Превышение SLA</p>
           </div>
           <motion.div
             className={cn(
@@ -249,10 +241,7 @@ export function ViolationsWidget({
         </div>
 
         {/* Main metric */}
-        <motion.div
-          className="flex items-baseline gap-3 mb-4"
-          variants={metricVariants}
-        >
+        <motion.div className="flex items-baseline gap-3 mb-4" variants={metricVariants}>
           <span
             className={cn(
               'text-5xl font-bold tracking-tight transition-colors duration-300',
@@ -297,10 +286,7 @@ export function ViolationsWidget({
             aria-label="График нарушений за последние 7 дней"
           >
             <ChartContainer config={chartConfig}>
-              <BarChart
-                data={sparklineData}
-                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-              >
+              <BarChart data={sparklineData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                 <XAxis dataKey="day" hide />
                 <YAxis hide />
                 <ChartTooltip
@@ -340,11 +326,10 @@ export function ViolationsWidget({
           transition={{
             duration: 4,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: 'easeInOut',
           }}
         />
       </GlassCard>
     </motion.div>
   );
 }
-

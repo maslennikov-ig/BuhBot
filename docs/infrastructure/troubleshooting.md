@@ -55,14 +55,14 @@ free -h
 
 ### Service Health Endpoints
 
-| Service | Health Check Command |
-|---------|---------------------|
-| Bot Backend | `curl http://localhost:3000/health` |
-| Frontend | `curl http://localhost:3001/api/health` |
-| Redis | `docker exec buhbot-redis redis-cli ping` |
-| Prometheus | `curl http://localhost:9090/-/healthy` |
-| Grafana | `curl http://localhost:3002/api/health` |
-| Nginx | `curl http://localhost/health` |
+| Service     | Health Check Command                      |
+| ----------- | ----------------------------------------- |
+| Bot Backend | `curl http://localhost:3000/health`       |
+| Frontend    | `curl http://localhost:3001/api/health`   |
+| Redis       | `docker exec buhbot-redis redis-cli ping` |
+| Prometheus  | `curl http://localhost:9090/-/healthy`    |
+| Grafana     | `curl http://localhost:3002/api/health`   |
+| Nginx       | `curl http://localhost/health`            |
 
 ---
 
@@ -71,6 +71,7 @@ free -h
 ### Bot Not Responding to Messages
 
 **Symptoms**:
+
 - Telegram messages sent to bot receive no response
 - Webhook errors in Telegram Bot API
 - Users report bot is "offline"
@@ -83,6 +84,7 @@ curl https://api.telegram.org/bot$TOKEN/getWebhookInfo
 ```
 
 **Expected Response**:
+
 ```json
 {
   "ok": true,
@@ -98,13 +100,14 @@ curl https://api.telegram.org/bot$TOKEN/getWebhookInfo
 
 **Problem Indicators**:
 
-| Field | Problem | Solution |
-|-------|---------|----------|
-| `url` is empty | Webhook not set | Run webhook setup command |
-| `pending_update_count` > 100 | Bot not processing | Check container health |
-| `last_error_message` present | Webhook delivery failing | Check error message |
+| Field                        | Problem                  | Solution                  |
+| ---------------------------- | ------------------------ | ------------------------- |
+| `url` is empty               | Webhook not set          | Run webhook setup command |
+| `pending_update_count` > 100 | Bot not processing       | Check container health    |
+| `last_error_message` present | Webhook delivery failing | Check error message       |
 
 **Fix webhook URL**:
+
 ```bash
 curl -X POST "https://api.telegram.org/bot$TOKEN/setWebhook" \
   -d "url=https://bot.example.com/webhook/telegram"
@@ -122,12 +125,12 @@ docker logs buhbot-bot-backend -f
 
 **Common Log Errors and Solutions**:
 
-| Error Pattern | Cause | Solution |
-|---------------|-------|----------|
-| `ECONNREFUSED` to Redis | Redis not running | Restart Redis container |
-| `ENOTFOUND` for Supabase | DNS/network issue | Check network connectivity |
-| `401 Unauthorized` | Invalid bot token | Verify `TELEGRAM_BOT_TOKEN` in `.env` |
-| `429 Too Many Requests` | Rate limited | Wait or check for message loops |
+| Error Pattern            | Cause             | Solution                              |
+| ------------------------ | ----------------- | ------------------------------------- |
+| `ECONNREFUSED` to Redis  | Redis not running | Restart Redis container               |
+| `ENOTFOUND` for Supabase | DNS/network issue | Check network connectivity            |
+| `401 Unauthorized`       | Invalid bot token | Verify `TELEGRAM_BOT_TOKEN` in `.env` |
+| `429 Too Many Requests`  | Rate limited      | Wait or check for message loops       |
 
 **Step 3: Verify Environment Variables**
 
@@ -137,6 +140,7 @@ docker exec buhbot-bot-backend env | grep -E "(TELEGRAM|SUPABASE|REDIS)"
 ```
 
 **Required Variables**:
+
 - `TELEGRAM_BOT_TOKEN` - Bot token from BotFather
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key
@@ -171,6 +175,7 @@ docker ps | grep bot-backend
 ### Bot Not Reading Group Messages (Privacy Mode)
 
 **Symptoms**:
+
 - Bot receives commands and mentions but ignores regular messages
 - SLA monitoring doesn't trigger for client messages
 - No violations are recorded
@@ -178,6 +183,7 @@ docker ps | grep bot-backend
 
 **Root Cause**:
 Telegram bots have Privacy Mode enabled by default. With Privacy Mode ON, bots only receive:
+
 - Direct messages (private chats)
 - Commands (messages starting with `/`)
 - Mentions (messages containing `@botname`)
@@ -193,6 +199,7 @@ curl "https://api.telegram.org/bot$TOKEN/getMe" | jq '.result.can_read_all_group
 ```
 
 **Expected Result**:
+
 - `true` — Privacy Mode OFF (correct)
 - `false` — Privacy Mode ON (problem!)
 
@@ -210,6 +217,7 @@ curl "https://api.telegram.org/bot$TOKEN/getMe" | jq '.result.can_read_all_group
 **Step 3: Remove and Re-add Bot to Groups**
 
 ⚠️ **IMPORTANT**: After changing Privacy Mode, you must:
+
 1. Remove the bot from all group chats
 2. Add the bot back to each group
 
@@ -224,6 +232,7 @@ curl "https://api.telegram.org/bot$TOKEN/getMe" | jq '.result.can_read_all_group
 ```
 
 **Prevention**:
+
 - Add Privacy Mode check to your deployment checklist
 - Include verification script in CI/CD pipeline
 
@@ -232,6 +241,7 @@ curl "https://api.telegram.org/bot$TOKEN/getMe" | jq '.result.can_read_all_group
 ### Bot Slow Response Times
 
 **Symptoms**:
+
 - Users report delays > 5 seconds before receiving responses
 - Messages eventually arrive but are slow
 - Monitoring shows high latency alerts
@@ -244,6 +254,7 @@ docker logs buhbot-bot-backend 2>&1 | grep -i "connection\|pool"
 ```
 
 **Check active database connections** (requires psql access):
+
 ```bash
 source /home/buhbot/BuhBot/backend/.env
 psql "$DATABASE_URL" -c "
@@ -258,11 +269,11 @@ GROUP BY state;
 
 **Connection States**:
 
-| State | Normal Range | Action if High |
-|-------|--------------|----------------|
-| `active` | 1-5 | Check for long-running queries |
-| `idle` | 5-20 | Normal |
-| `idle in transaction` | 0-2 | Possible connection leak |
+| State                 | Normal Range | Action if High                 |
+| --------------------- | ------------ | ------------------------------ |
+| `active`              | 1-5          | Check for long-running queries |
+| `idle`                | 5-20         | Normal                         |
+| `idle in transaction` | 0-2          | Possible connection leak       |
 
 **Step 2: Review Prometheus Metrics**
 
@@ -283,12 +294,12 @@ rate(bot_errors_total[5m]) / rate(bot_messages_received_total[5m]) * 100
 
 **Latency Thresholds**:
 
-| P95 Latency | Status | Action |
-|-------------|--------|--------|
-| < 1s | Normal | No action needed |
-| 1-3s | Warning | Monitor trends |
-| 3-5s | Degraded | Investigate database/external calls |
-| > 5s | Critical | Immediate investigation required |
+| P95 Latency | Status   | Action                              |
+| ----------- | -------- | ----------------------------------- |
+| < 1s        | Normal   | No action needed                    |
+| 1-3s        | Warning  | Monitor trends                      |
+| 3-5s        | Degraded | Investigate database/external calls |
+| > 5s        | Critical | Immediate investigation required    |
 
 **Step 3: Check Redis Queue Backlog**
 
@@ -302,6 +313,7 @@ docker exec buhbot-redis redis-cli keys "bull:*:waiting" | head -20
 ```
 
 **High queue backlog indicators**:
+
 - `dbsize` > 10000 keys
 - Memory usage > 80% of limit
 
@@ -318,6 +330,7 @@ docker inspect buhbot-bot-backend | grep -A 10 "Memory\|Cpu"
 ```
 
 **Resource Limits** (from docker-compose.prod.yml):
+
 - Bot Backend: 2.0 cores, 2.0 GB RAM
 - If usage near limits: consider increasing resources
 
@@ -328,6 +341,7 @@ docker inspect buhbot-bot-backend | grep -A 10 "Memory\|Cpu"
 ### SSL Certificate Expired
 
 **Symptoms**:
+
 - Browser shows "Certificate expired" error
 - HTTPS connections fail with SSL errors
 - Webhook deliveries from Telegram fail
@@ -340,6 +354,7 @@ sudo certbot certificates
 ```
 
 **Expected Output** (valid certificate):
+
 ```
 Certificate Name: bot.example.com
   Expiry Date: 2026-02-20 (VALID: 89 days)
@@ -353,6 +368,7 @@ sudo certbot renew --force-renewal
 ```
 
 **Expected Output**:
+
 ```
 Congratulations, all renewals succeeded:
   /etc/letsencrypt/live/bot.example.com/fullchain.pem (success)
@@ -407,6 +423,7 @@ sudo crontab -l | grep renew
 ### SSL Certificate Not Working
 
 **Symptoms**:
+
 - Browser shows "Certificate not valid" or "Security warning"
 - `curl` returns SSL handshake errors
 - Certificate chain incomplete
@@ -421,6 +438,7 @@ dig bot.example.com +short
 **Expected**: Your VDS IP address (e.g., `123.45.67.89`)
 
 **If DNS doesn't resolve**:
+
 1. Log into DNS provider
 2. Verify A record points to correct VDS IP
 3. Wait 5-15 minutes for propagation
@@ -438,12 +456,12 @@ grep -i "rate limit\|too many" /var/log/letsencrypt/letsencrypt.log
 
 **Common Certbot Errors**:
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `DNS problem` | Domain doesn't resolve | Fix DNS A record |
-| `Rate limit` | Too many certificate requests | Wait 1 hour and retry |
-| `Timeout` | Firewall blocking port 80 | Check UFW rules |
-| `Connection refused` | Nginx not running | Start nginx container |
+| Error                | Cause                         | Solution              |
+| -------------------- | ----------------------------- | --------------------- |
+| `DNS problem`        | Domain doesn't resolve        | Fix DNS A record      |
+| `Rate limit`         | Too many certificate requests | Wait 1 hour and retry |
+| `Timeout`            | Firewall blocking port 80     | Check UFW rules       |
+| `Connection refused` | Nginx not running             | Start nginx container |
 
 **Step 3: Review Nginx SSL Configuration**
 
@@ -456,6 +474,7 @@ ls -la /home/buhbot/BuhBot/infrastructure/nginx/ssl/
 ```
 
 **Expected Files**:
+
 - `fullchain.pem` - Certificate chain
 - `privkey.pem` - Private key
 
@@ -489,6 +508,7 @@ sudo certbot certonly --standalone -d bot.example.com
 ### Prometheus Not Scraping
 
 **Symptoms**:
+
 - Grafana dashboards show "No data"
 - Prometheus targets show "down" status
 - Metrics are stale or missing
@@ -501,6 +521,7 @@ curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job:
 ```
 
 **Expected Output** (healthy):
+
 ```json
 {
   "job": "bot-backend",
@@ -517,6 +538,7 @@ cat /home/buhbot/BuhBot/infrastructure/monitoring/prometheus.yml | grep -A 5 "jo
 ```
 
 **Current Scrape Targets**:
+
 - `prometheus` - localhost:9090
 - `bot-backend` - bot-backend:9100
 
@@ -531,6 +553,7 @@ docker exec buhbot-monitoring-stack curl -f http://bot-backend:9100/metrics
 ```
 
 **If metrics endpoint fails**:
+
 1. Check bot-backend is running
 2. Verify metrics port (9100) is exposed
 3. Check network connectivity between containers
@@ -567,6 +590,7 @@ docker compose -f infrastructure/docker-compose.yml \
 ### Grafana Not Loading
 
 **Symptoms**:
+
 - Grafana page returns 502 Bad Gateway
 - Page loads but shows connection errors
 - Dashboard login fails
@@ -582,6 +606,7 @@ docker exec buhbot-monitoring-stack supervisorctl status
 ```
 
 **Expected Supervisor Output**:
+
 ```
 grafana                          RUNNING   pid 123, uptime 0:01:00
 prometheus                       RUNNING   pid 124, uptime 0:01:00
@@ -609,10 +634,10 @@ docker exec buhbot-monitoring-stack supervisorctl tail grafana
 
 **Common Permission Issues**:
 
-| Error | Solution |
-|-------|----------|
-| `Permission denied` on grafana.db | Fix volume permissions |
-| `Database locked` | Stop Grafana, fix db, restart |
+| Error                             | Solution                      |
+| --------------------------------- | ----------------------------- |
+| `Permission denied` on grafana.db | Fix volume permissions        |
+| `Database locked`                 | Stop Grafana, fix db, restart |
 
 **Step 4: Check Memory Usage**
 
@@ -638,6 +663,7 @@ docker compose -f infrastructure/docker-compose.yml up -d monitoring-stack
 ### Alerts Not Firing
 
 **Symptoms**:
+
 - Known conditions exist but no alerts triggered
 - Alertmanager not sending notifications
 - Alert rules show "inactive"
@@ -654,11 +680,11 @@ curl -s http://localhost:9090/api/v1/alerts | jq '.data.alerts[] | {alertname: .
 
 **Alert States**:
 
-| State | Meaning |
-|-------|---------|
-| `inactive` | Condition not met |
-| `pending` | Condition met, waiting for `for` duration |
-| `firing` | Alert is active |
+| State      | Meaning                                   |
+| ---------- | ----------------------------------------- |
+| `inactive` | Condition not met                         |
+| `pending`  | Condition met, waiting for `for` duration |
+| `firing`   | Alert is active                           |
 
 **Step 2: Validate Alert Rules**
 
@@ -728,6 +754,7 @@ sudo cp /home/buhbot/BuhBot/infrastructure/monitoring/prometheus/alerts.yml.bak 
 ### Connection Pool Exhausted
 
 **Symptoms**:
+
 - `Too many connections` errors in logs
 - Database queries timing out
 - Application becomes unresponsive
@@ -752,10 +779,10 @@ WHERE datname = 'postgres';
 
 **Typical Limits**:
 
-| Environment | Max Connections |
-|-------------|-----------------|
-| Supabase Free | 60 |
-| Supabase Pro | 200-500 |
+| Environment   | Max Connections |
+| ------------- | --------------- |
+| Supabase Free | 60              |
+| Supabase Pro  | 200-500         |
 
 **Step 2: Review Connection Leaks**
 
@@ -805,6 +832,7 @@ docker compose -f infrastructure/docker-compose.yml \
 ### Slow Queries
 
 **Symptoms**:
+
 - High latency on specific operations
 - Dashboard pages load slowly
 - Prometheus shows high query latency
@@ -830,11 +858,11 @@ SELECT * FROM messages WHERE created_at > now() - interval '1 day';
 
 **Key Indicators**:
 
-| Metric | Good | Bad |
-|--------|------|-----|
-| Execution time | < 100ms | > 500ms |
-| Rows examined vs returned | Close to 1:1 | > 100:1 |
-| Seq Scan on large table | N/A | Needs index |
+| Metric                    | Good         | Bad         |
+| ------------------------- | ------------ | ----------- |
+| Execution time            | < 100ms      | > 500ms     |
+| Rows examined vs returned | Close to 1:1 | > 100:1     |
+| Seq Scan on large table   | N/A          | Needs index |
 
 **Step 3: Add Indexes If Needed**
 
@@ -874,6 +902,7 @@ ORDER BY n_live_tup DESC;
 ### Container Won't Start
 
 **Symptoms**:
+
 - Container shows `Exited` or `Restarting` status
 - `docker ps` shows container not running
 - Health checks failing
@@ -900,12 +929,12 @@ docker inspect buhbot-bot-backend | jq '.[0].HostConfig.Memory, .[0].HostConfig.
 
 **Resource Limits** (from docker-compose.prod.yml):
 
-| Service | Memory Limit | CPU Limit |
-|---------|--------------|-----------|
-| bot-backend | 2GB | 2.0 cores |
-| frontend | 1GB | 1.0 core |
-| monitoring-stack | 2.5GB | 1.5 cores |
-| redis | 512MB | 0.5 cores |
+| Service          | Memory Limit | CPU Limit |
+| ---------------- | ------------ | --------- |
+| bot-backend      | 2GB          | 2.0 cores |
+| frontend         | 1GB          | 1.0 core  |
+| monitoring-stack | 2.5GB        | 1.5 cores |
+| redis            | 512MB        | 0.5 cores |
 
 **Step 3: Check Dependencies**
 
@@ -918,6 +947,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
 
 **Dependency Chain**:
+
 1. `redis` must be healthy
 2. `monitoring-stack` must be started
 3. `bot-backend` can start (depends on redis, monitoring-stack)
@@ -947,6 +977,7 @@ grep -n " = \| =" /home/buhbot/BuhBot/backend/.env
 ### Out of Disk Space
 
 **Symptoms**:
+
 - `No space left on device` errors
 - Containers failing to start
 - Logs not being written
@@ -985,6 +1016,7 @@ du -sh /var/backups/
 ```
 
 **Retention Policy**:
+
 - Keep 4 most recent backups
 - Delete backups older than 4 weeks
 
@@ -1036,6 +1068,7 @@ Docker daemon configuration for log rotation (`/etc/docker/daemon.json`):
 ```
 
 After editing, restart Docker:
+
 ```bash
 sudo systemctl restart docker
 ```
@@ -1047,6 +1080,7 @@ sudo systemctl restart docker
 ### Redis Memory High
 
 **Symptoms**:
+
 - `RedisHighMemory` alert firing
 - Slow response times
 - OOM errors in logs
@@ -1102,6 +1136,7 @@ docker exec buhbot-redis redis-cli config get maxmemory
 ### Container DNS Resolution Failing
 
 **Symptoms**:
+
 - `getaddrinfo ENOTFOUND` errors
 - Services can't connect by hostname
 - Works by IP but not by name
@@ -1127,6 +1162,7 @@ docker exec buhbot-bot-backend ping -c 3 redis
 **Step 3: Verify Nginx Resolver**
 
 Nginx config should have Docker DNS resolver:
+
 ```nginx
 resolver 127.0.0.11 valid=30s ipv6=off;
 ```
@@ -1146,30 +1182,30 @@ docker compose -f infrastructure/docker-compose.yml up -d
 
 ### Application Logs
 
-| Component | Location | Access Command |
-|-----------|----------|----------------|
-| Bot Backend | Container stdout | `docker logs buhbot-bot-backend` |
-| Frontend | Container stdout | `docker logs buhbot-frontend` |
-| Nginx | Container stdout | `docker logs buhbot-nginx` |
-| Nginx access log | Container internal | `docker exec buhbot-nginx tail /var/log/nginx/access.log` |
-| Nginx error log | Container internal | `docker exec buhbot-nginx tail /var/log/nginx/error.log` |
+| Component          | Location           | Access Command                                                        |
+| ------------------ | ------------------ | --------------------------------------------------------------------- |
+| Bot Backend        | Container stdout   | `docker logs buhbot-bot-backend`                                      |
+| Frontend           | Container stdout   | `docker logs buhbot-frontend`                                         |
+| Nginx              | Container stdout   | `docker logs buhbot-nginx`                                            |
+| Nginx access log   | Container internal | `docker exec buhbot-nginx tail /var/log/nginx/access.log`             |
+| Nginx error log    | Container internal | `docker exec buhbot-nginx tail /var/log/nginx/error.log`              |
 | Webhook rate limit | Container internal | `docker exec buhbot-nginx tail /var/log/nginx/webhook_rate_limit.log` |
 
 ### System Logs
 
-| Log | Location | Access Command |
-|-----|----------|----------------|
-| Bootstrap | VDS | `sudo tail /var/log/buhbot-bootstrap-*.log` |
-| Deployment | VDS | `sudo tail /var/log/buhbot-deploy-*.log` |
-| SSL Renewal | VDS | `sudo tail /var/log/letsencrypt-renewal.log` |
-| System auth | VDS | `sudo tail /var/log/auth.log` |
+| Log         | Location | Access Command                               |
+| ----------- | -------- | -------------------------------------------- |
+| Bootstrap   | VDS      | `sudo tail /var/log/buhbot-bootstrap-*.log`  |
+| Deployment  | VDS      | `sudo tail /var/log/buhbot-deploy-*.log`     |
+| SSL Renewal | VDS      | `sudo tail /var/log/letsencrypt-renewal.log` |
+| System auth | VDS      | `sudo tail /var/log/auth.log`                |
 
 ### Monitoring Logs
 
-| Component | Access Command |
-|-----------|----------------|
-| Prometheus | `docker exec buhbot-monitoring-stack supervisorctl tail prometheus` |
-| Grafana | `docker exec buhbot-monitoring-stack supervisorctl tail grafana` |
+| Component   | Access Command                                                       |
+| ----------- | -------------------------------------------------------------------- |
+| Prometheus  | `docker exec buhbot-monitoring-stack supervisorctl tail prometheus`  |
+| Grafana     | `docker exec buhbot-monitoring-stack supervisorctl tail grafana`     |
 | Uptime Kuma | `docker exec buhbot-monitoring-stack supervisorctl tail uptime-kuma` |
 
 ### Log Analysis Commands

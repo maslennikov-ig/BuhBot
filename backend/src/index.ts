@@ -50,7 +50,7 @@ app.use((req, res, next) => {
 app.use((req, _res, next) => {
   logger.info(`${req.method} ${req.path}`, {
     ip: req.ip,
-    userAgent: req.get('user-agent')
+    userAgent: req.get('user-agent'),
   });
   next();
 });
@@ -69,7 +69,7 @@ app.get('/metrics', metricsHandler);
 app.get('/ready', (_req, res) => {
   res.json({
     status: 'ready',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -94,8 +94,8 @@ app.get('/', (_req, res) => {
       ready: '/ready',
       api: '/api',
       trpc: '/api/trpc',
-      webhook: '/webhook/telegram'
-    }
+      webhook: '/webhook/telegram',
+    },
   });
 });
 
@@ -111,25 +111,27 @@ const registerFinalHandlers = () => {
     res.status(404).json({
       error: 'Not Found',
       message: `Route ${req.method} ${req.path} not found`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   });
 
   // Error handler
-  app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    logger.error('Unhandled error:', {
-      error: err.message,
-      stack: err.stack,
-      path: req.path,
-      method: req.method
-    });
+  app.use(
+    (err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      logger.error('Unhandled error:', {
+        error: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+      });
 
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: isProduction() ? 'Something went wrong' : err.message,
-      timestamp: new Date().toISOString()
-    });
-  });
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: isProduction() ? 'Something went wrong' : err.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  );
 };
 
 const startServer = async (port: number) => {
@@ -195,10 +197,12 @@ const startServer = async (port: number) => {
     } else {
       // Fallback: Use Polling if no webhook URL provided (even in production)
       // This ensures the bot works even if the webhook URL is missing in config
-      logger.warn('TELEGRAM_WEBHOOK_URL not set. Launching in POLLING mode. This is less efficient for production but ensures functionality.');
-      
+      logger.warn(
+        'TELEGRAM_WEBHOOK_URL not set. Launching in POLLING mode. This is less efficient for production but ensures functionality.'
+      );
+
       // Launch polling in background
-      launchPolling().catch(err => {
+      launchPolling().catch((err) => {
         logger.error('Failed to launch polling', { error: err.message });
       });
     }
@@ -216,7 +220,7 @@ const startServer = async (port: number) => {
       port,
       environment: env.NODE_ENV,
       nodeVersion: process.version,
-      platform: process.platform
+      platform: process.platform,
     });
 
     if (isDevelopment()) {
@@ -259,13 +263,13 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 
   logger.info(`Received ${signal}, starting graceful shutdown...`, {
     signal,
-    timeoutMs: SHUTDOWN_TIMEOUT_MS
+    timeoutMs: SHUTDOWN_TIMEOUT_MS,
   });
 
   // Set up force exit timeout
   const forceExitTimer = setTimeout(() => {
     logger.warn('Graceful shutdown timed out, forcing exit', {
-      timeoutMs: SHUTDOWN_TIMEOUT_MS
+      timeoutMs: SHUTDOWN_TIMEOUT_MS,
     });
     process.exit(1);
   }, SHUTDOWN_TIMEOUT_MS);
@@ -279,7 +283,7 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
       server.close((err) => {
         if (err) {
           logger.error('Error closing HTTP server:', {
-            error: err.message
+            error: err.message,
           });
           reject(err);
         } else {
@@ -314,13 +318,13 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 
     logger.info('Graceful shutdown completed successfully', {
       signal,
-      duration: 'completed before timeout'
+      duration: 'completed before timeout',
     });
     process.exit(0);
   } catch (error) {
     logger.error('Error during graceful shutdown:', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     // Clear the force exit timer
     clearTimeout(forceExitTimer);
@@ -336,7 +340,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception:', {
     error: error.message,
-    stack: error.stack
+    stack: error.stack,
   });
   process.exit(1);
 });
@@ -344,7 +348,7 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled rejection:', {
     reason,
-    promise
+    promise,
   });
 });
 

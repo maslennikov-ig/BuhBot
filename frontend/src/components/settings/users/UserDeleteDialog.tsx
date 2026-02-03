@@ -50,7 +50,11 @@ export function UserDeleteDialog({ user, open, onClose, onSuccess }: UserDeleteD
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <GlassCard variant="elevated" padding="lg" className="w-full max-w-md relative animate-in fade-in zoom-in duration-200">
+      <GlassCard
+        variant="elevated"
+        padding="lg"
+        className="w-full max-w-md relative animate-in fade-in zoom-in duration-200"
+      >
         <button
           onClick={handleClose}
           className="absolute right-4 top-4 text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
@@ -63,14 +67,18 @@ export function UserDeleteDialog({ user, open, onClose, onSuccess }: UserDeleteD
             <AlertTriangle className="h-6 w-6 text-[var(--buh-error)]" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">Удаление пользователя</h2>
+            <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
+              Удаление пользователя
+            </h2>
             <p className="text-sm text-[var(--buh-foreground-muted)]">Это действие необратимо</p>
           </div>
         </div>
 
         <p className="text-sm text-[var(--buh-foreground-muted)] mb-6">
-          Вы уверены, что хотите удалить пользователя <strong className="text-[var(--buh-foreground)]">{user.fullName}</strong> ({user.email})?
-          <br /><br />
+          Вы уверены, что хотите удалить пользователя{' '}
+          <strong className="text-[var(--buh-foreground)]">{user.fullName}</strong> ({user.email})?
+          <br />
+          <br />
           Все назначенные чаты будут откреплены от этого пользователя.
         </p>
 
@@ -81,7 +89,9 @@ export function UserDeleteDialog({ user, open, onClose, onSuccess }: UserDeleteD
         )}
 
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={handleClose}>Отмена</Button>
+          <Button variant="ghost" onClick={handleClose}>
+            Отмена
+          </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}

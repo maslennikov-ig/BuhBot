@@ -8,6 +8,7 @@
 ## Problem Statement
 
 Currently, users manually enter their Telegram username in Profile Settings. This approach is:
+
 - **Insecure**: Anyone can claim any username without verification
 - **Error-prone**: Typos lead to failed notifications
 - **Unverifiable**: System cannot confirm the user actually owns that Telegram account

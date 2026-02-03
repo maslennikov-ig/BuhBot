@@ -3,6 +3,7 @@
 ## Проблема
 
 На странице `/analytics` график "История времени ответа" отображается некорректно:
+
 1. **График выходит за границы контейнера** — накладывается на секции "Топ бухгалтеров" и "Распределение"
 2. Визуально занимает слишком много места по вертикали
 
@@ -18,6 +19,7 @@ className={cn(
 ```
 
 **Конфликт стилей:**
+
 - `aspect-video` (соотношение 16:9) пытается вычислить высоту из ширины
 - Родительский контейнер `<div className="h-80">` задаёт фиксированную высоту 320px
 - `ResponsiveContainer` (recharts) пытается заполнить всё доступное пространство
@@ -26,6 +28,7 @@ className={cn(
 ## Решение
 
 Переопределить стили `ChartContainer` в `analytics/page.tsx` добавив:
+
 1. `overflow-hidden` для ограничения контента
 2. `!aspect-auto` для отмены aspect-video
 3. `h-full` для заполнения родительского контейнера
@@ -37,12 +40,14 @@ className={cn(
 **Строки 592-593:**
 
 До:
+
 ```tsx
 <div className="h-80">
   <ChartContainer config={historyChartConfig}>
 ```
 
 После:
+
 ```tsx
 <div className="h-80 overflow-hidden">
   <ChartContainer config={historyChartConfig} className="!aspect-auto h-full">

@@ -12,21 +12,25 @@ The BuhBot backend API is nearly complete, with functional tRPC routers for FAQs
 ## User Stories
 
 ### User Story 1: FAQ Management
+
 **As an** Administrator,
 **I want to** create, edit, and delete FAQ items via a dedicated settings page,
 **So that** I can keep the bot's auto-response knowledge base up to date without developer assistance.
 
 ### User Story 2: Template Management
+
 **As a** Manager or Administrator,
 **I want to** manage message templates and easily insert variables (like client name),
 **So that** accountants have quick, standardized responses available in the bot.
 
 ### User Story 3: User Management
+
 **As an** Administrator,
 **I want to** view a list of all users and change their roles (Admin/Manager/Observer),
 **So that** I can control access permissions within the system.
 
 ### User Story 4: Navigation & Polish
+
 **As a** User,
 **I want** all sidebar links to work (either taking me to the correct page or a "Coming Soon" placeholder),
 **So that** I don't encounter broken links (404 errors) while navigating the application.
@@ -34,6 +38,7 @@ The BuhBot backend API is nearly complete, with functional tRPC routers for FAQs
 ## Functional Requirements
 
 ### 1. FAQ Management (`/settings/faq`)
+
 - **List View**:
   - Fetch data using `trpc.faq.list`.
   - Display columns: Question, Answer (truncated to ~50 chars), Keywords (as badges), Usage Count.
@@ -48,6 +53,7 @@ The BuhBot backend API is nearly complete, with functional tRPC routers for FAQs
   - Keywords: Array of strings (Tag input UI).
 
 ### 2. Template Management (`/settings/templates`)
+
 - **List View**:
   - Fetch data using `trpc.templates.list`.
   - Display columns: Title, Category (colored badge), Content preview, Usage Count.
@@ -60,6 +66,7 @@ The BuhBot backend API is nearly complete, with functional tRPC routers for FAQs
   - Clicking a chip appends the variable string to the Content textarea cursor position.
 
 ### 3. User Management (`/settings/users`)
+
 - **List View**:
   - Fetch data using `trpc.auth.listUsers`.
   - Display columns: Full Name, Email, Role, Telegram Connection Status (icon/badge based on `telegramId !== null`).
@@ -70,6 +77,7 @@ The BuhBot backend API is nearly complete, with functional tRPC routers for FAQs
   - Calls `trpc.auth.updateUserRole` (**requires implementation** — see T001 in tasks.md).
 
 ### 4. Navigation Polish
+
 - **Client List**:
   - Update Sidebar link for "Clients" to point to `/chats` OR redirect `/clients` to `/chats`.
 - **Placeholders**:

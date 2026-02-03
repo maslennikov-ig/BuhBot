@@ -67,7 +67,9 @@ export function createTRPCClient() {
 
           // Get JWT token from Supabase session (client-side only)
           if (typeof window !== 'undefined' && supabase) {
-            const { data: { session } } = await supabase.auth.getSession();
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
             if (session?.access_token) {
               return {
                 Authorization: `Bearer ${session.access_token}`,
@@ -80,4 +82,3 @@ export function createTRPCClient() {
     ],
   });
 }
-

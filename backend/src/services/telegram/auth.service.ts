@@ -35,20 +35,17 @@ class TelegramAuthService {
     }
 
     // 2. Construct data-check-string
-    // "The data-check-string is a concatenation of all received fields, 
+    // "The data-check-string is a concatenation of all received fields,
     // sorted alphabetically, in the format key=value with a line feed character ('\n') as separator."
     const dataCheckArr = Object.keys(data)
       .sort()
       .map((key) => `${key}=${data[key as keyof typeof data]}`);
-    
+
     const dataCheckString = dataCheckArr.join('\n');
 
     // 3. Compute secret key
     // secret_key = SHA256(<bot_token>)
-    const secretKey = crypto
-      .createHash('sha256')
-      .update(env.TELEGRAM_BOT_TOKEN)
-      .digest();
+    const secretKey = crypto.createHash('sha256').update(env.TELEGRAM_BOT_TOKEN).digest();
 
     // 4. Calculate HMAC-SHA256
     const calculatedHash = crypto

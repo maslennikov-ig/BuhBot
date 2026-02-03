@@ -111,7 +111,8 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
   const isAddingHoliday = addHolidayMutation.isPending;
   const isRemovingHoliday = removeHolidayMutation.isPending;
   const isSeedingHolidays = seedHolidaysMutation.isPending;
-  const isAnyLoading = isLoadingHolidays || isAddingHoliday || isRemovingHoliday || isSeedingHolidays;
+  const isAnyLoading =
+    isLoadingHolidays || isAddingHoliday || isRemovingHoliday || isSeedingHolidays;
 
   /**
    * Handle year selection change
@@ -310,9 +311,7 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
                   <td colSpan={3} className="h-32 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <Calendar className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
-                      <p className="text-[var(--buh-foreground-muted)]">
-                        Праздников не найдено
-                      </p>
+                      <p className="text-[var(--buh-foreground-muted)]">Праздников не найдено</p>
                       <p className="text-sm text-[var(--buh-foreground-subtle)]">
                         Добавьте праздник или заполните федеральными праздниками РФ
                       </p>

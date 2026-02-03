@@ -3,11 +3,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ThemeLogo } from '@/components/ThemeLogo';
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative bg-[var(--buh-background)] overflow-hidden transition-colors duration-300">
       {/* Theme Toggle */}

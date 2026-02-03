@@ -23,16 +23,16 @@ git push                # 6. Push в remote
 
 ## Когда что использовать
 
-| Сценарий | Инструмент | Команда |
-|----------|------------|---------|
-| Большая фича (>1 день) | Spec-kit → Beads | `/speckit.specify` → `/speckit.tobeads` |
-| Маленькая фича (<1 день) | Beads | `bd create -t feature` |
-| Баг | Beads | `bd create -t bug` |
-| Tech debt | Beads | `bd create -t chore` |
-| Исследование/spike | Beads wisp | `bd mol wisp exploration` |
-| Hotfix (срочно!) | Beads wisp | `bd mol wisp hotfix` |
-| Health check | Workflow | `bd mol wisp healthcheck` |
-| Релиз | Workflow | `bd mol wisp release` |
+| Сценарий                 | Инструмент       | Команда                                 |
+| ------------------------ | ---------------- | --------------------------------------- |
+| Большая фича (>1 день)   | Spec-kit → Beads | `/speckit.specify` → `/speckit.tobeads` |
+| Маленькая фича (<1 день) | Beads            | `bd create -t feature`                  |
+| Баг                      | Beads            | `bd create -t bug`                      |
+| Tech debt                | Beads            | `bd create -t chore`                    |
+| Исследование/spike       | Beads wisp       | `bd mol wisp exploration`               |
+| Hotfix (срочно!)         | Beads wisp       | `bd mol wisp hotfix`                    |
+| Health check             | Workflow         | `bd mol wisp healthcheck`               |
+| Релиз                    | Workflow         | `bd mol wisp release`                   |
 
 ---
 
@@ -58,30 +58,34 @@ bd sync                     # Синхронизация перед выходо
 ## Создание задач
 
 ### Базовая команда
+
 ```bash
 bd create "Заголовок" -t тип -p приоритет -d "описание"
 ```
 
 ### Типы (-t)
-| Тип | Когда |
-|-----|-------|
-| `feature` | Новая функциональность |
-| `bug` | Исправление бага |
-| `chore` | Tech debt, рефакторинг, конфиги |
-| `docs` | Документация |
-| `test` | Тесты |
-| `epic` | Группа связанных задач |
+
+| Тип       | Когда                           |
+| --------- | ------------------------------- |
+| `feature` | Новая функциональность          |
+| `bug`     | Исправление бага                |
+| `chore`   | Tech debt, рефакторинг, конфиги |
+| `docs`    | Документация                    |
+| `test`    | Тесты                           |
+| `epic`    | Группа связанных задач          |
 
 ### Приоритеты (-p)
-| P | Значение |
-|---|----------|
-| 0 | Критический — блокирует релиз |
-| 1 | Критический |
-| 2 | Высокий |
-| 3 | Средний (по умолчанию) |
-| 4 | Низкий / бэклог |
+
+| P   | Значение                      |
+| --- | ----------------------------- |
+| 0   | Критический — блокирует релиз |
+| 1   | Критический                   |
+| 2   | Высокий                       |
+| 3   | Средний (по умолчанию)        |
+| 4   | Низкий / бэклог               |
 
 ### Примеры
+
 ```bash
 # Простая задача
 bd create "Добавить кнопку logout" -t feature -p 3
@@ -108,13 +112,13 @@ bd dep add ISSUE DEPENDS_ON    # ISSUE зависит от DEPENDS_ON
 bd blocked
 ```
 
-| Тип зависимости | Значение |
-|-----------------|----------|
-| `blocks:X` | Эта задача блокирует X |
-| `blocked-by:X` | Эта задача заблокирована X |
-| `discovered-from:X` | Найдена при работе над X |
-| `parent:X` | Дочерняя задача для epic X |
-| `related:X` | Связана с X (информационно) |
+| Тип зависимости     | Значение                    |
+| ------------------- | --------------------------- |
+| `blocks:X`          | Эта задача блокирует X      |
+| `blocked-by:X`      | Эта задача заблокирована X  |
+| `discovered-from:X` | Найдена при работе над X    |
+| `parent:X`          | Дочерняя задача для epic X  |
+| `related:X`         | Связана с X (информационно) |
 
 ---
 
@@ -138,27 +142,30 @@ bd show buh-epic-id --tree
 ## Молекулы (Workflows)
 
 ### Концепция
+
 - **Formula** — шаблон workflow (в `.beads/formulas/`)
 - **Wisp** — эфемерный экземпляр (можно сжечь или сжать)
 - **Mol** — постоянный экземпляр
 
 ### Доступные формулы
+
 ```bash
 bd formula list
 ```
 
-| Formula | Назначение |
-|---------|------------|
-| `bigfeature` | Spec-kit → Beads pipeline для больших фич |
-| `bugfix` | Стандартный процесс исправления бага |
-| `hotfix` | Экстренное исправление в проде |
-| `techdebt` | Работа с техническим долгом |
-| `healthcheck` | Bug-hunter → fix цикл |
-| `codereview` | Issues + Improvements анализ и фиксы |
-| `release` | Процесс релиза версии |
-| `exploration` | Исследование/spike |
+| Formula       | Назначение                                |
+| ------------- | ----------------------------------------- |
+| `bigfeature`  | Spec-kit → Beads pipeline для больших фич |
+| `bugfix`      | Стандартный процесс исправления бага      |
+| `hotfix`      | Экстренное исправление в проде            |
+| `techdebt`    | Работа с техническим долгом               |
+| `healthcheck` | Bug-hunter → fix цикл                     |
+| `codereview`  | Issues + Improvements анализ и фиксы      |
+| `release`     | Процесс релиза версии                     |
+| `exploration` | Исследование/spike                        |
 
 ### Запуск
+
 ```bash
 # Эфемерный (wisp) — для исследований, можно удалить
 bd mol wisp exploration --vars "question=Как сделать X?"
@@ -168,6 +175,7 @@ bd mol pour bigfeature --vars "feature_name=auth"
 ```
 
 ### Завершение wisp
+
 ```bash
 # Сжать в summary (сохранить результат)
 bd mol squash WISP_ID
@@ -177,6 +185,7 @@ bd mol burn WISP_ID
 ```
 
 ### Прогресс и навигация
+
 ```bash
 bd mol progress WISP_ID     # Статус выполнения
 bd mol current              # Текущая позиция в workflow
@@ -226,6 +235,7 @@ bd list --unlocked
 ```
 
 **Конфигурация** (`.beads/config.yaml`):
+
 - `timeout: 30m` — автоосвобождение через 30 минут неактивности
 - `on-conflict: warn` — предупреждение при конфликте
 
@@ -256,10 +266,12 @@ bd patrol run health-check
 Защита от случайного push в production ветку.
 
 **Текущая конфигурация:**
+
 - `main` — production ветка (auto-deploy)
 - `develop` — рабочая ветка
 
 **Workflow:**
+
 ```bash
 # 1. Работаем в develop
 git checkout develop
@@ -279,6 +291,7 @@ git push                     # → deploy на сервер
 Связывание нескольких molecules в pipeline для complex features.
 
 **Настроенный pipeline** `bigfeature-pipeline`:
+
 ```
 [spec] → [design] → [implement] → [review] → [release]
 ```
@@ -326,13 +339,13 @@ bd close buh-xxx --reason "Done"
 
 ### Доступные workflows
 
-| Skill | Команда | Описание |
-|-------|---------|----------|
-| `bug-health-inline` | `/health-bugs` | Баги и ошибки |
+| Skill                    | Команда            | Описание            |
+| ------------------------ | ------------------ | ------------------- |
+| `bug-health-inline`      | `/health-bugs`     | Баги и ошибки       |
 | `security-health-inline` | `/health-security` | Security уязвимости |
-| `cleanup-health-inline` | `/health-cleanup` | Dead code |
-| `deps-health-inline` | `/health-deps` | Зависимости |
-| `reuse-health-inline` | `/health-reuse` | Дубликаты кода |
+| `cleanup-health-inline`  | `/health-cleanup`  | Dead code           |
+| `deps-health-inline`     | `/health-deps`     | Зависимости         |
+| `reuse-health-inline`    | `/health-reuse`    | Дубликаты кода      |
 
 ---
 
@@ -394,6 +407,7 @@ bd sync --force             # Принудительно из JSONL
 ```
 
 **Автоматически:**
+
 - `/push` включает `bd sync`
 - Git hooks синхронизируют при commit
 
@@ -412,13 +426,13 @@ bd prime --full             # Полный контекст (CLI mode)
 
 ## Troubleshooting
 
-| Проблема | Решение |
-|----------|---------|
-| "No issues found" | `bd sync` или `bd daemon restart` |
+| Проблема           | Решение                                    |
+| ------------------ | ------------------------------------------ |
+| "No issues found"  | `bd sync` или `bd daemon restart`          |
 | Daemon не стартует | `rm .beads/daemon.lock && bd daemon start` |
-| Конфликты sync | `git status .beads/` → resolve → `bd sync` |
-| Issue не найден | `bd sync --force` |
-| Ошибки базы | `bd doctor` |
+| Конфликты sync     | `git status .beads/` → resolve → `bd sync` |
+| Issue не найден    | `bd sync --force`                          |
+| Ошибки базы        | `bd doctor`                                |
 
 ```bash
 # Логи daemon
@@ -470,4 +484,4 @@ bd daemon restart
 
 ---
 
-*Prefix: `buh` | Версия: 2026-01-14 v1*
+_Prefix: `buh` | Версия: 2026-01-14 v1_

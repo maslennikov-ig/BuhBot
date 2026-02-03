@@ -10,19 +10,20 @@ Implement missing Admin Panel UI pages for FAQ, Templates, and User management u
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x (Node.js 20+)
-**Primary Dependencies**: 
+**Primary Dependencies**:
+
 - Backend: `@trpc/server`, `zod`, `prisma`
 - Frontend: `@trpc/client`, `react-hook-form`, `framer-motion`, `lucide-react`
-**Storage**: PostgreSQL (via Prisma)
-**Target Platform**: Web (Next.js App Router)
-**Project Type**: Full-stack Web Application
-**Performance Goals**: Page load < 1s, UI interactions < 100ms
-**Constraints**: Must strictly follow `frontend/STYLE-GUIDE.md` visual patterns.
-**Scale/Scope**: Internal admin tool, low traffic volume.
+  **Storage**: PostgreSQL (via Prisma)
+  **Target Platform**: Web (Next.js App Router)
+  **Project Type**: Full-stack Web Application
+  **Performance Goals**: Page load < 1s, UI interactions < 100ms
+  **Constraints**: Must strictly follow `frontend/STYLE-GUIDE.md` visual patterns.
+  **Scale/Scope**: Internal admin tool, low traffic volume.
 
 ## Constitution Check
 
-*GATE: Passed.* (Standard Best Practices assumed)
+_GATE: Passed._ (Standard Best Practices assumed)
 
 ## Project Structure
 

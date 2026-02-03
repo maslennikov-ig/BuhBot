@@ -22,12 +22,7 @@ interface SortableHeaderProps {
  * />
  * ```
  */
-export function SortableHeader({
-  label,
-  sortDirection,
-  onClick,
-  className,
-}: SortableHeaderProps) {
+export function SortableHeader({ label, sortDirection, onClick, className }: SortableHeaderProps) {
   return (
     <th
       onClick={onClick}
@@ -52,4 +47,3 @@ export function SortableHeader({
     </th>
   );
 }
-

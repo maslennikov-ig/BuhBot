@@ -11,20 +11,21 @@ Integrate official Telegram Login Widget to securely link Telegram accounts to e
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x (Node.js 20+)
-**Primary Dependencies**: 
+**Primary Dependencies**:
+
 - Backend: `@trpc/server`, `zod`, `crypto` (built-in), `prisma`
 - Frontend: `@trpc/client`, `react`, `next`
-**Storage**: PostgreSQL (via Prisma)
-**Testing**: `vitest` (Backend & Frontend)
-**Target Platform**: Web (Next.js App Router)
-**Project Type**: Full-stack Web Application (Next.js + Express/Node Backend)
-**Performance Goals**: Verification < 200ms
-**Constraints**: Security critical (must verify hash), 24h expiry for auth data.
-**Scale/Scope**: Single feature, affects User model and Profile page.
+  **Storage**: PostgreSQL (via Prisma)
+  **Testing**: `vitest` (Backend & Frontend)
+  **Target Platform**: Web (Next.js App Router)
+  **Project Type**: Full-stack Web Application (Next.js + Express/Node Backend)
+  **Performance Goals**: Verification < 200ms
+  **Constraints**: Security critical (must verify hash), 24h expiry for auth data.
+  **Scale/Scope**: Single feature, affects User model and Profile page.
 
 ## Constitution Check
 
-*GATE: Passed.* (Standard Best Practices assumed)
+_GATE: Passed._ (Standard Best Practices assumed)
 
 ## Project Structure
 

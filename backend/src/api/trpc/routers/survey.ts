@@ -34,7 +34,14 @@ const SurveyStatusSchema = z.enum(['scheduled', 'sending', 'active', 'closed', '
 /**
  * Delivery status enum for input validation
  */
-const DeliveryStatusSchema = z.enum(['pending', 'delivered', 'reminded', 'expired', 'responded', 'failed']);
+const DeliveryStatusSchema = z.enum([
+  'pending',
+  'delivered',
+  'reminded',
+  'expired',
+  'responded',
+  'failed',
+]);
 
 /**
  * Survey router for campaign management

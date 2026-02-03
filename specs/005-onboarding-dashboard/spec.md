@@ -5,7 +5,7 @@
 **Status**: Draft  
 **Input**: User description: "Phase 2 Onboarding Dashboard"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - New User Onboarding Wizard (Priority: P1)
 
@@ -79,7 +79,7 @@ As a user, I want a login experience that feels consistent with the premium land
 - **No Data**: Dashboard widgets must handle the "zero state" gracefully (e.g., "No requests yet today") without crashing or showing `NaN`.
 - **Onboarding Abandonment**: If a user closes the browser during the wizard, they should return to the same step (or start of wizard) on next login, not the dashboard.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -100,7 +100,7 @@ As a user, I want a login experience that feels consistent with the premium land
 - **GlobalSettings**: Stores system-wide config: Bot Token (encrypted/securely stored reference), Working Hours, SLA Thresholds.
 - **DashboardMetrics**: Aggregated data structure for frontend consumption (Compliance %, Avg Response Time, Violation Count).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

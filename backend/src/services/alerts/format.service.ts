@@ -87,9 +87,7 @@ function getAlertEmoji(alertType: 'warning' | 'breach'): string {
  * @returns Header text in Russian
  */
 function getAlertHeader(alertType: 'warning' | 'breach'): string {
-  return alertType === 'warning'
-    ? 'ПРЕДУПРЕЖДЕНИЕ SLA'
-    : 'НАРУШЕНИЕ SLA';
+  return alertType === 'warning' ? 'ПРЕДУПРЕЖДЕНИЕ SLA' : 'НАРУШЕНИЕ SLA';
 }
 
 /**
@@ -128,7 +126,7 @@ function formatClientInfo(username: string | null): string {
 function formatTimeInfo(minutesElapsed: number, threshold: number): string {
   const lines = [
     `\u23F1 Время ожидания: ${minutesElapsed} мин`, // Stopwatch
-    `\uD83D\uDCCA Порог SLA: ${threshold} мин`,     // Bar chart
+    `\uD83D\uDCCA Порог SLA: ${threshold} мин`, // Bar chart
   ];
   return lines.join('\n');
 }

@@ -131,12 +131,7 @@ function ResolveAlertDialog({
           </div>
 
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={onClose} disabled={isLoading} className="flex-1">
               Отмена
             </Button>
             <Button
@@ -221,7 +216,8 @@ export default function AlertsPage() {
       breaches: items.filter((a) => a.alertType === 'breach' && !a.resolvedAction).length,
       resolved: items.filter((a) => a.resolvedAction !== null).length,
       // For total counts, use the query total if we're showing all statuses
-      totalActive: statusFilter === 'active' ? total : items.filter((a) => !a.resolvedAction).length,
+      totalActive:
+        statusFilter === 'active' ? total : items.filter((a) => !a.resolvedAction).length,
     };
   }, [alertsQuery.data?.items, alertsQuery.data?.total, statusFilter]);
 
@@ -242,16 +238,15 @@ export default function AlertsPage() {
     }));
   }, [alertsQuery.data]);
 
-  const { sortedData: sortedAlerts, requestSort, getSortIcon } = useTableSort(
-    flattenedAlerts,
-    'alertSentAt',
-    'desc'
-  );
+  const {
+    sortedData: sortedAlerts,
+    requestSort,
+    getSortIcon,
+  } = useTableSort(flattenedAlerts, 'alertSentAt', 'desc');
 
-  const activeFiltersCount = [
-    statusFilter !== 'active',
-    typeFilter !== 'all',
-  ].filter(Boolean).length;
+  const activeFiltersCount = [statusFilter !== 'active', typeFilter !== 'all'].filter(
+    Boolean
+  ).length;
 
   return (
     <AdminLayout>
@@ -260,10 +255,7 @@ export default function AlertsPage() {
         title="Алерты SLA"
         description="Управление нарушениями SLA и предупреждениями"
         actions={<HelpButton section="alerts" />}
-        breadcrumbs={[
-          { label: 'Панель управления', href: '/dashboard' },
-          { label: 'Алерты SLA' },
-        ]}
+        breadcrumbs={[{ label: 'Панель управления', href: '/dashboard' }, { label: 'Алерты SLA' }]}
       />
 
       {/* Filters Section */}
@@ -294,25 +286,31 @@ export default function AlertsPage() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-[var(--buh-error)]" />
                 <span>
-                  Активных: <strong className="text-[var(--buh-foreground)]">{quickStats.totalActive}</strong>
+                  Активных:{' '}
+                  <strong className="text-[var(--buh-foreground)]">{quickStats.totalActive}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-[var(--buh-warning)]" />
                 <span>
-                  Нарушений: <strong className="text-[var(--buh-foreground)]">{quickStats.breaches}</strong>
+                  Нарушений:{' '}
+                  <strong className="text-[var(--buh-foreground)]">{quickStats.breaches}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-[var(--buh-success)]" />
                 <span>
-                  Разрешено: <strong className="text-[var(--buh-foreground)]">{quickStats.resolved}</strong>
+                  Разрешено:{' '}
+                  <strong className="text-[var(--buh-foreground)]">{quickStats.resolved}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[var(--buh-primary)]" />
                 <span>
-                  Среднее время: <strong className="text-[var(--buh-foreground)]">{stats?.week.avgResolutionMinutes ?? 0} мин</strong>
+                  Среднее время:{' '}
+                  <strong className="text-[var(--buh-foreground)]">
+                    {stats?.week.avgResolutionMinutes ?? 0} мин
+                  </strong>
                 </span>
               </div>
             </div>
@@ -517,9 +515,7 @@ export default function AlertsPage() {
           {/* Pagination */}
           {sortedAlerts.length > 0 && (
             <div className="flex items-center justify-between border-t border-[var(--buh-border)] px-4 py-3">
-              <p className="text-sm text-[var(--buh-foreground-muted)]">
-                Страница {page + 1}
-              </p>
+              <p className="text-sm text-[var(--buh-foreground-muted)]">Страница {page + 1}</p>
               <div className="flex gap-2">
                 <Button
                   variant="outline"

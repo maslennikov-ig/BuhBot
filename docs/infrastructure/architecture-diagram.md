@@ -269,29 +269,29 @@ flowchart LR
 
 ### Supabase Cloud Components
 
-| Component | Description | Purpose |
-|-----------|-------------|---------|
-| **PostgreSQL 15+** | Managed relational database | Primary data store for users, firms, conversations, messages |
-| **Supavisor** | Connection pooler (PgBouncer replacement) | Manages database connections efficiently, supports IPv4/IPv6 |
-| **Supabase Auth** | Authentication service | JWT token generation and validation, user management |
-| **RLS Policies** | Row Level Security | Database-level security ensuring data isolation between firms |
+| Component          | Description                               | Purpose                                                       |
+| ------------------ | ----------------------------------------- | ------------------------------------------------------------- |
+| **PostgreSQL 15+** | Managed relational database               | Primary data store for users, firms, conversations, messages  |
+| **Supavisor**      | Connection pooler (PgBouncer replacement) | Manages database connections efficiently, supports IPv4/IPv6  |
+| **Supabase Auth**  | Authentication service                    | JWT token generation and validation, user management          |
+| **RLS Policies**   | Row Level Security                        | Database-level security ensuring data isolation between firms |
 
 ### VDS Container Components
 
-| Container | Image/Build | Port(s) | Purpose |
-|-----------|-------------|---------|---------|
-| **nginx** | `nginx:1.25-alpine` | 80, 443 | SSL termination, reverse proxy, rate limiting |
-| **bot-backend** | Custom Node.js | 3000 | Telegram bot webhooks, tRPC API, business logic |
-| **frontend** | Custom Next.js | 3000 (mapped to 3001) | Admin panel UI, dashboard, settings |
-| **redis** | `redis:7-alpine` | 6379 (internal) | BullMQ job queues, session cache |
-| **monitoring-stack** | Custom (supervisord) | 9090, 3000, 3001 | Prometheus metrics, Grafana dashboards, uptime monitoring |
+| Container            | Image/Build          | Port(s)               | Purpose                                                   |
+| -------------------- | -------------------- | --------------------- | --------------------------------------------------------- |
+| **nginx**            | `nginx:1.25-alpine`  | 80, 443               | SSL termination, reverse proxy, rate limiting             |
+| **bot-backend**      | Custom Node.js       | 3000                  | Telegram bot webhooks, tRPC API, business logic           |
+| **frontend**         | Custom Next.js       | 3000 (mapped to 3001) | Admin panel UI, dashboard, settings                       |
+| **redis**            | `redis:7-alpine`     | 6379 (internal)       | BullMQ job queues, session cache                          |
+| **monitoring-stack** | Custom (supervisord) | 9090, 3000, 3001      | Prometheus metrics, Grafana dashboards, uptime monitoring |
 
 ### External Services
 
-| Service | Purpose | Integration Method |
-|---------|---------|-------------------|
-| **Telegram Bot API** | Bot messaging platform | Webhooks via HTTPS |
-| **GitHub Actions** | CI/CD pipeline | SSH deployment to VDS |
+| Service              | Purpose                | Integration Method    |
+| -------------------- | ---------------------- | --------------------- |
+| **Telegram Bot API** | Bot messaging platform | Webhooks via HTTPS    |
+| **GitHub Actions**   | CI/CD pipeline         | SSH deployment to VDS |
 
 ---
 
@@ -314,13 +314,13 @@ External                 Internal (Docker)
 
 ### Nginx Proxy Routes
 
-| Route | Destination | Description |
-|-------|-------------|-------------|
-| `/api/*` | `bot-backend:3000` | tRPC API and webhook endpoints |
-| `/` | `frontend:3000` | Admin panel |
-| `/grafana` | `monitoring-stack:3000` | Grafana dashboards |
-| `/uptime` | `monitoring-stack:3001` | Uptime Kuma status page |
-| `/prometheus` | `monitoring-stack:9090` | Prometheus UI |
+| Route         | Destination             | Description                    |
+| ------------- | ----------------------- | ------------------------------ |
+| `/api/*`      | `bot-backend:3000`      | tRPC API and webhook endpoints |
+| `/`           | `frontend:3000`         | Admin panel                    |
+| `/grafana`    | `monitoring-stack:3000` | Grafana dashboards             |
+| `/uptime`     | `monitoring-stack:3001` | Uptime Kuma status page        |
+| `/prometheus` | `monitoring-stack:9090` | Prometheus UI                  |
 
 ### Docker Network
 
@@ -376,14 +376,14 @@ External                 Internal (Docker)
 
 ## Resource Allocation Summary
 
-| Service | Reserved (CPU/RAM) | Limit (CPU/RAM) | Priority |
-|---------|-------------------|-----------------|----------|
-| bot-backend | 1.5 cores / 1.5 GB | 2.0 cores / 2.0 GB | Highest |
-| frontend | 0.5 cores / 512 MB | 1.0 cores / 1.0 GB | Medium |
-| redis | 0.25 cores / 256 MB | 0.5 cores / 512 MB | Critical |
-| monitoring-stack | 1.0 cores / 1.5 GB | 1.5 cores / 2.5 GB | Lowest |
-| nginx | 0.25 cores / 128 MB | 0.5 cores / 256 MB | Lightweight |
-| **TOTAL** | **3.5 cores / 3.88 GB** | **5.5 cores / 6.26 GB** | - |
+| Service          | Reserved (CPU/RAM)      | Limit (CPU/RAM)         | Priority    |
+| ---------------- | ----------------------- | ----------------------- | ----------- |
+| bot-backend      | 1.5 cores / 1.5 GB      | 2.0 cores / 2.0 GB      | Highest     |
+| frontend         | 0.5 cores / 512 MB      | 1.0 cores / 1.0 GB      | Medium      |
+| redis            | 0.25 cores / 256 MB     | 0.5 cores / 512 MB      | Critical    |
+| monitoring-stack | 1.0 cores / 1.5 GB      | 1.5 cores / 2.5 GB      | Lowest      |
+| nginx            | 0.25 cores / 128 MB     | 0.5 cores / 256 MB      | Lightweight |
+| **TOTAL**        | **3.5 cores / 3.88 GB** | **5.5 cores / 6.26 GB** | -           |
 
 **VDS Capacity**: 2-4 vCPU, 4-8 GB RAM
 

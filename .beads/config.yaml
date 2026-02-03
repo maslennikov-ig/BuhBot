@@ -12,13 +12,13 @@
 # =============================================================================
 
 # Issue prefix - all issues will be buh-xxx
-issue-prefix: "buh"
+issue-prefix: 'buh'
 
 # Auto-start daemon when running bd commands
 auto-start-daemon: true
 
 # Debounce interval for auto-flush (how often to sync to JSONL)
-flush-debounce: "5s"
+flush-debounce: '5s'
 
 # =============================================================================
 # DAEMON SETTINGS (Auto-Sync)
@@ -50,20 +50,20 @@ daemon.auto-pull: true
 #        -> automatically gets labels: backend, bot
 
 directory-labels:
-  "packages/backend": ["backend"]
-  "packages/backend/src/bot": ["backend", "bot", "telegram"]
-  "packages/backend/src/trpc": ["backend", "api", "trpc"]
-  "packages/backend/src/services": ["backend", "services"]
-  "packages/backend/src/workers": ["backend", "workers", "bullmq"]
-  "packages/backend/prisma": ["backend", "database", "prisma"]
-  "packages/frontend": ["frontend", "nextjs"]
-  "packages/frontend/app": ["frontend", "pages"]
-  "packages/frontend/components": ["frontend", "components"]
-  "packages/shared": ["shared", "types"]
-  "supabase/migrations": ["database", "migrations"]
-  ".beads": ["beads", "config"]
-  ".claude": ["agent", "config"]
-  "docs": ["documentation"]
+  'packages/backend': ['backend']
+  'packages/backend/src/bot': ['backend', 'bot', 'telegram']
+  'packages/backend/src/trpc': ['backend', 'api', 'trpc']
+  'packages/backend/src/services': ['backend', 'services']
+  'packages/backend/src/workers': ['backend', 'workers', 'bullmq']
+  'packages/backend/prisma': ['backend', 'database', 'prisma']
+  'packages/frontend': ['frontend', 'nextjs']
+  'packages/frontend/app': ['frontend', 'pages']
+  'packages/frontend/components': ['frontend', 'components']
+  'packages/shared': ['shared', 'types']
+  'supabase/migrations': ['database', 'migrations']
+  '.beads': ['beads', 'config']
+  '.claude': ['agent', 'config']
+  'docs': ['documentation']
 
 # =============================================================================
 # EXCLUSIVE LOCK PROTOCOL (Multi-terminal safety)
@@ -74,9 +74,9 @@ directory-labels:
 
 exclusive-lock:
   enabled: true
-  timeout: "30m"
-  lock-file: ".beads/locks.json"
-  on-conflict: "warn"
+  timeout: '30m'
+  lock-file: '.beads/locks.json'
+  on-conflict: 'warn'
 
 # =============================================================================
 # PROTECTED BRANCH MODE (Safe deployment)
@@ -86,8 +86,8 @@ exclusive-lock:
 
 protected-branches:
   enabled: true
-  production: "main"
-  development: "develop"
+  production: 'main'
+  development: 'develop'
 
 # =============================================================================
 # PATROL PATTERN (Recurring workflows)
@@ -97,16 +97,16 @@ protected-branches:
 
 patrols:
   code-review:
-    description: "Code review after major implementation"
-    formula: "codereview"
-    trigger: "on_demand"
+    description: 'Code review after major implementation'
+    formula: 'codereview'
+    trigger: 'on_demand'
     default-vars:
-      fix_mode: "ask"
+      fix_mode: 'ask'
 
   health-check:
-    description: "Weekly codebase health check"
-    formula: "healthcheck"
-    trigger: "on_demand"
+    description: 'Weekly codebase health check'
+    formula: 'healthcheck'
+    trigger: 'on_demand'
 
 # =============================================================================
 # MOLECULE BONDING (Complex feature pipelines)
@@ -115,24 +115,24 @@ patrols:
 
 molecule-bonds:
   bigfeature-pipeline:
-    description: "Full feature lifecycle with bonded stages"
+    description: 'Full feature lifecycle with bonded stages'
     stages:
-      - id: "spec"
-        formula: "exploration"
-        output: "spec.md"
-      - id: "design"
-        formula: "exploration"
-        depends_on: ["spec"]
-        output: "plan.md"
-      - id: "implement"
-        formula: "bigfeature"
-        depends_on: ["design"]
-      - id: "review"
-        formula: "codereview"
-        depends_on: ["implement"]
-      - id: "release"
-        formula: "release"
-        depends_on: ["review"]
+      - id: 'spec'
+        formula: 'exploration'
+        output: 'spec.md'
+      - id: 'design'
+        formula: 'exploration'
+        depends_on: ['spec']
+        output: 'plan.md'
+      - id: 'implement'
+        formula: 'bigfeature'
+        depends_on: ['design']
+      - id: 'review'
+        formula: 'codereview'
+        depends_on: ['implement']
+      - id: 'release'
+        formula: 'release'
+        depends_on: ['review']
     auto_advance: false
 
 # =============================================================================

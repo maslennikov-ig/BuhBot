@@ -13,12 +13,9 @@ export default function ProfilePage() {
         title="Профиль"
         description="Управление личными данными и уведомлениями"
         actions={<HelpButton section="settings.profile" />}
-        breadcrumbs={[
-          { label: 'Настройки', href: '/settings' },
-          { label: 'Профиль' },
-        ]}
+        breadcrumbs={[{ label: 'Настройки', href: '/settings' }, { label: 'Профиль' }]}
       />
-      
+
       <div className="space-y-6">
         <ProfileSettingsForm />
       </div>

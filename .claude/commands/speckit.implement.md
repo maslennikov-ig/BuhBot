@@ -63,28 +63,28 @@ You **MUST** consider the user input before proceeding (if not empty).
 4. **PLANNING PHASE** (Execute Before Implementation):
    - Review all tasks and classify execution model (parallel vs sequential)
    - **Step 1: Task Analysis**:
-     * Analyze all tasks and identify required agent capabilities
-     * Determine which tasks need MAIN (trivial only), existing agents, or new agents
-     * Create list of missing agent types with specifications
+     - Analyze all tasks and identify required agent capabilities
+     - Determine which tasks need MAIN (trivial only), existing agents, or new agents
+     - Create list of missing agent types with specifications
    - **Step 2: Agent Creation** (if needed):
-     * Launch N meta-agent-v3 calls in single message (1 call per missing agent)
-     * After agent creation: ask user to restart claude-code
-     * After restart: verify new agents exist before proceeding
+     - Launch N meta-agent-v3 calls in single message (1 call per missing agent)
+     - After agent creation: ask user to restart claude-code
+     - After restart: verify new agents exist before proceeding
    - **Step 3: Executor Assignment**:
-     * [EXECUTOR: MAIN] - ONLY for trivial tasks (1-2 line fixes, simple imports, single dependency install)
-     * [EXECUTOR: existing-agent] - ONLY if 100% capability match after thorough examination
-     * [EXECUTOR: specific-agent-name] - For all other tasks using existing or newly created agents
-     * Annotate all tasks with `[EXECUTOR: name]` and `[SEQUENTIAL]`/`[PARALLEL-GROUP-X]`
+     - [EXECUTOR: MAIN] - ONLY for trivial tasks (1-2 line fixes, simple imports, single dependency install)
+     - [EXECUTOR: existing-agent] - ONLY if 100% capability match after thorough examination
+     - [EXECUTOR: specific-agent-name] - For all other tasks using existing or newly created agents
+     - Annotate all tasks with `[EXECUTOR: name]` and `[SEQUENTIAL]`/`[PARALLEL-GROUP-X]`
    - **Step 4: Research Resolution**:
-     * Simple research: solve with agent tools (Grep, Read, WebSearch, Context7, Supabase docs)
-     * Complex research: create research prompt in research/, wait for user deepresearch, incorporate results
+     - Simple research: solve with agent tools (Grep, Read, WebSearch, Context7, Supabase docs)
+     - Complex research: create research prompt in research/, wait for user deepresearch, incorporate results
    - Output: Updated tasks.md with executor annotations
    - **Atomicity Rule (CRITICAL)**: 1 Task = 1 Agent Invocation
-     * Never give multiple tasks to one agent in single run
-     * **Parallel execution**: Launch N agent calls in single message (not sequentially)
-     * Example: 3 parallel tasks for meta-agent → 3 meta-agent calls in single message
-     * Example: 5 parallel tasks for fullstack → 5 fullstack calls in single message
-     * Sequential tasks: 1 agent run, wait for completion, then next agent run
+     - Never give multiple tasks to one agent in single run
+     - **Parallel execution**: Launch N agent calls in single message (not sequentially)
+     - Example: 3 parallel tasks for meta-agent → 3 meta-agent calls in single message
+     - Example: 5 parallel tasks for fullstack → 5 fullstack calls in single message
+     - Sequential tasks: 1 agent run, wait for completion, then next agent run
 
 5. **Project Setup Verification**:
    - **REQUIRED**: Create/verify ignore files based on actual project setup:
@@ -96,11 +96,11 @@ You **MUST** consider the user input before proceeding (if not empty).
      git rev-parse --git-dir 2>/dev/null
      ```
 
-   - Check if Dockerfile* exists or Docker in plan.md → create/verify .dockerignore
+   - Check if Dockerfile\* exists or Docker in plan.md → create/verify .dockerignore
    - Check if .eslintrc*or eslint.config.* exists → create/verify .eslintignore
-   - Check if .prettierrc* exists → create/verify .prettierignore
+   - Check if .prettierrc\* exists → create/verify .prettierignore
    - Check if .npmrc or package.json exists → create/verify .npmignore (if publishing)
-   - Check if terraform files (*.tf) exist → create/verify .terraformignore
+   - Check if terraform files (\*.tf) exist → create/verify .terraformignore
    - Check if .helmignore needed (helm charts present) → create/verify .helmignore
 
    **If ignore file already exists**: Verify it contains essential patterns, append missing critical patterns only
@@ -149,11 +149,11 @@ You **MUST** consider the user input before proceeding (if not empty).
       - [EXECUTOR: MAIN]? → Execute directly if trivial, else delegate
       - [EXECUTOR: subagent-name]? → Delegate to specified subagent
    3. GATHER CONTEXT: Read existing code, search patterns, review docs, check commits
-   3.5. LIBRARY SEARCH: Before writing >20 lines of new code, search for existing npm/pypi packages
+      3.5. LIBRARY SEARCH: Before writing >20 lines of new code, search for existing npm/pypi packages
       - Use WebSearch + Context7 to find and evaluate libraries
       - If suitable library found: install and configure instead of implementing from scratch
       - Check: weekly downloads >1000, recent commits, TypeScript support, no critical vulnerabilities
-   3.6. FETCH LIBRARY DOCS (MANDATORY): Before writing code that uses ANY library:
+        3.6. FETCH LIBRARY DOCS (MANDATORY): Before writing code that uses ANY library:
       - Call `mcp__context7__resolve-library-id` to get library ID
       - Call `mcp__context7__get-library-docs` with relevant topic (e.g., "hooks", "routing", "auth")
       - Use fetched docs to ensure correct API usage and avoid deprecated patterns
@@ -178,24 +178,26 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **Polish and validation**: Unit tests, performance optimization, documentation
 
 10. Progress tracking and error handling:
-   - Report progress after each completed task
-   - **Commit after each task**: Run `/push patch` before moving to next
-   - Halt execution if any non-parallel task fails
-   - For parallel tasks [P], continue with successful tasks, report failed ones
-   - Provide clear error messages with context for debugging
-   - Suggest next steps if implementation cannot proceed
-   - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file
-   - **Critical Rules**:
-     * NEVER skip verification
-     * NEVER proceed if task failed
-     * NEVER batch commits (1 task = 1 commit)
-     * ONE task in_progress at a time (atomic execution)
+
+- Report progress after each completed task
+- **Commit after each task**: Run `/push patch` before moving to next
+- Halt execution if any non-parallel task fails
+- For parallel tasks [P], continue with successful tasks, report failed ones
+- Provide clear error messages with context for debugging
+- Suggest next steps if implementation cannot proceed
+- **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file
+- **Critical Rules**:
+  - NEVER skip verification
+  - NEVER proceed if task failed
+  - NEVER batch commits (1 task = 1 commit)
+  - ONE task in_progress at a time (atomic execution)
 
 11. Completion validation:
-   - Verify all required tasks are completed
-   - Check that implemented features match the original specification
-   - Validate that tests pass and coverage meets requirements
-   - Confirm the implementation follows the technical plan
-   - Report final status with summary of completed work
+
+- Verify all required tasks are completed
+- Check that implemented features match the original specification
+- Validate that tests pass and coverage meets requirements
+- Confirm the implementation follows the technical plan
+- Report final status with summary of completed work
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit.tasks` first to regenerate the task list.

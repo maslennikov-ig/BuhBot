@@ -2,11 +2,11 @@
 
 ## Summary
 
-| # | Issue | Type | Priority | Status | Fix Approach |
-|---|-------|------|----------|--------|--------------|
-| 1 | #17 | bug | P1 | Ready | Code fix + migration + tests |
-| 2 | #16 | bug | P2 | Ready | Code fix + tests |
-| 3 | #8 | config | P3 | **Already Fixed** | Closed by owner |
+| #   | Issue | Type   | Priority | Status            | Fix Approach                 |
+| --- | ----- | ------ | -------- | ----------------- | ---------------------------- |
+| 1   | #17   | bug    | P1       | Ready             | Code fix + migration + tests |
+| 2   | #16   | bug    | P2       | Ready             | Code fix + tests             |
+| 3   | #8    | config | P3       | **Already Fixed** | Closed by owner              |
 
 ---
 
@@ -39,10 +39,10 @@ Worker проверяет `if (request.chat?.notifyInChatOnBreach)` — `NULL` =
 
 ### Files to Modify
 
-| File | Change |
-|------|--------|
-| `backend/src/api/trpc/routers/chats.ts:596` | Add `notifyInChatOnBreach: true` |
-| Migration | `UPDATE chats SET notify_in_chat_on_breach = true WHERE notify_in_chat_on_breach IS NULL` |
+| File                                        | Change                                                                                    |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `backend/src/api/trpc/routers/chats.ts:596` | Add `notifyInChatOnBreach: true`                                                          |
+| Migration                                   | `UPDATE chats SET notify_in_chat_on_breach = true WHERE notify_in_chat_on_breach IS NULL` |
 
 ### Proposed Tests (from issue)
 
@@ -77,8 +77,8 @@ await ctx.prisma.chat.updateMany({
 
 ### Files to Modify
 
-| File | Change |
-|------|--------|
+| File                                               | Change                  |
+| -------------------------------------------------- | ----------------------- |
 | `backend/src/api/trpc/routers/settings.ts:646-656` | Add `chat.updateMany()` |
 
 ### Proposed Tests (from issue)
@@ -130,6 +130,7 @@ npx prisma migrate dev --name fix_notify_in_chat_default
 ```
 
 Migration SQL:
+
 ```sql
 UPDATE "chats" SET "notify_in_chat_on_breach" = true WHERE "notify_in_chat_on_breach" IS NULL;
 ```
@@ -293,13 +294,13 @@ git push
 
 ## Execution Summary
 
-| Task | Complexity | Executor | Test Coverage |
-|------|------------|----------|---------------|
-| #17: Add field to create | Simple | Direct | Yes |
-| #17: Migration | Simple | Direct | N/A |
-| #17: Tests | Medium | Direct | 4 tests |
-| #16: Add updateMany | Simple | Direct | Yes |
-| #16: Tests | Medium | Direct | 3 tests |
+| Task                     | Complexity | Executor | Test Coverage |
+| ------------------------ | ---------- | -------- | ------------- |
+| #17: Add field to create | Simple     | Direct   | Yes           |
+| #17: Migration           | Simple     | Direct   | N/A           |
+| #17: Tests               | Medium     | Direct   | 4 tests       |
+| #16: Add updateMany      | Simple     | Direct   | Yes           |
+| #16: Tests               | Medium     | Direct   | 3 tests       |
 
 **Total: 5 code changes + 7 tests.**
 
@@ -308,12 +309,14 @@ git push
 ## Verification Checklist
 
 ### Code Changes
+
 - [ ] `notifyInChatOnBreach: true` added to `registerChat` create block
 - [ ] Migration created and applied for existing chats
 - [ ] `updateSlaThresholds` updates all chats with `updateMany`
 - [ ] Output schema updated to return `updatedChats` count
 
 ### Tests
+
 - [ ] `chats.test.ts`: notifyInChatOnBreach set on creation
 - [ ] `sla-timer.worker.test.ts`: notification sent when enabled
 - [ ] `sla-timer.worker.test.ts`: notification NOT sent when disabled
@@ -323,11 +326,13 @@ git push
 - [ ] `settings.test.ts`: updatedChats count returned
 
 ### Quality Gates
+
 - [ ] `npm run type-check` passes
 - [ ] `npm run build` passes
 - [ ] `npm test` passes
 
 ### Closure
+
 - [ ] GitHub issues #16, #17 closed with comments
 - [ ] Beads tasks created and closed
 - [ ] Changes committed with issue refs

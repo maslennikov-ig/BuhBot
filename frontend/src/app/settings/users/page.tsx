@@ -60,10 +60,7 @@ export default function UsersPage() {
         title="Пользователи"
         description="Управление доступом и ролями сотрудников."
         actions={<HelpButton section="settings.users" />}
-        breadcrumbs={[
-          { label: 'Настройки', href: '/settings' },
-          { label: 'Пользователи' },
-        ]}
+        breadcrumbs={[{ label: 'Настройки', href: '/settings' }, { label: 'Пользователи' }]}
       />
 
       <UserList

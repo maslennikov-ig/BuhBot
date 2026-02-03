@@ -16,6 +16,7 @@ Branch: 004-landing-page
 ```
 
 Clone and checkout:
+
 ```bash
 git clone https://github.com/maslennikov-ig/BuhBot.git
 cd BuhBot
@@ -31,6 +32,7 @@ specs/004-landing-page/landing-spec.md
 ```
 
 This document includes:
+
 - Page structure (9 sections)
 - Content for each section (Russian language)
 - Technical requirements (SEO, performance, accessibility)
@@ -40,11 +42,11 @@ This document includes:
 
 ## Supporting Documents
 
-| File | Purpose |
-|------|---------|
-| `specs/004-landing-page/data-model.md` | Prisma schema for ContactRequest model |
-| `specs/004-landing-page/contracts/contact.ts` | tRPC router contract (types) |
-| `specs/004-landing-page/quickstart.md` | Local development setup |
+| File                                          | Purpose                                |
+| --------------------------------------------- | -------------------------------------- |
+| `specs/004-landing-page/data-model.md`        | Prisma schema for ContactRequest model |
+| `specs/004-landing-page/contracts/contact.ts` | tRPC router contract (types)           |
+| `specs/004-landing-page/quickstart.md`        | Local development setup                |
 
 ## Tech Stack (Required)
 
@@ -111,6 +113,7 @@ Before submitting, verify:
 ## Design Guidelines
 
 Create a modern, distinctive design that:
+
 - Avoids generic "AI-generated" aesthetics (no purple gradients on white, no Inter/Roboto)
 - Uses professional but approachable style suitable for B2B accounting audience
 - Implements smooth animations with Framer Motion
@@ -123,7 +126,7 @@ Create a modern, distinctive design that:
 2. **Legal compliance** — contact form must have consent checkbox per 152-FZ
 3. **Backend integration** — form submits via tRPC to `contact.submit` mutation
 4. **Existing auth** — login redirects to Supabase Auth, then to /dashboard
-5. **No breaking changes** — existing routes (/dashboard, /feedback, /settings/*) must continue working
+5. **No breaking changes** — existing routes (/dashboard, /feedback, /settings/\*) must continue working
 
 ## Questions?
 

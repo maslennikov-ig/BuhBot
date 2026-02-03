@@ -35,10 +35,7 @@ import env from '../config/env.js';
  * await setupWebhook(app, '/webhook/telegram');
  * ```
  */
-export async function setupWebhook(
-  app: Application,
-  webhookPath: string
-): Promise<void> {
+export async function setupWebhook(app: Application, webhookPath: string): Promise<void> {
   const webhookUrl = env.TELEGRAM_WEBHOOK_URL;
   const secretToken = env.TELEGRAM_WEBHOOK_SECRET;
 
@@ -180,9 +177,7 @@ export async function launchPolling(): Promise<void> {
     await removeWebhook();
 
     // Set bot commands for menu button
-    await bot.telegram.setMyCommands([
-      { command: 'menu', description: 'Открыть меню' },
-    ]);
+    await bot.telegram.setMyCommands([{ command: 'menu', description: 'Открыть меню' }]);
     logger.debug('Bot commands set successfully', { service: 'webhook' });
 
     // Start polling

@@ -48,7 +48,8 @@ export function validateDatabaseUrl(url: string | undefined): boolean {
   }
 
   // Check for SSL/TLS requirement
-  const hasSSL = url.includes('sslmode=require') ||
+  const hasSSL =
+    url.includes('sslmode=require') ||
     url.includes('ssl=true') ||
     url.includes('?sslmode=') ||
     url.includes('&sslmode=');
@@ -58,8 +59,7 @@ export function validateDatabaseUrl(url: string | undefined): boolean {
   }
 
   // Check for connection pool settings
-  const hasPooler = url.includes('pgbouncer=true') ||
-    url.includes('pooler.supabase.com');
+  const hasPooler = url.includes('pgbouncer=true') || url.includes('pooler.supabase.com');
 
   if (!hasPooler) {
     logger.info('DATABASE_URL not using Supabase pooler - direct connection');
@@ -70,7 +70,9 @@ export function validateDatabaseUrl(url: string | undefined): boolean {
   const connectionLimit = connectionLimitMatch?.[1] ? parseInt(connectionLimitMatch[1], 10) : null;
 
   if (connectionLimit && connectionLimit > POOL_CONFIG.MAX_CONNECTIONS) {
-    logger.warn(`Connection limit ${connectionLimit} exceeds recommended max ${POOL_CONFIG.MAX_CONNECTIONS}`);
+    logger.warn(
+      `Connection limit ${connectionLimit} exceeds recommended max ${POOL_CONFIG.MAX_CONNECTIONS}`
+    );
   }
 
   return true;
@@ -145,9 +147,7 @@ export function createPooledPrismaClient(): PrismaClient {
 
   return new PrismaClient({
     adapter,
-    log: process.env['NODE_ENV'] === 'development'
-      ? ['query', 'error', 'warn']
-      : ['error'],
+    log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
 

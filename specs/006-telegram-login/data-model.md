@@ -5,7 +5,7 @@
 ```mermaid
 erDiagram
     User ||--o| TelegramAccount : "has one"
-    
+
     User {
         string id PK
         string email
@@ -38,7 +38,7 @@ model User {
 
 model TelegramAccount {
   id          String   @id @default(cuid())
-  
+
   // Telegram Data
   telegramId  BigInt   @unique
   username    String?
@@ -46,11 +46,11 @@ model TelegramAccount {
   lastName    String?
   photoUrl    String?
   authDate    Int
-  
+
   // Relations
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String   @unique
-  
+
   // Timestamps
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -62,5 +62,5 @@ model TelegramAccount {
 ## Validation Rules
 
 1.  **Uniqueness**: `telegramId` must be unique across the system. `userId` must be unique (1:1).
-2.  **Updates**: If a user links a Telegram account that is already linked to *another* user, the operation must fail (or require explicit transfer, but spec says "fail").
+2.  **Updates**: If a user links a Telegram account that is already linked to _another_ user, the operation must fail (or require explicit transfer, but spec says "fail").
 3.  **Data Types**: `telegramId` fits in BigInt (64-bit integer).

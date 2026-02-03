@@ -23,7 +23,10 @@ declare global {
   interface Window {
     Telegram?: {
       Login: {
-        auth: (options: { bot_id: string; request_access: boolean }, callback: (data: TelegramUser | false) => void) => void;
+        auth: (
+          options: { bot_id: string; request_access: boolean },
+          callback: (data: TelegramUser | false) => void
+        ) => void;
       };
     };
     onTelegramAuth?: (user: TelegramUser) => void;

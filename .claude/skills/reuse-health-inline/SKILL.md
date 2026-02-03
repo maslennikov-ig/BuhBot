@@ -22,6 +22,7 @@ Detection → Validate → Consolidate by Priority → Verify → Repeat if need
 ## Phase 1: Pre-flight
 
 1. **Setup directories**:
+
    ```bash
    mkdir -p .tmp/current/{plans,changes,backups}
    ```
@@ -33,11 +34,31 @@ Detection → Validate → Consolidate by Priority → Verify → Repeat if need
 3. **Initialize TodoWrite**:
    ```json
    [
-     {"content": "Duplication detection", "status": "in_progress", "activeForm": "Detecting duplications"},
-     {"content": "Consolidate high priority duplications", "status": "pending", "activeForm": "Consolidating high priority"},
-     {"content": "Consolidate medium priority duplications", "status": "pending", "activeForm": "Consolidating medium priority"},
-     {"content": "Consolidate low priority duplications", "status": "pending", "activeForm": "Consolidating low priority"},
-     {"content": "Verification scan", "status": "pending", "activeForm": "Verifying consolidation"}
+     {
+       "content": "Duplication detection",
+       "status": "in_progress",
+       "activeForm": "Detecting duplications"
+     },
+     {
+       "content": "Consolidate high priority duplications",
+       "status": "pending",
+       "activeForm": "Consolidating high priority"
+     },
+     {
+       "content": "Consolidate medium priority duplications",
+       "status": "pending",
+       "activeForm": "Consolidating medium priority"
+     },
+     {
+       "content": "Consolidate low priority duplications",
+       "status": "pending",
+       "activeForm": "Consolidating low priority"
+     },
+     {
+       "content": "Verification scan",
+       "status": "pending",
+       "activeForm": "Verifying consolidation"
+     }
    ]
    ```
 
@@ -65,6 +86,7 @@ prompt: |
 ```
 
 **After reuse-hunter returns**:
+
 1. Read `reuse-hunting-report.md`
 2. Parse duplication counts by priority
 3. If zero duplications → skip to Final Summary
@@ -96,6 +118,7 @@ pnpm build
 2. **Update TodoWrite**: mark current priority in_progress
 
 3. **Invoke reuse-fixer** via Task tool:
+
    ```
    subagent_type: "reuse-fixer"
    description: "Consolidate {priority} duplications"
@@ -115,6 +138,7 @@ pnpm build
    ```
 
 4. **Quality Gate** (inline):
+
    ```bash
    pnpm type-check
    pnpm build
@@ -136,6 +160,7 @@ After all priorities consolidated:
 1. **Update TodoWrite**: mark verification in_progress
 
 2. **Invoke reuse-hunter** (verification mode):
+
    ```
    subagent_type: "reuse-hunter"
    description: "Verification scan"
@@ -167,20 +192,24 @@ Generate summary for user:
 **Status**: {SUCCESS/PARTIAL}
 
 ### Results
+
 - Found: {total} duplications
 - Consolidated: {consolidated} ({percentage}%)
 - Remaining: {remaining}
 
 ### By Priority
+
 - High: {consolidated}/{total}
 - Medium: {consolidated}/{total}
 - Low: {consolidated}/{total}
 
 ### Validation
+
 - Type Check: {status}
 - Build: {status}
 
 ### Artifacts
+
 - Detection: `reuse-hunting-report.md`
 - Consolidation: `reuse-consolidation-implemented.md`
 ```
@@ -190,6 +219,7 @@ Generate summary for user:
 ## Error Handling
 
 **If quality gate fails**:
+
 ```
 Rollback available: .tmp/current/changes/reuse-changes.json
 
@@ -200,6 +230,7 @@ To rollback:
 ```
 
 **If worker fails**:
+
 - Report error to user
 - Suggest manual intervention
 - Exit workflow
@@ -209,22 +240,26 @@ To rollback:
 ## Duplication Categories
 
 **Types/Interfaces** (shared-types):
+
 - Database types
 - API types
 - Zod schemas
 - Common enums
 
 **Constants** (shared-types):
+
 - Configuration objects
 - MIME types, file limits
 - Feature flags
 
 **Utilities** (shared package or re-export):
+
 - Helper functions
 - Validation utilities
 - Formatters
 
 **Single Source of Truth Pattern**:
+
 1. Canonical location: `packages/shared-types/src/`
 2. Other packages: `export * from '@package/shared-types/{module}'`
 3. NEVER copy code between packages
@@ -233,13 +268,13 @@ To rollback:
 
 ## Key Differences from Old Approach
 
-| Old (Orchestrator Agent) | New (Inline Skill) |
-|--------------------------|-------------------|
-| 9+ orchestrator calls | 0 orchestrator calls |
-| ~1400 lines (cmd + agent) | ~150 lines |
-| Context reload each call | Single session context |
-| Plan files for each phase | Direct execution |
-| ~10,000+ tokens overhead | ~500 tokens |
+| Old (Orchestrator Agent)  | New (Inline Skill)     |
+| ------------------------- | ---------------------- |
+| 9+ orchestrator calls     | 0 orchestrator calls   |
+| ~1400 lines (cmd + agent) | ~150 lines             |
+| Context reload each call  | Single session context |
+| Plan files for each phase | Direct execution       |
+| ~10,000+ tokens overhead  | ~500 tokens            |
 
 ---
 

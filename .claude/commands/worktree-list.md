@@ -7,6 +7,7 @@ description: List all git worktrees with status information
 Показывает список всех git worktrees с подробной информацией.
 
 **Что делает команда:**
+
 - Выводит все активные worktrees
 - Показывает текущие ветки
 - Отображает пути к директориям
@@ -14,6 +15,7 @@ description: List all git worktrees with status information
 - Показывает последние коммиты
 
 **Примеры:**
+
 ```bash
 /worktree-list
 ```
@@ -25,6 +27,7 @@ description: List all git worktrees with status information
 ### Step 1: Получение списка worktrees
 
 1. **Получить список worktrees**
+
    ```bash
    git worktree list
    ```
@@ -39,6 +42,7 @@ description: List all git worktrees with status information
 ### Step 2: Анализ worktrees
 
 Для каждого worktree извлеки:
+
 - Путь к директории
 - Название ветки
 - HEAD commit hash
@@ -55,27 +59,30 @@ description: List all git worktrees with status information
 
 ## Активные worktrees: N
 
-| Имя | Ветка | Путь | Статус | Последний коммит |
-|-----|-------|------|--------|------------------|
-| main (основной) | main | /home/me/code/megacampus2 | ✅ Active | abc1234 feat: ... |
-| admin-panel | feature/admin-panel | /home/me/code/megacampus2-worktrees/admin-panel | ✅ Active | def5678 feat: ... |
-| payment-system | feature/payment | /home/me/code/megacampus2-worktrees/payment-system | 🔒 Locked | ghi9012 fix: ... |
+| Имя             | Ветка               | Путь                                               | Статус    | Последний коммит  |
+| --------------- | ------------------- | -------------------------------------------------- | --------- | ----------------- |
+| main (основной) | main                | /home/me/code/megacampus2                          | ✅ Active | abc1234 feat: ... |
+| admin-panel     | feature/admin-panel | /home/me/code/megacampus2-worktrees/admin-panel    | ✅ Active | def5678 feat: ... |
+| payment-system  | feature/payment     | /home/me/code/megacampus2-worktrees/payment-system | 🔒 Locked | ghi9012 fix: ...  |
 
 ---
 
 ## Детали worktrees
 
 ### 1. main (основной worktree)
+
 - **Путь:** `/home/me/code/megacampus2`
 - **Ветка:** `main`
 - **HEAD:** `abc1234`
 - **Статус:** Main worktree (не может быть удален)
 - **Последний коммит:**
-  ```
-  abc1234 (HEAD -> main, origin/main) feat: add user authentication
-  Author: User Name <email>
-  Date: 2025-01-07
-  ```
+```
+
+abc1234 (HEAD -> main, origin/main) feat: add user authentication
+Author: User Name <email>
+Date: 2025-01-07
+
+```
 
 ### 2. admin-panel
 - **Путь:** `/home/me/code/megacampus2-worktrees/admin-panel`
@@ -83,16 +90,18 @@ description: List all git worktrees with status information
 - **HEAD:** `def5678`
 - **Статус:** ✅ Active (linked worktree)
 - **Последний коммит:**
-  ```
-  def5678 (HEAD -> feature/admin-panel) feat: add admin dashboard
-  Author: User Name <email>
-  Date: 2025-01-07
-  ```
+```
+
+def5678 (HEAD -> feature/admin-panel) feat: add admin dashboard
+Author: User Name <email>
+Date: 2025-01-07
+
+````
 - **Как открыть:**
-  ```bash
-  cd ../megacampus2-worktrees/admin-panel
-  code .
-  ```
+```bash
+cd ../megacampus2-worktrees/admin-panel
+code .
+````
 
 [... для каждого worktree ...]
 
@@ -111,26 +120,31 @@ description: List all git worktrees with status information
 ## Полезные команды
 
 **Переключиться на worktree:**
+
 ```bash
 cd /путь/к/worktree
 ```
 
 **Удалить worktree:**
+
 ```bash
 /worktree-remove <feature-name>
 ```
 
 **Создать новый worktree:**
+
 ```bash
 /worktree-create <feature-name>
 ```
 
 **Очистить устаревшие worktrees:**
+
 ```bash
 /worktree-cleanup
 ```
 
 **Git команды:**
+
 ```bash
 # Подробная информация
 git worktree list --porcelain
@@ -141,7 +155,8 @@ git worktree lock /путь/к/worktree --reason "Причина"
 # Разблокировать worktree
 git worktree unlock /путь/к/worktree
 ```
-```
+
+````
 
 ---
 
@@ -158,37 +173,45 @@ git worktree unlock /путь/к/worktree
 Разблокировать:
 ```bash
 git worktree unlock ../megacampus2-worktrees/feature-name
-```
+````
 
 **Prunable worktrees:**
-```markdown
+
+````markdown
 ⚠️ **Устаревшие worktrees:** N
 
 Эти worktrees были удалены, но административные файлы остались.
 
 Очистить:
+
 ```bash
 /worktree-cleanup
 # или
 git worktree prune
 ```
+````
 
 **Нет worktrees:**
-```markdown
+
+````markdown
 # Git Worktrees
 
 📭 **Нет дополнительных worktrees**
 
 У вас есть только основной worktree:
+
 - Путь: `/home/me/code/megacampus2`
 - Ветка: `current-branch`
 
 **Создать новый worktree:**
+
 ```bash
 /worktree-create <feature-name>
 ```
+````
 
 Примеры:
+
 ```bash
 /worktree-create admin-panel
 /worktree-create payment-system
@@ -196,10 +219,12 @@ git worktree prune
 ```
 
 **Преимущества worktrees:**
+
 - Работа над несколькими фичами параллельно
 - Нет необходимости в stash/commit WIP
 - Экономия места (общий .git)
 - Быстрое переключение между задачами
+
 ```
 
 ---
@@ -208,25 +233,31 @@ git worktree prune
 
 **Если git worktree не доступен:**
 ```
+
 ❌ Команда git worktree недоступна
 
 Проверьте версию Git:
+
 ```bash
 git --version
 # Требуется Git 2.5+
 ```
 
 Обновите Git, если нужно.
+
 ```
 
 **Если нет прав доступа:**
 ```
+
 ❌ Нет доступа к worktree директории
 
 Проверьте права доступа:
+
 ```bash
 ls -la ../megacampus2-worktrees/
 ```
+
 ```
 
 ---
@@ -237,3 +268,4 @@ ls -la ../megacampus2-worktrees/
 - Locked worktrees нельзя удалить без unlock
 - Prunable worktrees - это директории, которые были удалены вручную
 - Каждый worktree на своей уникальной ветке
+```

@@ -177,11 +177,7 @@ export function SetPasswordForm() {
                       className="absolute right-0 top-0 h-full w-10 px-3 py-2 hover:bg-transparent text-[var(--buh-foreground-subtle)] dark:text-slate-400 hover:text-[var(--buh-foreground)] dark:hover:text-white transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       <span className="sr-only">
                         {showPassword ? 'Скрыть пароль' : 'Показать пароль'}
                       </span>
@@ -196,11 +192,15 @@ export function SetPasswordForm() {
                       <span className="text-[var(--buh-foreground-muted)] dark:text-slate-400">
                         Надежность пароля
                       </span>
-                      <span className={`font-medium ${
-                        strength.score <= 2 ? 'text-red-500' :
-                        strength.score <= 4 ? 'text-amber-500' :
-                        'text-emerald-500'
-                      }`}>
+                      <span
+                        className={`font-medium ${
+                          strength.score <= 2
+                            ? 'text-red-500'
+                            : strength.score <= 4
+                              ? 'text-amber-500'
+                              : 'text-emerald-500'
+                        }`}
+                      >
                         {strength.label}
                       </span>
                     </div>
@@ -209,9 +209,7 @@ export function SetPasswordForm() {
                         <div
                           key={i}
                           className={`flex-1 rounded-full transition-all duration-300 ${
-                            i < strength.score
-                              ? strength.color
-                              : 'bg-slate-200 dark:bg-slate-700'
+                            i < strength.score ? strength.color : 'bg-slate-200 dark:bg-slate-700'
                           }`}
                         />
                       ))}
@@ -219,22 +217,10 @@ export function SetPasswordForm() {
 
                     {/* Password Requirements */}
                     <div className="space-y-1 pt-2">
-                      <PasswordRequirement
-                        met={password.length >= 8}
-                        text="Минимум 8 символов"
-                      />
-                      <PasswordRequirement
-                        met={/[A-Z]/.test(password)}
-                        text="Заглавная буква"
-                      />
-                      <PasswordRequirement
-                        met={/[a-z]/.test(password)}
-                        text="Строчная буква"
-                      />
-                      <PasswordRequirement
-                        met={/[0-9]/.test(password)}
-                        text="Цифра"
-                      />
+                      <PasswordRequirement met={password.length >= 8} text="Минимум 8 символов" />
+                      <PasswordRequirement met={/[A-Z]/.test(password)} text="Заглавная буква" />
+                      <PasswordRequirement met={/[a-z]/.test(password)} text="Строчная буква" />
+                      <PasswordRequirement met={/[0-9]/.test(password)} text="Цифра" />
                     </div>
                   </div>
                 )}
@@ -320,7 +306,13 @@ function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
       ) : (
         <XCircle className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600" />
       )}
-      <span className={met ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--buh-foreground-muted)] dark:text-slate-400'}>
+      <span
+        className={
+          met
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : 'text-[var(--buh-foreground-muted)] dark:text-slate-400'
+        }
+      >
         {text}
       </span>
     </div>

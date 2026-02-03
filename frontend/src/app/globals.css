@@ -5,8 +5,8 @@
  * Features: Aurora gradients, glassmorphism, orchestrated animations.
  */
 
-@import "tailwindcss";
-@import "../styles/design-system.css";
+@import 'tailwindcss';
+@import '../styles/design-system.css';
 
 /* ============================================
    CSS CUSTOM PROPERTIES FOR TAILWIND v4
@@ -124,7 +124,12 @@ a:hover {
 /* ============================================
    HEADINGS
    ============================================ */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--buh-font-sans);
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -178,7 +183,8 @@ p {
 /* ============================================
    CODE & PRE
    ============================================ */
-code, pre {
+code,
+pre {
   font-family: var(--buh-font-mono);
   font-size: 0.9em;
 }
@@ -212,7 +218,8 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--buh-border);
@@ -233,7 +240,9 @@ tr:hover {
 /* ============================================
    FORM ELEMENTS
    ============================================ */
-input, textarea, select {
+input,
+textarea,
+select {
   font-family: var(--buh-font-sans);
   font-size: 1rem;
   color: var(--buh-foreground);
@@ -246,13 +255,16 @@ input, textarea, select {
     box-shadow var(--buh-transition-fast);
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--buh-accent);
   box-shadow: 0 0 0 3px var(--buh-accent-glow);
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: var(--buh-foreground-subtle);
 }
 
@@ -477,7 +489,7 @@ html.theme-transition *::after {
    ============================================ */
 
 /* Card styling enhancements */
-[data-slot="card"] {
+[data-slot='card'] {
   background: var(--buh-surface);
   border: 1px solid var(--buh-border);
   border-radius: var(--buh-radius-lg);
@@ -485,12 +497,12 @@ html.theme-transition *::after {
 }
 
 /* Button primary enhancement */
-[data-slot="button"][data-variant="default"] {
+[data-slot='button'][data-variant='default'] {
   background: var(--buh-gradient-primary);
 }
 
 /* Input focus enhancement */
-[data-slot="input"]:focus-visible {
+[data-slot='input']:focus-visible {
   border-color: var(--buh-accent);
   box-shadow: 0 0 0 3px var(--buh-accent-glow);
 }

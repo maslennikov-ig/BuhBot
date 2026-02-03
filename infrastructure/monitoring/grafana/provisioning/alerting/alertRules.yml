@@ -95,7 +95,7 @@ groups:
         for: 5m
         annotations:
           summary: High number of webhook signature failures detected
-          description: "More than 10 webhook signature failures in the last 5 minutes. Current value: {{ $values.B.Value }}. This may indicate an attack attempt or misconfigured webhook secret."
+          description: 'More than 10 webhook signature failures in the last 5 minutes. Current value: {{ $values.B.Value }}. This may indicate an attack attempt or misconfigured webhook secret.'
           runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/webhook-signature-failures
         labels:
           severity: critical
@@ -189,7 +189,7 @@ groups:
         for: 5m
         annotations:
           summary: CPU usage is critically high
-          description: "CPU usage has been above 80% for more than 5 minutes. Current value: {{ $values.B.Value | printf \"%.1f\" }}%. Consider scaling up or investigating resource-intensive processes."
+          description: 'CPU usage has been above 80% for more than 5 minutes. Current value: {{ $values.B.Value | printf "%.1f" }}%. Consider scaling up or investigating resource-intensive processes.'
           runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/high-cpu-usage
         labels:
           severity: warning
@@ -274,7 +274,7 @@ groups:
         for: 5m
         annotations:
           summary: Memory usage is critically high
-          description: "Memory usage has been above 80% for more than 5 minutes. Current value: {{ $values.B.Value | printf \"%.1f\" }}%. Consider scaling up or investigating memory leaks."
+          description: 'Memory usage has been above 80% for more than 5 minutes. Current value: {{ $values.B.Value | printf "%.1f" }}%. Consider scaling up or investigating memory leaks.'
           runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/high-memory-usage
         labels:
           severity: warning
@@ -359,7 +359,7 @@ groups:
         for: 5m
         annotations:
           summary: Disk usage is critically high
-          description: "Disk usage has been above 85% for more than 5 minutes. Current value: {{ $values.B.Value | printf \"%.1f\" }}%. Consider cleaning up logs or expanding storage."
+          description: 'Disk usage has been above 85% for more than 5 minutes. Current value: {{ $values.B.Value | printf "%.1f" }}%. Consider cleaning up logs or expanding storage.'
           runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/high-disk-usage
         labels:
           severity: critical
@@ -453,7 +453,7 @@ groups:
         for: 2m
         annotations:
           summary: Supabase connection errors detected
-          description: "More than 5 Supabase connection errors in the last 5 minutes. Current value: {{ $values.B.Value }}. This may indicate database connectivity issues or Supabase service degradation."
+          description: 'More than 5 Supabase connection errors in the last 5 minutes. Current value: {{ $values.B.Value }}. This may indicate database connectivity issues or Supabase service degradation.'
           runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/supabase-connection-errors
         labels:
           severity: critical
@@ -538,7 +538,7 @@ groups:
         for: 10m
         annotations:
           summary: Service uptime is below SLA target of 99.5%
-          description: "7-day rolling uptime is below the SLA target of 99.5%. Current value: {{ $values.B.Value | printf \"%.3f\" }}%. Immediate investigation required."
+          description: '7-day rolling uptime is below the SLA target of 99.5%. Current value: {{ $values.B.Value | printf "%.3f" }}%. Immediate investigation required.'
           runbook_url: https://github.com/maslennikov-ig/BuhBot/wiki/runbooks/sla-breach
         labels:
           severity: critical

@@ -52,7 +52,7 @@ const UpdateGlobalSettingsInput = z.object({
 
   // Manager Alerts
   globalManagerIds: z.array(z.string()).optional(),
-  
+
   // Lead Notifications (Landing Page)
   leadNotificationIds: z.array(z.string()).optional(),
 
@@ -248,44 +248,42 @@ export const settingsRouter = router({
    * @returns Global settings object
    * @authorization All authenticated users
    */
-  getGlobalSettings: authedProcedure
-    .output(GlobalSettingsOutput)
-    .query(async ({ ctx }) => {
-      // Fetch or create default settings (singleton pattern)
-      let settings = await ctx.prisma.globalSettings.findUnique({
-        where: { id: 'default' },
+  getGlobalSettings: authedProcedure.output(GlobalSettingsOutput).query(async ({ ctx }) => {
+    // Fetch or create default settings (singleton pattern)
+    let settings = await ctx.prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+    });
+
+    // If settings don't exist, create with defaults
+    if (!settings) {
+      settings = await ctx.prisma.globalSettings.create({
+        data: { id: 'default' },
       });
+    }
 
-      // If settings don't exist, create with defaults
-      if (!settings) {
-        settings = await ctx.prisma.globalSettings.create({
-          data: { id: 'default' },
-        });
-      }
-
-      return {
-        defaultTimezone: settings.defaultTimezone,
-        defaultWorkingDays: settings.defaultWorkingDays,
-        defaultWorkingDaysDisplay: getWorkingDaysDisplay(settings.defaultWorkingDays),
-        defaultStartTime: settings.defaultStartTime,
-        defaultEndTime: settings.defaultEndTime,
-        defaultSlaThreshold: settings.defaultSlaThreshold,
-        maxEscalations: settings.maxEscalations,
-        escalationIntervalMin: settings.escalationIntervalMin,
-        globalManagerIds: settings.globalManagerIds,
-        globalManagerCount: settings.globalManagerIds.length,
-        leadNotificationIds: settings.leadNotificationIds,
-        aiConfidenceThreshold: settings.aiConfidenceThreshold,
-        messagePreviewLength: settings.messagePreviewLength,
-        // Mask API key for security (show only last 8 chars)
-        openrouterApiKey: settings.openrouterApiKey
-          ? `***${settings.openrouterApiKey.slice(-8)}`
-          : null,
-        openrouterModel: settings.openrouterModel,
-        dataRetentionYears: settings.dataRetentionYears,
-        updatedAt: settings.updatedAt,
-      };
-    }),
+    return {
+      defaultTimezone: settings.defaultTimezone,
+      defaultWorkingDays: settings.defaultWorkingDays,
+      defaultWorkingDaysDisplay: getWorkingDaysDisplay(settings.defaultWorkingDays),
+      defaultStartTime: settings.defaultStartTime,
+      defaultEndTime: settings.defaultEndTime,
+      defaultSlaThreshold: settings.defaultSlaThreshold,
+      maxEscalations: settings.maxEscalations,
+      escalationIntervalMin: settings.escalationIntervalMin,
+      globalManagerIds: settings.globalManagerIds,
+      globalManagerCount: settings.globalManagerIds.length,
+      leadNotificationIds: settings.leadNotificationIds,
+      aiConfidenceThreshold: settings.aiConfidenceThreshold,
+      messagePreviewLength: settings.messagePreviewLength,
+      // Mask API key for security (show only last 8 chars)
+      openrouterApiKey: settings.openrouterApiKey
+        ? `***${settings.openrouterApiKey.slice(-8)}`
+        : null,
+      openrouterModel: settings.openrouterModel,
+      dataRetentionYears: settings.dataRetentionYears,
+      updatedAt: settings.updatedAt,
+    };
+  }),
 
   /**
    * Get list of global holidays

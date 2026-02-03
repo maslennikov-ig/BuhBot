@@ -7,10 +7,13 @@
 ## 1. Обзор
 
 ### 1.1 Цель
+
 Создать UI раздел для генерации и экспорта отчётов для руководства бухгалтерской компании. В отличие от раздела "Аналитика" (интерактивные дашборды), раздел "Отчёты" предназначен для создания **экспортируемых документов** (CSV, JSON, PDF).
 
 ### 1.2 Существующий backend
+
 **ВАЖНО:** Backend уже частично реализован в `backend/src/api/trpc/routers/analytics.ts`:
+
 - `trpc.analytics.exportReport` — экспорт CSV/JSON (sla_compliance, accountant_performance, violations)
 - `trpc.analytics.getAccountantStats` — статистика по операторам
 - `trpc.analytics.feedbackSummary` — статистика NPS/CSAT
@@ -19,24 +22,28 @@
 **Задача:** Создать удобный UI для использования этих endpoint'ов.
 
 ### 1.2 Целевая аудитория
+
 - Руководители бухгалтерской фирмы
 - Менеджеры отделов
 - Администраторы системы
 
 ### 1.3 Ключевое отличие от Аналитики
-| Аналитика | Отчёты |
-|-----------|--------|
-| Интерактивные графики | Статичные документы |
+
+| Аналитика                 | Отчёты                     |
+| ------------------------- | -------------------------- |
+| Интерактивные графики     | Статичные документы        |
 | Данные в реальном времени | Данные за выбранный период |
-| Просмотр в браузере | Экспорт PDF/Excel |
-| Фильтрация "на лету" | Предустановленные шаблоны |
+| Просмотр в браузере       | Экспорт PDF/Excel          |
+| Фильтрация "на лету"      | Предустановленные шаблоны  |
 
 ## 2. Функциональные требования
 
 ### 2.1 Типы отчётов
 
 #### 2.1.1 Отчёт по продуктивности операторов
+
 **Содержимое:**
+
 - Таблица операторов с метриками:
   - ФИО / username
   - Количество обработанных чатов
@@ -49,7 +56,9 @@
 - Топ-3 лучших и худших по метрикам
 
 #### 2.1.2 Отчёт по SLA
+
 **Содержимое:**
+
 - Общий % соблюдения SLA за период
 - Количество нарушений по типам:
   - Превышение времени первого ответа
@@ -59,7 +68,9 @@
 - Топ-5 операторов по количеству нарушений
 
 #### 2.1.3 Отчёт по качеству обслуживания
+
 **Содержимое:**
+
 - Средний NPS за период
 - Средний CSAT за период
 - Распределение оценок (гистограмма)
@@ -67,7 +78,9 @@
 - Динамика NPS/CSAT по неделям/месяцам
 
 #### 2.1.4 Сводный отчёт (Executive Summary)
+
 **Содержимое:**
+
 - Ключевые метрики за период:
   - Всего обработано чатов
   - Всего закрыто запросов
@@ -80,6 +93,7 @@
 - Краткие рекомендации
 
 ### 2.2 Параметры генерации
+
 - **Период:** Сегодня, Неделя, Месяц, Квартал, Год, Произвольный диапазон
 - **Формат экспорта:** PDF, Excel (XLSX)
 - **Фильтр по оператору:** Все / Выбранные (для отчётов по продуктивности)
@@ -87,6 +101,7 @@
 ### 2.3 UI требования
 
 #### Страница /reports
+
 1. **Заголовок страницы** с HelpButton
 2. **Сетка карточек отчётов** (2x2 или 1x4):
    - Иконка типа отчёта
@@ -111,41 +126,49 @@
 export const reportsRouter = router({
   // Генерация отчёта по продуктивности
   generateProductivityReport: protectedProcedure
-    .input(z.object({
-      dateFrom: z.date(),
-      dateTo: z.date(),
-      format: z.enum(['pdf', 'xlsx']),
-      accountantIds: z.array(z.string()).optional(), // фильтр по операторам
-    }))
+    .input(
+      z.object({
+        dateFrom: z.date(),
+        dateTo: z.date(),
+        format: z.enum(['pdf', 'xlsx']),
+        accountantIds: z.array(z.string()).optional(), // фильтр по операторам
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       // Возвращает base64 файла или URL для скачивания
     }),
 
   // Генерация отчёта по SLA
   generateSlaReport: protectedProcedure
-    .input(z.object({
-      dateFrom: z.date(),
-      dateTo: z.date(),
-      format: z.enum(['pdf', 'xlsx']),
-    }))
+    .input(
+      z.object({
+        dateFrom: z.date(),
+        dateTo: z.date(),
+        format: z.enum(['pdf', 'xlsx']),
+      })
+    )
     .mutation(async ({ input, ctx }) => {}),
 
   // Генерация отчёта по качеству
   generateQualityReport: protectedProcedure
-    .input(z.object({
-      dateFrom: z.date(),
-      dateTo: z.date(),
-      format: z.enum(['pdf', 'xlsx']),
-    }))
+    .input(
+      z.object({
+        dateFrom: z.date(),
+        dateTo: z.date(),
+        format: z.enum(['pdf', 'xlsx']),
+      })
+    )
     .mutation(async ({ input, ctx }) => {}),
 
   // Генерация сводного отчёта
   generateExecutiveReport: protectedProcedure
-    .input(z.object({
-      dateFrom: z.date(),
-      dateTo: z.date(),
-      format: z.enum(['pdf', 'xlsx']),
-    }))
+    .input(
+      z.object({
+        dateFrom: z.date(),
+        dateTo: z.date(),
+        format: z.enum(['pdf', 'xlsx']),
+      })
+    )
     .mutation(async ({ input, ctx }) => {}),
 });
 ```
@@ -153,10 +176,12 @@ export const reportsRouter = router({
 ### 3.2 Библиотеки для генерации
 
 **PDF генерация:**
+
 - `@react-pdf/renderer` — для React-компонентов в PDF
 - ИЛИ `pdfmake` — для серверной генерации
 
 **Excel генерация:**
+
 - `exceljs` — полнофункциональная библиотека для XLSX
 
 ### 3.3 Структура файлов
@@ -187,6 +212,7 @@ backend/src/
 ### 3.4 Интеграция с существующими данными
 
 Использовать существующие роутеры для получения данных:
+
 - `trpc.sla.getRequests` — данные по SLA
 - `trpc.analytics.*` — метрики аналитики
 - `trpc.auth.getAccountants` — список операторов
@@ -253,27 +279,32 @@ backend/src/
 ## 5. Этапы реализации
 
 ### Этап 1: Backend — tRPC роутер и сервисы
+
 1. Создать `reports.ts` роутер
 2. Создать `report.service.ts` с логикой агрегации данных
 3. Подключить роутер к главному router.ts
 
 ### Этап 2: Backend — генерация Excel
+
 1. Установить `exceljs`
 2. Создать `excel-generator.service.ts`
 3. Реализовать шаблоны для каждого типа отчёта
 
 ### Этап 3: Backend — генерация PDF
+
 1. Установить `pdfmake` или `@react-pdf/renderer`
 2. Создать `pdf-generator.service.ts`
 3. Реализовать шаблоны для каждого типа отчёта
 
 ### Этап 4: Frontend — UI страницы
+
 1. Создать компонент `ReportCard.tsx`
 2. Создать компонент `ReportGeneratorModal.tsx`
 3. Обновить `page.tsx` с сеткой карточек
 4. Добавить HelpButton и документацию
 
 ### Этап 5: Интеграция и тестирование
+
 1. Подключить frontend к backend
 2. Протестировать генерацию всех типов отчётов
 3. Проверить корректность данных в отчётах
@@ -292,12 +323,14 @@ backend/src/
 ## 7. Зависимости
 
 ### NPM пакеты (backend)
+
 ```bash
 npm install exceljs pdfmake
 npm install -D @types/pdfmake
 ```
 
 ### Существующие компоненты
+
 - `GlassCard` — для карточек
 - `PageHeader` — заголовок страницы
 - `Button` — кнопки

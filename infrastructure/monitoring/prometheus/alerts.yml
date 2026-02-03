@@ -16,7 +16,7 @@ groups:
           service: system
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "High CPU usage on {{ $labels.instance }}"
+          summary: 'High CPU usage on {{ $labels.instance }}'
           description: |
             CPU usage is {{ $value | humanize }}% (threshold: 80%).
             Instance: {{ $labels.instance }}
@@ -33,7 +33,7 @@ groups:
           service: system
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "High memory usage on {{ $labels.instance }}"
+          summary: 'High memory usage on {{ $labels.instance }}'
           description: |
             Memory usage is {{ $value | humanize }}% (threshold: 80%).
             Instance: {{ $labels.instance }}
@@ -50,7 +50,7 @@ groups:
           service: system
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "High disk usage on {{ $labels.instance }}"
+          summary: 'High disk usage on {{ $labels.instance }}'
           description: |
             Disk usage is {{ $value | humanize }}% (threshold: 85%).
             Instance: {{ $labels.instance }}
@@ -72,7 +72,7 @@ groups:
           service: bot-backend
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "Bot backend is down"
+          summary: 'Bot backend is down'
           description: |
             Bot backend health check is failing.
             Instance: {{ $labels.instance }}
@@ -89,7 +89,7 @@ groups:
           service: bot-backend
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "High message processing latency"
+          summary: 'High message processing latency'
           description: |
             P95 message processing time is {{ $value | humanize }}s (threshold: 5s).
             Instance: {{ $labels.instance }}
@@ -110,7 +110,7 @@ groups:
           service: supabase
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "High rate of Supabase connection errors"
+          summary: 'High rate of Supabase connection errors'
           description: |
             Supabase connection errors: {{ $value | humanize }} in last 5 minutes (threshold: 10).
             Instance: {{ $labels.instance }}
@@ -127,7 +127,7 @@ groups:
           service: supabase
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "High Supabase query latency"
+          summary: 'High Supabase query latency'
           description: |
             P95 Supabase query time is {{ $value | humanize }}s (threshold: 0.5s).
             Instance: {{ $labels.instance }}
@@ -148,7 +148,7 @@ groups:
           service: redis
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "Redis high memory usage"
+          summary: 'Redis high memory usage'
           description: |
             Redis memory usage is {{ $value | humanize }}% (threshold: 80%).
             Instance: {{ $labels.instance }}
@@ -165,7 +165,7 @@ groups:
           service: redis
           instance: '{{ $labels.instance }}'
         annotations:
-          summary: "Redis connection pool near saturation"
+          summary: 'Redis connection pool near saturation'
           description: |
             Redis connection pool usage is {{ $value | humanize }}% (threshold: 80%).
             Instance: {{ $labels.instance }}

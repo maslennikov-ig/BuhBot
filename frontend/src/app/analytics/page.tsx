@@ -32,15 +32,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from '@/components/ui/chart';
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { HelpButton } from '@/components/ui/HelpButton';
 
 // ============================================
@@ -103,18 +95,18 @@ const historyChartConfig = {
     label: 'Среднее время',
     color: 'hsl(var(--buh-accent))',
   },
-  'Медиана': {
+  Медиана: {
     label: 'Медиана',
     color: 'hsl(var(--buh-primary))',
   },
-  'P95': {
+  P95: {
     label: 'P95',
     color: 'hsl(var(--buh-warning))',
   },
 };
 
 const distributionChartConfig = {
-  'Количество': {
+  Количество: {
     label: 'Количество обращений',
     color: 'hsl(var(--buh-accent))',
   },
@@ -218,13 +210,9 @@ function KPICard({
 
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)]">
-              {title}
-            </h3>
+            <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)]">{title}</h3>
             {subtitle && (
-              <p className="text-xs text-[var(--buh-foreground-subtle)] mt-1">
-                {subtitle}
-              </p>
+              <p className="text-xs text-[var(--buh-foreground-subtle)] mt-1">{subtitle}</p>
             )}
           </div>
           <motion.div
@@ -349,9 +337,7 @@ export default function AnalyticsPage() {
   const handleExportCSV = () => {
     if (!historyQuery.data) return;
 
-    const csvRows = [
-      ['Дата', 'Среднее время (мин)', 'Медиана (мин)', 'P95 (мин)', 'Количество'],
-    ];
+    const csvRows = [['Дата', 'Среднее время (мин)', 'Медиана (мин)', 'P95 (мин)', 'Количество']];
 
     historyQuery.data.dataPoints.forEach((point) => {
       csvRows.push([
@@ -378,7 +364,8 @@ export default function AnalyticsPage() {
   // ============================================
 
   const summary = historyQuery.data?.summary;
-  const isLoading = historyQuery.isLoading || distributionQuery.isLoading || accountantStatsQuery.isLoading;
+  const isLoading =
+    historyQuery.isLoading || distributionQuery.isLoading || accountantStatsQuery.isLoading;
 
   return (
     <AdminLayout>
@@ -407,9 +394,7 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Period Select */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--buh-foreground)]">
-                  Период
-                </label>
+                <label className="text-sm font-medium text-[var(--buh-foreground)]">Период</label>
                 <Select value={period} onValueChange={(v: PeriodType) => setPeriod(v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите период" />
@@ -425,9 +410,7 @@ export default function AnalyticsPage() {
 
               {/* Chat Select */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--buh-foreground)]">
-                  Чат
-                </label>
+                <label className="text-sm font-medium text-[var(--buh-foreground)]">Чат</label>
                 <Select value={selectedChatId} onValueChange={setSelectedChatId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Все чаты" />
@@ -596,8 +579,8 @@ export default function AnalyticsPage() {
                       historyQuery.data?.dataPoints.map((point) => ({
                         Дата: point.label,
                         'Среднее время': point.avgResponseMinutes,
-                        'Медиана': point.medianResponseMinutes,
-                        'P95': point.p95ResponseMinutes,
+                        Медиана: point.medianResponseMinutes,
+                        P95: point.p95ResponseMinutes,
                       })) ?? []
                     }
                     margin={{ top: 10, right: 10, bottom: 0, left: 0 }}
@@ -682,9 +665,7 @@ export default function AnalyticsPage() {
                   <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
                     Топ бухгалтеров
                   </h2>
-                  <p className="text-sm text-[var(--buh-foreground-muted)]">
-                    По времени ответа
-                  </p>
+                  <p className="text-sm text-[var(--buh-foreground-muted)]">По времени ответа</p>
                 </div>
               </div>
 
@@ -721,7 +702,8 @@ export default function AnalyticsPage() {
                           key={acc.accountantId}
                           className={cn(
                             'border-b border-[var(--buh-glass-border)] transition-colors hover:bg-[var(--buh-surface-elevated)]',
-                            idx === 0 && 'bg-gradient-to-r from-[var(--buh-success-muted)] to-transparent'
+                            idx === 0 &&
+                              'bg-gradient-to-r from-[var(--buh-success-muted)] to-transparent'
                           )}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -764,9 +746,7 @@ export default function AnalyticsPage() {
                   <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
                     Распределение
                   </h2>
-                  <p className="text-sm text-[var(--buh-foreground-muted)]">
-                    По времени ответа
-                  </p>
+                  <p className="text-sm text-[var(--buh-foreground-muted)]">По времени ответа</p>
                 </div>
               </div>
 

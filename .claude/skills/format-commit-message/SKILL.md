@@ -24,6 +24,7 @@ Generate conventional commit messages following project standards with proper at
 Collect required information for commit message.
 
 **Expected Input**:
+
 - `type`: String (feat|fix|chore|docs|refactor|test|style|perf)
 - `scope`: String (optional, e.g., "auth", "api", "ui")
 - `description`: String (brief description)
@@ -35,6 +36,7 @@ Collect required information for commit message.
 Apply conventional commit format with project standards.
 
 **Format Structure**:
+
 ```
 {type}({scope}): {description}
 
@@ -44,6 +46,7 @@ Apply conventional commit format with project standards.
 ```
 
 **Footer Template**:
+
 ```
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -58,6 +61,7 @@ If `breaking: true`, prepend "BREAKING CHANGE: " to body or add as footer.
 Ensure message follows guidelines.
 
 **Validation Rules** (Release Please–friendly):
+
 - Type must be valid (feat|fix|chore|docs|refactor|test|style|perf|ci)
 - Subject: imperative mood, lowercase, no period at end, ≤ 72 characters
 - Scope: lowercase if present; never use `chore(release):` for normal commits (reserved for Release Please)
@@ -69,6 +73,7 @@ Ensure message follows guidelines.
 Return complete commit message ready for git commit.
 
 **Expected Output**:
+
 ```
 feat(auth): add OAuth2 authentication support
 
@@ -92,6 +97,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Example 1: Simple Feature Commit
 
 **Input**:
+
 ```json
 {
   "type": "feat",
@@ -100,6 +106,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Output**:
+
 ```
 feat: add dark mode toggle
 
@@ -111,6 +118,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Example 2: Scoped Fix with Body
 
 **Input**:
+
 ```json
 {
   "type": "fix",
@@ -121,6 +129,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Output**:
+
 ```
 fix(api): resolve memory leak in connection pool
 
@@ -135,6 +144,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Example 3: Breaking Change
 
 **Input**:
+
 ```json
 {
   "type": "feat",
@@ -146,6 +156,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Output**:
+
 ```
 feat(api): migrate to v2 authentication API
 
@@ -162,6 +173,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 **Note:** Only the release script or Release Please should create `chore(release):` commits. Agents should not generate these for normal work.
 
 **Input** (e.g. from release script):
+
 ```json
 {
   "type": "chore",
@@ -171,6 +183,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Output**:
+
 ```
 chore(release): v0.8.0
 

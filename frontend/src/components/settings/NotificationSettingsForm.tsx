@@ -77,9 +77,7 @@ export function NotificationSettingsForm() {
           </div>
           <div>
             <CardTitle>Уведомления о заявках</CardTitle>
-            <CardDescription>
-              Куда отправлять уведомления о новых лидах с лендинга
-            </CardDescription>
+            <CardDescription>Куда отправлять уведомления о новых лидах с лендинга</CardDescription>
           </div>
         </div>
       </CardHeader>

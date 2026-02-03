@@ -69,11 +69,13 @@ cd frontend && pnpm dev
 #### View Feedback (Admin Panel)
 
 **Manager View** (`/feedback`):
+
 - See all responses with client names
 - Filter by date, rating, survey
 - Export to CSV
 
 **Accountant View** (`/feedback`):
+
 - See aggregate stats only
 - NPS score, average rating
 - Anonymous comments
@@ -102,6 +104,7 @@ As accountant in a client chat:
 #### Auto-File Confirmation
 
 As client:
+
 1. Send a document to bot
 2. Bot replies: "File received: document.pdf (1.2 MB)"
 
@@ -197,6 +200,7 @@ http://localhost:3001/admin/queues
 ### Survey Delivery Speed
 
 For 10,000 clients:
+
 - Expected: < 4 hours
 - Rate: ~10 messages/second with 100ms delay
 - Monitor: `surveys` queue job count

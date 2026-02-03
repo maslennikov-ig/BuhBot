@@ -25,24 +25,25 @@
 
 Tracks quarterly survey campaigns.
 
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| id | UUID | PK, default gen_random_uuid() | Unique identifier |
-| quarter | String | NOT NULL | Format: "2025-Q1" |
-| scheduledAt | DateTime | NOT NULL | When survey was scheduled |
-| sentAt | DateTime | NULL | When delivery started |
-| expiresAt | DateTime | NOT NULL | Survey validity deadline |
-| closedAt | DateTime | NULL | Manual close timestamp |
-| closedBy | UUID | FK → User.id, NULL | Who closed manually |
-| status | SurveyStatus | NOT NULL, default 'scheduled' | Campaign status |
-| totalClients | Int | default 0 | Total clients targeted |
-| deliveredCount | Int | default 0 | Successfully delivered |
-| responseCount | Int | default 0 | Responses received |
-| averageRating | Float | NULL | Calculated average |
-| createdAt | DateTime | default now() | Record creation |
-| updatedAt | DateTime | auto-update | Last modification |
+| Field          | Type         | Constraints                   | Description               |
+| -------------- | ------------ | ----------------------------- | ------------------------- |
+| id             | UUID         | PK, default gen_random_uuid() | Unique identifier         |
+| quarter        | String       | NOT NULL                      | Format: "2025-Q1"         |
+| scheduledAt    | DateTime     | NOT NULL                      | When survey was scheduled |
+| sentAt         | DateTime     | NULL                          | When delivery started     |
+| expiresAt      | DateTime     | NOT NULL                      | Survey validity deadline  |
+| closedAt       | DateTime     | NULL                          | Manual close timestamp    |
+| closedBy       | UUID         | FK → User.id, NULL            | Who closed manually       |
+| status         | SurveyStatus | NOT NULL, default 'scheduled' | Campaign status           |
+| totalClients   | Int          | default 0                     | Total clients targeted    |
+| deliveredCount | Int          | default 0                     | Successfully delivered    |
+| responseCount  | Int          | default 0                     | Responses received        |
+| averageRating  | Float        | NULL                          | Calculated average        |
+| createdAt      | DateTime     | default now()                 | Record creation           |
+| updatedAt      | DateTime     | auto-update                   | Last modification         |
 
 **Enum: SurveyStatus**
+
 - `scheduled` - Waiting for scheduled time
 - `sending` - Delivery in progress
 - `active` - Delivered, accepting responses
@@ -50,6 +51,7 @@ Tracks quarterly survey campaigns.
 - `expired` - Past expiry date
 
 **Indexes**:
+
 - `idx_survey_quarter` on (quarter)
 - `idx_survey_status` on (status)
 
@@ -57,21 +59,22 @@ Tracks quarterly survey campaigns.
 
 Tracks individual survey delivery to each client.
 
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| id | UUID | PK, default gen_random_uuid() | Unique identifier |
-| surveyId | UUID | FK → FeedbackSurvey.id, NOT NULL | Parent survey |
-| chatId | BigInt | FK → Chat.id, NOT NULL | Target client chat |
-| messageId | BigInt | NULL | Telegram message ID |
-| status | DeliveryStatus | NOT NULL, default 'pending' | Delivery status |
-| deliveredAt | DateTime | NULL | When successfully sent |
-| reminderSentAt | DateTime | NULL | When reminder sent (day 2) |
-| managerNotifiedAt | DateTime | NULL | When manager notified of non-response |
-| retryCount | Int | default 0 | Delivery retry attempts |
-| errorMessage | String | NULL | Last error if failed |
-| createdAt | DateTime | default now() | Record creation |
+| Field             | Type           | Constraints                      | Description                           |
+| ----------------- | -------------- | -------------------------------- | ------------------------------------- |
+| id                | UUID           | PK, default gen_random_uuid()    | Unique identifier                     |
+| surveyId          | UUID           | FK → FeedbackSurvey.id, NOT NULL | Parent survey                         |
+| chatId            | BigInt         | FK → Chat.id, NOT NULL           | Target client chat                    |
+| messageId         | BigInt         | NULL                             | Telegram message ID                   |
+| status            | DeliveryStatus | NOT NULL, default 'pending'      | Delivery status                       |
+| deliveredAt       | DateTime       | NULL                             | When successfully sent                |
+| reminderSentAt    | DateTime       | NULL                             | When reminder sent (day 2)            |
+| managerNotifiedAt | DateTime       | NULL                             | When manager notified of non-response |
+| retryCount        | Int            | default 0                        | Delivery retry attempts               |
+| errorMessage      | String         | NULL                             | Last error if failed                  |
+| createdAt         | DateTime       | default now()                    | Record creation                       |
 
 **Enum: DeliveryStatus**
+
 - `pending` - Not yet attempted
 - `delivered` - Successfully sent
 - `reminded` - Reminder sent on day 2
@@ -80,6 +83,7 @@ Tracks individual survey delivery to each client.
 - `responded` - Client has responded
 
 **Indexes**:
+
 - `idx_delivery_survey` on (surveyId)
 - `idx_delivery_chat` on (chatId)
 - `idx_delivery_status` on (status)
@@ -91,26 +95,27 @@ Tracks individual survey delivery to each client.
 
 Add fields to link responses to surveys.
 
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| surveyId | UUID | FK → FeedbackSurvey.id, NULL | Parent survey (NULL for ad-hoc) |
-| deliveryId | UUID | FK → SurveyDelivery.id, NULL | Delivery record |
-| clientUsername | String | NULL | Telegram username for manager view |
-| isAnonymizedView | Boolean | computed | Helper for accountant queries |
+| Field            | Type    | Constraints                  | Description                        |
+| ---------------- | ------- | ---------------------------- | ---------------------------------- |
+| surveyId         | UUID    | FK → FeedbackSurvey.id, NULL | Parent survey (NULL for ad-hoc)    |
+| deliveryId       | UUID    | FK → SurveyDelivery.id, NULL | Delivery record                    |
+| clientUsername   | String  | NULL                         | Telegram username for manager view |
+| isAnonymizedView | Boolean | computed                     | Helper for accountant queries      |
 
 **New Index**:
+
 - `idx_feedback_survey` on (surveyId)
 
 ### GlobalSettings (EXTEND existing)
 
 Add survey configuration fields.
 
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| surveyValidityDays | Int | default 7 | Days until survey expires |
-| surveyReminderDay | Int | default 2 | Day to send reminder |
-| lowRatingThreshold | Int | default 3 | Rating that triggers alert (<=) |
-| surveyQuarterDay | Int | default 1 | Day of month to send (1st Monday) |
+| Field              | Type | Constraints | Description                       |
+| ------------------ | ---- | ----------- | --------------------------------- |
+| surveyValidityDays | Int  | default 7   | Days until survey expires         |
+| surveyReminderDay  | Int  | default 2   | Day to send reminder              |
+| lowRatingThreshold | Int  | default 3   | Rating that triggers alert (<=)   |
+| surveyQuarterDay   | Int  | default 1   | Day of month to send (1st Monday) |
 
 ## State Transitions
 
@@ -148,17 +153,20 @@ pending ──[send success]──> delivered ──[day 2]──> reminded ─�
 ## Validation Rules
 
 ### FeedbackSurvey
+
 - `quarter` must match pattern `^\d{4}-Q[1-4]$`
 - `expiresAt` must be after `scheduledAt`
 - `closedBy` required when `status = 'closed'`
 - `averageRating` must be between 1.0 and 5.0
 
 ### SurveyDelivery
+
 - `retryCount` max value: 5
 - `reminderSentAt` only set if `status` was 'delivered'
 - `managerNotifiedAt` only set if `status` transitions to 'expired'
 
 ### FeedbackResponse
+
 - `rating` must be 1-5 (existing CHECK constraint)
 - If `surveyId` set, survey must be in 'active' status
 

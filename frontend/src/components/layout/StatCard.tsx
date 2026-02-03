@@ -47,12 +47,7 @@ export function StatCard({
 
   if (loading) {
     return (
-      <div
-        className={cn(
-          'buh-card p-6',
-          className
-        )}
-      >
+      <div className={cn('buh-card p-6', className)}>
         <div className="flex items-start justify-between">
           <div className="space-y-3 flex-1">
             <div className="h-4 w-24 buh-shimmer rounded" />
@@ -67,10 +62,7 @@ export function StatCard({
 
   return (
     <div
-      className={cn(
-        'buh-card buh-card-interactive group relative overflow-hidden p-6',
-        className
-      )}
+      className={cn('buh-card buh-card-interactive group relative overflow-hidden p-6', className)}
     >
       {/* Gradient top border on hover */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -78,9 +70,7 @@ export function StatCard({
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           {/* Title */}
-          <p className="text-sm font-medium text-[var(--buh-foreground-muted)]">
-            {title}
-          </p>
+          <p className="text-sm font-medium text-[var(--buh-foreground-muted)]">{title}</p>
 
           {/* Value */}
           <p className="buh-animate-count text-3xl font-bold tracking-tight text-[var(--buh-foreground)]">
@@ -92,9 +82,11 @@ export function StatCard({
             <div
               className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
-                change.type === 'increase' && 'bg-[var(--buh-success-muted)] text-[var(--buh-success)]',
+                change.type === 'increase' &&
+                  'bg-[var(--buh-success-muted)] text-[var(--buh-success)]',
                 change.type === 'decrease' && 'bg-[var(--buh-error-muted)] text-[var(--buh-error)]',
-                change.type === 'neutral' && 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]'
+                change.type === 'neutral' &&
+                  'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]'
               )}
             >
               {ChangeIcon && <ChangeIcon className="h-3 w-3" />}
@@ -119,4 +111,3 @@ export function StatCard({
     </div>
   );
 }
-

@@ -43,19 +43,9 @@ export function GlassCard({
         paddingMap[padding],
 
         // Variant styles
-        variant === 'default' && [
-          'buh-glass',
-          'border-[var(--buh-glass-border)]',
-        ],
-        variant === 'elevated' && [
-          'buh-glass-elevated',
-          'border-[var(--buh-glass-border)]',
-        ],
-        variant === 'glow' && [
-          'buh-glass',
-          'buh-card-glow',
-          'border-[var(--buh-glass-border)]',
-        ],
+        variant === 'default' && ['buh-glass', 'border-[var(--buh-glass-border)]'],
+        variant === 'elevated' && ['buh-glass-elevated', 'border-[var(--buh-glass-border)]'],
+        variant === 'glow' && ['buh-glass', 'buh-card-glow', 'border-[var(--buh-glass-border)]'],
 
         className
       )}
@@ -65,4 +55,3 @@ export function GlassCard({
     </div>
   );
 }
-

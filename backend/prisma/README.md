@@ -50,6 +50,7 @@ DIRECT_URL=postgresql://postgres:PASSWORD@db.PROJECT-REF.supabase.co:5432/postgr
 ```
 
 **Connection String Details**:
+
 - `DATABASE_URL`: Uses Supabase Supavisor pooler (port 6543) with `pgbouncer=true`
 - `DIRECT_URL`: Direct connection (port 5432) for running migrations (bypasses pooler)
 
@@ -68,6 +69,7 @@ This generates the type-safe Prisma Client in `node_modules/.prisma/client`.
 **IMPORTANT**: Database schema is managed through Supabase migrations (in `infrastructure/supabase/migrations/`), NOT Prisma migrations.
 
 Prisma schema is used for:
+
 - Generating Prisma Client for type-safe queries
 - Database introspection after Supabase migrations are applied
 - Type definitions for backend code
@@ -100,11 +102,13 @@ model ClientRequest {
 ### Indexes
 
 Indexes are defined on:
+
 - All foreign key columns
 - Frequently queried columns (status, rating, timestamps)
 - Conditional indexes for filtered queries (e.g., `slaEnabled = true`)
 
 Example:
+
 ```prisma
 @@index([chatId])
 @@index([status])
@@ -276,6 +280,7 @@ const prisma = new PrismaClient({
 ```
 
 **Supabase Pooler Configuration**:
+
 - Max connections per project: 1000 (Supabase Cloud)
 - Recommended Prisma pool size: 5-10 connections
 - Pooler mode: Transaction (PgBouncer)
@@ -337,6 +342,7 @@ npx prisma validate
 ### Error: Can't reach database server
 
 **Solution**:
+
 - Check DATABASE_URL format
 - Verify Supabase project is running
 - Test connection with `npx prisma db pull`
@@ -348,6 +354,7 @@ npx prisma validate
 ### Error: Migration failed (when using directUrl)
 
 **Solution**:
+
 - Ensure `DIRECT_URL` bypasses pooler (port 5432, no `pgbouncer=true`)
 - Use Supabase CLI for migrations instead of Prisma Migrate
 
@@ -365,6 +372,7 @@ npx prisma validate
 **Generated From**: `specs/001-infrastructure-setup/data-model.md`
 
 **Future Enhancements** (Phase 2+):
+
 - Materialized views for analytics
 - Partitioning for `client_requests` table
 - Additional indexes for complex queries

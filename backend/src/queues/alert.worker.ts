@@ -190,14 +190,10 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
 
     for (const managerId of managerIds) {
       try {
-        const message = await bot.telegram.sendMessage(
-          managerId,
-          formattedMessage,
-          {
-            parse_mode: 'HTML',
-            ...(keyboard ?? {}),
-          }
-        );
+        const message = await bot.telegram.sendMessage(managerId, formattedMessage, {
+          parse_mode: 'HTML',
+          ...(keyboard ?? {}),
+        });
 
         logger.debug('Alert sent to manager', {
           managerId,
@@ -278,18 +274,14 @@ async function processAlertJob(job: Job<AlertWorkerJobData>): Promise<void> {
  * Processes jobs from the 'alerts' queue.
  * Handles 'send-alert', 'escalation', and 'low-rating-alert' job types.
  */
-export const alertWorker = new Worker<AlertWorkerJobData>(
-  'alerts',
-  processAlertJob,
-  {
-    connection: redis,
-    concurrency: queueConfig.alertConcurrency, // Process up to 3 alerts concurrently
-    limiter: {
-      max: queueConfig.alertRateLimitMax, // Max 30 jobs
-      duration: queueConfig.alertRateLimitDuration, // Per second (Telegram rate limit ~30 msg/sec)
-    },
-  }
-);
+export const alertWorker = new Worker<AlertWorkerJobData>('alerts', processAlertJob, {
+  connection: redis,
+  concurrency: queueConfig.alertConcurrency, // Process up to 3 alerts concurrently
+  limiter: {
+    max: queueConfig.alertRateLimitMax, // Max 30 jobs
+    duration: queueConfig.alertRateLimitDuration, // Per second (Telegram rate limit ~30 msg/sec)
+  },
+});
 
 // Register worker for graceful shutdown
 registerWorker(alertWorker);

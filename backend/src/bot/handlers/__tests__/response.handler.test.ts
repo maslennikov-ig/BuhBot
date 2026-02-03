@@ -63,11 +63,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'accountant2',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'accountant2', 456);
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_1');
@@ -143,11 +139,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'different_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'different_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -162,11 +154,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -181,11 +169,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -202,11 +186,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'legacy_accountant',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'legacy_accountant', 456);
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_5');
@@ -259,11 +239,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'different_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'different_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -278,11 +254,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -303,11 +275,7 @@ describe('isAccountantForChat', () => {
         },
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'assigned_accountant',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'assigned_accountant', 456);
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_8');
@@ -372,11 +340,7 @@ describe('isAccountantForChat', () => {
         },
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'different_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'different_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -391,11 +355,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -414,11 +374,7 @@ describe('isAccountantForChat', () => {
         },
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -508,11 +464,7 @@ describe('isAccountantForChat', () => {
         },
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        undefined,
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), undefined, 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -523,11 +475,7 @@ describe('isAccountantForChat', () => {
     it('should return false when chat is not found in database', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue(null);
 
-      const result = await isAccountantForChat(
-        BigInt(999),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(999), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -672,11 +620,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -694,11 +638,7 @@ describe('isAccountantForChat', () => {
       const dbError = new Error('Database connection failed');
       mockPrisma.chat.findUnique.mockRejectedValue(dbError);
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -717,11 +657,7 @@ describe('isAccountantForChat', () => {
     it('should handle non-Error exceptions gracefully', async () => {
       mockPrisma.chat.findUnique.mockRejectedValue('Unexpected error string');
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'some_user',
-        456
-      );
+      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
 
       expect(result.isAccountant).toBe(false);
       expect(result.accountantId).toBeNull();
@@ -746,11 +682,7 @@ describe('isAccountantForChat', () => {
         },
       });
 
-      await isAccountantForChat(
-        BigInt(123),
-        'test_user',
-        456
-      );
+      await isAccountantForChat(BigInt(123), 'test_user', 456);
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
         'Chat configuration for accountant check',
@@ -785,11 +717,7 @@ describe('isAccountantForChat', () => {
         },
       });
 
-      const result = await isAccountantForChat(
-        BigInt(123),
-        undefined,
-        Number(largeTelegramId)
-      );
+      const result = await isAccountantForChat(BigInt(123), undefined, Number(largeTelegramId));
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_bigint');
@@ -806,11 +734,7 @@ describe('isAccountantForChat', () => {
         assignedAccountant: null,
       });
 
-      const result = await isAccountantForChat(
-        largeChatId,
-        'accountant1',
-        456
-      );
+      const result = await isAccountantForChat(largeChatId, 'accountant1', 456);
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_bigchat');

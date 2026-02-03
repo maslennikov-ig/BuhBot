@@ -20,7 +20,11 @@ export { registerFaqHandler } from './faq.handler.js';
 export { registerMessageHandler } from './message.handler.js';
 export { registerResponseHandler } from './response.handler.js';
 export { registerAlertCallbackHandler } from './alert-callback.handler.js';
-export { registerSurveyHandler, isAwaitingComment, getAwaitingCommentData } from './survey.handler.js';
+export {
+  registerSurveyHandler,
+  isAwaitingComment,
+  getAwaitingCommentData,
+} from './survey.handler.js';
 export { registerMenuHandler } from './menu.handler.js';
 export { registerFileHandler, formatFileSize, formatTimestamp } from './file.handler.js';
 export { registerTemplateHandler } from './template.handler.js';

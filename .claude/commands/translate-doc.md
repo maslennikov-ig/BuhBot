@@ -16,6 +16,7 @@ You are translating technical documentation from English to Russian for develope
 ### Step 1: Read Source File
 
 Read the English documentation file specified by the user:
+
 - Use Read tool with the provided file_path
 - Verify file exists and is readable
 - If file not found, report error and stop
@@ -25,6 +26,7 @@ Read the English documentation file specified by the user:
 Translate the content while preserving structure and accuracy:
 
 **Preserve**:
+
 - Markdown formatting (headers, lists, tables, code blocks)
 - Code blocks UNCHANGED (do not translate code)
 - Technical terms accuracy (orchestrator, worker, quality gate)
@@ -34,12 +36,14 @@ Translate the content while preserving structure and accuracy:
 - JSON examples UNCHANGED
 
 **Translate**:
+
 - All text content (paragraphs, descriptions)
 - Headers and titles
 - List items (except code)
 - Table content (except code columns)
 
 **Translation Guidelines**:
+
 - Use professional technical Russian
 - Maintain consistency with existing Russian docs
 - Keep Claude Code terminology: agent, orchestrator, worker, quality gate
@@ -57,11 +61,13 @@ At the top of the translated document (after YAML frontmatter if present), add:
 ### Step 4: Save Translated File
 
 Save the translated content:
+
 - Generate filename: {original_filename}.ru.md
 - Save in the same directory as the source file
 - Use Write tool with full path
 
 Example:
+
 - Source: docs/Agents Ecosystem/ARCHITECTURE.md
 - Output: docs/Agents Ecosystem/ARCHITECTURE.ru.md
 
@@ -75,6 +81,7 @@ Source: {source_file_path}
 Output: {output_file_path}
 
 Translation includes:
+
 - N sections translated
 - M code blocks preserved
 - Translation header added

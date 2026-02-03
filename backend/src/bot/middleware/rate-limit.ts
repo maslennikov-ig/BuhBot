@@ -34,8 +34,8 @@ export interface RateLimitOptions {
  * Default rate limit configuration
  */
 const DEFAULT_OPTIONS: Required<RateLimitOptions> = {
-  windowMs: 60000,      // 1 minute
-  maxRequests: 30,      // 30 requests per minute
+  windowMs: 60000, // 1 minute
+  maxRequests: 30, // 30 requests per minute
   keyPrefix: 'ratelimit:',
 };
 

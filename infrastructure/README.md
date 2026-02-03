@@ -4,13 +4,13 @@ Production-ready Docker Compose orchestration for all BuhBot services.
 
 ## Services Overview
 
-| Service | Port | Description | Health Check |
-|---------|------|-------------|--------------|
-| **bot-backend** | 3000 | Telegram bot + tRPC API | `curl -f http://localhost:3000/health` |
-| **frontend** | 3001 | Next.js admin panel | Node.js HTTP health check |
-| **redis** | 6379 | Cache and queue (internal) | `redis-cli ping` |
-| **monitoring-stack** | 9090, 3002, 3003 | Prometheus + Grafana + Uptime Kuma | Custom script |
-| **nginx** | 80, 443 | HTTPS reverse proxy | `curl -f http://localhost/health` |
+| Service              | Port             | Description                        | Health Check                           |
+| -------------------- | ---------------- | ---------------------------------- | -------------------------------------- |
+| **bot-backend**      | 3000             | Telegram bot + tRPC API            | `curl -f http://localhost:3000/health` |
+| **frontend**         | 3001             | Next.js admin panel                | Node.js HTTP health check              |
+| **redis**            | 6379             | Cache and queue (internal)         | `redis-cli ping`                       |
+| **monitoring-stack** | 9090, 3002, 3003 | Prometheus + Grafana + Uptime Kuma | Custom script                          |
+| **nginx**            | 80, 443          | HTTPS reverse proxy                | `curl -f http://localhost/health`      |
 
 ## Architecture
 
@@ -39,6 +39,7 @@ Production-ready Docker Compose orchestration for all BuhBot services.
 **Network**: `buhbot-network` (bridge)
 
 **Volumes**:
+
 - `redis-data`: Redis persistent storage (AOF enabled)
 - `prometheus-data`: Prometheus TSDB metrics
 - `grafana-data`: Grafana database and dashboards
@@ -122,6 +123,7 @@ docker compose logs -f frontend
 ## Service Dependencies
 
 **Startup Order**:
+
 1. `redis` → Must be healthy before bot-backend
 2. `monitoring-stack` → Starts immediately
 3. `bot-backend` → Waits for redis health check
@@ -129,6 +131,7 @@ docker compose logs -f frontend
 5. `nginx` → Waits for bot-backend and frontend health checks
 
 **Health Checks**:
+
 - All services have health checks configured
 - `depends_on` with `condition: service_healthy` ensures proper startup order
 - Restart policy: `unless-stopped` (survives host reboot)

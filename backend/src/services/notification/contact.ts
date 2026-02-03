@@ -21,11 +21,11 @@ export class ContactNotificationService {
     // 2. Combine DB IDs with env var fallback
     const dbIds = settings?.leadNotificationIds || [];
     const envId = process.env['TELEGRAM_ADMIN_CHAT_ID'];
-    
+
     // Create unique set of IDs
     const chatIds = new Set<string>(dbIds);
     if (envId) chatIds.add(envId);
-    
+
     if (chatIds.size === 0) {
       console.warn('No notification chat IDs configured (DB or ENV), skipping lead notification');
       return;
@@ -43,9 +43,10 @@ ${this.escapeHtml(lead.message || 'Нет сообщения')}
     `;
 
     // 3. Send to all IDs
-    const promises = Array.from(chatIds).map(chatId => 
-      this.bot.telegram.sendMessage(chatId, text, { parse_mode: 'HTML' })
-        .catch(error => console.error(`Failed to send lead notification to ${chatId}:`, error))
+    const promises = Array.from(chatIds).map((chatId) =>
+      this.bot.telegram
+        .sendMessage(chatId, text, { parse_mode: 'HTML' })
+        .catch((error) => console.error(`Failed to send lead notification to ${chatId}:`, error))
     );
 
     await Promise.all(promises);
@@ -53,10 +54,10 @@ ${this.escapeHtml(lead.message || 'Нет сообщения')}
 
   private escapeHtml(unsafe: string): string {
     return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 }

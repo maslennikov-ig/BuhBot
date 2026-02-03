@@ -56,7 +56,7 @@ ${ctx.from?.id}
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Error handling /info', {
         error: errorMessage,
-        service: 'system-handler'
+        service: 'system-handler',
       });
       await ctx.reply('Ошибка получения информации.');
     }
@@ -69,7 +69,7 @@ ${ctx.from?.id}
     } catch (error) {
       logger.error('Error handling /version', {
         error: error instanceof Error ? error.message : String(error),
-        service: 'system-handler'
+        service: 'system-handler',
       });
     }
   });

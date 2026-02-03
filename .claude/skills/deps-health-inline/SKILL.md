@@ -22,6 +22,7 @@ Audit → Validate → Update by Priority → Verify → Repeat if needed
 ## Phase 1: Pre-flight
 
 1. **Setup directories**:
+
    ```bash
    mkdir -p .tmp/current/{plans,changes,backups}
    ```
@@ -34,12 +35,32 @@ Audit → Validate → Update by Priority → Verify → Repeat if needed
 3. **Initialize TodoWrite**:
    ```json
    [
-     {"content": "Dependency audit", "status": "in_progress", "activeForm": "Auditing dependencies"},
-     {"content": "Fix critical dependency issues", "status": "pending", "activeForm": "Fixing critical deps"},
-     {"content": "Fix high priority dependency issues", "status": "pending", "activeForm": "Fixing high deps"},
-     {"content": "Fix medium priority dependency issues", "status": "pending", "activeForm": "Fixing medium deps"},
-     {"content": "Fix low priority dependency issues", "status": "pending", "activeForm": "Fixing low deps"},
-     {"content": "Verification audit", "status": "pending", "activeForm": "Verifying updates"}
+     {
+       "content": "Dependency audit",
+       "status": "in_progress",
+       "activeForm": "Auditing dependencies"
+     },
+     {
+       "content": "Fix critical dependency issues",
+       "status": "pending",
+       "activeForm": "Fixing critical deps"
+     },
+     {
+       "content": "Fix high priority dependency issues",
+       "status": "pending",
+       "activeForm": "Fixing high deps"
+     },
+     {
+       "content": "Fix medium priority dependency issues",
+       "status": "pending",
+       "activeForm": "Fixing medium deps"
+     },
+     {
+       "content": "Fix low priority dependency issues",
+       "status": "pending",
+       "activeForm": "Fixing low deps"
+     },
+     { "content": "Verification audit", "status": "pending", "activeForm": "Verifying updates" }
    ]
    ```
 
@@ -67,6 +88,7 @@ prompt: |
 ```
 
 **After dependency-auditor returns**:
+
 1. Read `dependency-scan-report.md`
 2. Parse issue counts by priority
 3. If zero issues → skip to Final Summary
@@ -98,6 +120,7 @@ pnpm build
 2. **Update TodoWrite**: mark current priority in_progress
 
 3. **Invoke dependency-updater** via Task tool:
+
    ```
    subagent_type: "dependency-updater"
    description: "Update {priority} dependencies"
@@ -117,6 +140,7 @@ pnpm build
    ```
 
 4. **Quality Gate** (inline):
+
    ```bash
    pnpm type-check
    pnpm build
@@ -138,6 +162,7 @@ After all priorities updated:
 1. **Update TodoWrite**: mark verification in_progress
 
 2. **Invoke dependency-auditor** (verification mode):
+
    ```
    subagent_type: "dependency-auditor"
    description: "Verification audit"
@@ -169,21 +194,25 @@ Generate summary for user:
 **Status**: {SUCCESS/PARTIAL}
 
 ### Results
+
 - Found: {total} dependency issues
 - Fixed: {fixed} ({percentage}%)
 - Remaining: {remaining}
 
 ### By Priority
+
 - Critical: {fixed}/{total}
 - High: {fixed}/{total}
 - Medium: {fixed}/{total}
 - Low: {fixed}/{total}
 
 ### Validation
+
 - Type Check: {status}
 - Build: {status}
 
 ### Artifacts
+
 - Audit: `dependency-scan-report.md`
 - Updates: `dependency-updates-implemented.md`
 ```
@@ -193,6 +222,7 @@ Generate summary for user:
 ## Error Handling
 
 **If quality gate fails**:
+
 ```
 Rollback available: .tmp/current/changes/deps-changes.json
 
@@ -204,6 +234,7 @@ To rollback:
 ```
 
 **If worker fails**:
+
 - Report error to user
 - Suggest manual intervention
 - Exit workflow
@@ -212,13 +243,13 @@ To rollback:
 
 ## Key Differences from Old Approach
 
-| Old (Orchestrator Agent) | New (Inline Skill) |
-|--------------------------|-------------------|
-| 9+ orchestrator calls | 0 orchestrator calls |
-| ~1400 lines (cmd + agent) | ~150 lines |
-| Context reload each call | Single session context |
-| Plan files for each phase | Direct execution |
-| ~10,000+ tokens overhead | ~500 tokens |
+| Old (Orchestrator Agent)  | New (Inline Skill)     |
+| ------------------------- | ---------------------- |
+| 9+ orchestrator calls     | 0 orchestrator calls   |
+| ~1400 lines (cmd + agent) | ~150 lines             |
+| Context reload each call  | Single session context |
+| Plan files for each phase | Direct execution       |
+| ~10,000+ tokens overhead  | ~500 tokens            |
 
 ---
 

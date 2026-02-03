@@ -23,19 +23,20 @@ Build a marketing landing page for BuhBot at the root URL (/) with hero section,
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0. Re-check after Phase 1.*
+_GATE: Must pass before Phase 0. Re-check after Phase 1._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Context-First Development | PASS | Existing codebase analyzed (Prisma schema, tRPC patterns, frontend structure) |
-| II. Agent-Based Orchestration | PASS | Complex tasks will be delegated to specialized subagents |
-| III. Test-Driven Development | N/A | Tests not explicitly required in spec; optional for MVP |
-| IV. Atomic Task Execution | PASS | Tasks will be atomic and independently committable |
-| V. User Story Independence | PASS | 4 user stories identified with P1/P2 priorities |
-| VI. Quality Gates | PASS | Type-check and build must pass before commits |
-| VII. Progressive Specification | PASS | Following spec → plan → tasks → implement flow |
+| Principle                      | Status | Notes                                                                         |
+| ------------------------------ | ------ | ----------------------------------------------------------------------------- |
+| I. Context-First Development   | PASS   | Existing codebase analyzed (Prisma schema, tRPC patterns, frontend structure) |
+| II. Agent-Based Orchestration  | PASS   | Complex tasks will be delegated to specialized subagents                      |
+| III. Test-Driven Development   | N/A    | Tests not explicitly required in spec; optional for MVP                       |
+| IV. Atomic Task Execution      | PASS   | Tasks will be atomic and independently committable                            |
+| V. User Story Independence     | PASS   | 4 user stories identified with P1/P2 priorities                               |
+| VI. Quality Gates              | PASS   | Type-check and build must pass before commits                                 |
+| VII. Progressive Specification | PASS   | Following spec → plan → tasks → implement flow                                |
 
 **Security Requirements:**
+
 - No hardcoded credentials
 - Contact form validation (Zod)
 - Honeypot spam protection
@@ -94,4 +95,4 @@ frontend/
 
 > No constitution violations - all principles followed.
 
-*No entries needed.*
+_No entries needed._

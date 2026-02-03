@@ -47,7 +47,10 @@ type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
 type Classification = 'REQUEST' | 'SPAM' | 'GRATITUDE' | 'CLARIFICATION';
 type AlertType = 'warning' | 'breach';
 
-const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; icon: React.ElementType }> = {
+const STATUS_CONFIG: Record<
+  RequestStatus,
+  { label: string; color: string; icon: React.ElementType }
+> = {
   pending: { label: 'Ожидает ответа', color: 'var(--buh-warning)', icon: Clock },
   in_progress: { label: 'В работе', color: 'var(--buh-accent)', icon: AlertCircle },
   answered: { label: 'Отвечено', color: 'var(--buh-success)', icon: CheckCircle2 },
@@ -83,7 +86,11 @@ type ResponseSectionProps = {
   responseTimeMinutes: number | null;
 };
 
-function ResponseSection({ responseMessage, responseAt, responseTimeMinutes }: ResponseSectionProps) {
+function ResponseSection({
+  responseMessage,
+  responseAt,
+  responseTimeMinutes,
+}: ResponseSectionProps) {
   if (!responseMessage) {
     return null;
   }
@@ -109,9 +116,7 @@ function ResponseSection({ responseMessage, responseAt, responseTimeMinutes }: R
             <CheckCircle2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
-              Ответ бухгалтера
-            </h2>
+            <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">Ответ бухгалтера</h2>
             <p className="text-sm text-[var(--buh-foreground-muted)]">
               {respondentName} • {responseDate}
             </p>
@@ -190,9 +195,7 @@ function RequestInfoCard({ request }: RequestInfoCardProps) {
             <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
               Запрос от {request.clientUsername ? `@${request.clientUsername}` : 'клиента'}
             </h2>
-            <p className="text-sm text-[var(--buh-foreground-muted)]">
-              Chat ID: {request.chatId}
-            </p>
+            <p className="text-sm text-[var(--buh-foreground-muted)]">Chat ID: {request.chatId}</p>
           </div>
         </div>
         <div
@@ -223,10 +226,7 @@ function RequestInfoCard({ request }: RequestInfoCardProps) {
             <Tag className="h-4 w-4" />
             <span className="text-xs uppercase tracking-wide">Классификация</span>
           </div>
-          <p
-            className="font-medium"
-            style={{ color: classificationConfig.color }}
-          >
+          <p className="font-medium" style={{ color: classificationConfig.color }}>
             {classificationConfig.label}
           </p>
         </div>
@@ -238,7 +238,9 @@ function RequestInfoCard({ request }: RequestInfoCardProps) {
             <span className="text-xs uppercase tracking-wide">Клиент</span>
           </div>
           <p className="font-medium text-[var(--buh-foreground)]">
-            {request.clientUsername ? `@${request.clientUsername}` : (
+            {request.clientUsername ? (
+              `@${request.clientUsername}`
+            ) : (
               <span className="text-[var(--buh-foreground-subtle)] italic">Неизвестен</span>
             )}
           </p>
@@ -301,7 +303,12 @@ type ActionsCardProps = {
   onUpdate: () => void;
 };
 
-function ActionsCard({ requestId, currentStatus, currentClassification, onUpdate }: ActionsCardProps) {
+function ActionsCard({
+  requestId,
+  currentStatus,
+  currentClassification,
+  onUpdate,
+}: ActionsCardProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -341,15 +348,14 @@ function ActionsCard({ requestId, currentStatus, currentClassification, onUpdate
     deleteMutation.mutate({ id: requestId });
   };
 
-  const isLoading = updateMutation.isPending || updateClassificationMutation.isPending || deleteMutation.isPending;
+  const isLoading =
+    updateMutation.isPending || updateClassificationMutation.isPending || deleteMutation.isPending;
 
   return (
     <GlassCard variant="default" padding="lg">
       <div className="flex items-center gap-3 mb-4">
         <Settings className="h-5 w-5 text-[var(--buh-accent)]" />
-        <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
-          Действия
-        </h3>
+        <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">Действия</h3>
       </div>
 
       <div className="space-y-4">
@@ -374,15 +380,18 @@ function ActionsCard({ requestId, currentStatus, currentClassification, onUpdate
               onClick={() => handleStatusChange('in_progress')}
               disabled={isLoading || currentStatus === 'in_progress'}
             >
-              <AlertCircle className="mr-1.5 h-3.5 w-3.5" />
-              В работе
+              <AlertCircle className="mr-1.5 h-3.5 w-3.5" />В работе
             </Button>
             <Button
               size="sm"
               variant={currentStatus === 'answered' ? 'default' : 'outline'}
               onClick={() => handleStatusChange('answered')}
               disabled={isLoading || currentStatus === 'answered'}
-              className={currentStatus === 'answered' ? 'bg-[var(--buh-success)] hover:bg-[var(--buh-success)]/90' : ''}
+              className={
+                currentStatus === 'answered'
+                  ? 'bg-[var(--buh-success)] hover:bg-[var(--buh-success)]/90'
+                  : ''
+              }
             >
               <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
               Выполнено
@@ -392,7 +401,11 @@ function ActionsCard({ requestId, currentStatus, currentClassification, onUpdate
               variant={currentStatus === 'escalated' ? 'default' : 'outline'}
               onClick={() => handleStatusChange('escalated')}
               disabled={isLoading || currentStatus === 'escalated'}
-              className={currentStatus === 'escalated' ? 'bg-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/90' : ''}
+              className={
+                currentStatus === 'escalated'
+                  ? 'bg-[var(--buh-danger)] hover:bg-[var(--buh-danger)]/90'
+                  : ''
+              }
             >
               <XCircle className="mr-1.5 h-3.5 w-3.5" />
               Эскалация
@@ -459,12 +472,7 @@ function ActionsCard({ requestId, currentStatus, currentClassification, onUpdate
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-sm text-[var(--buh-foreground-muted)]">Удалить?</span>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
+              <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
                 {isDeleting ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
@@ -499,9 +507,7 @@ function AlertsList({ alerts }: AlertsListProps) {
       <GlassCard variant="default" padding="lg">
         <div className="flex items-center gap-3 mb-4">
           <AlertCircle className="h-5 w-5 text-[var(--buh-foreground-muted)]" />
-          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
-            SLA Оповещения
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">SLA Оповещения</h3>
         </div>
         <p className="text-[var(--buh-foreground-muted)] text-center py-4">
           Нет оповещений для этого запроса
@@ -546,9 +552,7 @@ function AlertsList({ alerts }: AlertsListProps) {
               <div className="text-sm text-[var(--buh-foreground-muted)]">
                 <p>Отправлено: {sentDate}</p>
                 {acknowledgedDate && (
-                  <p className="text-[var(--buh-success)]">
-                    Подтверждено: {acknowledgedDate}
-                  </p>
+                  <p className="text-[var(--buh-success)]">Подтверждено: {acknowledgedDate}</p>
                 )}
                 {alert.resolutionNotes && (
                   <p className="mt-1 text-[var(--buh-foreground)]">
@@ -640,8 +644,7 @@ export function RequestDetailsContent({ requestId }: RequestDetailsContentProps)
         actions={
           <Button asChild variant="outline">
             <Link href="/requests">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              К списку запросов
+              <ArrowLeft className="mr-2 h-4 w-4" />К списку запросов
             </Link>
           </Button>
         }

@@ -12,15 +12,7 @@
  */
 
 import * as React from 'react';
-import {
-  X,
-  Link2,
-  Users,
-  Hash,
-  Copy,
-  Check,
-  Loader2,
-} from 'lucide-react';
+import { X, Link2, Users, Hash, Copy, Check, Loader2 } from 'lucide-react';
 
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
@@ -58,11 +50,7 @@ const CHAT_TYPE_LABELS: Record<ChatType, string> = {
 // INVITATION MODAL COMPONENT
 // ============================================
 
-export function InvitationModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: InvitationModalProps) {
+export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalProps) {
   // Shared options state
   const [accountantId, setAccountantId] = React.useState<string | null>(null);
   const [initialTitle, setInitialTitle] = React.useState('');
@@ -178,9 +166,7 @@ export function InvitationModal({
         <GlassCard variant="elevated" padding="lg">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">
-              Подключить чат
-            </h2>
+            <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">Подключить чат</h2>
             <button
               onClick={handleClose}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]"
@@ -220,10 +206,7 @@ export function InvitationModal({
                   <Label className="text-[var(--buh-foreground)]">
                     Ответственный бухгалтер (опционально)
                   </Label>
-                  <AccountantSelect
-                    value={accountantId}
-                    onChange={setAccountantId}
-                  />
+                  <AccountantSelect value={accountantId} onChange={setAccountantId} />
                 </div>
 
                 {/* Initial Title */}
@@ -262,9 +245,7 @@ export function InvitationModal({
                 {/* Generated Link */}
                 {generatedLink && (
                   <div className="space-y-2 buh-animate-fade-in-up">
-                    <Label className="text-[var(--buh-foreground)]">
-                      Ссылка для клиента
-                    </Label>
+                    <Label className="text-[var(--buh-foreground)]">Ссылка для клиента</Label>
                     <div className="flex gap-2">
                       <Input
                         value={generatedLink}
@@ -306,10 +287,7 @@ export function InvitationModal({
                   <Label className="text-[var(--buh-foreground)]">
                     Ответственный бухгалтер (опционально)
                   </Label>
-                  <AccountantSelect
-                    value={accountantId}
-                    onChange={setAccountantId}
-                  />
+                  <AccountantSelect value={accountantId} onChange={setAccountantId} />
                 </div>
 
                 {/* Initial Title */}
@@ -348,9 +326,7 @@ export function InvitationModal({
                 {/* Generated Command */}
                 {generatedCommand && (
                   <div className="space-y-2 buh-animate-fade-in-up">
-                    <Label className="text-[var(--buh-foreground)]">
-                      Код для группы
-                    </Label>
+                    <Label className="text-[var(--buh-foreground)]">Код для группы</Label>
                     <div className="flex gap-2">
                       <div className="flex-1 flex items-center px-4 py-3 rounded-lg bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
                         <code className="text-lg font-mono font-semibold text-[var(--buh-accent)]">
@@ -372,7 +348,8 @@ export function InvitationModal({
                       </Button>
                     </div>
                     <p className="text-xs text-[var(--buh-foreground-subtle)] mt-2">
-                      Добавьте бота в группу, отправьте этот код. Чат появится в системе после подключения.
+                      Добавьте бота в группу, отправьте этот код. Чат появится в системе после
+                      подключения.
                     </p>
                   </div>
                 )}
@@ -389,9 +366,7 @@ export function InvitationModal({
 
                 {/* Telegram Chat ID */}
                 <div className="space-y-2">
-                  <Label className="text-[var(--buh-foreground)]">
-                    Telegram Chat ID *
-                  </Label>
+                  <Label className="text-[var(--buh-foreground)]">Telegram Chat ID *</Label>
                   <Input
                     value={telegramChatId}
                     onChange={(e) => setTelegramChatId(e.target.value)}
@@ -425,9 +400,7 @@ export function InvitationModal({
 
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label className="text-[var(--buh-foreground)]">
-                    Название (опционально)
-                  </Label>
+                  <Label className="text-[var(--buh-foreground)]">Название (опционально)</Label>
                   <Input
                     value={manualTitle}
                     onChange={(e) => setManualTitle(e.target.value)}
@@ -451,12 +424,7 @@ export function InvitationModal({
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleClose}
-                    className="flex-1"
-                  >
+                  <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
                     Отмена
                   </Button>
                   <Button
@@ -486,4 +454,3 @@ export function InvitationModal({
     </div>
   );
 }
-

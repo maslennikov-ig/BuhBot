@@ -44,8 +44,7 @@ export const MENU_MESSAGES = {
   /** Contact accountant confirmation */
   CONTACT_RESPONSE: 'Ваш запрос передан бухгалтеру. Ожидайте ответа.',
   /** Request service prompt */
-  REQUEST_SERVICE_RESPONSE:
-    'Опишите, какая услуга вам нужна, и мы свяжемся с вами.',
+  REQUEST_SERVICE_RESPONSE: 'Опишите, какая услуга вам нужна, и мы свяжемся с вами.',
 } as const;
 
 /**

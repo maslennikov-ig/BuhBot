@@ -9,14 +9,14 @@
 
 ## Related Documents
 
-| Document | Purpose |
-|----------|---------|
-| [data-model.md](./data-model.md) | Prisma schema for `ContactRequest` model |
-| [contracts/contact.ts](./contracts/contact.ts) | tRPC router contract (input/output types) |
-| [quickstart.md](./quickstart.md) | Local development setup guide |
-| [tasks.md](./tasks.md) | Granular task breakdown (optional reference) |
-| [spec.md](./spec.md) | Original business requirements |
-| [research.md](./research.md) | Technical decisions and rationale |
+| Document                                       | Purpose                                      |
+| ---------------------------------------------- | -------------------------------------------- |
+| [data-model.md](./data-model.md)               | Prisma schema for `ContactRequest` model     |
+| [contracts/contact.ts](./contracts/contact.ts) | tRPC router contract (input/output types)    |
+| [quickstart.md](./quickstart.md)               | Local development setup guide                |
+| [tasks.md](./tasks.md)                         | Granular task breakdown (optional reference) |
+| [spec.md](./spec.md)                           | Original business requirements               |
+| [research.md](./research.md)                   | Technical decisions and rationale            |
 
 **Primary document for implementation: This file (`landing-spec.md`)**
 
@@ -25,19 +25,23 @@
 ## 1. Purpose & Goals
 
 ### Primary Goal
+
 Convert first-time visitors into demo requests (leads) by clearly communicating BuhBot's value proposition within 30 seconds.
 
 ### Secondary Goals
+
 - Establish trust and credibility for B2B audience (accounting firms)
 - Provide quick access to login for existing users
 - Achieve 90+ Lighthouse performance score
 
 ### Target Audience
+
 - **Primary**: Decision makers at accounting firms (owners, managing partners, operations directors)
 - **Secondary**: IT specialists evaluating solutions for accounting firms
 - **Tertiary**: Existing BuhBot users accessing the dashboard
 
 ### Key Metrics (Success Criteria)
+
 - Demo request conversion rate: >3%
 - Time to understand value proposition: <30 seconds
 - Bounce rate: <50%
@@ -49,17 +53,17 @@ Convert first-time visitors into demo requests (leads) by clearly communicating 
 
 ### Section Order (Top to Bottom)
 
-| # | Section | Purpose | Estimated Height |
-|---|---------|---------|------------------|
-| 1 | Header | Navigation + Login CTA | Fixed, ~64-80px |
-| 2 | Hero | Hook + Primary CTA | 100vh (full screen) |
-| 3 | Problem/Pain Points | Empathy + Problem awareness | ~50vh |
-| 4 | Features | Solution capabilities | ~100vh |
-| 5 | How It Works | Process clarity | ~80vh |
-| 6 | Benefits/Results | Proof + outcomes | ~60vh |
-| 7 | Social Proof | Trust building | ~40vh |
-| 8 | Contact/CTA | Lead capture | ~60vh |
-| 9 | Footer | Links + legal | ~200px |
+| #   | Section             | Purpose                     | Estimated Height    |
+| --- | ------------------- | --------------------------- | ------------------- |
+| 1   | Header              | Navigation + Login CTA      | Fixed, ~64-80px     |
+| 2   | Hero                | Hook + Primary CTA          | 100vh (full screen) |
+| 3   | Problem/Pain Points | Empathy + Problem awareness | ~50vh               |
+| 4   | Features            | Solution capabilities       | ~100vh              |
+| 5   | How It Works        | Process clarity             | ~80vh               |
+| 6   | Benefits/Results    | Proof + outcomes            | ~60vh               |
+| 7   | Social Proof        | Trust building              | ~40vh               |
+| 8   | Contact/CTA         | Lead capture                | ~60vh               |
+| 9   | Footer              | Links + legal               | ~200px              |
 
 ---
 
@@ -70,11 +74,13 @@ Convert first-time visitors into demo requests (leads) by clearly communicating 
 **Goal**: Navigation + quick access to login
 
 **Content**:
+
 - Logo (left): "BuhBot" wordmark
 - Navigation links (center): Возможности | Как это работает | Результаты | Контакты
 - CTA button (right): "Войти" (Login)
 
 **Behavior**:
+
 - Sticky on scroll (appears after scrolling past hero)
 - Mobile: hamburger menu
 - Smooth scroll to sections on click
@@ -111,6 +117,7 @@ Abstract visualization or screenshot showing the concept
 ```
 
 **Key Messages**:
+
 - Pain point acknowledgment: clients waiting for responses
 - Solution: control over response time
 - Mechanism: automatic tracking + proactive alerts
@@ -125,12 +132,12 @@ Abstract visualization or screenshot showing the concept
 
 **Pain Points (3-4 cards)**:
 
-| Icon | Problem | Description |
-|------|---------|-------------|
-| ⏰ | Забытые сообщения | Клиент написал в Telegram, бухгалтер увидел, но забыл ответить. Через 3 дня — жалоба руководителю. |
-| 😤 | Негативные отзывы | "Долго отвечают" — частая причина ухода клиентов. Узнаёте последними. |
-| 📊 | Слепая зона | Сколько обращений в день? Какое среднее время ответа? Кто из бухгалтеров перегружен? Данных нет. |
-| 🔥 | Тушение пожаров | Вместо стратегического развития — разбор конфликтов и извинения перед клиентами. |
+| Icon | Problem           | Description                                                                                        |
+| ---- | ----------------- | -------------------------------------------------------------------------------------------------- |
+| ⏰   | Забытые сообщения | Клиент написал в Telegram, бухгалтер увидел, но забыл ответить. Через 3 дня — жалоба руководителю. |
+| 😤   | Негативные отзывы | "Долго отвечают" — частая причина ухода клиентов. Узнаёте последними.                              |
+| 📊   | Слепая зона       | Сколько обращений в день? Какое среднее время ответа? Кто из бухгалтеров перегружен? Данных нет.   |
+| 🔥   | Тушение пожаров   | Вместо стратегического развития — разбор конфликтов и извинения перед клиентами.                   |
 
 **Transition**: "BuhBot решает эти проблемы автоматически"
 
@@ -144,14 +151,14 @@ Abstract visualization or screenshot showing the concept
 
 **Features (6 items)**:
 
-| Icon | Feature | Short Description |
-|------|---------|-------------------|
-| ⏱️ | SLA-мониторинг | Автоматический учёт времени ответа с учётом рабочих часов, выходных и праздников |
-| 🔔 | Умные алерты | Предупреждения о приближении дедлайна бухгалтеру и руководителю — до нарушения SLA |
-| 📈 | Аналитика | Дашборд с метриками: среднее время ответа, SLA compliance, нагрузка по бухгалтерам |
-| 💬 | Telegram-интеграция | Работает прямо в Telegram — без установки нового софта для бухгалтеров |
-| 📝 | Шаблоны ответов | Готовые ответы на частые вопросы — быстрее реакция, меньше рутины |
-| 📊 | Обратная связь | Квартальные опросы NPS клиентов с анонимной аналитикой |
+| Icon | Feature             | Short Description                                                                  |
+| ---- | ------------------- | ---------------------------------------------------------------------------------- |
+| ⏱️   | SLA-мониторинг      | Автоматический учёт времени ответа с учётом рабочих часов, выходных и праздников   |
+| 🔔   | Умные алерты        | Предупреждения о приближении дедлайна бухгалтеру и руководителю — до нарушения SLA |
+| 📈   | Аналитика           | Дашборд с метриками: среднее время ответа, SLA compliance, нагрузка по бухгалтерам |
+| 💬   | Telegram-интеграция | Работает прямо в Telegram — без установки нового софта для бухгалтеров             |
+| 📝   | Шаблоны ответов     | Готовые ответы на частые вопросы — быстрее реакция, меньше рутины                  |
+| 📊   | Обратная связь      | Квартальные опросы NPS клиентов с анонимной аналитикой                             |
 
 **Layout**: 2x3 grid or 3x2 grid depending on viewport
 
@@ -165,12 +172,12 @@ Abstract visualization or screenshot showing the concept
 
 **Steps (4)**:
 
-| Step | Icon | Title | Description |
-|------|------|-------|-------------|
-| 01 | 🔗 | Подключение | Добавьте BuhBot в ваши клиентские Telegram-чаты. Занимает 5 минут. |
-| 02 | ⚙️ | Настройка | Укажите SLA-пороги (например, 2 часа), рабочее время и праздники. |
-| 03 | 📡 | Мониторинг | BuhBot автоматически отслеживает каждое обращение и время ответа. |
-| 04 | ✅ | Результат | Бухгалтеры получают напоминания, вы — аналитику и спокойствие. |
+| Step | Icon | Title       | Description                                                        |
+| ---- | ---- | ----------- | ------------------------------------------------------------------ |
+| 01   | 🔗   | Подключение | Добавьте BuhBot в ваши клиентские Telegram-чаты. Занимает 5 минут. |
+| 02   | ⚙️   | Настройка   | Укажите SLA-пороги (например, 2 часа), рабочее время и праздники.  |
+| 03   | 📡   | Мониторинг  | BuhBot автоматически отслеживает каждое обращение и время ответа.  |
+| 04   | ✅   | Результат   | Бухгалтеры получают напоминания, вы — аналитику и спокойствие.     |
 
 **Visual**: Numbered steps with connecting line/arrows
 
@@ -184,12 +191,12 @@ Abstract visualization or screenshot showing the concept
 
 **Stats (4)**:
 
-| Number | Metric | Context |
-|--------|--------|---------|
-| 4× | Быстрее ответы | С шаблонами и напоминаниями |
-| 90%+ | SLA compliance | После 1 месяца использования |
-| −60% | Просроченных обращений | Среднее снижение |
-| 0 | Забытых сообщений | При включенном мониторинге |
+| Number | Metric                 | Context                      |
+| ------ | ---------------------- | ---------------------------- |
+| 4×     | Быстрее ответы         | С шаблонами и напоминаниями  |
+| 90%+   | SLA compliance         | После 1 месяца использования |
+| −60%   | Просроченных обращений | Среднее снижение             |
+| 0      | Забытых сообщений      | При включенном мониторинге   |
 
 **Note**: These are aspirational/projected metrics. Consider adding disclaimer "по данным пилотных внедрений" or similar.
 
@@ -204,6 +211,7 @@ Abstract visualization or screenshot showing the concept
 **Testimonials (3)**:
 
 **Testimonial 1:**
+
 ```
 "Раньше я узнавала о просроченных обращениях от самих клиентов —
 уже с претензией. Теперь вижу всё в реальном времени и успеваю
@@ -215,6 +223,7 @@ Abstract visualization or screenshot showing the concept
 ```
 
 **Testimonial 2:**
+
 ```
 "У нас 4 бухгалтера и 80+ клиентов. Было невозможно отследить,
 кто кому ответил. BuhBot показал, что 15% обращений 'терялись'.
@@ -226,6 +235,7 @@ Abstract visualization or screenshot showing the concept
 ```
 
 **Testimonial 3:**
+
 ```
 "Внедрили за день, без обучения сотрудников — всё работает
 в привычном Telegram. Бухгалтеры даже не заметили изменений,
@@ -252,6 +262,7 @@ IT-директор, Группа компаний "Учёт и Право"
 **Section Title**: "Запросите демо"
 
 **Content**:
+
 ```
 [Headline]
 Готовы контролировать время ответа?
@@ -274,6 +285,7 @@ IT-директор, Группа компаний "Учёт и Право"
 ```
 
 **Form Behavior**:
+
 - Client-side validation (Zod)
 - Success state: "Спасибо! Мы свяжемся с вами в течение 24 часов."
 - Error state: Clear error messages in Russian
@@ -286,6 +298,7 @@ IT-директор, Группа компаний "Учёт и Право"
 **Goal**: Navigation, legal, secondary info
 
 **Content**:
+
 ```
 Left Column:
 - BuhBot logo
@@ -310,41 +323,47 @@ Bottom:
 ## 4. Navigation & User Flows
 
 ### Primary Flow (New Visitor → Lead)
+
 ```
 Hero → Scroll/Explore → Features/HowItWorks → Contact Form → Submit
 ```
 
 ### Secondary Flow (Existing User → Dashboard)
+
 ```
 Hero → Header "Войти" → /login → Auth → /dashboard
 ```
 
 ### Navigation Links Behavior
-| Link | Target |
-|------|--------|
-| Возможности | Scroll to Features section |
+
+| Link             | Target                         |
+| ---------------- | ------------------------------ |
+| Возможности      | Scroll to Features section     |
 | Как это работает | Scroll to How It Works section |
-| Результаты | Scroll to Benefits section |
-| Контакты | Scroll to Contact section |
-| Войти | Navigate to /login |
+| Результаты       | Scroll to Benefits section     |
+| Контакты         | Scroll to Contact section      |
+| Войти            | Navigate to /login             |
 
 ---
 
 ## 5. Content Guidelines
 
 ### Language
+
 - **All content in Russian**
 - Formal but approachable tone (вы-form)
 - Technical terms explained simply
 - Focus on outcomes, not features
 
 ### Copywriting Principles
+
 1. **Lead with pain**: Acknowledge problems before presenting solutions
 2. **Be specific**: "2 часа" not "быстро", "70%" not "значительно"
 3. **Show, don't tell**: Describe scenarios, not abstract benefits
 4. **Create urgency without pressure**: "Узнайте, сколько обращений вы теряете"
 
 ### Content Gaps to Fill
+
 - [ ] Final headline/subheadline (pending approval)
 - [ ] Real testimonials (if available)
 - [ ] Exact stats from pilot implementations
@@ -355,6 +374,7 @@ Hero → Header "Войти" → /login → Auth → /dashboard
 ## 6. Technical Requirements
 
 ### SEO
+
 - Unique title and meta description
 - Single H1 (Hero headline)
 - Proper heading hierarchy (H2 for sections, H3 for subsections)
@@ -362,18 +382,21 @@ Hero → Header "Войти" → /login → Auth → /dashboard
 - robots.txt and sitemap.xml
 
 ### Performance
+
 - First Contentful Paint: <1.5s
 - Largest Contentful Paint: <2.5s
 - Total Blocking Time: <300ms
 - Lighthouse Performance: >90
 
 ### Accessibility
+
 - Keyboard navigation for all interactive elements
 - ARIA labels for icon-only buttons
 - Color contrast: WCAG AA minimum
 - Focus states visible
 
 ### Mobile
+
 - Fully responsive (320px - 1920px)
 - Touch-friendly tap targets (min 44x44px)
 - Mobile menu for header navigation
@@ -390,6 +413,7 @@ Per Federal Law No. 152-FZ "On Personal Data" and Federal Law No. 149-FZ "On Inf
 **7.1 Privacy Policy (Политика конфиденциальности)**
 
 Must include:
+
 - Operator identity (AIDevTeam, legal name, address, contact)
 - Categories of personal data collected (name, email, company, message)
 - Purposes of data processing (responding to demo requests, marketing with consent)
@@ -403,6 +427,7 @@ Must include:
 **7.2 User Agreement / Terms of Service (Пользовательское соглашение)**
 
 Must include:
+
 - Service description
 - User obligations
 - Intellectual property rights
@@ -413,6 +438,7 @@ Must include:
 **7.3 Consent Mechanism**
 
 Contact form must include:
+
 - Checkbox: "Даю согласие на обработку персональных данных в соответствии с Политикой конфиденциальности"
 - Link to Privacy Policy
 - Form cannot be submitted without consent checkbox checked
@@ -420,12 +446,14 @@ Contact form must include:
 **7.4 Footer Legal Links**
 
 Required links in footer:
+
 - Политика конфиденциальности
 - Пользовательское соглашение
 
 **7.5 Cookie Notice (if cookies used)**
 
 If analytics/tracking cookies are implemented:
+
 - Cookie consent banner required
 - Option to accept/reject non-essential cookies
 
@@ -474,20 +502,21 @@ frontend/src/
 
 ### 8.2 Technology Stack (Must Use)
 
-| Category | Technology | Version |
-|----------|------------|---------|
-| Framework | Next.js | 16.x (App Router) |
-| Language | TypeScript | 5.x (strict mode) |
-| Styling | Tailwind CSS | 4.x |
-| UI Components | shadcn/ui | Latest |
-| Animations | Framer Motion | Latest |
-| Form Handling | React Hook Form | 7.x |
-| Validation | Zod | 3.x |
-| Icons | Lucide React | Latest |
+| Category      | Technology      | Version           |
+| ------------- | --------------- | ----------------- |
+| Framework     | Next.js         | 16.x (App Router) |
+| Language      | TypeScript      | 5.x (strict mode) |
+| Styling       | Tailwind CSS    | 4.x               |
+| UI Components | shadcn/ui       | Latest            |
+| Animations    | Framer Motion   | Latest            |
+| Form Handling | React Hook Form | 7.x               |
+| Validation    | Zod             | 3.x               |
+| Icons         | Lucide React    | Latest            |
 
 ### 8.3 File Requirements
 
 **Each component file must include:**
+
 - TypeScript with proper types (no `any`)
 - "use client" directive where needed (interactive components)
 - Responsive design (mobile-first, breakpoints: sm/md/lg/xl)
@@ -495,6 +524,7 @@ frontend/src/
 - Accessibility: ARIA labels, keyboard navigation, focus states
 
 **Naming conventions:**
+
 - Components: PascalCase (e.g., `ContactForm.tsx`)
 - Functions: camelCase
 - CSS classes: Tailwind utilities only (no custom CSS unless absolutely necessary)
@@ -504,17 +534,20 @@ frontend/src/
 The landing connects to existing backend at `backend/`:
 
 **Contact form submission:**
+
 - Endpoint: tRPC mutation `contact.submit`
 - Location: `backend/src/api/trpc/routers/contact.ts` (to be created)
 - Sends Telegram notification on successful submission
 
 **Authentication:**
+
 - Login page redirects to Supabase Auth
 - After auth, redirect to `/dashboard`
 
 ### 8.5 Acceptance Criteria
 
 **Functional Requirements:**
+
 - [ ] All 9 sections render correctly
 - [ ] Navigation links scroll smoothly to sections
 - [ ] Mobile hamburger menu works
@@ -524,6 +557,7 @@ The landing connects to existing backend at `backend/`:
 - [ ] All content is in Russian
 
 **Technical Requirements:**
+
 - [ ] `pnpm type-check` passes with zero errors
 - [ ] `pnpm build` completes successfully
 - [ ] Lighthouse Performance score ≥90
@@ -532,6 +566,7 @@ The landing connects to existing backend at `backend/`:
 - [ ] Responsive on 320px, 768px, 1024px, 1440px viewports
 
 **Visual Requirements:**
+
 - [ ] Matches approved design (if design phase completed)
 - [ ] Animations are smooth (60fps)
 - [ ] No layout shifts on load
@@ -571,21 +606,22 @@ After delivery:
 
 ## 9. Approval Status
 
-| Item | Status |
-|------|--------|
-| Hero headline | ✅ Approved |
-| Pain Points section | ✅ Approved (include) |
-| Social Proof section | ✅ Approved (with testimonials) |
-| Projected metrics | ✅ Approved |
-| Alternative contacts | ✅ Approved (Telegram + email) |
-| Legal requirements | ✅ Approved (Russian law) |
-| Delivery specification | ✅ Added |
+| Item                   | Status                          |
+| ---------------------- | ------------------------------- |
+| Hero headline          | ✅ Approved                     |
+| Pain Points section    | ✅ Approved (include)           |
+| Social Proof section   | ✅ Approved (with testimonials) |
+| Projected metrics      | ✅ Approved                     |
+| Alternative contacts   | ✅ Approved (Telegram + email)  |
+| Legal requirements     | ✅ Approved (Russian law)       |
+| Delivery specification | ✅ Added                        |
 
 ---
 
 **Document Status: READY FOR IMPLEMENTATION**
 
 Next steps:
+
 1. Optional: Design specification (visual style, colors, typography, animations)
 2. Development team implements per this specification
 3. Review and acceptance per Section 8.7

@@ -88,10 +88,7 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 // COMPONENT
 // ============================================
 
-export function RecentRequestsTable({
-  requests,
-  className,
-}: RecentRequestsTableProps) {
+export function RecentRequestsTable({ requests, className }: RecentRequestsTableProps) {
   return (
     <GlassCard
       variant="elevated"
@@ -111,9 +108,7 @@ export function RecentRequestsTable({
             <h3 className="text-base font-semibold text-[var(--buh-foreground)]">
               Последние запросы
             </h3>
-            <p className="text-xs text-[var(--buh-foreground-subtle)]">
-              Последние 10 обращений
-            </p>
+            <p className="text-xs text-[var(--buh-foreground-subtle)]">Последние 10 обращений</p>
           </div>
         </div>
         <Link
@@ -189,9 +184,7 @@ export function RecentRequestsTable({
                 {/* Time */}
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex flex-col">
-                    <span className="text-sm text-[var(--buh-foreground)]">
-                      {request.time}
-                    </span>
+                    <span className="text-sm text-[var(--buh-foreground)]">{request.time}</span>
                     {request.slaRemaining && (
                       <span
                         className={cn(
@@ -229,9 +222,7 @@ export function RecentRequestsTable({
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
             <MessageSquare className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
           </div>
-          <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
-            Нет запросов
-          </p>
+          <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет запросов</p>
           <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
             Запросы от клиентов появятся здесь
           </p>
@@ -243,4 +234,3 @@ export function RecentRequestsTable({
     </GlassCard>
   );
 }
-

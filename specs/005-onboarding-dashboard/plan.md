@@ -23,27 +23,32 @@ Implement a guided onboarding wizard for new users (Bot Token, Working Hours, SL
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### I. Library-First
+
 - **Status**: Pass
 - **Check**: Feature uses existing libraries (Prisma, tRPC routers) and adds new modular components (OnboardingWizard, AnalyticsRouter).
 
 ### II. CLI Interface
+
 - **Status**: Pass
 - **Check**: N/A for this UI-heavy feature, but backend logic is testable via tRPC procedures.
 
 ### III. Test-First (NON-NEGOTIABLE)
+
 - **Status**: Pass
 - **Check**: Plan includes defining tRPC contracts and component props before implementation.
 
 ### IV. Integration Testing
+
 - **Status**: Pass
 - **Check**: Integration tests required for:
-    - Onboarding flow (state transitions).
-    - Analytics queries (accuracy against known dataset).
+  - Onboarding flow (state transitions).
+  - Analytics queries (accuracy against known dataset).
 
 ### V. Observability
+
 - **Status**: Pass
 - **Check**: Standard logging for API errors and onboarding failures.
 
@@ -95,5 +100,5 @@ frontend/
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| None | N/A | N/A |
+| --------- | ---------- | ------------------------------------ |
+| None      | N/A        | N/A                                  |

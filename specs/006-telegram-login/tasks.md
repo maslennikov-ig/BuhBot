@@ -7,6 +7,7 @@
 ## Implementation Strategy
 
 **MVP Approach**:
+
 1.  **Setup & Foundation**: Database schema and basic verification logic.
 2.  **User Story 1**: Implementation of the core linking flow. This delivers the primary value (secure linking).
 3.  **User Story 3**: Visual confirmation (UX).
@@ -14,6 +15,7 @@
 5.  **Polish**: Error handling and edge cases.
 
 **Parallel Execution**:
+
 - Backend and Frontend tasks within the same story can often run in parallel once the contract is defined.
 - US3 (Visual) and US2 (Unlink) are independent of each other and can be done in parallel after US1.
 
@@ -35,7 +37,7 @@
 - [x] T001 Verify backend dependencies (crypto, prisma) in `backend/package.json`
 - [x] T002 Update `backend/prisma/schema.prisma` to include `TelegramAccount` model and relation to `User`
 - [x] T003 Run `npm run prisma:migrate` (or `prisma db push` for dev) to apply schema changes
-  → Artifacts: [telegram_accounts table](supabase migration via MCP)
+      → Artifacts: [telegram_accounts table](supabase migration via MCP)
 
 ---
 
@@ -57,11 +59,11 @@
 - [x] T006 [US1] Backend: Define `linkTelegram` input validation schema in `backend/src/modules/user/user.schema.ts` (or trpc router)
 - [x] T007 [P] [US1] Backend: Implement `linkTelegram` mutation in `backend/src/trpc/routers/user.ts` calling `TelegramService`
 - [x] T008 [P] [US1] Frontend: Add `useLinkTelegram` mutation hook in `frontend/src/services/user.ts` (if using separate service file) or usage in component
-  → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
+      → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
 - [x] T009 [US1] Frontend: Integrate `TelegramLoginButton` into `frontend/src/app/(dashboard)/settings/page.tsx`
-  → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
+      → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
 - [x] T010 [US1] Frontend: Handle `onAuth` callback to trigger `linkTelegram` mutation and handle success/error
-  → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
+      → Artifacts: [ProfileSettingsForm.tsx](frontend/src/components/settings/ProfileSettingsForm.tsx)
 
 ---
 
@@ -99,7 +101,7 @@
 - [x] T020 Verify 24h expiry logic in `TelegramService` (FR-004)
 - [x] T021 Add audit logging for link/unlink operations (NFR-003) in `TelegramService`
 - [x] T022 Add rate limiting on `linkTelegram` mutation (Security: prevent brute-force)
-  → Artifacts: [rate-limiter.ts](backend/src/services/telegram/rate-limiter.ts), [user.ts](backend/src/api/trpc/routers/user.ts)
+      → Artifacts: [rate-limiter.ts](backend/src/services/telegram/rate-limiter.ts), [user.ts](backend/src/api/trpc/routers/user.ts)
 - [ ] T023 Test Telegram widget on mobile browsers (NFR-002): iOS Safari, Android Chrome
 
 ---

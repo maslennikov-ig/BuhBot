@@ -23,7 +23,13 @@ export type RequestStatus = z.infer<typeof RequestStatusSchema>;
 export const AlertTypeSchema = z.enum(['warning', 'breach']);
 export type AlertType = z.infer<typeof AlertTypeSchema>;
 
-export const TemplateCategorySchema = z.enum(['greeting', 'status', 'document_request', 'reminder', 'closing']);
+export const TemplateCategorySchema = z.enum([
+  'greeting',
+  'status',
+  'document_request',
+  'reminder',
+  'closing',
+]);
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
 
 // ============================================================================

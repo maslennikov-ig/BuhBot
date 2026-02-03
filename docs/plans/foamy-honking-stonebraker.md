@@ -9,6 +9,7 @@ Create `backend/src/config/queue.config.ts` to centralize all BullMQ queue confi
 ## Current State
 
 All queue configuration is hardcoded across these files:
+
 - `backend/src/queues/setup.ts` - Default job options, queues
 - `backend/src/queues/alert.worker.ts` - Alert worker settings
 - `backend/src/queues/sla-timer.worker.ts` - SLA timer worker settings
@@ -158,18 +159,14 @@ const repeatPattern = queueConfig.dataRetentionSchedule;
 import { queueConfig } from '../config/queue.config.js';
 
 // Update alertWorker (line ~285)
-export const alertWorker = new Worker<AlertWorkerJobData>(
-  'alerts',
-  processAlertJob,
-  {
-    connection: redis,
-    concurrency: queueConfig.alertConcurrency,
-    limiter: {
-      max: queueConfig.alertRateLimitMax,
-      duration: queueConfig.alertRateLimitDuration,
-    },
-  }
-);
+export const alertWorker = new Worker<AlertWorkerJobData>('alerts', processAlertJob, {
+  connection: redis,
+  concurrency: queueConfig.alertConcurrency,
+  limiter: {
+    max: queueConfig.alertRateLimitMax,
+    duration: queueConfig.alertRateLimitDuration,
+  },
+});
 ```
 
 #### 2.3 `backend/src/queues/sla-timer.worker.ts`
@@ -270,15 +267,15 @@ Add to `backend/.env.example`:
 
 ## Files to Modify
 
-| File | Action |
-|------|--------|
-| `backend/src/config/queue.config.ts` | CREATE |
-| `backend/src/queues/setup.ts` | MODIFY |
-| `backend/src/queues/alert.worker.ts` | MODIFY |
+| File                                     | Action |
+| ---------------------------------------- | ------ |
+| `backend/src/config/queue.config.ts`     | CREATE |
+| `backend/src/queues/setup.ts`            | MODIFY |
+| `backend/src/queues/alert.worker.ts`     | MODIFY |
 | `backend/src/queues/sla-timer.worker.ts` | MODIFY |
-| `backend/src/queues/survey.worker.ts` | MODIFY |
-| `backend/src/queues/survey.queue.ts` | MODIFY |
-| `backend/.env.example` | MODIFY |
+| `backend/src/queues/survey.worker.ts`    | MODIFY |
+| `backend/src/queues/survey.queue.ts`     | MODIFY |
+| `backend/.env.example`                   | MODIFY |
 
 ---
 

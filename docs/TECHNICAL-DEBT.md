@@ -8,6 +8,7 @@
 ## Database (Supabase)
 
 ### TD-DB-001: Data Retention Policy
+
 **Priority**: Medium
 **Effort**: 2-4 hours
 **Source**: Supabase Audit 2025-12-17
@@ -16,11 +17,13 @@
 `global_settings.data_retention_years` определён (default: 3), но нет автоматической очистки старых данных.
 
 **Влияние**:
+
 - База будет расти бесконечно
 - Увеличение storage costs
 - Замедление запросов на больших таблицах
 
 **Решение**:
+
 1. Создать BullMQ job `data-retention-cleanup`
 2. Запускать ежедневно в 03:00 UTC
 3. Удалять записи старше `data_retention_years`:
@@ -30,6 +33,7 @@
    - `notifications` (старше N лет)
 
 **Таблицы для очистки**:
+
 ```sql
 DELETE FROM client_requests
 WHERE received_at < NOW() - INTERVAL '3 years';
@@ -47,6 +51,7 @@ WHERE created_at < NOW() - INTERVAL '3 years';
 ---
 
 ### TD-DB-002: VACUUM ANALYZE Scheduling
+
 **Priority**: Low
 **Effort**: 1 hour
 **Source**: Supabase Audit 2025-12-17
@@ -55,13 +60,16 @@ WHERE created_at < NOW() - INTERVAL '3 years';
 Нет периодического запуска VACUUM ANALYZE для предотвращения table bloat.
 
 **Влияние**:
+
 - Dead tuples накапливаются
 - Деградация производительности со временем
 - Увеличение storage
 
 **Решение**:
+
 1. Включить `pg_cron` extension в Supabase
 2. Создать scheduled job:
+
 ```sql
 SELECT cron.schedule(
   'vacuum-analyze-public',
@@ -75,6 +83,7 @@ SELECT cron.schedule(
 ---
 
 ### TD-DB-003: Working Schedules Default Data
+
 **Priority**: Medium
 **Effort**: 30 min
 **Source**: Supabase Audit 2025-12-17
@@ -83,14 +92,17 @@ SELECT cron.schedule(
 Таблица `working_schedules` пустая. Нет дефолтных рабочих часов для новых чатов.
 
 **Влияние**:
+
 - SLA расчёты могут падать если working hours не настроены
 - Новые чаты требуют ручной настройки
 
 **Решение**:
+
 1. Создать seed данные для стандартных рабочих часов (Пн-Пт 09:00-18:00 MSK)
 2. Или: автоматически создавать schedule при создании чата
 
 **Seed SQL**:
+
 ```sql
 -- Default working schedule template (to be copied for each chat)
 -- This is a reference, actual implementation should create per-chat schedules
@@ -112,27 +124,32 @@ VALUES
 ---
 
 ### TD-DB-004: OAuth Tables RLS Investigation
+
 **Priority**: Low
 **Effort**: 1-2 hours (research)
 **Source**: Supabase Audit 2025-12-17
 
 **Описание**:
 OAuth таблицы в `auth` схеме не имеют RLS:
+
 - `auth.oauth_authorizations`
 - `auth.oauth_client_states`
 - `auth.oauth_clients`
 - `auth.oauth_consents`
 
 **Влияние**:
+
 - Возможно управляется Supabase Auth service
 - Требует исследования документации
 
 **Решение**:
+
 1. Изучить Supabase Auth документацию
 2. Проверить, нужен ли RLS для OAuth tables
 3. Если да — создать политики
 
 **Ссылки**:
+
 - https://supabase.com/docs/guides/auth/row-level-security
 
 ---
@@ -140,6 +157,7 @@ OAuth таблицы в `auth` схеме не имеют RLS:
 ## Backend
 
 ### TD-BE-001: Classification Cache Cleanup
+
 **Priority**: Low
 **Effort**: 1 hour
 **Source**: Schema design
@@ -149,6 +167,7 @@ OAuth таблицы в `auth` схеме не имеют RLS:
 
 **Решение**:
 Добавить в data-retention job или отдельный cleanup:
+
 ```sql
 DELETE FROM classification_cache
 WHERE expires_at < NOW();
@@ -157,6 +176,7 @@ WHERE expires_at < NOW();
 ---
 
 ### TD-BE-002: Prisma Migration Sync
+
 **Priority**: Low
 **Effort**: 30 min
 **Source**: Supabase Audit 2025-12-17
@@ -165,6 +185,7 @@ WHERE expires_at < NOW();
 Локальные миграции могут рассинхронизироваться с production БД.
 
 **Решение**:
+
 1. Периодически запускать `prisma migrate diff`
 2. Добавить CI check для migration drift
 
@@ -172,24 +193,27 @@ WHERE expires_at < NOW();
 
 ## Frontend
 
-*Нет текущего технического долга.*
+_Нет текущего технического долга._
 
 ---
 
 ## Infrastructure
 
 ### TD-INFRA-001: Monitoring Alerts for DB Health
+
 **Priority**: Medium
 **Effort**: 2-3 hours
 **Source**: Best practices
 
 **Описание**:
 Нет алертов на:
+
 - Table bloat (dead tuples > 10%)
 - Long-running queries (> 30s)
 - Connection pool exhaustion
 
 **Решение**:
+
 1. Настроить Prometheus metrics через Supabase
 2. Добавить Grafana dashboards
 3. Настроить Telegram alerts
@@ -199,6 +223,7 @@ WHERE expires_at < NOW();
 ## Completed Items
 
 ### 2025-12-17: Supabase Audit Fixes
+
 - [x] Created missing tables (global_holidays, chat_holidays, classification_cache)
 - [x] Removed duplicate FK constraint on telegram_accounts
 - [x] Enabled RLS on contact_requests, feedback_surveys, survey_deliveries, global_settings
@@ -211,16 +236,16 @@ WHERE expires_at < NOW();
 
 ## Legend
 
-| Priority | Description |
-|----------|-------------|
+| Priority | Description                        |
+| -------- | ---------------------------------- |
 | Critical | Blocking production, security risk |
-| High | Should fix before next release |
-| Medium | Plan for next sprint |
-| Low | Nice to have, backlog |
+| High     | Should fix before next release     |
+| Medium   | Plan for next sprint               |
+| Low      | Nice to have, backlog              |
 
-| Effort | Time |
-|--------|------|
-| 30 min | Quick fix |
-| 1-2 hours | Small task |
+| Effort    | Time        |
+| --------- | ----------- |
+| 30 min    | Quick fix   |
+| 1-2 hours | Small task  |
 | 2-4 hours | Medium task |
-| 1+ days | Large task |
+| 1+ days   | Large task  |

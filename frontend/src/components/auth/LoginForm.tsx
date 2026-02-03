@@ -92,8 +92,12 @@ export function LoginForm() {
       )}
 
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-[var(--buh-foreground)] dark:text-white mb-2">Welcome Back</h1>
-        <p className="text-[var(--buh-foreground-muted)] dark:text-slate-300 text-sm">Sign in to your accountant dashboard</p>
+        <h1 className="text-2xl font-bold text-[var(--buh-foreground)] dark:text-white mb-2">
+          Welcome Back
+        </h1>
+        <p className="text-[var(--buh-foreground-muted)] dark:text-slate-300 text-sm">
+          Sign in to your accountant dashboard
+        </p>
       </div>
 
       <Form {...form}>
@@ -103,7 +107,9 @@ export function LoginForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">Email</FormLabel>
+                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">
+                  Email
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="name@example.com"
@@ -121,7 +127,9 @@ export function LoginForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">Password</FormLabel>
+                <FormLabel className="text-[var(--buh-foreground)] dark:text-slate-200">
+                  Password
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
@@ -137,11 +145,7 @@ export function LoginForm() {
                       className="absolute right-0 top-0 h-full w-10 px-3 py-2 hover:bg-transparent text-[var(--buh-foreground-subtle)] dark:text-slate-400 hover:text-[var(--buh-foreground)] dark:hover:text-white transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       <span className="sr-only">
                         {showPassword ? 'Hide password' : 'Show password'}
                       </span>

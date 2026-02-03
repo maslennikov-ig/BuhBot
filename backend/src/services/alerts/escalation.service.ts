@@ -55,7 +55,8 @@ async function getEscalationConfig(): Promise<EscalationConfig> {
 
     return {
       maxEscalations: globalSettings.maxEscalations ?? DEFAULT_ESCALATION_CONFIG.maxEscalations,
-      escalationIntervalMin: globalSettings.escalationIntervalMin ?? DEFAULT_ESCALATION_CONFIG.escalationIntervalMin,
+      escalationIntervalMin:
+        globalSettings.escalationIntervalMin ?? DEFAULT_ESCALATION_CONFIG.escalationIntervalMin,
     };
   } catch (error) {
     logger.error('Failed to get escalation config, using defaults', {
@@ -131,7 +132,7 @@ export async function scheduleNextEscalation(
 
   try {
     // Get configuration
-    const escalationConfig = config ?? await getEscalationConfig();
+    const escalationConfig = config ?? (await getEscalationConfig());
     const { maxEscalations, escalationIntervalMin } = escalationConfig;
 
     // Check if max escalations reached

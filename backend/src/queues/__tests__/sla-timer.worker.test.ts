@@ -122,11 +122,9 @@ describe('SLA Timer Worker - Group Notifications', () => {
       // Simulate the worker logic for notification
       const request = mockRequest;
       if (request.chat?.notifyInChatOnBreach) {
-        await mockBot.telegram.sendMessage(
-          String(chatId),
-          'Test breach notification',
-          { parse_mode: 'HTML' }
-        );
+        await mockBot.telegram.sendMessage(String(chatId), 'Test breach notification', {
+          parse_mode: 'HTML',
+        });
       }
 
       expect(mockBot.telegram.sendMessage).toHaveBeenCalledWith(
@@ -160,11 +158,9 @@ describe('SLA Timer Worker - Group Notifications', () => {
       // Simulate the worker logic for notification
       const request = mockRequest;
       if (request.chat?.notifyInChatOnBreach) {
-        await mockBot.telegram.sendMessage(
-          String(chatId),
-          'Test breach notification',
-          { parse_mode: 'HTML' }
-        );
+        await mockBot.telegram.sendMessage(String(chatId), 'Test breach notification', {
+          parse_mode: 'HTML',
+        });
       }
 
       expect(mockBot.telegram.sendMessage).not.toHaveBeenCalled();
@@ -193,11 +189,9 @@ describe('SLA Timer Worker - Group Notifications', () => {
       // Simulate the worker logic for notification
       const request = mockRequest;
       if (request.chat?.notifyInChatOnBreach) {
-        await mockBot.telegram.sendMessage(
-          String(chatId),
-          'Test breach notification',
-          { parse_mode: 'HTML' }
-        );
+        await mockBot.telegram.sendMessage(String(chatId), 'Test breach notification', {
+          parse_mode: 'HTML',
+        });
       }
 
       // NULL is falsy, so notification should NOT be sent
@@ -223,9 +217,7 @@ describe('SLA Timer Worker - Group Notifications', () => {
       };
 
       mockPrisma.clientRequest.findUnique.mockResolvedValue(mockRequest);
-      mockBot.telegram.sendMessage.mockRejectedValue(
-        new Error('Bot was blocked by the user')
-      );
+      mockBot.telegram.sendMessage.mockRejectedValue(new Error('Bot was blocked by the user'));
       mockQueueAlert.mockResolvedValue({});
 
       // Simulate the worker logic with error handling
@@ -234,11 +226,9 @@ describe('SLA Timer Worker - Group Notifications', () => {
 
       if (request.chat?.notifyInChatOnBreach) {
         try {
-          await mockBot.telegram.sendMessage(
-            String(chatId),
-            'Test breach notification',
-            { parse_mode: 'HTML' }
-          );
+          await mockBot.telegram.sendMessage(String(chatId), 'Test breach notification', {
+            parse_mode: 'HTML',
+          });
         } catch (chatNotifyError) {
           // Don't fail the job if chat notification fails
           error = chatNotifyError as Error;
@@ -274,11 +264,9 @@ describe('SLA Timer Worker - Group Notifications', () => {
       // Simulate the worker logic
       const request = mockRequest;
       if (request.chat?.notifyInChatOnBreach) {
-        await mockBot.telegram.sendMessage(
-          String(request.chatId),
-          'Test breach notification',
-          { parse_mode: 'HTML' }
-        );
+        await mockBot.telegram.sendMessage(String(request.chatId), 'Test breach notification', {
+          parse_mode: 'HTML',
+        });
       }
 
       expect(mockBot.telegram.sendMessage).not.toHaveBeenCalled();

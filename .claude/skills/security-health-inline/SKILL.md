@@ -22,6 +22,7 @@ Detection → Validate → Fix by Priority → Verify → Repeat if needed
 ## Phase 1: Pre-flight
 
 1. **Setup directories**:
+
    ```bash
    mkdir -p .tmp/current/{plans,changes,backups}
    ```
@@ -33,12 +34,32 @@ Detection → Validate → Fix by Priority → Verify → Repeat if needed
 3. **Initialize TodoWrite**:
    ```json
    [
-     {"content": "Security scan", "status": "in_progress", "activeForm": "Scanning for vulnerabilities"},
-     {"content": "Fix critical vulnerabilities", "status": "pending", "activeForm": "Fixing critical vulnerabilities"},
-     {"content": "Fix high priority vulnerabilities", "status": "pending", "activeForm": "Fixing high vulnerabilities"},
-     {"content": "Fix medium priority vulnerabilities", "status": "pending", "activeForm": "Fixing medium vulnerabilities"},
-     {"content": "Fix low priority vulnerabilities", "status": "pending", "activeForm": "Fixing low vulnerabilities"},
-     {"content": "Verification scan", "status": "pending", "activeForm": "Verifying fixes"}
+     {
+       "content": "Security scan",
+       "status": "in_progress",
+       "activeForm": "Scanning for vulnerabilities"
+     },
+     {
+       "content": "Fix critical vulnerabilities",
+       "status": "pending",
+       "activeForm": "Fixing critical vulnerabilities"
+     },
+     {
+       "content": "Fix high priority vulnerabilities",
+       "status": "pending",
+       "activeForm": "Fixing high vulnerabilities"
+     },
+     {
+       "content": "Fix medium priority vulnerabilities",
+       "status": "pending",
+       "activeForm": "Fixing medium vulnerabilities"
+     },
+     {
+       "content": "Fix low priority vulnerabilities",
+       "status": "pending",
+       "activeForm": "Fixing low vulnerabilities"
+     },
+     { "content": "Verification scan", "status": "pending", "activeForm": "Verifying fixes" }
    ]
    ```
 
@@ -67,6 +88,7 @@ prompt: |
 ```
 
 **After security-scanner returns**:
+
 1. Read `security-scan-report.md`
 2. Parse vulnerability counts by priority
 3. If zero vulnerabilities → skip to Final Summary
@@ -98,6 +120,7 @@ pnpm build
 2. **Update TodoWrite**: mark current priority in_progress
 
 3. **Invoke vulnerability-fixer** via Task tool:
+
    ```
    subagent_type: "vulnerability-fixer"
    description: "Fix {priority} vulnerabilities"
@@ -115,6 +138,7 @@ pnpm build
    ```
 
 4. **Quality Gate** (inline):
+
    ```bash
    pnpm type-check
    pnpm build
@@ -136,6 +160,7 @@ After all priorities fixed:
 1. **Update TodoWrite**: mark verification in_progress
 
 2. **Invoke security-scanner** (verification mode):
+
    ```
    subagent_type: "security-scanner"
    description: "Verification scan"
@@ -167,21 +192,25 @@ Generate summary for user:
 **Status**: {SUCCESS/PARTIAL}
 
 ### Results
+
 - Found: {total} vulnerabilities
 - Fixed: {fixed} ({percentage}%)
 - Remaining: {remaining}
 
 ### By Priority
+
 - Critical: {fixed}/{total}
 - High: {fixed}/{total}
 - Medium: {fixed}/{total}
 - Low: {fixed}/{total}
 
 ### Validation
+
 - Type Check: {status}
 - Build: {status}
 
 ### Artifacts
+
 - Detection: `security-scan-report.md`
 - Fixes: `security-fixes-implemented.md`
 ```
@@ -191,6 +220,7 @@ Generate summary for user:
 ## Error Handling
 
 **If quality gate fails**:
+
 ```
 Rollback available: .tmp/current/changes/security-changes.json
 
@@ -201,6 +231,7 @@ To rollback:
 ```
 
 **If worker fails**:
+
 - Report error to user
 - Suggest manual intervention
 - Exit workflow
@@ -209,13 +240,13 @@ To rollback:
 
 ## Key Differences from Old Approach
 
-| Old (Orchestrator Agent) | New (Inline Skill) |
-|--------------------------|-------------------|
-| 9+ orchestrator calls | 0 orchestrator calls |
-| ~1400 lines (cmd + agent) | ~150 lines |
-| Context reload each call | Single session context |
-| Plan files for each phase | Direct execution |
-| ~10,000+ tokens overhead | ~500 tokens |
+| Old (Orchestrator Agent)  | New (Inline Skill)     |
+| ------------------------- | ---------------------- |
+| 9+ orchestrator calls     | 0 orchestrator calls   |
+| ~1400 lines (cmd + agent) | ~150 lines             |
+| Context reload each call  | Single session context |
+| Plan files for each phase | Direct execution       |
+| ~10,000+ tokens overhead  | ~500 tokens            |
 
 ---
 

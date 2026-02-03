@@ -29,3 +29,7 @@ The [.claude/scripts/release.sh](../../.claude/scripts/release.sh) script and `/
 
 - **Release Please runs but cannot open or update the release PR**  
   In **Settings → Actions → General**, enable **"Allow GitHub Actions to create and approve pull requests"** so the default `GITHUB_TOKEN` can create/update the release PR.
+
+## VDS deployment requirement
+
+The **Deploy to Production** workflow does not sync `backend/.env` (or other `.env` files) to the VDS for security. The server must already have `backend/.env` with at least `DATABASE_URL` and `TELEGRAM_BOT_TOKEN` before running a GitHub-triggered deploy. The deploy script ([infrastructure/scripts/github-deploy.sh](../../infrastructure/scripts/github-deploy.sh)) runs a pre-flight check and fails with a clear error if the file is missing or incomplete.

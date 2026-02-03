@@ -1,3 +1,7 @@
+# Release Please: creates/updates the release PR (CHANGELOG + version).
+# If you see "GitHub Actions is not permitted to create or approve pull requests",
+# enable Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests".
+# See docs/infrastructure/release-process.md (Troubleshooting).
 name: Release Please
 
 on:

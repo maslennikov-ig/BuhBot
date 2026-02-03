@@ -10,7 +10,8 @@
 import { createTRPCReact } from '@trpc/react-query';
 import { httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../types/trpc';
-import { supabase, isDevMode, devMockSession } from './supabase';
+import { supabase } from './supabase';
+import { isDevMode } from './config';
 
 /**
  * tRPC React hooks
@@ -56,11 +57,11 @@ export function createTRPCClient() {
       httpBatchLink({
         url: `${getBaseUrl()}/api/trpc`,
         async headers() {
-          // DEV MODE: Use mock token when Supabase is not configured
+          // DEV MODE: Skip Supabase auth, send dev mode headers
           if (isDevMode) {
             return {
-              Authorization: `Bearer ${devMockSession.access_token}`,
               'X-Dev-Mode': 'true',
+              Authorization: 'Bearer dev-mode-token',
             };
           }
 
@@ -79,5 +80,4 @@ export function createTRPCClient() {
     ],
   });
 }
-
 

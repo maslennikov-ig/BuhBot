@@ -22,8 +22,11 @@
 
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { PrismaClient } from '@prisma/client';
-import { supabase, isDevMode } from '../../lib/supabase.js';
+import { supabase } from '../../lib/supabase.js';
 import { prisma } from '../../lib/prisma.js';
+import { isDevMode } from '../../config/env.js';
+import env from '../../config/env.js';
+import logger from '../../utils/logger.js';
 
 /**
  * User information extracted from session and database
@@ -34,6 +37,19 @@ interface ContextUser {
   role: 'admin' | 'manager' | 'observer'; // Role for RBAC
   fullName: string;     // Display name
 }
+
+/**
+ * Mock admin user for DEV MODE
+ *
+ * This user is used when DEV_MODE=true to bypass Supabase authentication.
+ * The UUID matches the dev user in seed.ts.
+ */
+const DEV_MODE_USER: ContextUser = {
+  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  email: env.DEV_USER_EMAIL || 'admin@buhbot.local',
+  role: 'admin',
+  fullName: 'DEV Admin',
+};
 
 /**
  * Supabase session information
@@ -53,17 +69,6 @@ export interface Context {
   user: ContextUser | null;       // Authenticated user (null if unauthenticated)
   session: ContextSession | null; // Session info (null if unauthenticated)
 }
-
-/**
- * Dev mode mock user for local development without Supabase
- * Uses a valid UUID that matches the seeded admin user
- */
-const DEV_MODE_USER: ContextUser = {
-  id: '11111111-1111-1111-1111-111111111111', // Matches seeded admin user
-  email: 'admin@buhbot.local',
-  role: 'admin',
-  fullName: 'Администратор',
-};
 
 /**
  * Extract JWT token from Authorization header
@@ -109,23 +114,17 @@ export async function createContext({
   const reqId = Math.random().toString(36).substring(7);
   const startTime = Date.now();
 
-  // DEV MODE: Bypass auth when Supabase is not configured
+  // DEV MODE: Bypass all authentication
   if (isDevMode) {
-    const isDevModeHeader = req.headers['x-dev-mode'] === 'true';
-    const token = extractToken(req.headers.authorization);
-
-    // In dev mode, return authenticated context with mock user
-    if (isDevModeHeader || token === 'dev-mock-token') {
-      console.log(`[CTX:${reqId}] DEV MODE: Using mock user (${Date.now() - startTime}ms)`);
-      return {
-        prisma,
-        user: DEV_MODE_USER,
-        session: {
-          accessToken: 'dev-mock-token',
-          expiresAt: Math.floor(Date.now() / 1000) + 3600,
-        },
-      };
-    }
+    logger.debug('[context] DEV MODE: Using mock admin user', { reqId, duration: Date.now() - startTime });
+    return {
+      prisma,
+      user: DEV_MODE_USER,
+      session: {
+        accessToken: 'dev-mode-token',
+        expiresAt: Math.floor(Date.now() / 1000) + 86400, // 24 hours
+      },
+    };
   }
 
   // Extract JWT from Authorization header

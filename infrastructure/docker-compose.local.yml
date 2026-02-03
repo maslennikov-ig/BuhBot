@@ -1,18 +1,21 @@
-# ============================================================================
 # BuhBot Local Development Environment
-# ============================================================================
-# Fully local setup with PostgreSQL, Redis for bug reproduction
-# Usage: docker compose -f infrastructure/docker-compose.local.yml up -d
-# ============================================================================
+#
+# This file provides PostgreSQL and Redis for local development without Supabase.
+# Use with DEV_MODE=true in backend/.env
+#
+# Usage:
+#   docker-compose -f docker-compose.local.yml up -d
+#   cd backend && DEV_MODE=true pnpm dev
+#
+# Connection strings for .env:
+#   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/buhbot
+#   REDIS_HOST=localhost
+#   REDIS_PORT=6379
 
 services:
-  # ==========================================================================
-  # PostgreSQL Database (replaces Supabase for local development)
-  # ==========================================================================
   postgres:
     image: postgres:15-alpine
     container_name: buhbot-postgres-local
-    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
@@ -26,16 +29,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - buhbot-local-network
+    restart: unless-stopped
 
-  # ==========================================================================
-  # Redis (for BullMQ job queues)
-  # ==========================================================================
   redis:
     image: redis:7-alpine
     container_name: buhbot-redis-local
-    restart: unless-stopped
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -46,19 +44,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - buhbot-local-network
-
-networks:
-  buhbot-local-network:
-    driver: bridge
-    name: buhbot-local-network
+    restart: unless-stopped
 
 volumes:
   postgres-local-data:
-    driver: local
-    name: buhbot-postgres-local-data
-
   redis-local-data:
-    driver: local
-    name: buhbot-redis-local-data

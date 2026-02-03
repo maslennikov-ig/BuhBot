@@ -153,6 +153,19 @@ const envSchema = z.object({
 
   // Sentry (optional error tracking)
   SENTRY_DSN: z.string().url().optional(),
+
+  // DEV MODE - Local development without Supabase
+  DEV_MODE: z
+    .enum(['true', 'false'])
+    .optional()
+    .default('false')
+    .describe('Enable DEV MODE for local development without Supabase'),
+  DEV_USER_EMAIL: z
+    .string()
+    .email()
+    .optional()
+    .default('admin@buhbot.local')
+    .describe('Email for the mock admin user in DEV MODE'),
 });
 
 // Export validated environment type
@@ -222,3 +235,12 @@ export function isDevelopment(): boolean {
 export function isTest(): boolean {
   return env.NODE_ENV === 'test';
 }
+
+/**
+ * Check if running in DEV MODE (local development without Supabase)
+ *
+ * DEV MODE is only enabled when:
+ * - DEV_MODE=true is explicitly set
+ * - NODE_ENV is 'development'
+ */
+export const isDevMode = env.DEV_MODE === 'true' && env.NODE_ENV === 'development';

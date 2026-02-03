@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.19] - 2026-01-30
+
+### Fixed
+- **sla**: fix notifyInChatOnBreach and global threshold update (gh-16, gh-17) (6d4cca9)
+
+### Other
+- bd sync: 2026-01-30 16:15:39 (073a3b1)
+- bd sync: 2026-01-30 16:15:23 (c7e938e)
+- **sla**: add timer service unit tests (0316ae9)
+
 ## [0.9.18] - 2026-01-30
 
 ### Added

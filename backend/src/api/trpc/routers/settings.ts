@@ -643,7 +643,14 @@ export const settingsRouter = router({
         slaThreshold: z.number().min(1).max(480),
       })
     )
+    .output(
+      z.object({
+        success: z.boolean(),
+        updatedChats: z.number(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
+      // 1. Update global default
       await ctx.prisma.globalSettings.upsert({
         where: { id: 'default' },
         create: {
@@ -654,6 +661,16 @@ export const settingsRouter = router({
           defaultSlaThreshold: input.slaThreshold,
         },
       });
-      return { success: true };
+
+      // 2. Update ALL existing chats (gh-16)
+      const result = await ctx.prisma.chat.updateMany({
+        where: {},
+        data: {
+          slaThresholdMinutes: input.slaThreshold,
+          slaResponseMinutes: input.slaThreshold,
+        },
+      });
+
+      return { success: true, updatedChats: result.count };
     }),
 });

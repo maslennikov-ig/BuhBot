@@ -13,11 +13,13 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Prerequisites
 
 Verify Beads is installed:
+
 ```bash
 bd version
 ```
 
 If not installed, instruct user to run:
+
 ```bash
 npm install -g @beads/bd
 bd init
@@ -37,22 +39,27 @@ bd init
    - `[USn]` marker — User story label
 
 3. Create Epic in Beads:
+
    ```bash
    bd create "Feature: <feature-name>" -t epic -p 2 -d "<spec-path>"
    ```
+
    Save the returned epic ID.
 
 4. For each Phase, create a parent task:
+
    ```bash
    bd create "Phase N: <title>" -t task -p 2 --deps parent:<epic-id>
    ```
 
 5. For each task within a phase:
+
    ```bash
    bd create "<task-description>" -t task -p 2 --deps parent:<phase-id>
    ```
 
    If task has `[USn]` marker, add label:
+
    ```bash
    bd update <task-id> --add-label usN
    ```
@@ -105,17 +112,21 @@ Run `bd ready` to see available tasks.
 ## Example
 
 Input tasks.md:
+
 ```markdown
 ## Phase 1: Setup
+
 - [ ] T001 Create database schema
 - [ ] T002 [P] Setup API routes
 
 ## Phase 2: Implementation
+
 - [ ] T003 [US1] Implement user service
 - [ ] T004 [US1] Add validation
 ```
 
 Creates:
+
 ```
 buh-epic-001: Feature: user-management
 ├── buh-ph1-001: Phase 1: Setup

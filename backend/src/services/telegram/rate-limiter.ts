@@ -30,9 +30,7 @@ export function isRateLimited(userId: string): boolean {
   }
 
   // Filter out attempts outside the window
-  const recentAttempts = entry.attempts.filter(
-    (timestamp) => now - timestamp < WINDOW_MS
-  );
+  const recentAttempts = entry.attempts.filter((timestamp) => now - timestamp < WINDOW_MS);
 
   if (recentAttempts.length >= MAX_ATTEMPTS) {
     // Rate limited
@@ -51,9 +49,7 @@ export function isRateLimited(userId: string): boolean {
 function cleanupRateLimitStore(): void {
   const now = Date.now();
   for (const [userId, entry] of rateLimitStore.entries()) {
-    const recentAttempts = entry.attempts.filter(
-      (timestamp) => now - timestamp < WINDOW_MS
-    );
+    const recentAttempts = entry.attempts.filter((timestamp) => now - timestamp < WINDOW_MS);
     if (recentAttempts.length === 0) {
       rateLimitStore.delete(userId);
     } else {

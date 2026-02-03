@@ -3,7 +3,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Trash2, Info, CheckCircle2, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  Trash2,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -17,9 +26,9 @@ export function NotificationPopover() {
   // Queries
   const { data: notificationsData, isLoading } = trpc.notification.list.useQuery(
     { limit: 10 },
-    { 
+    {
       enabled: isOpen, // Fetch when opened
-      staleTime: 10000 
+      staleTime: 10000,
     }
   );
 
@@ -33,21 +42,21 @@ export function NotificationPopover() {
     onSuccess: () => {
       utils.notification.list.invalidate();
       utils.notification.getUnreadCount.invalidate();
-    }
+    },
   });
 
   const markAllAsReadMutation = trpc.notification.markAllAsRead.useMutation({
     onSuccess: () => {
       utils.notification.list.invalidate();
       utils.notification.getUnreadCount.invalidate();
-    }
+    },
   });
 
   const deleteMutation = trpc.notification.delete.useMutation({
     onSuccess: () => {
       utils.notification.list.invalidate();
       utils.notification.getUnreadCount.invalidate();
-    }
+    },
   });
 
   // Close on click outside
@@ -74,10 +83,14 @@ export function NotificationPopover() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case 'warning': return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-      case 'error': return <AlertCircle className="h-5 w-5 text-red-500" />;
-      default: return <Info className="h-5 w-5 text-blue-500" />;
+      case 'success':
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
 
@@ -89,8 +102,8 @@ export function NotificationPopover() {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200',
-          isOpen 
-            ? 'bg-[var(--buh-surface-elevated)] text-[var(--buh-primary)]' 
+          isOpen
+            ? 'bg-[var(--buh-surface-elevated)] text-[var(--buh-primary)]'
             : 'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]'
         )}
         aria-label="Уведомления"
@@ -114,7 +127,7 @@ export function NotificationPopover() {
             <div className="flex items-center justify-between p-4 border-b border-[var(--buh-border)] bg-[var(--buh-surface)]/50">
               <h3 className="font-semibold text-[var(--buh-foreground)]">Уведомления</h3>
               {unreadCount > 0 && (
-                <button 
+                <button
                   onClick={() => markAllAsReadMutation.mutate()}
                   disabled={markAllAsReadMutation.isPending}
                   className="text-xs font-medium text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)] transition-colors disabled:opacity-50 flex items-center gap-1"
@@ -140,30 +153,36 @@ export function NotificationPopover() {
               ) : (
                 <div className="divide-y divide-[var(--buh-border)]">
                   {notificationsData?.items.map((notification) => (
-                    <div 
+                    <div
                       key={notification.id}
                       className={cn(
-                        "relative group p-4 transition-colors hover:bg-[var(--buh-surface)]",
-                        !notification.isRead ? "bg-[var(--buh-primary)]/5" : ""
+                        'relative group p-4 transition-colors hover:bg-[var(--buh-surface)]',
+                        !notification.isRead ? 'bg-[var(--buh-primary)]/5' : ''
                       )}
                     >
                       <div className="flex gap-3">
-                        <div className="mt-1 shrink-0">
-                          {getIcon(notification.type)}
-                        </div>
+                        <div className="mt-1 shrink-0">{getIcon(notification.type)}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={cn("text-sm font-medium text-[var(--buh-foreground)]", !notification.isRead && "font-semibold")}>
+                            <p
+                              className={cn(
+                                'text-sm font-medium text-[var(--buh-foreground)]',
+                                !notification.isRead && 'font-semibold'
+                              )}
+                            >
                               {notification.title}
                             </p>
                             <span className="text-[10px] text-[var(--buh-foreground-muted)] shrink-0 whitespace-nowrap">
-                              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: ru })}
+                              {formatDistanceToNow(new Date(notification.createdAt), {
+                                addSuffix: true,
+                                locale: ru,
+                              })}
                             </span>
                           </div>
                           <p className="text-sm text-[var(--buh-foreground-muted)] mt-1 break-words line-clamp-3">
                             {notification.message}
                           </p>
-                          
+
                           {/* Actions */}
                           <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {!notification.isRead && (
@@ -185,7 +204,7 @@ export function NotificationPopover() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Unread dot */}
                       {!notification.isRead && (
                         <div className="absolute left-2 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-[var(--buh-primary)]" />
@@ -198,7 +217,11 @@ export function NotificationPopover() {
 
             {/* Footer */}
             <div className="p-2 bg-[var(--buh-surface)]/30 border-t border-[var(--buh-border)] text-center">
-              <Link href="/alerts" onClick={() => setIsOpen(false)} className="text-xs font-medium text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)] transition-colors">
+              <Link
+                href="/alerts"
+                onClick={() => setIsOpen(false)}
+                className="text-xs font-medium text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)] transition-colors"
+              >
                 Показать все алерты
               </Link>
             </div>

@@ -8,17 +8,20 @@ const features = [
   {
     icon: Timer,
     title: 'SLA-мониторинг',
-    description: 'Автоматический учёт времени ответа с учётом рабочих часов, выходных и праздников.',
+    description:
+      'Автоматический учёт времени ответа с учётом рабочих часов, выходных и праздников.',
   },
   {
     icon: Bell,
     title: 'Умные алерты',
-    description: 'Предупреждения о приближении дедлайна бухгалтеру и руководителю — до нарушения SLA.',
+    description:
+      'Предупреждения о приближении дедлайна бухгалтеру и руководителю — до нарушения SLA.',
   },
   {
     icon: LineChart,
     title: 'Аналитика',
-    description: 'Дашборд с метриками: среднее время ответа, SLA compliance, нагрузка по бухгалтерам.',
+    description:
+      'Дашборд с метриками: среднее время ответа, SLA compliance, нагрузка по бухгалтерам.',
   },
   {
     icon: MessageCircle,
@@ -92,14 +95,14 @@ export function Features() {
               className="group relative bg-[var(--buh-surface)] p-8 rounded-3xl border border-[var(--buh-border)] hover:border-[var(--buh-primary)] transition-colors duration-300 overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-[var(--buh-primary-muted)]/0 via-[var(--buh-accent-glow)] to-[var(--buh-primary-muted)]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
-              
+
               <div className="relative z-10">
                 <motion.div
                   className="w-14 h-14 rounded-2xl bg-[var(--buh-surface-elevated)] flex items-center justify-center mb-6 text-[var(--buh-primary)] shadow-sm border border-[var(--buh-border)]"
                   whileHover={{
                     scale: 1.15,
                     rotate: [0, -5, 5, 0],
-                    transition: { duration: 0.5 }
+                    transition: { duration: 0.5 },
                   }}
                 >
                   <feature.icon size={28} strokeWidth={1.5} />

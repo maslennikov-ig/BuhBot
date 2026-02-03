@@ -54,14 +54,14 @@ This document provides step-by-step disaster recovery procedures for BuhBot infr
 
 ### Critical Services
 
-| Service | Priority | Impact of Failure |
-|---------|----------|-------------------|
-| Bot Backend | P1 - Critical | Telegram bot completely non-functional |
-| Supabase (DB) | P1 - Critical | No data persistence, auth failures |
-| Redis | P2 - High | Session loss, degraded performance |
-| Frontend | P2 - High | Admin panel inaccessible |
-| Nginx | P2 - High | All HTTPS traffic blocked |
-| Monitoring | P3 - Medium | No visibility, alerts non-functional |
+| Service       | Priority      | Impact of Failure                      |
+| ------------- | ------------- | -------------------------------------- |
+| Bot Backend   | P1 - Critical | Telegram bot completely non-functional |
+| Supabase (DB) | P1 - Critical | No data persistence, auth failures     |
+| Redis         | P2 - High     | Session loss, degraded performance     |
+| Frontend      | P2 - High     | Admin panel inaccessible               |
+| Nginx         | P2 - High     | All HTTPS traffic blocked              |
+| Monitoring    | P3 - Medium   | No visibility, alerts non-functional   |
 
 ---
 
@@ -71,22 +71,22 @@ This document provides step-by-step disaster recovery procedures for BuhBot infr
 
 Maximum acceptable downtime before critical business functions are restored.
 
-| Scenario | Target RTO | Maximum RTO |
-|----------|------------|-------------|
-| VDS Complete Failure | 2 hours | 4 hours |
-| Database Corruption | 1 hour | 2 hours |
-| SSL Certificate Expired | 10 minutes | 30 minutes |
+| Scenario                | Target RTO | Maximum RTO |
+| ----------------------- | ---------- | ----------- |
+| VDS Complete Failure    | 2 hours    | 4 hours     |
+| Database Corruption     | 1 hour     | 2 hours     |
+| SSL Certificate Expired | 10 minutes | 30 minutes  |
 
 ### Recovery Point Objective (RPO): 24 hours
 
 Maximum acceptable data loss measured in time.
 
-| Data Type | Backup Frequency | RPO |
-|-----------|------------------|-----|
-| Supabase Database | Daily (automatic) | 24 hours |
-| Redis State | Weekly (manual/optional) | 7 days |
-| Configuration Files | Per deployment | Immediate (git) |
-| SSL Certificates | N/A (regeneratable) | N/A |
+| Data Type           | Backup Frequency         | RPO             |
+| ------------------- | ------------------------ | --------------- |
+| Supabase Database   | Daily (automatic)        | 24 hours        |
+| Redis State         | Weekly (manual/optional) | 7 days          |
+| Configuration Files | Per deployment           | Immediate (git) |
+| SSL Certificates    | N/A (regeneratable)      | N/A             |
 
 ### SLA Targets
 
@@ -100,30 +100,30 @@ Maximum acceptable data loss measured in time.
 
 ### Internal Contacts
 
-| Role | Name | Contact | Backup Contact |
-|------|------|---------|----------------|
+| Role             | Name           | Contact          | Backup Contact    |
+| ---------------- | -------------- | ---------------- | ----------------- |
 | On-Call Engineer | [Primary Name] | [Phone/Telegram] | [Secondary Phone] |
-| DevOps Lead | [Name] | [Phone/Telegram] | [Email] |
-| Security Lead | [Name] | [Phone/Telegram] | [Email] |
-| Project Manager | [Name] | [Phone/Telegram] | [Email] |
+| DevOps Lead      | [Name]         | [Phone/Telegram] | [Email]           |
+| Security Lead    | [Name]         | [Phone/Telegram] | [Email]           |
+| Project Manager  | [Name]         | [Phone/Telegram] | [Email]           |
 
 ### External Service Contacts
 
-| Service | Support URL | Response Time |
-|---------|-------------|---------------|
-| FirstVDS.ru | https://firstvds.ru/support | 24/7 Live Chat |
-| Supabase | support@supabase.com | Business hours |
-| Let's Encrypt | https://community.letsencrypt.org | Community |
-| Telegram API | https://core.telegram.org/bots/faq | Community |
+| Service       | Support URL                        | Response Time  |
+| ------------- | ---------------------------------- | -------------- |
+| FirstVDS.ru   | https://firstvds.ru/support        | 24/7 Live Chat |
+| Supabase      | support@supabase.com               | Business hours |
+| Let's Encrypt | https://community.letsencrypt.org  | Community      |
+| Telegram API  | https://core.telegram.org/bots/faq | Community      |
 
 ### Escalation Matrix
 
-| Time Elapsed | Action |
-|--------------|--------|
-| 0-15 min | On-call engineer acknowledges and begins diagnosis |
-| 15-30 min | Escalate to DevOps Lead if unresolved |
-| 30-60 min | Escalate to Security Lead (if security-related) |
-| 60+ min | Notify Project Manager, prepare stakeholder communication |
+| Time Elapsed | Action                                                    |
+| ------------ | --------------------------------------------------------- |
+| 0-15 min     | On-call engineer acknowledges and begins diagnosis        |
+| 15-30 min    | Escalate to DevOps Lead if unresolved                     |
+| 30-60 min    | Escalate to Security Lead (if security-related)           |
+| 60+ min      | Notify Project Manager, prepare stakeholder communication |
 
 ---
 
@@ -154,13 +154,13 @@ curl --version  # cURL (for testing)
 
 ### Backup Locations
 
-| Backup Type | Primary Location | Secondary Location |
-|-------------|------------------|-------------------|
-| Docker volumes | `/var/backups/buhbot-*` | S3 (if configured) |
-| Environment files | `/var/backups/buhbot-pre-deploy-*/` | Local password manager |
-| Redis data | `/var/backups/buhbot-pre-deploy-*/buhbot-redis-data.tar.gz` | N/A |
-| Supabase DB | Supabase Dashboard > Backups | N/A (managed service) |
-| SSL Certificates | `/etc/letsencrypt/` | Regeneratable via certbot |
+| Backup Type       | Primary Location                                            | Secondary Location        |
+| ----------------- | ----------------------------------------------------------- | ------------------------- |
+| Docker volumes    | `/var/backups/buhbot-*`                                     | S3 (if configured)        |
+| Environment files | `/var/backups/buhbot-pre-deploy-*/`                         | Local password manager    |
+| Redis data        | `/var/backups/buhbot-pre-deploy-*/buhbot-redis-data.tar.gz` | N/A                       |
+| Supabase DB       | Supabase Dashboard > Backups                                | N/A (managed service)     |
+| SSL Certificates  | `/etc/letsencrypt/`                                         | Regeneratable via certbot |
 
 ---
 
@@ -169,6 +169,7 @@ curl --version  # cURL (for testing)
 ### Description
 
 The VDS server is completely inaccessible due to:
+
 - Hardware failure
 - Datacenter outage
 - VDS account suspension
@@ -176,15 +177,15 @@ The VDS server is completely inaccessible due to:
 
 ### Estimated Recovery Time: ~2 hours
 
-| Phase | Duration | Cumulative |
-|-------|----------|------------|
-| Provision New VDS | 30 min | 0:30 |
-| Install Docker + Docker Compose | 10 min | 0:40 |
-| Restore Configurations | 15 min | 0:55 |
-| Deploy Application | 20 min | 1:15 |
-| Restore Redis State | 10 min | 1:25 |
-| Update DNS (if needed) | 5 min | 1:30 |
-| Verify Services | 30 min | 2:00 |
+| Phase                           | Duration | Cumulative |
+| ------------------------------- | -------- | ---------- |
+| Provision New VDS               | 30 min   | 0:30       |
+| Install Docker + Docker Compose | 10 min   | 0:40       |
+| Restore Configurations          | 15 min   | 0:55       |
+| Deploy Application              | 20 min   | 1:15       |
+| Restore Redis State             | 10 min   | 1:25       |
+| Update DNS (if needed)          | 5 min    | 1:30       |
+| Verify Services                 | 30 min   | 2:00       |
 
 ---
 
@@ -200,13 +201,13 @@ The VDS server is completely inaccessible due to:
 
 Select the following specifications:
 
-| Parameter | Value | Notes |
-|-----------|-------|-------|
-| CPU | 2-4 vCPU | Recommended: 4 vCPU for production |
-| RAM | 4-8 GB | Recommended: 8 GB for production |
-| Disk | 50-100 GB SSD | Recommended: 100 GB |
-| OS | **Ubuntu 22.04 LTS** | CRITICAL: Must be Ubuntu 22.04 |
-| Location | Moscow/St. Petersburg | Lowest latency to Russia |
+| Parameter | Value                 | Notes                              |
+| --------- | --------------------- | ---------------------------------- |
+| CPU       | 2-4 vCPU              | Recommended: 4 vCPU for production |
+| RAM       | 4-8 GB                | Recommended: 8 GB for production   |
+| Disk      | 50-100 GB SSD         | Recommended: 100 GB                |
+| OS        | **Ubuntu 22.04 LTS**  | CRITICAL: Must be Ubuntu 22.04     |
+| Location  | Moscow/St. Petersburg | Lowest latency to Russia           |
 
 **Step 1.3: Complete Order and Save Credentials**
 
@@ -219,6 +220,7 @@ Select the following specifications:
 3. **IMMEDIATELY** store these in password manager
 
 **Expected Output:**
+
 ```
 VDS Status: Running
 IP: XXX.XXX.XXX.XXX
@@ -260,6 +262,7 @@ hostnamectl && timedatectl
 ```
 
 **Expected Output:**
+
 ```
    Static hostname: buhbot-prod
          Icon name: computer-vm
@@ -287,6 +290,7 @@ sudo ./bootstrap-vds.sh
 ```
 
 **Expected Output:**
+
 ```
 [SUCCESS] ========================================
 [SUCCESS] Bootstrap completed successfully!
@@ -306,6 +310,7 @@ docker compose version
 ```
 
 **Expected Output:**
+
 ```
 Docker version 24.0+
 Docker Compose version v2.20+
@@ -400,6 +405,7 @@ ls -l backend/.env frontend/.env.local
 ```
 
 **Expected Output:**
+
 ```
 -rw------- 1 buhbot buhbot XXX backend/.env
 -rw------- 1 buhbot buhbot XXX frontend/.env.local
@@ -422,6 +428,7 @@ chmod +x infrastructure/scripts/deploy.sh
 ```
 
 **Expected Output:**
+
 ```
 [INFO] Pre-flight checks passed
 [INFO] Dry run complete - no changes made
@@ -436,6 +443,7 @@ chmod +x infrastructure/scripts/deploy.sh
 When prompted: Type `yes` and press Enter.
 
 **Expected Output (after 5-10 minutes):**
+
 ```
 [SUCCESS] ========================================
 [SUCCESS] Deployment completed successfully!
@@ -457,6 +465,7 @@ docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-com
 ```
 
 All containers must show:
+
 - Status: `Up`
 - Health: `(healthy)` where applicable
 
@@ -502,6 +511,7 @@ docker exec buhbot-redis redis-cli ping
 ```
 
 **Expected Output:**
+
 ```
 PONG
 ```
@@ -543,6 +553,7 @@ dig bot.example.com +short
 ```
 
 **Expected Output:**
+
 ```
 XXX.XXX.XXX.XXX  (new VDS IP)
 ```
@@ -580,10 +591,12 @@ sudo certbot certonly \
 ```
 
 Replace:
+
 - `bot.example.com` with your actual domain
 - `admin@example.com` with your email
 
 **Expected Output:**
+
 ```
 Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/bot.example.com/fullchain.pem
@@ -654,6 +667,7 @@ curl -I https://bot.example.com/health
 ```
 
 **Expected Output:**
+
 ```
 HTTP/2 200
 server: nginx/1.25
@@ -687,6 +701,7 @@ sudo nano /usr/local/bin/renew-letsencrypt.sh
 ```
 
 Add content:
+
 ```bash
 #!/bin/bash
 certbot renew --quiet --webroot -w /var/www/certbot
@@ -712,6 +727,7 @@ sudo crontab -e
 ```
 
 Add line:
+
 ```
 0 0,12 * * * /usr/local/bin/renew-letsencrypt.sh >> /var/log/letsencrypt-renewal.log 2>&1
 ```
@@ -723,6 +739,7 @@ Add line:
 ### Description
 
 Supabase PostgreSQL database has corrupted data due to:
+
 - Application bug causing bad writes
 - Failed migration
 - Accidental data deletion
@@ -730,12 +747,12 @@ Supabase PostgreSQL database has corrupted data due to:
 
 ### Estimated Recovery Time: ~1 hour
 
-| Phase | Duration | Cumulative |
-|-------|----------|------------|
-| Identify Last Good Backup | 10 min | 0:10 |
-| Restore Database | 30 min | 0:40 |
-| Verify Data Integrity | 20 min | 1:00 |
-| Replay Lost Transactions (optional) | Variable | Variable |
+| Phase                               | Duration | Cumulative |
+| ----------------------------------- | -------- | ---------- |
+| Identify Last Good Backup           | 10 min   | 0:10       |
+| Restore Database                    | 30 min   | 0:40       |
+| Verify Data Integrity               | 20 min   | 1:00       |
+| Replay Lost Transactions (optional) | Variable | Variable   |
 
 ---
 
@@ -766,9 +783,9 @@ Identify the timestamp when issues started.
 
 Select the most recent backup **BEFORE** the corruption timestamp.
 
-| Backup Time | Corruption Time | Action |
-|-------------|-----------------|--------|
-| 2025-11-21 03:00 | 2025-11-22 14:30 | Use Nov 21 backup |
+| Backup Time      | Corruption Time  | Action                      |
+| ---------------- | ---------------- | --------------------------- |
+| 2025-11-21 03:00 | 2025-11-22 14:30 | Use Nov 21 backup           |
 | 2025-11-22 03:00 | 2025-11-22 14:30 | Use Nov 22 backup (morning) |
 
 ---
@@ -801,6 +818,7 @@ docker compose -f infrastructure/docker-compose.yml stop bot-backend frontend
 - Status will change from "Restoring" to "Available"
 
 **Expected Dashboard Status:**
+
 ```
 Backup: 2025-11-21 03:00:00 UTC
 Status: Restored successfully
@@ -841,6 +859,7 @@ ORDER BY tablename;
 ```
 
 **Expected Output (example):**
+
 ```
  schemaname |   tablename    | row_count
 ------------+----------------+-----------
@@ -887,6 +906,7 @@ docker logs buhbot-bot-backend --since="BACKUP_TIME" --until="CORRUPTION_TIME" 2
 **Step 4.2: Manual Data Recovery**
 
 Based on log analysis, manually re-apply critical transactions via:
+
 - Admin panel
 - Direct database queries
 - Re-processing message queue
@@ -900,18 +920,19 @@ Based on log analysis, manually re-apply critical transactions via:
 ### Description
 
 Let's Encrypt SSL certificate has expired, causing:
+
 - HTTPS connections failing
 - Browser security warnings
 - API calls rejected
 
 ### Estimated Recovery Time: ~10 minutes
 
-| Phase | Duration | Cumulative |
-|-------|----------|------------|
-| Manual Certificate Renewal | 5 min | 0:05 |
-| Reload Nginx | 1 min | 0:06 |
-| Verify HTTPS | 2 min | 0:08 |
-| Fix Auto-Renewal (if broken) | 5 min | 0:13 |
+| Phase                        | Duration | Cumulative |
+| ---------------------------- | -------- | ---------- |
+| Manual Certificate Renewal   | 5 min    | 0:05       |
+| Reload Nginx                 | 1 min    | 0:06       |
+| Verify HTTPS                 | 2 min    | 0:08       |
+| Fix Auto-Renewal (if broken) | 5 min    | 0:13       |
 
 ---
 
@@ -925,6 +946,7 @@ sudo certbot certificates
 ```
 
 **Expected Output (expired certificate):**
+
 ```
 Certificate Name: bot.example.com
     Expiry Date: 2025-11-20 (EXPIRED)
@@ -938,6 +960,7 @@ sudo certbot renew --force-renewal
 ```
 
 **Expected Output:**
+
 ```
 Congratulations, all renewals succeeded:
   /etc/letsencrypt/live/bot.example.com/fullchain.pem (success)
@@ -999,6 +1022,7 @@ curl -I https://bot.example.com/health
 ```
 
 **Expected Output:**
+
 ```
 HTTP/2 200
 server: nginx/1.25
@@ -1012,6 +1036,7 @@ echo | openssl s_client -servername bot.example.com -connect bot.example.com:443
 ```
 
 **Expected Output:**
+
 ```
 notBefore=Nov 22 00:00:00 2025 GMT
 notAfter=Feb 20 23:59:59 2026 GMT
@@ -1045,6 +1070,7 @@ sudo crontab -l | grep renew
 ```
 
 **Expected:**
+
 ```
 0 0,12 * * * /usr/local/bin/renew-letsencrypt.sh >> /var/log/letsencrypt-renewal.log 2>&1
 ```
@@ -1056,6 +1082,7 @@ sudo crontab -e
 ```
 
 Add line:
+
 ```
 0 0,12 * * * /usr/local/bin/renew-letsencrypt.sh >> /var/log/letsencrypt-renewal.log 2>&1
 ```
@@ -1113,12 +1140,12 @@ Complete this checklist after ANY disaster recovery:
 
 ### Testing Schedule
 
-| Test Type | Frequency | Last Tested | Next Test |
-|-----------|-----------|-------------|-----------|
-| Backup Restore (Supabase) | Quarterly | [DATE] | [DATE] |
-| VDS Recovery (Staging) | Semi-annually | [DATE] | [DATE] |
-| SSL Renewal | Monthly (automated) | [DATE] | [DATE] |
-| Failover Documentation Review | Quarterly | [DATE] | [DATE] |
+| Test Type                     | Frequency           | Last Tested | Next Test |
+| ----------------------------- | ------------------- | ----------- | --------- |
+| Backup Restore (Supabase)     | Quarterly           | [DATE]      | [DATE]    |
+| VDS Recovery (Staging)        | Semi-annually       | [DATE]      | [DATE]    |
+| SSL Renewal                   | Monthly (automated) | [DATE]      | [DATE]    |
+| Failover Documentation Review | Quarterly           | [DATE]      | [DATE]    |
 
 ### Quarterly Backup Restore Test
 
@@ -1155,25 +1182,30 @@ sudo certbot renew --dry-run
 **Conducted By**: [Name]
 
 ### Summary
+
 - **Status**: [Pass / Partial / Fail]
 - **Duration**: [Actual time vs. expected]
 - **Issues Found**: [Count]
 
 ### Steps Executed
+
 1. [Step description] - [Pass/Fail]
 2. [Step description] - [Pass/Fail]
-...
+   ...
 
 ### Issues and Resolutions
-| Issue | Impact | Resolution |
-|-------|--------|------------|
+
+| Issue         | Impact            | Resolution     |
+| ------------- | ----------------- | -------------- |
 | [Description] | [High/Medium/Low] | [Action taken] |
 
 ### Recommendations
+
 - [Improvement suggestion 1]
 - [Improvement suggestion 2]
 
 ### Sign-off
+
 - Tested By: [Name]
 - Reviewed By: [Name]
 - Date: YYYY-MM-DD
@@ -1289,6 +1321,6 @@ curl -I https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe
 
 ### Revision History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0.0 | 2025-11-22 | BuhBot Team | Initial version |
+| Version | Date       | Author      | Changes         |
+| ------- | ---------- | ----------- | --------------- |
+| 1.0.0   | 2025-11-22 | BuhBot Team | Initial version |

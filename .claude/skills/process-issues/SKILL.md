@@ -129,14 +129,14 @@ mcp__context7__resolve-library-id → mcp__context7__query-docs
 
 **Subagent selection for MEDIUM tasks:**
 
-| Domain             | Subagent                      | When                       |
-| ------------------ | ----------------------------- | -------------------------- |
-| DB/migrations      | `database-architect`          | Schema changes, RLS        |
-| UI components      | `nextjs-ui-designer`          | New pages, components      |
-| Backend services   | `fullstack-nextjs-specialist` | APIs, workers              |
-| Types              | `typescript-types-specialist` | Complex types, generics    |
-| Telegram bot       | `telegraf-bot-middleware-specialist` | Bot handlers, middleware |
-| SLA/monitoring     | `sla-backend-specialist`      | SLA timers, alerts         |
+| Domain           | Subagent                             | When                     |
+| ---------------- | ------------------------------------ | ------------------------ |
+| DB/migrations    | `database-architect`                 | Schema changes, RLS      |
+| UI components    | `nextjs-ui-designer`                 | New pages, components    |
+| Backend services | `fullstack-nextjs-specialist`        | APIs, workers            |
+| Types            | `typescript-types-specialist`        | Complex types, generics  |
+| Telegram bot     | `telegraf-bot-middleware-specialist` | Bot handlers, middleware |
+| SLA/monitoring   | `sla-backend-specialist`             | SLA timers, alerts       |
 
 ### 6. ISSUE LABELS → PRIORITY MAPPING
 
@@ -426,18 +426,18 @@ Present to user:
 
 ## Issue Categories & Subagents
 
-| Pattern in Issue        | Category      | Subagent                            | Priority |
-| ----------------------- | ------------- | ----------------------------------- | -------- |
-| `silent failure`        | Bug           | Same domain subagent                | P1       |
-| `not displayed`         | UI Bug        | `nextjs-ui-designer`                | P2       |
-| `not editable`          | UI Bug        | `nextjs-ui-designer`                | P2       |
-| `focus`, `scroll`       | UX            | `nextjs-ui-designer`                | P2       |
-| `keyboard`, `a11y`      | Accessibility | `nextjs-ui-designer`                | P3       |
-| `telegram`, `bot`       | Bot           | `telegraf-bot-middleware-specialist`| P2       |
-| `SLA`, `timer`, `alert` | SLA           | `sla-backend-specialist`            | P2       |
-| `database`, `migration` | DB            | `database-architect`                | P2       |
-| `tRPC`, `API`           | Backend       | `fullstack-nextjs-specialist`       | P2       |
-| `type error`            | Types         | `typescript-types-specialist`       | P2       |
+| Pattern in Issue        | Category      | Subagent                             | Priority |
+| ----------------------- | ------------- | ------------------------------------ | -------- |
+| `silent failure`        | Bug           | Same domain subagent                 | P1       |
+| `not displayed`         | UI Bug        | `nextjs-ui-designer`                 | P2       |
+| `not editable`          | UI Bug        | `nextjs-ui-designer`                 | P2       |
+| `focus`, `scroll`       | UX            | `nextjs-ui-designer`                 | P2       |
+| `keyboard`, `a11y`      | Accessibility | `nextjs-ui-designer`                 | P3       |
+| `telegram`, `bot`       | Bot           | `telegraf-bot-middleware-specialist` | P2       |
+| `SLA`, `timer`, `alert` | SLA           | `sla-backend-specialist`             | P2       |
+| `database`, `migration` | DB            | `database-architect`                 | P2       |
+| `tRPC`, `API`           | Backend       | `fullstack-nextjs-specialist`        | P2       |
+| `type error`            | Types         | `typescript-types-specialist`        | P2       |
 
 ---
 

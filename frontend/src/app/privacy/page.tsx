@@ -16,31 +16,37 @@ export default function PrivacyPolicyPage() {
               className="h-7 w-auto object-contain"
             />
           </Link>
-          <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">Login</Link>
+          <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+            Login
+          </Link>
         </div>
       </header>
       <main className="max-w-3xl mx-auto py-12 px-4 prose prose-slate">
         <h1>Privacy Policy</h1>
         <p>Last updated: November 25, 2025</p>
-        
+
         <h2>1. Introduction</h2>
         <p>
-          Welcome to BuhBot. We respect your privacy and are committed to protecting your personal data.
+          Welcome to BuhBot. We respect your privacy and are committed to protecting your personal
+          data.
         </p>
 
         <h2>2. Data We Collect</h2>
         <p>
-          We collect information you provide directly to us, such as when you create an account, update your profile, or communicate with us.
+          We collect information you provide directly to us, such as when you create an account,
+          update your profile, or communicate with us.
         </p>
 
         <h2>3. How We Use Your Data</h2>
         <p>
-          We use your data to provide, maintain, and improve our services, including processing transactions and sending related information.
+          We use your data to provide, maintain, and improve our services, including processing
+          transactions and sending related information.
         </p>
 
         <h2>4. Contact Us</h2>
         <p>
-          If you have any questions about this Privacy Policy, please contact us at privacy@buhbot.ru.
+          If you have any questions about this Privacy Policy, please contact us at
+          privacy@buhbot.ru.
         </p>
       </main>
     </div>

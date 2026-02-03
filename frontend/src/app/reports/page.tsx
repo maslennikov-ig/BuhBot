@@ -3,10 +3,7 @@
 import * as React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { ReportCard } from '@/components/reports/ReportCard';
-import {
-  ReportGeneratorModal,
-  ReportType,
-} from '@/components/reports/ReportGeneratorModal';
+import { ReportGeneratorModal, ReportType } from '@/components/reports/ReportGeneratorModal';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { motion } from 'framer-motion';
 import { Users, Clock, Star, BarChart3 } from 'lucide-react';

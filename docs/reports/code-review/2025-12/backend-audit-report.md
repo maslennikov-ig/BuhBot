@@ -15,6 +15,7 @@ Comprehensive audit of BuhBot backend completed. The codebase is **generally wel
 **Overall Assessment**: Medium Priority Fixes Required
 
 Key findings:
+
 - Type-check PASSED (no TypeScript errors)
 - All workers imported and registered correctly
 - All handlers registered in proper order
@@ -34,32 +35,36 @@ Key findings:
 **Issue**: The `surveyQueue` and `surveyEvents` are created in `survey.queue.ts` but are NOT closed in the `closeQueues()` function in `setup.ts`. This will prevent graceful shutdown and may cause data loss.
 
 **Evidence**:
+
 ```typescript
 // setup.ts closeQueues() function:
 await Promise.all([
   slaTimerEvents.close(),
   alertEvents.close(),
-  dataRetentionEvents.close(),  // Survey events missing here
+  dataRetentionEvents.close(), // Survey events missing here
 ]);
 
 await Promise.all([
   slaTimerQueue.close(),
   alertQueue.close(),
-  dataRetentionQueue.close(),  // Survey queue missing here
+  dataRetentionQueue.close(), // Survey queue missing here
 ]);
 ```
 
 **Impact**:
+
 - Survey jobs may be lost during shutdown
 - Redis connections may not close properly
 - Docker container shutdown may timeout
 
 **Fix Required**:
+
 1. Import `surveyQueue` and `surveyEvents` in `setup.ts`
 2. Add them to the `closeQueues()` function
 3. OR: Export `closeSurveyQueue()` and call it from `closeQueues()`
 
 **Recommendation**:
+
 ```typescript
 // In setup.ts, add to closeQueues():
 import { surveyQueue, surveyEvents } from './survey.queue.js';
@@ -69,14 +74,14 @@ await Promise.all([
   slaTimerEvents.close(),
   alertEvents.close(),
   dataRetentionEvents.close(),
-  surveyEvents.close(),  // ADD THIS
+  surveyEvents.close(), // ADD THIS
 ]);
 
 await Promise.all([
   slaTimerQueue.close(),
   alertQueue.close(),
   dataRetentionQueue.close(),
-  surveyQueue.close(),  // ADD THIS
+  surveyQueue.close(), // ADD THIS
 ]);
 ```
 
@@ -89,6 +94,7 @@ await Promise.all([
 **Issue**: Several environment variables are used directly via `process.env` but are NOT defined in the Zod schema in `env.ts`. This bypasses validation and type safety.
 
 **Missing Variables**:
+
 1. **OPENROUTER_API_KEY** (used in `services/classifier/openrouter-client.ts`)
    - Critical for AI message classification
    - Currently fails silently if missing
@@ -115,6 +121,7 @@ await Promise.all([
    - Optional Prisma direct connection URL
 
 **Impact**:
+
 - No validation at startup - runtime failures possible
 - No type safety for these variables
 - Missing variables only discovered when feature is used
@@ -124,29 +131,36 @@ await Promise.all([
 Add all missing variables to `env.ts` Zod schema with proper validation.
 
 **Recommendation**:
+
 ```typescript
 // In env.ts schema:
 const envSchema = z.object({
   // ... existing fields ...
 
   // AI Classification
-  OPENROUTER_API_KEY: z.string().min(1).optional()
+  OPENROUTER_API_KEY: z
+    .string()
+    .min(1)
+    .optional()
     .describe('OpenRouter API key for AI message classification'),
 
   // URLs
   APP_URL: z.string().url().default('https://buhbot.ru'),
   FRONTEND_URL: z.string().url().default('https://buhbot.aidevteam.ru'),
-  BOT_USERNAME: z.string().optional()
-    .describe('Telegram bot username (without @)'),
+  BOT_USERNAME: z.string().optional().describe('Telegram bot username (without @)'),
 
   // Supabase
-  SUPABASE_URL: z.string().url()
-    .describe('Supabase project URL'),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1)
+  SUPABASE_URL: z.string().url().describe('Supabase project URL'),
+  SUPABASE_SERVICE_ROLE_KEY: z
+    .string()
+    .min(1)
     .describe('Supabase service role key for admin operations'),
 
   // Prisma
-  DIRECT_URL: z.string().url().optional()
+  DIRECT_URL: z
+    .string()
+    .url()
+    .optional()
     .describe('Direct PostgreSQL connection URL (bypasses pooler)'),
 });
 ```
@@ -162,25 +176,31 @@ const envSchema = z.object({
 **Issue**: The bot middleware exports (`errorMiddleware`, `rateLimitMiddleware`) are defined in `bot/middleware/` but are **NEVER applied** to the bot instance in `bot.ts`.
 
 **Evidence**:
+
 - `bot/middleware/index.ts` exports middleware
 - `bot/middleware/error.ts` defines `errorMiddleware()`
 - `bot/middleware/rate-limit.ts` defines `rateLimitMiddleware()`
 - `bot/bot.ts` does NOT call `bot.use()` for any middleware
 
 **Impact**:
+
 - No rate limiting - bot vulnerable to spam/abuse
 - Error handling relies only on bot.catch() - may miss some errors
 - Middleware features completely unused
 
 **Current State**:
+
 ```typescript
 // bot.ts - NO middleware applied
 export const bot = new Telegraf<BotContext>(token);
-bot.catch((err, ctx) => { /* error handler */ });
+bot.catch((err, ctx) => {
+  /* error handler */
+});
 // NO bot.use() calls
 ```
 
 **Fix Required**:
+
 ```typescript
 // In bot.ts, after creating bot instance:
 import { errorMiddleware, rateLimitMiddleware } from './middleware/index.js';
@@ -192,7 +212,9 @@ bot.use(errorMiddleware());
 bot.use(rateLimitMiddleware());
 
 // Then global error handler
-bot.catch((err, ctx) => { /* ... */ });
+bot.catch((err, ctx) => {
+  /* ... */
+});
 ```
 
 **Note**: This is high priority because rate limiting is a security feature, but not critical since bot.catch() provides basic error handling.
@@ -206,6 +228,7 @@ bot.catch((err, ctx) => { /* ... */ });
 **Issue**: TODO comment indicates incomplete feature for mapping Telegram user IDs to internal User records.
 
 **Code**:
+
 ```typescript
 // Check 2: User has assignedAccountant relationship
 // This requires a mapping between Telegram ID and User table
@@ -214,6 +237,7 @@ bot.catch((err, ctx) => { /* ... */ });
 ```
 
 **Impact**:
+
 - Accountant detection only works via username matching
 - If accountant changes username, detection breaks
 - Less reliable than ID-based mapping
@@ -234,6 +258,7 @@ bot.catch((err, ctx) => { /* ... */ });
 **Issue**: Placeholder for Redis-backed rate limiting exists but not implemented. Falls back to in-memory.
 
 **Code**:
+
 ```typescript
 export function createRedisRateLimiter(...) {
   // TODO: Implement Redis-backed rate limiting using:
@@ -247,11 +272,13 @@ export function createRedisRateLimiter(...) {
 ```
 
 **Impact**:
+
 - In-memory rate limiter works for single instance
 - Will NOT work correctly in multi-instance deployments
 - Each instance has separate counters - users can bypass limits by hitting different instances
 
 **Recommendation**:
+
 - Current single-instance deployment: No action needed
 - Future multi-instance: Implement Redis-backed rate limiting
 
@@ -264,12 +291,14 @@ export function createRedisRateLimiter(...) {
 **Issue**: `YANDEX_GPT_API_KEY` and `YANDEX_FOLDER_ID` are defined in env schema but never used in codebase.
 
 **Evidence**:
+
 ```bash
 $ grep -r "YANDEX_GPT\|YANDEX_FOLDER" backend/src/ --include="*.ts"
 # Only found in env.ts, nowhere else
 ```
 
 **Impact**:
+
 - Dead code in environment schema
 - May confuse developers about which AI service is used
 - Actually using OpenRouter, not Yandex GPT
@@ -281,10 +310,12 @@ $ grep -r "YANDEX_GPT\|YANDEX_FOLDER" backend/src/ --include="*.ts"
 ### 7. Generic "accounting" and "llm" Service Directories Empty
 
 **Files**:
+
 - `backend/src/services/accounting/` (empty)
 - `backend/src/services/llm/` (empty)
 
 **Issue**: Empty directories in services may indicate:
+
 1. Planned features not yet implemented
 2. Dead code that should be removed
 3. Unclear organization
@@ -298,6 +329,7 @@ $ grep -r "YANDEX_GPT\|YANDEX_FOLDER" backend/src/ --include="*.ts"
 ### 8. Duplicate "notifications" Directories
 
 **Files**:
+
 - `backend/src/services/notification/` (2 files)
 - `backend/src/services/notifications/` (empty)
 
@@ -316,6 +348,7 @@ $ grep -r "YANDEX_GPT\|YANDEX_FOLDER" backend/src/ --include="*.ts"
 **File**: `backend/src/utils/logger.ts:43`
 
 **Code**:
+
 ```typescript
 level: process.env['LOG_LEVEL'] || 'info',
 ```
@@ -333,6 +366,7 @@ level: process.env['LOG_LEVEL'] || 'info',
 **File**: `backend/src/bot/handlers/system.handler.ts:16`
 
 **Code**:
+
 ```typescript
 const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 ```
@@ -485,6 +519,7 @@ const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 ### Environment Variables Status
 
 **Defined in env.ts and Used**:
+
 - NODE_ENV
 - PORT
 - DATABASE_URL
@@ -499,6 +534,7 @@ const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 - SENTRY_DSN
 
 **Used but NOT in env.ts (CRITICAL)**:
+
 - OPENROUTER_API_KEY
 - APP_URL
 - FRONTEND_URL
@@ -508,6 +544,7 @@ const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 - DIRECT_URL
 
 **Defined but NOT used (MEDIUM)**:
+
 - YANDEX_GPT_API_KEY
 - YANDEX_FOLDER_ID
 
@@ -515,54 +552,60 @@ const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 
 ## Graceful Shutdown Checklist
 
-- [X] HTTP server stops accepting connections
-- [X] Telegram bot stopped
-- [X] BullMQ workers closed (sla-timer, alert, survey)
+- [x] HTTP server stops accepting connections
+- [x] Telegram bot stopped
+- [x] BullMQ workers closed (sla-timer, alert, survey)
 - [ ] **Survey queue/events NOT closed (CRITICAL)**
-- [X] Redis disconnected
-- [X] Prisma disconnected
-- [X] 30-second timeout enforced
-- [X] Signal handlers registered (SIGTERM, SIGINT)
-- [X] Uncaught exception/rejection handlers
+- [x] Redis disconnected
+- [x] Prisma disconnected
+- [x] 30-second timeout enforced
+- [x] Signal handlers registered (SIGTERM, SIGINT)
+- [x] Uncaught exception/rejection handlers
 
 ---
 
 ## Checklist Status
 
 **Imports and Initialization**:
-- [X] All workers imported in index.ts
-- [X] All handlers registered in bot/index.ts
-- [X] All routers connected to appRouter
+
+- [x] All workers imported in index.ts
+- [x] All handlers registered in bot/index.ts
+- [x] All routers connected to appRouter
 - [ ] **Middleware NOT applied to bot instance (P1)**
-- [X] All services properly structured
+- [x] All services properly structured
 
 **Functional Completeness**:
-- [X] SLA monitoring: timer → worker → alert → Telegram
-- [X] Classification: message → classifier → request
-- [X] Response tracking: detection → SLA stop → statistics
-- [X] Surveys: scheduling → delivery → collection
-- [X] Alerts: breach → alert → manager notification
+
+- [x] SLA monitoring: timer → worker → alert → Telegram
+- [x] Classification: message → classifier → request
+- [x] Response tracking: detection → SLA stop → statistics
+- [x] Surveys: scheduling → delivery → collection
+- [x] Alerts: breach → alert → manager notification
 
 **Configuration**:
+
 - [ ] **Missing env variables in schema (P0)**
-- [X] All used env variables have defaults or validation
+- [x] All used env variables have defaults or validation
 - [ ] Some unused env variables (P2)
 
 **Graceful Shutdown**:
-- [X] All resources closed EXCEPT survey queue (P0)
-- [X] Workers registered for cleanup
-- [X] Timeout enforcement working
+
+- [x] All resources closed EXCEPT survey queue (P0)
+- [x] Workers registered for cleanup
+- [x] Timeout enforcement working
 
 **Error Handling**:
-- [X] Try-catch blocks in critical sections
-- [X] Logging with proper context
-- [X] No silent error swallowing found
-- [X] Retry logic where appropriate
+
+- [x] Try-catch blocks in critical sections
+- [x] Logging with proper context
+- [x] No silent error swallowing found
+- [x] Retry logic where appropriate
 
 **TypeScript**:
-- [X] Type-check passes (pnpm type-check)
-- [X] No any types (except justified)
-- [X] Proper type definitions
+
+- [x] Type-check passes (pnpm type-check)
+- [x] No any types (except justified)
+- [x] Proper type definitions
 
 ---
 
@@ -648,6 +691,7 @@ const BOT_VERSION = process.env['npm_package_version'] || '1.0.0';
 ## Appendix: File Structure Analysis
 
 ### Workers (All Imported)
+
 ```
 backend/src/queues/
 ├── sla-timer.worker.ts    ← Imported in index.ts:14
@@ -656,6 +700,7 @@ backend/src/queues/
 ```
 
 ### Handlers (All Registered)
+
 ```
 backend/src/bot/handlers/
 ├── faq.handler.ts              ← Registered 1st
@@ -672,6 +717,7 @@ backend/src/bot/handlers/
 ```
 
 ### Routers (All Connected)
+
 ```
 backend/src/api/trpc/routers/
 ├── auth.ts           ← appRouter.auth
@@ -692,6 +738,7 @@ backend/src/api/trpc/routers/
 ```
 
 ### Services (All Functional)
+
 ```
 backend/src/services/
 ├── alerts/           ← Alert creation, escalation, formatting

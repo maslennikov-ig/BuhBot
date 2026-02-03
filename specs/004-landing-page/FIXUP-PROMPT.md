@@ -21,6 +21,7 @@ Landing page implementation is **95% complete** with excellent code quality. Two
 **Root Cause**: Migration file not created/committed
 
 **Fix**:
+
 ```bash
 cd /home/me/code/bobabuh/backend
 pnpm prisma migrate dev --name add_contact_requests
@@ -28,6 +29,7 @@ pnpm prisma generate
 ```
 
 **Verify**:
+
 ```bash
 # Check migration was created
 ls -la backend/prisma/migrations/ | grep contact
@@ -95,6 +97,7 @@ export default function LandingPage() { ... }
 **File**: `/home/me/code/bobabuh/frontend/package.json`
 
 Add to scripts section:
+
 ```json
 "scripts": {
   "dev": "next dev",
@@ -106,6 +109,7 @@ Add to scripts section:
 ```
 
 **Verify**:
+
 ```bash
 cd frontend
 pnpm type-check
@@ -118,6 +122,7 @@ pnpm type-check
 **Priority**: MEDIUM - Accessibility compliance
 
 **A. Hero.tsx** - Add labels to CTA buttons (lines 85-99):
+
 ```typescript
 <button
   onClick={...}
@@ -129,6 +134,7 @@ pnpm type-check
 ```
 
 **B. Header.tsx** - Add labels to navigation links:
+
 ```typescript
 <a
   href={link.href}
@@ -147,6 +153,7 @@ pnpm type-check
 After applying fixes:
 
 ### 1. Database Migration
+
 ```bash
 cd backend
 pnpm prisma migrate status
@@ -154,6 +161,7 @@ pnpm prisma migrate status
 ```
 
 ### 2. Type Check
+
 ```bash
 cd frontend
 pnpm type-check
@@ -161,6 +169,7 @@ pnpm type-check
 ```
 
 ### 3. Build Test
+
 ```bash
 cd frontend
 pnpm build
@@ -168,6 +177,7 @@ pnpm build
 ```
 
 ### 4. Manual Testing
+
 ```bash
 # Terminal 1: Backend
 cd backend && pnpm dev
@@ -179,6 +189,7 @@ cd frontend && pnpm dev
 ```
 
 **Test Cases**:
+
 - [ ] Landing page loads without errors
 - [ ] Contact form submits successfully
 - [ ] Telegram notification received
@@ -189,14 +200,14 @@ cd frontend && pnpm dev
 
 ## Timeline Estimate
 
-| Task | Time |
-|------|------|
-| Run database migration | 2 min |
-| Add SEO metadata | 10 min |
-| Add type-check script | 1 min |
-| Add aria-labels | 15 min |
-| Testing | 10 min |
-| **Total** | **~30-40 min** |
+| Task                   | Time           |
+| ---------------------- | -------------- |
+| Run database migration | 2 min          |
+| Add SEO metadata       | 10 min         |
+| Add type-check script  | 1 min          |
+| Add aria-labels        | 15 min         |
+| Testing                | 10 min         |
+| **Total**              | **~30-40 min** |
 
 ---
 

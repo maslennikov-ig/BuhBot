@@ -175,21 +175,18 @@ export const alertQueue = new Queue<AlertJobData>(QUEUE_NAMES.ALERTS, {
  * );
  * ```
  */
-export const dataRetentionQueue = new Queue<DataRetentionJobData>(
-  QUEUE_NAMES.DATA_RETENTION,
-  {
-    connection: redis,
-    defaultJobOptions: {
-      ...defaultJobOptions,
-      // Data retention jobs can take longer
-      attempts: queueConfig.dataRetentionAttempts,
-      backoff: {
-        type: 'exponential' as const,
-        delay: queueConfig.dataRetentionBackoffDelay,
-      },
+export const dataRetentionQueue = new Queue<DataRetentionJobData>(QUEUE_NAMES.DATA_RETENTION, {
+  connection: redis,
+  defaultJobOptions: {
+    ...defaultJobOptions,
+    // Data retention jobs can take longer
+    attempts: queueConfig.dataRetentionAttempts,
+    backoff: {
+      type: 'exponential' as const,
+      delay: queueConfig.dataRetentionBackoffDelay,
     },
-  }
-);
+  },
+});
 
 // ============================================================================
 // QUEUE EVENTS
@@ -299,9 +296,7 @@ export async function updateQueueMetrics(): Promise<void> {
     );
     redisQueueLength.set(
       { queue_name: QUEUE_NAMES.ALERTS },
-      (alertCount['waiting'] ?? 0) +
-        (alertCount['delayed'] ?? 0) +
-        (alertCount['active'] ?? 0)
+      (alertCount['waiting'] ?? 0) + (alertCount['delayed'] ?? 0) + (alertCount['active'] ?? 0)
     );
     redisQueueLength.set(
       { queue_name: QUEUE_NAMES.DATA_RETENTION },
@@ -374,7 +369,9 @@ export async function setupQueues(): Promise<void> {
  *
  * @param timeout - Maximum time to wait for workers to finish (default: 10000ms)
  */
-export async function closeQueues(timeout: number = queueConfig.workerShutdownTimeout): Promise<void> {
+export async function closeQueues(
+  timeout: number = queueConfig.workerShutdownTimeout
+): Promise<void> {
   logger.info('Closing BullMQ queues and workers...', {
     workerCount: registeredWorkers.length,
     timeout,
@@ -394,19 +391,11 @@ export async function closeQueues(timeout: number = queueConfig.workerShutdownTi
     }
 
     // Close queue event listeners
-    await Promise.all([
-      slaTimerEvents.close(),
-      alertEvents.close(),
-      dataRetentionEvents.close(),
-    ]);
+    await Promise.all([slaTimerEvents.close(), alertEvents.close(), dataRetentionEvents.close()]);
     logger.debug('Queue event listeners closed');
 
     // Close queues
-    await Promise.all([
-      slaTimerQueue.close(),
-      alertQueue.close(),
-      dataRetentionQueue.close(),
-    ]);
+    await Promise.all([slaTimerQueue.close(), alertQueue.close(), dataRetentionQueue.close()]);
 
     // Close survey queue (separate module)
     await closeSurveyQueue();

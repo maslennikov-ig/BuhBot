@@ -70,10 +70,12 @@ Context for task generation: $ARGUMENTS
 The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without additional context.
 
 **Research Tasks**: Questions without obvious answers
+
 - **Simple**: Agent solves with available tools (Grep, Read, WebSearch, Context7, Supabase docs)
 - **Complex**: Create research prompt in research/ → wait for deepresearch → incorporate
 
 **Planning Phase**: After generating tasks, Phase 0: Planning will be added automatically by the template. This phase includes:
+
 - **P001**: Task analysis (identify required agent types and capabilities)
 - **P002**: Agent creation via meta-agent-v3 in single message, then ask restart
 - **P003**: Executor assignment (MAIN for trivial only, existing if 100% match, specific agents otherwise)
@@ -86,6 +88,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 **Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
 
 **Library Evaluation (BEFORE creating implementation tasks)**:
+
 - For each major component (>20 lines), check if suitable library exists
 - Use research.md library decisions from planning phase
 - If suitable library found: task becomes "Install and configure {library} for {functionality}"

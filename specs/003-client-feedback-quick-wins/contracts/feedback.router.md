@@ -16,15 +16,17 @@ tRPC router for feedback analytics with role-based access control.
 **Description**: Returns aggregate feedback statistics without client-identifying information.
 
 **Input**:
+
 ```typescript
 z.object({
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   surveyId: z.string().uuid().optional(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   totalResponses: number;
@@ -34,21 +36,25 @@ z.object({
     rating: number; // 1-5
     count: number;
     percentage: number;
-  }[];
+  }
+  [];
   recentComments: {
     comment: string; // No client identifiers
     rating: number;
     submittedAt: Date;
-  }[];
+  }
+  [];
   trendData: {
     period: string; // "2025-Q1"
     averageRating: number;
     responseCount: number;
-  }[];
+  }
+  [];
 }
 ```
 
 **Business Logic**:
+
 - NPS = (% ratings 4-5) - (% ratings 1-3)
 - Comments returned without chatId or clientUsername
 - Trend data grouped by quarter
@@ -62,6 +68,7 @@ z.object({
 **Description**: Returns full feedback details including client identifiers.
 
 **Input**:
+
 ```typescript
 z.object({
   dateFrom: z.date().optional(),
@@ -72,10 +79,11 @@ z.object({
   chatId: z.string().optional(),
   page: z.number().min(1).default(1),
   pageSize: z.number().min(10).max(100).default(20),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   items: {
@@ -89,17 +97,19 @@ z.object({
     submittedAt: Date;
     surveyId: string | null;
     surveyQuarter: string | null;
-  }[];
+  }
+  [];
   pagination: {
     page: number;
     pageSize: number;
     totalItems: number;
     totalPages: number;
-  };
+  }
 }
 ```
 
 **Business Logic**:
+
 - Requires `manager` role (use middleware)
 - Includes all client-identifying information
 - Joins with Chat for chatTitle and accountant info
@@ -113,13 +123,15 @@ z.object({
 **Description**: Get single feedback entry with full details.
 
 **Input**:
+
 ```typescript
 z.object({
   id: z.string().uuid(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   id: string;
@@ -156,16 +168,18 @@ z.object({
 **Description**: Records client rating from Telegram callback.
 
 **Input**:
+
 ```typescript
 z.object({
   chatId: z.string(),
   deliveryId: z.string().uuid(),
   rating: z.number().min(1).max(5),
   telegramUsername: z.string().optional(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -175,6 +189,7 @@ z.object({
 ```
 
 **Business Logic**:
+
 - Create FeedbackResponse record
 - Update SurveyDelivery status to 'responded'
 - Increment FeedbackSurvey.responseCount
@@ -190,14 +205,16 @@ z.object({
 **Description**: Adds comment to existing feedback.
 
 **Input**:
+
 ```typescript
 z.object({
   feedbackId: z.string().uuid(),
   comment: z.string().max(2000),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -213,15 +230,17 @@ z.object({
 **Description**: Export feedback data as CSV.
 
 **Input**:
+
 ```typescript
 z.object({
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   surveyId: z.string().uuid().optional(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   filename: string;
@@ -232,10 +251,10 @@ z.object({
 
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| UNAUTHORIZED | Not authenticated |
-| FORBIDDEN | Role not permitted for this operation |
-| NOT_FOUND | Feedback entry not found |
-| SURVEY_CLOSED | Cannot submit to closed/expired survey |
+| Code              | Description                             |
+| ----------------- | --------------------------------------- |
+| UNAUTHORIZED      | Not authenticated                       |
+| FORBIDDEN         | Role not permitted for this operation   |
+| NOT_FOUND         | Feedback entry not found                |
+| SURVEY_CLOSED     | Cannot submit to closed/expired survey  |
 | ALREADY_RESPONDED | Client already responded to this survey |

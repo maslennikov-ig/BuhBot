@@ -14,14 +14,17 @@ Conducted comprehensive code review of BuhBot's SLA/alert system following produ
 ### Key Findings
 
 **Critical (P0)**: 1 issue
+
 - Race condition in alert delivery status updates
 
 **High Priority (P1)**: 3 issues
+
 - Silent alert failures when no managers configured
 - Missing validation for empty manager lists
 - Unhandled edge case in recovery logic
 
 **Medium Priority (P2)**: 5 issues
+
 - Inconsistent error handling patterns
 - Missing transaction boundaries
 - Potential memory leaks in worker event listeners
@@ -29,11 +32,13 @@ Conducted comprehensive code review of BuhBot's SLA/alert system following produ
 - Missing database constraints
 
 **Low Priority (P3-P4)**: 3 issues
+
 - Code duplication in manager ID resolution
 - Magic numbers in retry configuration
 - Missing JSDoc for complex logic
 
 **Positive Observations**:
+
 - Strong logging throughout
 - Good working hours calculation logic
 - Recovery mechanism for lost jobs (critical feature)
@@ -74,17 +79,20 @@ if (alertId) {
 ```
 
 **Problem**:
+
 - Two separate database updates for the same alert
 - If process crashes between the two updates, alert stuck in 'sent' state
 - No atomic transition from 'sent' → 'delivered'
 - `telegramMessageId` only stored for first manager (line 204), others lost
 
 **Impact**:
+
 - Inconsistent alert state after crashes
 - Lost message IDs for debugging
 - Cannot accurately track which managers received alerts
 
 **Recommendation**:
+
 1. Collect all successful message IDs during loop
 2. Single atomic update at the end with all results:
 
@@ -139,6 +147,7 @@ if (alertManagerIds.length === 0) {
 ```
 
 **Problem**:
+
 - Alert record created in database (line 93-101)
 - No notification sent (silent failure)
 - No escalation to global managers or fallback mechanism
@@ -228,6 +237,7 @@ if (managerIds.length === 0) {
 ```
 
 **Problem**:
+
 - Alert record created (line 112-120) BEFORE checking for managers
 - If no managers, alert exists but will never be delivered
 - No escalation mechanism
@@ -295,6 +305,7 @@ if (managers.length > 0) {
 ```
 
 **Problem**:
+
 - If chat has no managers configured, breached request during recovery gets no alert
 - Inconsistent with normal breach flow which falls back to global managers
 - Silent failure during critical recovery process
@@ -382,6 +393,7 @@ Workers re-throw errors for BullMQ retry, but services sometimes return null:
 ```
 
 **Problem**:
+
 - Inconsistent error propagation makes debugging harder
 - Callers cannot distinguish between "not found" and "error occurred"
 - Some errors silently swallowed as null returns
@@ -453,6 +465,7 @@ const alert = await prisma.slaAlert.create({
 ```
 
 **Problem**:
+
 - If process crashes between steps, request marked as breached but no alert record
 - If Step 2 fails, request status incorrect
 - Cannot rollback partial changes
@@ -498,6 +511,7 @@ try {
 ```
 
 **Other locations needing transactions**:
+
 - `alert.service.ts:74-184` - Alert creation + notification
 - `timer.service.ts:341-351` - Stop timer + update request
 - `escalation.service.ts:222-224` - Schedule escalation + update alert
@@ -521,6 +535,7 @@ alertWorker.on('stalled', (jobId) => { ... });
 ```
 
 **Problem**:
+
 - If workers are recreated (tests, hot reload), listeners accumulate
 - No cleanup in graceful shutdown
 - Node.js warns about memory leaks after 10 listeners
@@ -548,7 +563,7 @@ export function setupWorkerEventHandlers(worker: Worker, name: string) {
 
   handlers.push(
     { event: 'completed', handler: onCompleted },
-    { event: 'failed', handler: onFailed },
+    { event: 'failed', handler: onFailed }
   );
 
   workerListeners.set(name, handlers);
@@ -614,6 +629,7 @@ export const defaultJobOptions = {
 ```
 
 **Problem**:
+
 - Cannot tune performance without code changes
 - Different defaults in different files
 - No single source of truth for worker configuration
@@ -653,21 +669,18 @@ export const QUEUE_CONFIG = {
 } as const;
 
 // Usage
-export const alertWorker = new Worker(
-  'alerts',
-  processAlertJob,
-  {
-    connection: redis,
-    concurrency: QUEUE_CONFIG.workers.alerts.concurrency,
-    limiter: {
-      max: QUEUE_CONFIG.workers.alerts.rateLimitMax,
-      duration: QUEUE_CONFIG.workers.alerts.rateLimitDuration,
-    },
-  }
-);
+export const alertWorker = new Worker('alerts', processAlertJob, {
+  connection: redis,
+  concurrency: QUEUE_CONFIG.workers.alerts.concurrency,
+  limiter: {
+    max: QUEUE_CONFIG.workers.alerts.rateLimitMax,
+    duration: QUEUE_CONFIG.workers.alerts.rateLimitDuration,
+  },
+});
 ```
 
 Add to `.env`:
+
 ```bash
 # Queue Worker Configuration
 ALERT_WORKER_CONCURRENCY=3
@@ -697,6 +710,7 @@ ESCALATION_INTERVAL_MIN=30
 No database constraints to prevent invalid states that caused production issue:
 
 **Missing Constraints**:
+
 1. `Chat.slaEnabled = true` → requires `managerTelegramIds` not empty OR `globalSettings.globalManagerIds` not empty
 2. `Chat.slaThresholdMinutes` → must be > 0 and < 1440 (24 hours)
 3. `ClientRequest.status = 'escalated'` → requires at least one `SlaAlert` record
@@ -767,6 +781,7 @@ Manager ID resolution logic duplicated in 4 places:
 4. `timer.service.ts:752-777` - getManagersForChat function
 
 **Problem**:
+
 - Same logic repeated 4 times
 - Bug fixes need to be applied in multiple places
 - Inconsistent error handling across implementations
@@ -836,10 +851,7 @@ export async function resolveManagersForChat(
 }
 
 // Usage
-const { managerIds, source } = await resolveManagersForChat(
-  chatId,
-  { throwOnEmpty: true }
-);
+const { managerIds, source } = await resolveManagersForChat(chatId, { throwOnEmpty: true });
 ```
 
 ---
@@ -997,6 +1009,7 @@ for (const request of pendingRequests) {
 ### Race Conditions & Concurrency
 
 **Identified Issues**:
+
 1. Alert delivery status updates (P0) - see Issue #1
 2. Missing transaction boundaries (P2) - see Issue #6
 3. Potential duplicate job scheduling if multiple workers start simultaneously
@@ -1040,11 +1053,13 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
 ### Error Handling & Reliability
 
 **Strengths**:
+
 - Comprehensive logging at all levels
 - BullMQ retry mechanism properly utilized
 - Graceful degradation (FIFO when no direct reply)
 
 **Weaknesses**:
+
 - Inconsistent error propagation (throw vs return null)
 - Silent failures when no managers configured
 - No circuit breaker for external services (Telegram API)
@@ -1055,7 +1070,10 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
 ```typescript
 // Custom error classes
 export class RetriableError extends Error {
-  constructor(message: string, public readonly retryAfter?: number) {
+  constructor(
+    message: string,
+    public readonly retryAfter?: number
+  ) {
     super(message);
     this.name = 'RetriableError';
   }
@@ -1098,12 +1116,14 @@ async function processAlertJob(job: Job<AlertJobData>): Promise<void> {
 ### Performance & Scalability
 
 **Current Performance Profile**:
+
 - Alert worker: 3 concurrent jobs, 30/sec rate limit (matches Telegram)
 - SLA timer worker: 5 concurrent jobs, 10/sec processing
 - Database queries: mostly simple lookups by ID
 - No N+1 query issues identified
 
 **Potential Bottlenecks**:
+
 1. Recovery function processes all pending requests sequentially (line 630)
    - For 100+ pending requests, could take minutes
    - Recommendation: Batch processing with progress tracking
@@ -1168,7 +1188,7 @@ export async function resolveManagersForChat(chatId: bigint): Promise<string[]> 
   const managerIds = await getManagerIdsFromDb(chatId);
 
   // Filter invalid IDs
-  const validIds = managerIds.filter(id => {
+  const validIds = managerIds.filter((id) => {
     const isValid = validateManagerId(id);
     if (!isValid) {
       logger.warn('Invalid manager ID format', { chatId, managerId: id });
@@ -1195,6 +1215,7 @@ export async function resolveManagersForChat(chatId: bigint): Promise<string[]> 
 ### Critical Test Cases Missing
 
 1. **Race Condition Tests**:
+
 ```typescript
 describe('Alert delivery status race conditions', () => {
   it('should handle concurrent status updates', async () => {
@@ -1213,6 +1234,7 @@ describe('Alert delivery status race conditions', () => {
 ```
 
 2. **Recovery Edge Cases**:
+
 ```typescript
 describe('SLA timer recovery', () => {
   it('should handle requests with no managers', async () => {
@@ -1242,6 +1264,7 @@ describe('SLA timer recovery', () => {
 ```
 
 3. **Empty Manager List Tests**:
+
 ```typescript
 describe('Alert creation with empty managers', () => {
   it('should fail when no managers available', async () => {
@@ -1269,11 +1292,13 @@ describe('Alert creation with empty managers', () => {
 ### Current Monitoring
 
 **Strengths**:
+
 - Prometheus metrics for queue lengths (line 285-316 in setup.ts)
 - Comprehensive structured logging
 - Job failure tracking via BullMQ events
 
 **Gaps**:
+
 - No alerts when manager list empty
 - No SLA breach rate metrics
 - No alert delivery success rate tracking
@@ -1349,8 +1374,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "SLA monitoring has no managers configured"
-          description: "Chat {{ $labels.chat_id }} has SLA enabled but no managers"
+          summary: 'SLA monitoring has no managers configured'
+          description: 'Chat {{ $labels.chat_id }} has SLA enabled but no managers'
 
       - alert: HighAlertFailureRate
         expr: |
@@ -1361,16 +1386,16 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "High alert delivery failure rate"
-          description: "{{ $value | humanizePercentage }} of alerts failing"
+          summary: 'High alert delivery failure rate'
+          description: '{{ $value | humanizePercentage }} of alerts failing'
 
       - alert: SlaRecoveryTooLong
         expr: sla_recovery_duration_seconds > 60
         labels:
           severity: warning
         annotations:
-          summary: "SLA recovery taking too long"
-          description: "Recovery operation took {{ $value }}s"
+          summary: 'SLA recovery taking too long'
+          description: 'Recovery operation took {{ $value }}s'
 
       - alert: PendingRequestsBacklog
         expr: pending_requests > 50
@@ -1378,8 +1403,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Large backlog of pending requests"
-          description: "{{ $value }} requests pending in chat {{ $labels.chat_id }}"
+          summary: 'Large backlog of pending requests'
+          description: '{{ $value }} requests pending in chat {{ $labels.chat_id }}'
 ```
 
 ---
@@ -1422,6 +1447,7 @@ The SLA/alert system is **fundamentally sound** but has **critical configuration
 4. **Monitoring** - proactive alerts for misconfigurations
 
 **Production Readiness**: 7/10
+
 - Core functionality: ✅ Solid
 - Error handling: ⚠️ Needs improvement
 - Configuration validation: ❌ Critical gap
@@ -1430,6 +1456,7 @@ The SLA/alert system is **fundamentally sound** but has **critical configuration
 - Documentation: ✅ Good
 
 **Next Steps**:
+
 1. Apply P0 fix for race condition
 2. Deploy P1 fixes for manager validation
 3. Add monitoring alerts for configuration issues

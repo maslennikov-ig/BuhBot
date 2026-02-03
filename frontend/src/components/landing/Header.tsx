@@ -51,13 +51,17 @@ export function Header() {
     const sb = supabase;
 
     const checkAuth = async () => {
-      const { data: { session } } = await sb.auth.getSession();
+      const {
+        data: { session },
+      } = await sb.auth.getSession();
       setIsLoggedIn(!!session);
       setUserEmail(session?.user?.email ?? null);
     };
     checkAuth();
 
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = sb.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session);
       setUserEmail(session?.user?.email ?? null);
     });
@@ -85,7 +89,10 @@ export function Header() {
     >
       <div className="container h-full flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300">
+        <Link
+          href="/"
+          className="flex items-center gap-2 group hover:opacity-80 transition-opacity duration-300"
+        >
           <ThemeLogo size="xl" priority />
         </Link>
 

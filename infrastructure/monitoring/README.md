@@ -49,9 +49,9 @@ In production, use docker-compose (see `infrastructure/docker-compose/docker-com
 monitoring-stack:
   build: ./monitoring
   ports:
-    - "9090:9090"
-    - "3000:3000"
-    - "3001:3001"
+    - '9090:9090'
+    - '3000:3000'
+    - '3001:3001'
   volumes:
     - prometheus-data:/prometheus
     - grafana-data:/var/lib/grafana
@@ -60,7 +60,7 @@ monitoring-stack:
     - ./monitoring/grafana.ini:/etc/grafana/grafana.ini:ro
   restart: unless-stopped
   healthcheck:
-    test: ["/usr/local/bin/healthcheck.sh"]
+    test: ['/usr/local/bin/healthcheck.sh']
     interval: 30s
     timeout: 10s
     retries: 3
@@ -81,6 +81,7 @@ scrape_configs:
 ```
 
 Reload configuration without restart:
+
 ```bash
 docker exec monitoring-stack kill -HUP $(pgrep prometheus)
 ```
@@ -110,11 +111,13 @@ Returns exit code 0 if all services are healthy.
 ## Logs
 
 View logs for all services:
+
 ```bash
 docker logs -f monitoring-stack
 ```
 
 View specific service logs via supervisorctl:
+
 ```bash
 docker exec monitoring-stack supervisorctl tail -f prometheus
 docker exec monitoring-stack supervisorctl tail -f grafana
@@ -126,11 +129,13 @@ docker exec monitoring-stack supervisorctl tail -f uptime-kuma
 ### Service not starting
 
 Check supervisor status:
+
 ```bash
 docker exec monitoring-stack supervisorctl status
 ```
 
 Restart specific service:
+
 ```bash
 docker exec monitoring-stack supervisorctl restart prometheus
 ```
@@ -138,6 +143,7 @@ docker exec monitoring-stack supervisorctl restart prometheus
 ### Permission issues
 
 All services run as `nobody:nogroup` user. Ensure volumes have correct permissions:
+
 ```bash
 docker exec monitoring-stack chown -R nobody:nogroup /prometheus /var/lib/grafana /app/data
 ```
@@ -145,6 +151,7 @@ docker exec monitoring-stack chown -R nobody:nogroup /prometheus /var/lib/grafan
 ## Resource Requirements
 
 Recommended VDS resources (all 3 services):
+
 - **CPU**: 1-2 vCPU
 - **RAM**: 1-2 GB
 - **Disk**: 10 GB (for time-series data retention)

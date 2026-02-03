@@ -51,12 +51,14 @@ The backend now includes comprehensive health monitoring and Prometheus metrics 
 ### Individual Checks
 
 #### Database Check
+
 - Tests PostgreSQL/Supabase connection via Prisma
 - Query: `SELECT 1`
 - Timeout: 5 seconds
 - **Critical**: Service cannot function without database
 
 #### Redis Check
+
 - Tests Redis connection via `PING` command
 - Timeout: 5 seconds
 - **Non-critical**: Service can function with degraded features (no caching, no queues)
@@ -109,40 +111,48 @@ Automatically collected by `prom-client`:
 #### 2. Bot Application Metrics
 
 **bot_messages_received_total** (Counter)
+
 - Total incoming messages received by the bot
 - Labels: `chat_type` (private|group|supergroup), `user_type` (client|accountant|unknown)
 
 **bot_message_processing_duration** (Histogram)
+
 - Message processing duration in seconds
 - Labels: `chat_type`, `user_type`
 - Buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5]
 
 **bot_webhook_signature_failures** (Counter)
+
 - Number of webhook requests with invalid signatures
 - No labels
 
 #### 3. Redis Queue Metrics (BullMQ)
 
 **redis_queue_length** (Gauge)
+
 - Number of pending jobs in BullMQ queue
 - Labels: `queue_name`
 
 **redis_connection_errors** (Counter)
+
 - Number of Redis connection errors
 - No labels
 
 #### 4. Supabase/Database Metrics
 
 **supabase_query_duration** (Histogram)
+
 - Database query duration in seconds
 - Labels: `query_type` (select|insert|update|delete), `model` (table name)
 - Buckets: [0.01, 0.05, 0.1, 0.2, 0.5, 1]
 
 **supabase_connection_errors** (Counter)
+
 - Number of database connection errors
 - No labels
 
 **supabase_connection_pool_size** (Gauge)
+
 - Number of active database connections
 - No labels
 
@@ -181,19 +191,19 @@ curl 'http://localhost:9090/api/v1/query?query=bot_messages_received_total'
 import {
   botMessagesReceivedTotal,
   botMessageProcessingDuration,
-  startTimer
+  startTimer,
 } from '../utils/metrics.js';
 
 // Record incoming message
 botMessagesReceivedTotal.inc({
   chat_type: 'private',
-  user_type: 'client'
+  user_type: 'client',
 });
 
 // Measure processing duration
 const end = startTimer(botMessageProcessingDuration, {
   chat_type: 'private',
-  user_type: 'client'
+  user_type: 'client',
 });
 
 // ... process message ...
@@ -209,7 +219,7 @@ import { supabaseQueryDuration, startTimer } from '../utils/metrics.js';
 // Measure query duration
 const end = startTimer(supabaseQueryDuration, {
   query_type: 'select',
-  model: 'User'
+  model: 'User',
 });
 
 const users = await prisma.user.findMany();

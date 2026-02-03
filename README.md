@@ -28,6 +28,7 @@
 Проект разрабатывается в **3 фазы**:
 
 ### 📦 Фаза 1: CORE + QUICK WINS (6-8 недель)
+
 - SLA-мониторинг и алерты
 - Квартальная обратная связь
 - Inline-кнопки для клиентов и бухгалтеров
@@ -37,12 +38,14 @@
 - Инфраструктура (Yandex Cloud, 152-ФЗ)
 
 ### 🎁 Фаза 2: INTELLIGENCE & PROACTIVE (8-12 недель)
+
 - Аналитика коммуникаций (время, типы задач, sentiment)
 - Big Data Collection (бизнес-события, риски, предпочтения)
 - Умные напоминания с эскалацией
 - Early churn detection
 
 ### 🚀 Фаза 3: WOW & DIFFERENTIATION (10-14 недель)
+
 - Реферальная программа
 - Статус запросов и быстрые действия
 - Рассылки и новости
@@ -97,10 +100,33 @@ BuhBot/
 git clone https://github.com/maslennikov-ig/BuhBot.git
 cd BuhBot
 
+# Установка зависимостей (автоматически настраивает pre-commit hooks)
+pnpm install
+
 # Настройка переменных окружения
 cp .env.example .env.local
 # Отредактируйте .env.local с вашими credentials
 ```
+
+### Разработка
+
+Проект использует pre-commit hooks для автоматической проверки качества кода:
+
+```bash
+# Запуск линтера
+pnpm lint
+
+# Проверка форматирования
+pnpm format:check
+
+# Автоформатирование кода
+pnpm format
+
+# Проверка типов
+pnpm type-check
+```
+
+При каждом коммите автоматически запускаются ESLint и Prettier на измененных файлах.
 
 ---
 
@@ -122,6 +148,7 @@ cp .env.example .env.local
 - [Детальное предложение с часами](docs/Final-Modular-Offer-With-Hours.md)
 - [Архитектура агентной системы](docs/Agents%20Ecosystem/ARCHITECTURE.md)
 - [Правила оркестрации](CLAUDE.md)
+- [Архитектурные решения (ADR)](docs/adr/) - Architecture Decision Records
 
 ### Infrastructure Documentation
 
@@ -141,6 +168,7 @@ Phase 1 Infrastructure Foundation completed. Technology stack: Supabase (Postgre
 ## 🛠️ Технологический стек
 
 ### Backend
+
 - **Runtime:** Node.js 18+
 - **Framework:** Express.js / Fastify
 - **Database:** PostgreSQL 14+ (Yandex Managed Database)
@@ -148,15 +176,18 @@ Phase 1 Infrastructure Foundation completed. Technology stack: Supabase (Postgre
 - **Queue:** BullMQ
 
 ### Frontend
+
 - **Bot Framework:** node-telegram-bot-api / Telegraf
 - **Web Admin Panel:** Next.js 14+ / React
 
 ### AI & ML
+
 - **LLM:** Yandex GPT (для фильтрации, NLP)
 - **OCR:** Google Vision API / Tesseract
 - **Sentiment Analysis:** Russian-specific models
 
 ### Integrations
+
 - **Automation:** n8n
 - **Payments:** YooKassa (54-ФЗ compliance)
 - **Storage:** Yandex Object Storage / Yandex.Disk
@@ -167,6 +198,7 @@ Phase 1 Infrastructure Foundation completed. Technology stack: Supabase (Postgre
 ## 📅 Roadmap
 
 ### Q1 2025
+
 - [x] Исследование и анализ требований
 - [x] Техническое задание
 - [x] Инициализация репозитория
@@ -175,11 +207,13 @@ Phase 1 Infrastructure Foundation completed. Technology stack: Supabase (Postgre
 - [ ] Начало Фазы 1: Core Features
 
 ### Q2 2025
+
 - [ ] Завершение Фазы 1 (CORE + QUICK WINS)
 - [ ] Beta-тестирование с первыми клиентами
 - [ ] Начало Фазы 2
 
 ### Q3-Q4 2025
+
 - [ ] Фаза 2: Intelligence & Proactive
 - [ ] Фаза 3: WOW & Differentiation
 - [ ] Production-ready release

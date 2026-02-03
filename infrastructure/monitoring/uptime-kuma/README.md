@@ -38,47 +38,47 @@ Configure the following monitors per BuhBot specification:
 
 #### 1. BuhBot Backend Health
 
-| Setting | Value |
-|---------|-------|
-| Monitor Type | HTTP(s) |
-| Friendly Name | BuhBot Backend |
-| URL | http://bot-backend:3000/health |
-| Heartbeat Interval | 300 seconds (5 minutes) |
-| Retries | 3 |
-| Retry Interval | 60 seconds |
-| Method | GET |
-| Expected Status Codes | 200 |
+| Setting               | Value                          |
+| --------------------- | ------------------------------ |
+| Monitor Type          | HTTP(s)                        |
+| Friendly Name         | BuhBot Backend                 |
+| URL                   | http://bot-backend:3000/health |
+| Heartbeat Interval    | 300 seconds (5 minutes)        |
+| Retries               | 3                              |
+| Retry Interval        | 60 seconds                     |
+| Method                | GET                            |
+| Expected Status Codes | 200                            |
 
 **Tags**: `backend`, `critical`
 
 #### 2. BuhBot Frontend Health
 
-| Setting | Value |
-|---------|-------|
-| Monitor Type | HTTP(s) |
-| Friendly Name | BuhBot Frontend |
-| URL | http://frontend:3000/api/health |
-| Heartbeat Interval | 300 seconds (5 minutes) |
-| Retries | 3 |
-| Retry Interval | 60 seconds |
-| Method | GET |
-| Expected Status Codes | 200 |
+| Setting               | Value                           |
+| --------------------- | ------------------------------- |
+| Monitor Type          | HTTP(s)                         |
+| Friendly Name         | BuhBot Frontend                 |
+| URL                   | http://frontend:3000/api/health |
+| Heartbeat Interval    | 300 seconds (5 minutes)         |
+| Retries               | 3                               |
+| Retry Interval        | 60 seconds                      |
+| Method                | GET                             |
+| Expected Status Codes | 200                             |
 
 **Tags**: `frontend`, `critical`
 
 #### 3. Supabase API
 
-| Setting | Value |
-|---------|-------|
-| Monitor Type | HTTP(s) |
-| Friendly Name | Supabase API |
-| URL | https://[PROJECT-REF].supabase.co/rest/v1/ |
-| Heartbeat Interval | 300 seconds (5 minutes) |
-| Retries | 3 |
-| Retry Interval | 60 seconds |
-| Method | GET |
-| Expected Status Codes | 200 |
-| Headers | `apikey: <SUPABASE_ANON_KEY>` |
+| Setting               | Value                                      |
+| --------------------- | ------------------------------------------ |
+| Monitor Type          | HTTP(s)                                    |
+| Friendly Name         | Supabase API                               |
+| URL                   | https://[PROJECT-REF].supabase.co/rest/v1/ |
+| Heartbeat Interval    | 300 seconds (5 minutes)                    |
+| Retries               | 3                                          |
+| Retry Interval        | 60 seconds                                 |
+| Method                | GET                                        |
+| Expected Status Codes | 200                                        |
+| Headers               | `apikey: <SUPABASE_ANON_KEY>`              |
 
 **Note**: Replace `[PROJECT-REF]` with your actual Supabase project reference.
 Replace `<SUPABASE_ANON_KEY>` with your Supabase anon key.
@@ -87,40 +87,40 @@ Replace `<SUPABASE_ANON_KEY>` with your Supabase anon key.
 
 #### 4. Redis (Optional)
 
-| Setting | Value |
-|---------|-------|
-| Monitor Type | TCP Port |
-| Friendly Name | Redis Cache |
-| Hostname | redis |
-| Port | 6379 |
+| Setting            | Value                   |
+| ------------------ | ----------------------- |
+| Monitor Type       | TCP Port                |
+| Friendly Name      | Redis Cache             |
+| Hostname           | redis                   |
+| Port               | 6379                    |
 | Heartbeat Interval | 300 seconds (5 minutes) |
-| Retries | 3 |
+| Retries            | 3                       |
 
 **Tags**: `cache`, `internal`
 
 #### 5. Prometheus (Optional)
 
-| Setting | Value |
-|---------|-------|
-| Monitor Type | HTTP(s) |
-| Friendly Name | Prometheus |
-| URL | http://localhost:9090/-/healthy |
-| Heartbeat Interval | 300 seconds (5 minutes) |
-| Method | GET |
-| Expected Status Codes | 200 |
+| Setting               | Value                           |
+| --------------------- | ------------------------------- |
+| Monitor Type          | HTTP(s)                         |
+| Friendly Name         | Prometheus                      |
+| URL                   | http://localhost:9090/-/healthy |
+| Heartbeat Interval    | 300 seconds (5 minutes)         |
+| Method                | GET                             |
+| Expected Status Codes | 200                             |
 
 **Tags**: `monitoring`, `internal`
 
 #### 6. Grafana (Optional)
 
-| Setting | Value |
-|---------|-------|
-| Monitor Type | HTTP(s) |
-| Friendly Name | Grafana |
-| URL | http://localhost:3000/api/health |
-| Heartbeat Interval | 300 seconds (5 minutes) |
-| Method | GET |
-| Expected Status Codes | 200 |
+| Setting               | Value                            |
+| --------------------- | -------------------------------- |
+| Monitor Type          | HTTP(s)                          |
+| Friendly Name         | Grafana                          |
+| URL                   | http://localhost:3000/api/health |
+| Heartbeat Interval    | 300 seconds (5 minutes)          |
+| Method                | GET                              |
+| Expected Status Codes | 200                              |
 
 **Note**: Inside the monitoring container, Grafana runs on port 3000.
 
@@ -140,11 +140,13 @@ Replace `<SUPABASE_ANON_KEY>` with your Supabase anon key.
 ### 2. Get Chat ID
 
 **For personal notifications**:
+
 1. Send a message to your bot
 2. Open: `https://api.telegram.org/bot<TOKEN>/getUpdates`
 3. Find `chat.id` in the response
 
 **For group notifications**:
+
 1. Add the bot to a group
 2. Send a message in the group
 3. Open: `https://api.telegram.org/bot<TOKEN>/getUpdates`
@@ -157,13 +159,13 @@ Replace `<SUPABASE_ANON_KEY>` with your Supabase anon key.
 3. Select **Telegram** as notification type
 4. Configure:
 
-| Setting | Value |
-|---------|-------|
-| Friendly Name | BuhBot Telegram Alerts |
-| Bot Token | Your bot token from BotFather |
-| Chat ID | Your chat or group ID |
-| Default Enabled | Yes |
-| Apply on all existing monitors | Yes (optional) |
+| Setting                        | Value                         |
+| ------------------------------ | ----------------------------- |
+| Friendly Name                  | BuhBot Telegram Alerts        |
+| Bot Token                      | Your bot token from BotFather |
+| Chat ID                        | Your chat or group ID         |
+| Default Enabled                | Yes                           |
+| Apply on all existing monitors | Yes (optional)                |
 
 ### 4. Test Notification
 
@@ -201,6 +203,7 @@ Default message format works well, but you can customize:
 ### Public Access
 
 To make status page public:
+
 1. Edit status page settings
 2. Set **Public** to `true`
 3. Access at: `http://localhost:3003/status/buhbot-status`
@@ -232,6 +235,7 @@ To make status page public:
 
 **Note**: The `monitors.json` file in this directory provides a template.
 You must update:
+
 - Supabase URL with your project reference
 - Notification IDs after creating Telegram notification
 
@@ -265,6 +269,7 @@ docker cp buhbot-monitoring-stack:/app/data ./uptime-kuma-backup
 ```
 
 To restore:
+
 ```bash
 docker cp ./uptime-kuma-backup/. buhbot-monitoring-stack:/app/data
 ```
@@ -282,6 +287,7 @@ docker cp ./uptime-kuma-backup/. buhbot-monitoring-stack:/app/data
 ### Database Cleanup
 
 Uptime Kuma automatically cleans old heartbeat data. Default retention:
+
 - Heartbeat data: 180 days
 - Statistics: Keep forever
 
@@ -290,6 +296,7 @@ Adjust in **Settings** > **General** > **Data Persistence**
 ### Update Monitors
 
 To bulk update monitors:
+
 1. Export current configuration
 2. Edit JSON file
 3. Re-import (will overwrite existing)

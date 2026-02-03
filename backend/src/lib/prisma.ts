@@ -65,7 +65,9 @@ function createPool(): pg.Pool {
   const isSupabase = connectionString.includes('supabase.com');
   const urlType = connectionString.includes('pooler.supabase.com') ? 'pooler' : 'direct';
   // eslint-disable-next-line no-console
-  console.log(`[prisma] Database connection: using ${urlType} URL in ${isDev ? 'development' : 'production'} mode`);
+  console.log(
+    `[prisma] Database connection: using ${urlType} URL in ${isDev ? 'development' : 'production'} mode`
+  );
 
   // For Supabase in dev environments with TLS issues, disable certificate verification
   // This is safe for development but should be investigated for production
@@ -97,9 +99,7 @@ function createPrismaClient(pool: pg.Pool): PrismaClient {
 
   return new PrismaClient({
     adapter,
-    log: process.env['NODE_ENV'] === 'development'
-      ? ['query', 'error', 'warn']
-      : ['error'],
+    log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
 

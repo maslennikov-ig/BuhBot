@@ -18,9 +18,7 @@ export function LogsHeader({ viewMode, onViewModeChange }: LogsHeaderProps) {
           <FileWarning className="h-5 w-5 text-[var(--buh-primary)]" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-[var(--buh-foreground)]">
-            Системные логи
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--buh-foreground)]">Системные логи</h1>
           <p className="text-sm text-[var(--buh-foreground-subtle)]">
             Ошибки и предупреждения системы
           </p>

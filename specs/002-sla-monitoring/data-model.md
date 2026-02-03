@@ -11,6 +11,7 @@
 ## Existing Entities (требуют модификации)
 
 ### Chat
+
 Уже существует. Требуется добавить поля:
 
 ```prisma
@@ -32,6 +33,7 @@ model Chat {
 ```
 
 ### ClientRequest
+
 Уже существует. Требуется добавить поля:
 
 ```prisma
@@ -56,6 +58,7 @@ model ClientRequest {
 ```
 
 ### SlaAlert
+
 Уже существует. Требуется добавить поля:
 
 ```prisma
@@ -77,6 +80,7 @@ model SlaAlert {
 ```
 
 ### WorkingSchedule
+
 Уже существует. Структура подходит, но требуется добавить:
 
 ```prisma
@@ -91,6 +95,7 @@ model WorkingSchedule {
 ## New Entities
 
 ### MessageClassification (Enum)
+
 ```prisma
 enum MessageClassification {
   REQUEST
@@ -101,6 +106,7 @@ enum MessageClassification {
 ```
 
 ### AlertDeliveryStatus (Enum)
+
 ```prisma
 enum AlertDeliveryStatus {
   pending
@@ -111,6 +117,7 @@ enum AlertDeliveryStatus {
 ```
 
 ### AlertAction (Enum)
+
 ```prisma
 enum AlertAction {
   mark_resolved       // Менеджер отметил как решённое
@@ -120,6 +127,7 @@ enum AlertAction {
 ```
 
 ### ChatHoliday
+
 Праздничные дни для чата (override глобальных).
 
 ```prisma
@@ -141,6 +149,7 @@ model ChatHoliday {
 ```
 
 ### GlobalSettings
+
 Глобальные настройки системы.
 
 ```prisma
@@ -175,6 +184,7 @@ model GlobalSettings {
 ```
 
 ### GlobalHoliday
+
 Глобальный календарь праздников (федеральные праздники РФ).
 
 ```prisma
@@ -192,6 +202,7 @@ model GlobalHoliday {
 ```
 
 ### ClassificationCache
+
 Кеш результатов AI классификации.
 
 ```prisma
@@ -249,26 +260,31 @@ CREATE INDEX idx_sla_alerts_analytics ON sla_alerts(alert_sent_at, alert_type);
 ## Validation Rules
 
 ### ClientRequest
+
 - `classificationScore` MUST be between 0 and 1
 - `slaWorkingMinutes` MUST be >= 0
 - `responseTimeMinutes` MUST be >= 0
 
 ### WorkingSchedule
+
 - `dayOfWeek` MUST be between 1 and 7
 - `startTime` MUST be valid time format (HH:MM)
 - `endTime` MUST be > `startTime`
 
 ### SlaAlert
+
 - `escalationLevel` MUST be between 1 and 5
 - `minutesElapsed` MUST be > 0
 
 ### GlobalSettings
+
 - `aiConfidenceThreshold` MUST be between 0 and 1
 - `messagePreviewLength` MUST be between 100 and 1000
 
 ## State Transitions
 
 ### ClientRequest Status
+
 ```
 ┌─────────┐     classify      ┌────────────┐
 │ CREATED │ ──────────────────▶│  pending   │
@@ -289,6 +305,7 @@ CREATE INDEX idx_sla_alerts_analytics ON sla_alerts(alert_sent_at, alert_type);
 ```
 
 ### SlaAlert Lifecycle
+
 ```
 ┌─────────┐    send     ┌──────┐   deliver   ┌───────────┐
 │ pending │ ──────────▶ │ sent │ ──────────▶ │ delivered │

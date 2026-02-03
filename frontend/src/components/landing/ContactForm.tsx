@@ -11,7 +11,7 @@ import { trpc } from '@/lib/trpc';
 export function ContactForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const mutation = trpc.contact.submit.useMutation();
   const isLoading = mutation.isPending;
 
@@ -45,7 +45,9 @@ export function ContactForm() {
       form.reset();
     } catch (err) {
       console.error(err);
-      setError('Произошла ошибка при отправке. Пожалуйста, попробуйте позже или свяжитесь с нами через Telegram.');
+      setError(
+        'Произошла ошибка при отправке. Пожалуйста, попробуйте позже или свяжитесь с нами через Telegram.'
+      );
     }
   };
 
@@ -65,7 +67,8 @@ export function ContactForm() {
               Заявка отправлена!
             </h3>
             <p className="text-[var(--buh-foreground-muted)] mb-8">
-              Спасибо за интерес к BuhBot. Мы свяжемся с вами в течение 24 часов для уточнения деталей и демонстрации.
+              Спасибо за интерес к BuhBot. Мы свяжемся с вами в течение 24 часов для уточнения
+              деталей и демонстрации.
             </p>
             <button
               onClick={() => setIsSubmitted(false)}
@@ -92,10 +95,12 @@ export function ContactForm() {
             <p className="text-xl text-[var(--buh-foreground-muted)] mb-8">
               Оставьте заявку — мы покажем BuhBot в действии и поможем настроить под вашу фирму.
             </p>
-            
+
             <div className="space-y-6 text-[var(--buh-foreground-muted)]">
               <div>
-                <h4 className="font-semibold text-[var(--buh-foreground)] mb-2">Или напишите нам:</h4>
+                <h4 className="font-semibold text-[var(--buh-foreground)] mb-2">
+                  Или напишите нам:
+                </h4>
                 <p className="hover:text-[var(--buh-primary)] transition-colors cursor-pointer">
                   <a href="https://t.me/buhbot_support">Telegram: @buhbot_support</a>
                 </p>
@@ -151,7 +156,10 @@ export function ContactForm() {
 
               {/* Company */}
               <div className="space-y-2">
-                <label htmlFor="company" className="text-sm font-medium text-[var(--buh-foreground)]">
+                <label
+                  htmlFor="company"
+                  className="text-sm font-medium text-[var(--buh-foreground)]"
+                >
                   Компания
                 </label>
                 <motion.input
@@ -166,7 +174,10 @@ export function ContactForm() {
 
               {/* Message */}
               <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-medium text-[var(--buh-foreground)]">
+                <label
+                  htmlFor="message"
+                  className="text-sm font-medium text-[var(--buh-foreground)]"
+                >
                   Сообщение (необязательно)
                 </label>
                 <motion.textarea

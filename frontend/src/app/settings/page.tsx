@@ -30,7 +30,7 @@ export default function SettingsPage() {
             <TabsTrigger value="schedule">Расписание и SLA</TabsTrigger>
             <TabsTrigger value="notifications">Уведомления</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="profile" className="space-y-4">
             <ProfileSettingsForm />
           </TabsContent>
@@ -38,12 +38,12 @@ export default function SettingsPage() {
           <TabsContent value="general" className="space-y-4">
             <GeneralSettingsForm />
           </TabsContent>
-          
+
           <TabsContent value="schedule" className="space-y-4">
             <WorkingHoursForm />
             <HolidayCalendar />
           </TabsContent>
-          
+
           <TabsContent value="notifications" className="space-y-4">
             <NotificationSettingsForm />
           </TabsContent>

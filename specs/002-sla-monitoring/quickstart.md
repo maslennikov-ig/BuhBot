@@ -82,35 +82,37 @@ curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo"
 ## Key Endpoints
 
 ### Backend API (tRPC)
+
 - Base URL: `http://localhost:3001/trpc`
 
-| Procedure | Type | Description |
-|-----------|------|-------------|
-| `sla.createRequest` | mutation | Создать запрос клиента |
-| `sla.classifyMessage` | mutation | Классифицировать сообщение |
-| `sla.startTimer` | mutation | Запустить SLA таймер |
-| `sla.stopTimer` | mutation | Остановить SLA таймер |
-| `sla.getRequests` | query | Список запросов |
-| `chat.getChats` | query | Список чатов |
-| `chat.updateChat` | mutation | Обновить настройки чата |
-| `alert.getAlerts` | query | Список алертов |
-| `alert.resolveAlert` | mutation | Закрыть алерт |
-| `analytics.getDashboard` | query | Данные dashboard |
-| `settings.getGlobalSettings` | query | Глобальные настройки |
+| Procedure                    | Type     | Description                |
+| ---------------------------- | -------- | -------------------------- |
+| `sla.createRequest`          | mutation | Создать запрос клиента     |
+| `sla.classifyMessage`        | mutation | Классифицировать сообщение |
+| `sla.startTimer`             | mutation | Запустить SLA таймер       |
+| `sla.stopTimer`              | mutation | Остановить SLA таймер      |
+| `sla.getRequests`            | query    | Список запросов            |
+| `chat.getChats`              | query    | Список чатов               |
+| `chat.updateChat`            | mutation | Обновить настройки чата    |
+| `alert.getAlerts`            | query    | Список алертов             |
+| `alert.resolveAlert`         | mutation | Закрыть алерт              |
+| `analytics.getDashboard`     | query    | Данные dashboard           |
+| `settings.getGlobalSettings` | query    | Глобальные настройки       |
 
 ### Frontend (Admin Panel)
+
 - URL: `http://localhost:3000`
 
-| Route | Description |
-|-------|-------------|
-| `/` | Redirect to dashboard |
-| `/dashboard` | Main SLA dashboard |
-| `/chats` | Chat management |
-| `/chats/[id]` | Chat details & settings |
-| `/accountants` | Accountant performance |
-| `/alerts` | Active alerts |
-| `/settings` | Global settings |
-| `/settings/holidays` | Holiday calendar |
+| Route                | Description             |
+| -------------------- | ----------------------- |
+| `/`                  | Redirect to dashboard   |
+| `/dashboard`         | Main SLA dashboard      |
+| `/chats`             | Chat management         |
+| `/chats/[id]`        | Chat details & settings |
+| `/accountants`       | Accountant performance  |
+| `/alerts`            | Active alerts           |
+| `/settings`          | Global settings         |
+| `/settings/holidays` | Holiday calendar        |
 
 ## Development Workflow
 
@@ -162,17 +164,9 @@ export async function startSlaTimer(requestId: string) {
   const schedule = await getWorkingSchedule(chat.id);
 
   // Calculate delay until SLA breach
-  const delayMs = calculateWorkingHoursDelay(
-    new Date(),
-    chat.slaThresholdMinutes,
-    schedule
-  );
+  const delayMs = calculateWorkingHoursDelay(new Date(), chat.slaThresholdMinutes, schedule);
 
-  await slaQueue.add(
-    'check-breach',
-    { requestId },
-    { delay: delayMs, jobId: `sla-${requestId}` }
-  );
+  await slaQueue.add('check-breach', { requestId }, { delay: delayMs, jobId: `sla-${requestId}` });
 }
 
 export async function stopSlaTimer(requestId: string) {
@@ -196,16 +190,15 @@ export async function sendManagerAlert(alert: SlaAlert) {
   const keyboard = Markup.inlineKeyboard([
     [
       Markup.button.url('Открыть чат', `https://t.me/${chat.telegramChatId}`),
-      Markup.button.callback('Уведомить', `notify_${alert.id}`)
+      Markup.button.callback('Уведомить', `notify_${alert.id}`),
     ],
-    [Markup.button.callback('Закрыть', `resolve_${alert.id}`)]
+    [Markup.button.callback('Закрыть', `resolve_${alert.id}`)],
   ]);
 
-  await bot.telegram.sendMessage(
-    alert.managerTelegramId,
-    message,
-    { parse_mode: 'HTML', ...keyboard }
-  );
+  await bot.telegram.sendMessage(alert.managerTelegramId, message, {
+    parse_mode: 'HTML',
+    ...keyboard,
+  });
 }
 ```
 
@@ -237,6 +230,7 @@ pnpm test:integration
 ### Manual Testing
 
 1. **Message Classification**:
+
    ```bash
    curl -X POST http://localhost:3001/trpc/sla.classifyMessage \
      -H "Content-Type: application/json" \
@@ -283,6 +277,7 @@ psql $DATABASE_URL -c "SELECT 1"
 ### Common Issues
 
 1. **Bot не получает сообщения**
+
    ```bash
    # Проверить webhook
    curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo"
@@ -292,6 +287,7 @@ psql $DATABASE_URL -c "SELECT 1"
    ```
 
 2. **SLA таймер не срабатывает**
+
    ```bash
    # Проверить очередь BullMQ
    redis-cli KEYS "bull:sla-timers:*"

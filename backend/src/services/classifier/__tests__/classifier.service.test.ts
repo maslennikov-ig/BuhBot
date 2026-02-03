@@ -188,11 +188,8 @@ describe('ClassifierService - Metrics Recording (T4)', () => {
 
   it('should record cache hit metrics with model="cache"', async () => {
     const { getCached } = await import('../cache.service.js');
-    const {
-      classifierCacheHitsTotal,
-      classifierLatencySeconds,
-      classifierRequestsTotal,
-    } = await import('../../../utils/metrics.js');
+    const { classifierCacheHitsTotal, classifierLatencySeconds, classifierRequestsTotal } =
+      await import('../../../utils/metrics.js');
 
     // Mock cache hit
     const cachedResult: ClassificationResult = {
@@ -248,10 +245,8 @@ describe('ClassifierService - Metrics Recording (T4)', () => {
   it('should record AI success metrics with model="openrouter"', async () => {
     const { getCached } = await import('../cache.service.js');
     const { classifyWithAI } = await import('../openrouter-client.js');
-    const {
-      classifierLatencySeconds,
-      classifierRequestsTotal,
-    } = await import('../../../utils/metrics.js');
+    const { classifierLatencySeconds, classifierRequestsTotal } =
+      await import('../../../utils/metrics.js');
 
     // Mock cache miss
     (getCached as any).mockResolvedValue(null);
@@ -286,10 +281,8 @@ describe('ClassifierService - Metrics Recording (T4)', () => {
     const { getCached } = await import('../cache.service.js');
     const { classifyWithAI } = await import('../openrouter-client.js');
     const { classifyByKeywords } = await import('../keyword-classifier.js');
-    const {
-      classifierLatencySeconds,
-      classifierRequestsTotal,
-    } = await import('../../../utils/metrics.js');
+    const { classifierLatencySeconds, classifierRequestsTotal } =
+      await import('../../../utils/metrics.js');
 
     // Mock cache miss
     (getCached as any).mockResolvedValue(null);
@@ -353,10 +346,8 @@ describe('ClassifierService - Metrics Recording (T4)', () => {
     const { getCached } = await import('../cache.service.js');
     const { classifyWithAI } = await import('../openrouter-client.js');
     const { classifyByKeywords } = await import('../keyword-classifier.js');
-    const {
-      classifierLatencySeconds,
-      classifierRequestsTotal,
-    } = await import('../../../utils/metrics.js');
+    const { classifierLatencySeconds, classifierRequestsTotal } =
+      await import('../../../utils/metrics.js');
 
     // Mock cache miss
     (getCached as any).mockResolvedValue(null);

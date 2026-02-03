@@ -47,16 +47,19 @@ export const authRouter = router({
         createdAt: z.date(),
         telegramId: z.string().nullable().optional(),
         telegramUsername: z.string().nullable().optional(),
-        telegramAccount: z.object({
-          id: z.string(),
-          telegramId: z.string(),
-          username: z.string().nullable(),
-          firstName: z.string().nullable(),
-          lastName: z.string().nullable(),
-          photoUrl: z.string().nullable(),
-          authDate: z.string(),
-          linkedAt: z.date(),
-        }).nullable().optional(),
+        telegramAccount: z
+          .object({
+            id: z.string(),
+            telegramId: z.string(),
+            username: z.string().nullable(),
+            firstName: z.string().nullable(),
+            lastName: z.string().nullable(),
+            photoUrl: z.string().nullable(),
+            authDate: z.string(),
+            linkedAt: z.date(),
+          })
+          .nullable()
+          .optional(),
       })
     )
     .query(async ({ ctx }) => {
@@ -86,16 +89,18 @@ export const authRouter = router({
         createdAt: dbUser.createdAt,
         telegramId: dbUser.telegramId?.toString() ?? null,
         telegramUsername: dbUser.telegramUsername,
-        telegramAccount: dbUser.telegramAccount ? {
-          id: dbUser.telegramAccount.id,
-          telegramId: dbUser.telegramAccount.telegramId.toString(),
-          username: dbUser.telegramAccount.username,
-          firstName: dbUser.telegramAccount.firstName,
-          lastName: dbUser.telegramAccount.lastName,
-          photoUrl: dbUser.telegramAccount.photoUrl,
-          authDate: dbUser.telegramAccount.authDate.toString(),
-          linkedAt: dbUser.telegramAccount.linkedAt,
-        } : null,
+        telegramAccount: dbUser.telegramAccount
+          ? {
+              id: dbUser.telegramAccount.id,
+              telegramId: dbUser.telegramAccount.telegramId.toString(),
+              username: dbUser.telegramAccount.username,
+              firstName: dbUser.telegramAccount.firstName,
+              lastName: dbUser.telegramAccount.lastName,
+              photoUrl: dbUser.telegramAccount.photoUrl,
+              authDate: dbUser.telegramAccount.authDate.toString(),
+              linkedAt: dbUser.telegramAccount.linkedAt,
+            }
+          : null,
       };
     }),
 
@@ -261,7 +266,9 @@ export const authRouter = router({
       if (authError) {
         // If user already exists in Supabase Auth but not in our DB
         if (authError.message.includes('already been registered')) {
-          throw new Error('Пользователь с таким email уже зарегистрирован в системе аутентификации');
+          throw new Error(
+            'Пользователь с таким email уже зарегистрирован в системе аутентификации'
+          );
         }
         throw new Error(`Ошибка отправки приглашения: ${authError.message}`);
       }

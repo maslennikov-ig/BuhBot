@@ -13,18 +13,21 @@
 ## Running Locally
 
 1.  **Database**:
+
     ```bash
     cd backend
     npm run prisma:migrate
     ```
 
 2.  **Backend**:
+
     ```bash
     cd backend
     npm run dev
     ```
 
 3.  **Frontend**:
+
     ```bash
     cd frontend
     npm run dev

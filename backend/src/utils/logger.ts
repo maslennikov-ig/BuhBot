@@ -68,7 +68,7 @@ const consoleFormat = winston.format.combine(
 
     // Add metadata if present (use BigInt-safe replacer)
     if (Object.keys(metadata).length > 0) {
-      msg += ` ${JSON.stringify(metadata, (_, v) => typeof v === 'bigint' ? v.toString() : v)}`;
+      msg += ` ${JSON.stringify(metadata, (_, v) => (typeof v === 'bigint' ? v.toString() : v))}`;
     }
 
     return msg;
@@ -100,16 +100,21 @@ class DatabaseTransport extends TransportStream {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { level, message, stack, service, timestamp, ...metadata } = info;
 
-      this.errorCapture.captureError({
-        level: level as 'error' | 'warn',
-        message: message || 'Unknown error',
-        stack: stack,
-        service: service || 'buhbot-backend',
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined
-      }).catch((err: unknown) => {
-        // Fail silently to avoid logging loops
-        console.error('[DatabaseTransport] Failed to capture error:', err instanceof Error ? err.message : String(err));
-      });
+      this.errorCapture
+        .captureError({
+          level: level as 'error' | 'warn',
+          message: message || 'Unknown error',
+          stack: stack,
+          service: service || 'buhbot-backend',
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        })
+        .catch((err: unknown) => {
+          // Fail silently to avoid logging loops
+          console.error(
+            '[DatabaseTransport] Failed to capture error:',
+            err instanceof Error ? err.message : String(err)
+          );
+        });
     }
 
     callback();
@@ -128,29 +133,29 @@ const logger = winston.createLogger({
       filename: path.join(__dirname, '../../logs/error.log'),
       level: 'error',
       maxsize: 5242880, // 5MB
-      maxFiles: 5
+      maxFiles: 5,
     }),
     // Write all logs to combined.log
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/combined.log'),
       maxsize: 5242880, // 5MB
-      maxFiles: 5
-    })
-  ]
+      maxFiles: 5,
+    }),
+  ],
 });
 
 // If not in production, log to console with human-readable format
 if (NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
-      format: consoleFormat
+      format: consoleFormat,
     })
   );
 } else {
   // In production, still log to console but with JSON format
   logger.add(
     new winston.transports.Console({
-      format: logFormat
+      format: logFormat,
     })
   );
 }
@@ -159,7 +164,7 @@ if (NODE_ENV !== 'production') {
 export const stream = {
   write: (message: string) => {
     logger.info(message.trim());
-  }
+  },
 };
 
 export default logger;

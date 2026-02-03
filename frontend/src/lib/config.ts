@@ -14,8 +14,7 @@
  * - NODE_ENV is 'development'
  */
 export const isDevMode =
-  process.env.NEXT_PUBLIC_DEV_MODE === 'true' &&
-  process.env.NODE_ENV === 'development';
+  process.env.NEXT_PUBLIC_DEV_MODE === 'true' && process.env.NODE_ENV === 'development';
 
 /**
  * Mock user for DEV MODE

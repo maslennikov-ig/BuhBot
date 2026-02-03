@@ -84,7 +84,7 @@ Perfect for dark deep-sea backgrounds (#0c1222).
 
 ## Вариант 7: Волновой логотип с надписью BuhBot
 
-```
+````
 Premium wordmark logo for "BuhBot" - accounting automation platform.
 The entire word "BuhBot" styled as flowing ocean waves.
 Each letter constructed from smooth, curved wave shapes that flow into each other.
@@ -120,3 +120,4 @@ Clean, minimal, premium SaaS branding aesthetic.
 - После генерации — доработай в Figma/Illustrator для идеальных векторов
 - Проверь читаемость на размерах 16px, 32px, 64px, 256px
 - Тестируй на фоне `#0c1222` (основной тёмный фон сайта)
+````

@@ -65,7 +65,8 @@
   /* === Gradients === */
   --buh-gradient-primary: linear-gradient(135deg, var(--buh-accent) 0%, var(--buh-primary) 100%);
   --buh-gradient-surface: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-  --buh-gradient-aurora: linear-gradient(135deg,
+  --buh-gradient-aurora: linear-gradient(
+    135deg,
     rgba(0, 212, 170, 0.03) 0%,
     rgba(124, 58, 237, 0.03) 50%,
     rgba(0, 102, 204, 0.03) 100%
@@ -87,9 +88,9 @@
   --buh-header-background: rgba(255, 255, 255, 0.92);
 
   /* === Typography === */
-  --buh-font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --buh-font-serif: "Spectral", Georgia, serif;
-  --buh-font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --buh-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --buh-font-serif: 'Spectral', Georgia, serif;
+  --buh-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* === Spacing Scale (8pt grid) === */
   --buh-space-1: 4px;
@@ -131,7 +132,7 @@
    CSS CUSTOM PROPERTIES - DARK MODE
    ============================================ */
 .dark,
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* === Primary Colors === */
   --buh-background: #0c1222;
   --buh-background-subtle: #111827;
@@ -182,7 +183,8 @@
   /* === Gradients === */
   --buh-gradient-primary: linear-gradient(135deg, var(--buh-accent) 0%, var(--buh-primary) 100%);
   --buh-gradient-surface: linear-gradient(180deg, #1a2744 0%, #0c1222 100%);
-  --buh-gradient-aurora: linear-gradient(135deg,
+  --buh-gradient-aurora: linear-gradient(
+    135deg,
     rgba(0, 212, 170, 0.08) 0%,
     rgba(124, 58, 237, 0.08) 50%,
     rgba(56, 189, 248, 0.08) 100%
@@ -210,7 +212,7 @@
 }
 
 .buh-aurora::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -50%;
   left: -50%;
@@ -247,7 +249,7 @@
 
 /* More visible aurora for dark mode */
 .dark .buh-aurora::before,
-[data-theme="dark"] .buh-aurora::before {
+[data-theme='dark'] .buh-aurora::before {
   opacity: 1;
 }
 
@@ -320,7 +322,7 @@
 }
 
 .buh-card-glow::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -1px;
   border-radius: inherit;
@@ -353,10 +355,10 @@
 }
 
 .buh-btn-primary::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
   opacity: 0;
   transition: opacity var(--buh-transition-fast);
 }
@@ -418,16 +420,36 @@
   opacity: 0;
 }
 
-.buh-stagger > *:nth-child(1) { animation-delay: 0.05s; }
-.buh-stagger > *:nth-child(2) { animation-delay: 0.1s; }
-.buh-stagger > *:nth-child(3) { animation-delay: 0.15s; }
-.buh-stagger > *:nth-child(4) { animation-delay: 0.2s; }
-.buh-stagger > *:nth-child(5) { animation-delay: 0.25s; }
-.buh-stagger > *:nth-child(6) { animation-delay: 0.3s; }
-.buh-stagger > *:nth-child(7) { animation-delay: 0.35s; }
-.buh-stagger > *:nth-child(8) { animation-delay: 0.4s; }
-.buh-stagger > *:nth-child(9) { animation-delay: 0.45s; }
-.buh-stagger > *:nth-child(10) { animation-delay: 0.5s; }
+.buh-stagger > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.buh-stagger > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.buh-stagger > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.buh-stagger > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.buh-stagger > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.buh-stagger > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.buh-stagger > *:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.buh-stagger > *:nth-child(8) {
+  animation-delay: 0.4s;
+}
+.buh-stagger > *:nth-child(9) {
+  animation-delay: 0.45s;
+}
+.buh-stagger > *:nth-child(10) {
+  animation-delay: 0.5s;
+}
 
 /* Fade In Scale - for modals and popovers */
 @keyframes buh-fade-in-scale {
@@ -463,7 +485,8 @@
 
 /* Pulse Glow - for attention */
 @keyframes buh-pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: var(--buh-shadow-md);
   }
   50% {
@@ -518,7 +541,9 @@
 
 /* Hover lift effect */
 .buh-hover-lift {
-  transition: transform var(--buh-transition-fast), box-shadow var(--buh-transition-fast);
+  transition:
+    transform var(--buh-transition-fast),
+    box-shadow var(--buh-transition-fast);
 }
 
 .buh-hover-lift:hover {
@@ -542,7 +567,9 @@
 }
 
 .buh-focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px var(--buh-background), 0 0 0 4px var(--buh-accent);
+  box-shadow:
+    0 0 0 2px var(--buh-background),
+    0 0 0 4px var(--buh-accent);
 }
 
 /* Active press effect */
@@ -627,7 +654,7 @@
 }
 
 .buh-sidebar-item-active::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 50%;
@@ -665,7 +692,7 @@
 }
 
 .buh-stat-card::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -723,7 +750,7 @@
 }
 
 .buh-noise::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
@@ -733,7 +760,7 @@
 }
 
 .dark .buh-noise::after,
-[data-theme="dark"] .buh-noise::after {
+[data-theme='dark'] .buh-noise::after {
   opacity: 0.05;
 }
 

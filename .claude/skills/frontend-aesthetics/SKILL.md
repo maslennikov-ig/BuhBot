@@ -24,6 +24,7 @@ Create distinctive, creative frontend designs that avoid generic AI-generated ae
 Understand the project's brand identity, purpose, and target aesthetic before making design decisions.
 
 **Key Questions**:
+
 - What is the project's brand personality? (playful, professional, technical, editorial, etc.)
 - Who is the target audience?
 - What emotional response should the design evoke?
@@ -34,6 +35,7 @@ Understand the project's brand identity, purpose, and target aesthetic before ma
 Choose beautiful, unique, and interesting fonts that match the project's character.
 
 **AVOID These Generic Fonts**:
+
 - Inter (massively overused in AI-generated UIs)
 - Roboto
 - Arial
@@ -42,18 +44,21 @@ Choose beautiful, unique, and interesting fonts that match the project's charact
 **Recommended Font Categories**:
 
 **Code/Technical Aesthetics**:
+
 - JetBrains Mono
 - Fira Code
 - Cascadia Code
 - Victor Mono
 
 **Editorial/Sophisticated**:
+
 - Playfair Display
 - Crimson Pro
 - Spectral
 - Lora
 
 **Modern/Clean**:
+
 - Space Grotesk (use sparingly - increasingly common)
 - DM Sans
 - Outfit
@@ -66,18 +71,21 @@ Choose beautiful, unique, and interesting fonts that match the project's charact
 Create cohesive color systems using CSS variables with dominant colors and sharp accents.
 
 **Principles**:
+
 - Dominant colors with sharp accents > timid, evenly-distributed palettes
 - Commit to a cohesive aesthetic using CSS variables
 - Draw inspiration from IDE themes (Dracula, Nord, Tokyo Night, Monokai, etc.)
 - Consider cultural aesthetics relevant to project context
 
 **AVOID**:
+
 - Purple gradients on white backgrounds (clichéd AI aesthetic)
 - Generic blue/gray combinations
 - Predictable rainbow palettes with equal weight
 - Safe, corporate color schemes when inappropriate for context
 
 **Approach**:
+
 - Choose 1-2 dominant colors that define the brand
 - Add 1-2 sharp accent colors for calls-to-action and highlights
 - Use CSS custom properties for theming
@@ -88,25 +96,34 @@ Create cohesive color systems using CSS variables with dominant colors and sharp
 Use animations strategically for high-impact moments and delightful micro-interactions.
 
 **Animation Priorities**:
+
 1. **High-impact moments**: Orchestrated page loads with staggered reveals
 2. **Micro-interactions**: Button hovers, transitions, state changes
 3. **Contextual effects**: Scroll-triggered animations, parallax
 
 **Implementation Guidelines**:
+
 - **For HTML/Vanilla JS**: Prioritize CSS-only solutions (transitions, animations, @keyframes)
 - **For React**: Use Motion library (Framer Motion) when available
 - **Focus on orchestration**: One well-orchestrated sequence > scattered micro-interactions
 - **Use animation-delay**: Create staggered reveals for related elements
 
 **Example Pattern**:
+
 ```css
 .stagger-item {
   animation: fadeInUp 0.6s ease-out forwards;
   opacity: 0;
 }
-.stagger-item:nth-child(1) { animation-delay: 0.1s; }
-.stagger-item:nth-child(2) { animation-delay: 0.2s; }
-.stagger-item:nth-child(3) { animation-delay: 0.3s; }
+.stagger-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.stagger-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.stagger-item:nth-child(3) {
+  animation-delay: 0.3s;
+}
 ```
 
 ### Step 5: Background & Atmosphere
@@ -114,11 +131,13 @@ Use animations strategically for high-impact moments and delightful micro-intera
 Create depth and atmosphere through layered backgrounds and contextual effects.
 
 **AVOID**:
+
 - Defaulting to solid colors
 - Plain white or gray backgrounds
 - Flat, lifeless surfaces
 
 **Recommended Approaches**:
+
 - Layer CSS gradients for depth
 - Use geometric patterns (stripes, grids, dots)
 - Add subtle noise textures
@@ -126,13 +145,19 @@ Create depth and atmosphere through layered backgrounds and contextual effects.
 - Match background complexity to overall aesthetic
 
 **Example Patterns**:
+
 ```css
 /* Layered gradient */
 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 
 /* Geometric pattern */
-background-image:
-  repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,.05) 10px, rgba(0,0,0,.05) 20px);
+background-image: repeating-linear-gradient(
+  45deg,
+  transparent,
+  transparent 10px,
+  rgba(0, 0, 0, 0.05) 10px,
+  rgba(0, 0, 0, 0.05) 20px
+);
 
 /* Subtle noise texture */
 background-image: url('data:image/svg+xml,...'), linear-gradient(...);
@@ -143,6 +168,7 @@ background-image: url('data:image/svg+xml,...'), linear-gradient(...);
 Review the design against common AI-generated UI pitfalls.
 
 **Anti-Pattern Checklist**:
+
 - [ ] Not using Inter, Roboto, Arial, or system fonts
 - [ ] No purple gradients on white backgrounds
 - [ ] Color palette has clear hierarchy (dominant + accent, not even distribution)
@@ -157,6 +183,7 @@ Review the design against common AI-generated UI pitfalls.
 Provide specific, actionable design recommendations.
 
 **Expected Output**:
+
 ```json
 {
   "typography": {
@@ -197,6 +224,7 @@ Provide specific, actionable design recommendations.
 ### Example 1: Technical Documentation Site
 
 **Input**:
+
 ```json
 {
   "project": "Developer documentation platform",
@@ -206,6 +234,7 @@ Provide specific, actionable design recommendations.
 ```
 
 **Output**:
+
 ```json
 {
   "typography": {
@@ -237,6 +266,7 @@ Provide specific, actionable design recommendations.
 ### Example 2: Creative Agency Landing Page
 
 **Input**:
+
 ```json
 {
   "project": "Design agency portfolio",
@@ -246,6 +276,7 @@ Provide specific, actionable design recommendations.
 ```
 
 **Output**:
+
 ```json
 {
   "typography": {
@@ -261,7 +292,11 @@ Provide specific, actionable design recommendations.
   "animations": {
     "approach": "Framer Motion for complex orchestration",
     "focus": "Full-page orchestrated entry sequence",
-    "key_moments": ["Hero text reveal with stagger", "Project thumbnails parallax", "Section transitions"]
+    "key_moments": [
+      "Hero text reveal with stagger",
+      "Project thumbnails parallax",
+      "Section transitions"
+    ]
   },
   "backgrounds": {
     "technique": "Animated gradient mesh with organic shapes",
@@ -277,6 +312,7 @@ Provide specific, actionable design recommendations.
 ### Example 3: Anti-Pattern Detection
 
 **Input**:
+
 ```json
 {
   "project": "SaaS dashboard",
@@ -290,6 +326,7 @@ Provide specific, actionable design recommendations.
 ```
 
 **Output**:
+
 ```json
 {
   "typography": {
@@ -325,6 +362,7 @@ Provide specific, actionable design recommendations.
 ### Example 4: E-commerce Product Page
 
 **Input**:
+
 ```json
 {
   "project": "Premium fashion e-commerce",
@@ -334,6 +372,7 @@ Provide specific, actionable design recommendations.
 ```
 
 **Output**:
+
 ```json
 {
   "typography": {
@@ -349,7 +388,11 @@ Provide specific, actionable design recommendations.
   "animations": {
     "approach": "CSS-only for lightweight performance",
     "focus": "Smooth product image transitions and subtle reveals",
-    "key_moments": ["Product image crossfade", "Size selector micro-interaction", "Add to cart confirmation"]
+    "key_moments": [
+      "Product image crossfade",
+      "Size selector micro-interaction",
+      "Add to cart confirmation"
+    ]
   },
   "backgrounds": {
     "technique": "Soft gradient from cream to off-white with subtle texture",
@@ -399,6 +442,7 @@ Use frontend-aesthetics Skill to evaluate existing frontend code for generic pat
 ## Step 3: Frontend Aesthetics Review
 
 Use frontend-aesthetics Skill in validation mode:
+
 - Extract current font choices from CSS
 - Identify color palette from CSS variables
 - Review animation implementation
@@ -415,13 +459,14 @@ Include frontend-aesthetics validation in quality gates:
 ## Phase 2: Design Review
 
 Use frontend-aesthetics Skill to validate design choices:
+
 1. Check typography selection
 2. Validate color scheme
 3. Review animation approach
 4. Assess background depth
 
 If anti_pattern_validation.passed == false:
-  Delegate design improvements to frontend worker
+Delegate design improvements to frontend worker
 ```
 
 ## Notes

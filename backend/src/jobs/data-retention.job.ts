@@ -233,9 +233,7 @@ async function deleteExpiredCacheEntries(): Promise<number> {
  * @param job - BullMQ job with data retention configuration
  * @returns Cleanup result with counts and duration
  */
-async function processDataRetention(
-  job: Job<DataRetentionJobData>
-): Promise<DataRetentionResult> {
+async function processDataRetention(job: Job<DataRetentionJobData>): Promise<DataRetentionResult> {
   const startTime = Date.now();
   const { triggeredBy } = job.data;
 

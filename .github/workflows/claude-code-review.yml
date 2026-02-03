@@ -30,13 +30,13 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to review"
+        description: 'PR number to review'
         required: true
         type: number
       focus_area:
-        description: "Review focus (security/performance/quality/all)"
+        description: 'Review focus (security/performance/quality/all)'
         required: false
-        default: "all"
+        default: 'all'
         type: choice
         options:
           - all
@@ -48,8 +48,8 @@ permissions:
   contents: read
   pull-requests: write
   issues: read
-  id-token: write      # Required for OIDC authentication
-  actions: read        # Allows Claude to read CI results
+  id-token: write # Required for OIDC authentication
+  actions: read # Allows Claude to read CI results
 
 jobs:
   claude-review:
@@ -61,7 +61,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for better context
+          fetch-depth: 0 # Full history for better context
 
       - name: Determine PR context
         id: pr-context

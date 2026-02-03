@@ -84,7 +84,7 @@ class AppNotificationService {
    * Delete a notification
    */
   async delete(id: string, userId: string): Promise<void> {
-     const notification = await this.db.notification.findFirst({
+    const notification = await this.db.notification.findFirst({
       where: { id, userId },
     });
 

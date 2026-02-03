@@ -72,12 +72,8 @@ function SettingField({
         <Icon className="h-5 w-5 text-[var(--buh-primary)]" />
       </div>
       <div className="flex-1">
-        <label className="block text-sm font-semibold text-[var(--buh-foreground)]">
-          {label}
-        </label>
-        <p className="mt-1 text-sm text-[var(--buh-foreground-muted)]">
-          {description}
-        </p>
+        <label className="block text-sm font-semibold text-[var(--buh-foreground)]">{label}</label>
+        <p className="mt-1 text-sm text-[var(--buh-foreground-muted)]">{description}</p>
         <div className="mt-3">{children}</div>
       </div>
     </div>
@@ -93,12 +89,7 @@ export function SurveySettingsContent() {
   const [saveStatus, setSaveStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
 
   // Fetch current settings
-  const {
-    data: settingsData,
-    isLoading,
-    error,
-    refetch,
-  } = trpc.survey.getSettings.useQuery();
+  const { data: settingsData, isLoading, error, refetch } = trpc.survey.getSettings.useQuery();
 
   // Update mutation
   const updateMutation = trpc.survey.updateSettings.useMutation({
@@ -164,9 +155,7 @@ export function SurveySettingsContent() {
           <h2 className="mt-4 text-xl font-semibold text-[var(--buh-foreground)]">
             Ошибка загрузки настроек
           </h2>
-          <p className="mt-2 text-[var(--buh-foreground-muted)]">
-            {error.message}
-          </p>
+          <p className="mt-2 text-[var(--buh-foreground-muted)]">{error.message}</p>
           <Link
             href="/settings/survey"
             className="mt-6 flex items-center gap-2 text-[var(--buh-primary)] hover:underline"
@@ -204,28 +193,28 @@ export function SurveySettingsContent() {
           <HelpButton section="settings.survey" />
           <button
             onClick={handleSave}
-          disabled={updateMutation.isPending || !hasChanges}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
-            hasChanges
-              ? 'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:opacity-90'
-              : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]',
-            'transition-all duration-200',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
-          )}
-        >
-          {updateMutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Сохранение...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              Сохранить
-            </>
-          )}
-        </button>
+            disabled={updateMutation.isPending || !hasChanges}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium',
+              hasChanges
+                ? 'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:opacity-90'
+                : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]',
+              'transition-all duration-200',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            {updateMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Сохранение...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Сохранить
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -384,28 +373,17 @@ export function SurveySettingsContent() {
 
       {/* Help Text */}
       <div className="mt-6 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] p-4">
-        <h4 className="text-sm font-semibold text-[var(--buh-foreground)]">
-          Как работают опросы
-        </h4>
+        <h4 className="text-sm font-semibold text-[var(--buh-foreground)]">Как работают опросы</h4>
         <ul className="mt-2 space-y-1 text-sm text-[var(--buh-foreground-muted)]">
           <li>
             1. В начале каждого квартала (на указанный день) автоматически создается новый опрос
           </li>
-          <li>
-            2. Опрос отправляется всем активным клиентам через Telegram бота
-          </li>
-          <li>
-            3. Клиенты могут ответить в течение указанного срока действия
-          </li>
-          <li>
-            4. На указанный день отправляется напоминание тем, кто еще не ответил
-          </li>
-          <li>
-            5. Низкие оценки (ниже порога) автоматически уведомляют менеджера
-          </li>
+          <li>2. Опрос отправляется всем активным клиентам через Telegram бота</li>
+          <li>3. Клиенты могут ответить в течение указанного срока действия</li>
+          <li>4. На указанный день отправляется напоминание тем, кто еще не ответил</li>
+          <li>5. Низкие оценки (ниже порога) автоматически уведомляют менеджера</li>
         </ul>
       </div>
     </AdminLayout>
   );
 }
-

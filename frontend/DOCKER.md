@@ -38,6 +38,7 @@ curl http://localhost:3000/api/health
 ```
 
 Expected response:
+
 ```json
 {
   "status": "healthy",
@@ -88,6 +89,7 @@ docker-compose down
 1. **Use Multi-Stage Build**: The Dockerfile already implements multi-stage builds for optimal image size.
 
 2. **Build Cache**: Use Docker BuildKit for better caching:
+
    ```bash
    DOCKER_BUILDKIT=1 docker build -t buhbot-frontend:latest .
    ```
@@ -106,6 +108,7 @@ docker-compose down
 ### Health Checks
 
 The Dockerfile includes a built-in health check:
+
 - **Endpoint**: `http://localhost:3000/api/health`
 - **Interval**: 30 seconds
 - **Timeout**: 3 seconds
@@ -113,6 +116,7 @@ The Dockerfile includes a built-in health check:
 - **Retries**: 3
 
 To check container health:
+
 ```bash
 docker inspect --format='{{.State.Health.Status}}' buhbot-frontend
 ```
@@ -132,17 +136,20 @@ docker stop -t 10 buhbot-frontend
 ## Dockerfile Architecture
 
 ### Build Stage
+
 - **Base**: `node:20-alpine`
 - **Purpose**: Compile Next.js application with all dependencies
 - **Output**: Standalone Next.js server in `.next/standalone/`
 
 ### Runtime Stage
+
 - **Base**: `node:20-alpine`
 - **Purpose**: Run production server with minimal dependencies
 - **User**: `nextjs` (UID 1001, non-root)
 - **Size**: ~291MB (includes Node.js runtime + standalone output)
 
 ### Key Features
+
 - Multi-stage build for minimal image size
 - Non-root user for security
 - Health check endpoint
@@ -155,6 +162,7 @@ docker stop -t 10 buhbot-frontend
 ### Build Fails
 
 **Error**: `npm ci` fails during build
+
 ```bash
 # Clear Docker cache and rebuild
 docker build --no-cache -t buhbot-frontend:latest .
@@ -163,6 +171,7 @@ docker build --no-cache -t buhbot-frontend:latest .
 ### Container Exits Immediately
 
 **Error**: Container starts but exits
+
 ```bash
 # Check logs
 docker logs buhbot-frontend
@@ -176,6 +185,7 @@ docker logs buhbot-frontend
 ### Health Check Fails
 
 **Error**: Container marked as unhealthy
+
 ```bash
 # Check health status
 docker inspect --format='{{json .State.Health}}' buhbot-frontend
@@ -187,20 +197,23 @@ docker exec buhbot-frontend wget -qO- http://localhost:3000/api/health
 ### High Memory Usage
 
 **Solution**: Adjust memory limits in docker-compose.yml:
+
 ```yaml
 deploy:
   resources:
     limits:
-      memory: 512M  # Reduce from 1G
+      memory: 512M # Reduce from 1G
 ```
 
 ## Environment Variables
 
 ### Build-Time Variables (Required)
+
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
 
 ### Runtime Variables (Optional)
+
 - `PORT`: Server port (default: 3000)
 - `HOSTNAME`: Bind address (default: 0.0.0.0)
 - `NODE_ENV`: Environment mode (default: production)
@@ -259,6 +272,7 @@ docker push cr.yandex/your-registry-id/buhbot-frontend:latest
 ## Support
 
 For issues or questions:
+
 - Check logs: `docker logs buhbot-frontend`
 - Inspect container: `docker inspect buhbot-frontend`
 - Open issue on GitHub: https://github.com/maslennikov-ig/BuhBot

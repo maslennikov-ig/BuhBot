@@ -11,6 +11,7 @@
 **Description**: Verifies Telegram auth data and links the account to the current user.
 
 **Input (`z.object`)**:
+
 ```typescript
 {
   id: z.number(),          // Telegram User ID
@@ -24,6 +25,7 @@
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean,
@@ -36,12 +38,14 @@
 ```
 
 **Errors**:
+
 - `400 BAD_REQUEST`: Invalid hash (verification failed).
 - `400 BAD_REQUEST`: Auth data expired (>24h).
 - `409 CONFLICT`: Telegram account already linked to another user.
 - `429 TOO_MANY_REQUESTS`: Rate limit exceeded (max 5 attempts per minute).
 
 **Security**:
+
 - Rate limiting: 5 requests per minute per user.
 - Audit log entry created on success with userId, telegramId, timestamp.
 
@@ -55,16 +59,19 @@
 **Input**: `void` (uses context `userId`)
 
 **Output**:
+
 ```typescript
 {
-  success: boolean
+  success: boolean;
 }
 ```
 
 **Errors**:
+
 - `404 NOT_FOUND`: User has no linked Telegram account.
 
 **Security**:
+
 - Audit log entry created on success with userId, previousTelegramId, timestamp.
 
 ---
@@ -75,6 +82,7 @@
 **Description**: Existing query should include `telegramAccount` data.
 
 **Output Update**:
+
 ```typescript
 {
   // ... user fields ...

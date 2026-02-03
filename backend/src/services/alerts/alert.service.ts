@@ -100,13 +100,16 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
       where: { id: 'default' },
     });
 
-    const maxEscalations = globalSettings?.maxEscalations ?? DEFAULT_ESCALATION_CONFIG.maxEscalations;
-    const escalationIntervalMin = globalSettings?.escalationIntervalMin ?? DEFAULT_ESCALATION_CONFIG.escalationIntervalMin;
+    const maxEscalations =
+      globalSettings?.maxEscalations ?? DEFAULT_ESCALATION_CONFIG.maxEscalations;
+    const escalationIntervalMin =
+      globalSettings?.escalationIntervalMin ?? DEFAULT_ESCALATION_CONFIG.escalationIntervalMin;
 
     // Calculate next escalation time
-    const nextEscalationAt = escalationLevel < maxEscalations
-      ? new Date(Date.now() + escalationIntervalMin * 60 * 1000)
-      : null;
+    const nextEscalationAt =
+      escalationLevel < maxEscalations
+        ? new Date(Date.now() + escalationIntervalMin * 60 * 1000)
+        : null;
 
     // Create alert record
     const alert = await prisma.slaAlert.create({
@@ -524,7 +527,7 @@ async function createNotificationsForManagers(
     const users = await prisma.user.findMany({
       where: {
         telegramId: {
-          in: managerTelegramIds.map(id => BigInt(id)),
+          in: managerTelegramIds.map((id) => BigInt(id)),
         },
       },
       select: { id: true, telegramId: true },
@@ -540,21 +543,18 @@ async function createNotificationsForManagers(
 
     // Prepare notification content
     const isWarning = alert.alertType === 'warning';
-    const title = isWarning
-      ? `⚠️ SLA предупреждение`
-      : `🚨 SLA нарушение`;
+    const title = isWarning ? `⚠️ SLA предупреждение` : `🚨 SLA нарушение`;
 
     const clientInfo = clientUsername ? `@${clientUsername}` : 'Клиент';
-    const preview = messagePreview.length > 100
-      ? messagePreview.substring(0, 100) + '...'
-      : messagePreview;
+    const preview =
+      messagePreview.length > 100 ? messagePreview.substring(0, 100) + '...' : messagePreview;
 
     const message = isWarning
       ? `${clientInfo} в чате "${chatTitle}" ждёт ответа ${alert.minutesElapsed} мин. Сообщение: "${preview}"`
       : `${clientInfo} в чате "${chatTitle}" не получил ответ уже ${alert.minutesElapsed} мин! Сообщение: "${preview}"`;
 
     // Create notifications for all found users
-    const notifications = users.map(user =>
+    const notifications = users.map((user) =>
       appNotificationService.create({
         userId: user.id,
         title,

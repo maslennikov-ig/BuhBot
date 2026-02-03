@@ -20,13 +20,14 @@
 
 **Purpose**: Prepare for implementation by analyzing requirements, creating necessary agents, and assigning executors.
 
-- [X] P001 Analyze all tasks and identify required agent types and capabilities [EXECUTOR: MAIN]
-- [X] P002 Create missing agents using meta-agent-v3 [EXECUTOR: meta-agent-v3]
-  → Artifacts: [sla-backend-specialist](.claude/agents/development/workers/sla-backend-specialist.md), [ai-classifier-specialist](.claude/agents/development/workers/ai-classifier-specialist.md)
-- [X] P003 Assign executors to all tasks [EXECUTOR: MAIN]
-- [X] P004 Resolve research tasks: all research completed in research.md [EXECUTOR: MAIN]
+- [x] P001 Analyze all tasks and identify required agent types and capabilities [EXECUTOR: MAIN]
+- [x] P002 Create missing agents using meta-agent-v3 [EXECUTOR: meta-agent-v3]
+      → Artifacts: [sla-backend-specialist](.claude/agents/development/workers/sla-backend-specialist.md), [ai-classifier-specialist](.claude/agents/development/workers/ai-classifier-specialist.md)
+- [x] P003 Assign executors to all tasks [EXECUTOR: MAIN]
+- [x] P004 Resolve research tasks: all research completed in research.md [EXECUTOR: MAIN]
 
 **Agents Created**:
+
 - `sla-backend-specialist` - SLA services, Telegram bot handlers, BullMQ queues/workers, alerts
 - `ai-classifier-specialist` - OpenRouter API, keyword classifier, cache service
 
@@ -36,16 +37,16 @@
 
 **Purpose**: Project initialization, dependencies, and folder structure
 
-- [X] T001 Install backend dependencies (date-fns, date-fns-tz) in backend/package.json [EXECUTOR: MAIN] [SEQUENTIAL]
-  → Artifacts: [package.json](backend/package.json)
-- [X] T002 [P] Create backend directory structure in backend/src/bot/, backend/src/services/, backend/src/queues/, backend/src/api/ [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
-  → Artifacts: directories created
-- [X] T003 [P] Create frontend directory structure in frontend/src/app/dashboard/, frontend/src/app/chats/, frontend/src/app/settings/ [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
-  → Artifacts: directories created
-- [X] T004 [P] Configure Vitest for backend in backend/vitest.config.ts [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
-  → Artifacts: [vitest.config.ts](backend/vitest.config.ts)
-- [X] T005 [P] Add tRPC client setup in frontend/src/lib/trpc.ts [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
-  → Artifacts: [trpc.ts](frontend/src/lib/trpc.ts), [trpc-provider.tsx](frontend/src/lib/trpc-provider.tsx), [trpc.d.ts](frontend/types/trpc.d.ts)
+- [x] T001 Install backend dependencies (date-fns, date-fns-tz) in backend/package.json [EXECUTOR: MAIN] [SEQUENTIAL]
+      → Artifacts: [package.json](backend/package.json)
+- [x] T002 [P] Create backend directory structure in backend/src/bot/, backend/src/services/, backend/src/queues/, backend/src/api/ [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
+      → Artifacts: directories created
+- [x] T003 [P] Create frontend directory structure in frontend/src/app/dashboard/, frontend/src/app/chats/, frontend/src/app/settings/ [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
+      → Artifacts: directories created
+- [x] T004 [P] Configure Vitest for backend in backend/vitest.config.ts [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
+      → Artifacts: [vitest.config.ts](backend/vitest.config.ts)
+- [x] T005 [P] Add tRPC client setup in frontend/src/lib/trpc.ts [EXECUTOR: MAIN] [PARALLEL-GROUP-1]
+      → Artifacts: [trpc.ts](frontend/src/lib/trpc.ts), [trpc-provider.tsx](frontend/src/lib/trpc-provider.tsx), [trpc.d.ts](frontend/types/trpc.d.ts)
 
 ---
 
@@ -57,38 +58,38 @@
 
 ### Database Schema Extension
 
-- [X] T006 Add new enums (MessageClassification, AlertDeliveryStatus, AlertAction) to backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [X] T007 Extend Chat model with SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [X] T008 Extend ClientRequest model with classification and SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [X] T009 Extend SlaAlert model with delivery and escalation fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [X] T010 Extend WorkingSchedule model with timezone field in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
-- [X] T011 [P] Create GlobalSettings model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [X] T012 [P] Create GlobalHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [X] T013 [P] Create ChatHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [X] T014 [P] Create ClassificationCache model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
-- [X] T015 Generate and run Prisma migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [SEQUENTIAL]
-  → Artifacts: [schema.prisma](backend/prisma/schema.prisma), [migration](backend/prisma/migrations/20251122215631_add_sla_monitoring_schema/)
+- [x] T006 Add new enums (MessageClassification, AlertDeliveryStatus, AlertAction) to backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [x] T007 Extend Chat model with SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [x] T008 Extend ClientRequest model with classification and SLA fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [x] T009 Extend SlaAlert model with delivery and escalation fields in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [x] T010 Extend WorkingSchedule model with timezone field in backend/prisma/schema.prisma [EXECUTOR: database-architect] [SEQUENTIAL]
+- [x] T011 [P] Create GlobalSettings model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [x] T012 [P] Create GlobalHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [x] T013 [P] Create ChatHoliday model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [x] T014 [P] Create ClassificationCache model in backend/prisma/schema.prisma [EXECUTOR: database-architect] [PARALLEL-GROUP-2]
+- [x] T015 Generate and run Prisma migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [SEQUENTIAL]
+      → Artifacts: [schema.prisma](backend/prisma/schema.prisma), [migration](backend/prisma/migrations/20251122215631_add_sla_monitoring_schema/)
 
 ### Core Services Foundation
 
-- [X] T016 Create working hours calculator in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  → Artifacts: [working-hours.service.ts](backend/src/services/sla/working-hours.service.ts)
-- [X] T017 [P] Create keyword-based classifier (fallback) in backend/src/services/classifier/keyword-classifier.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
-- [X] T018 [P] Create OpenRouter API client in backend/src/services/classifier/openrouter-client.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
-- [X] T019 Create message classifier service in backend/src/services/classifier/classifier.service.ts (depends on T017, T018) [EXECUTOR: ai-classifier-specialist] [SEQUENTIAL]
-- [X] T020 [P] Create classification cache service in backend/src/services/classifier/cache.service.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
-  → Artifacts: [classifier/](backend/src/services/classifier/)
-- [X] T021 Create BullMQ queue setup in backend/src/queues/setup.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  → Artifacts: [setup.ts](backend/src/queues/setup.ts)
+- [x] T016 Create working hours calculator in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      → Artifacts: [working-hours.service.ts](backend/src/services/sla/working-hours.service.ts)
+- [x] T017 [P] Create keyword-based classifier (fallback) in backend/src/services/classifier/keyword-classifier.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
+- [x] T018 [P] Create OpenRouter API client in backend/src/services/classifier/openrouter-client.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
+- [x] T019 Create message classifier service in backend/src/services/classifier/classifier.service.ts (depends on T017, T018) [EXECUTOR: ai-classifier-specialist] [SEQUENTIAL]
+- [x] T020 [P] Create classification cache service in backend/src/services/classifier/cache.service.ts [EXECUTOR: ai-classifier-specialist] [PARALLEL-GROUP-3]
+      → Artifacts: [classifier/](backend/src/services/classifier/)
+- [x] T021 Create BullMQ queue setup in backend/src/queues/setup.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      → Artifacts: [setup.ts](backend/src/queues/setup.ts)
 
 ### tRPC Infrastructure
 
-- [X] T022 Create tRPC context and router base in backend/src/api/trpc.ts [EXECUTOR: MAIN] [SEQUENTIAL]
-  → Artifacts: Already exists at [trpc.ts](backend/src/api/trpc/trpc.ts)
-- [X] T023 [P] Implement settings.router in backend/src/api/routers/settings.router.ts (from contracts/settings.router.ts) [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
-  → Artifacts: [settings.ts](backend/src/api/trpc/routers/settings.ts)
-- [X] T024 [P] Seed GlobalSettings and Russian holidays in backend/prisma/seed.ts [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
-  → Artifacts: [seed.ts](backend/prisma/seed.ts)
+- [x] T022 Create tRPC context and router base in backend/src/api/trpc.ts [EXECUTOR: MAIN] [SEQUENTIAL]
+      → Artifacts: Already exists at [trpc.ts](backend/src/api/trpc/trpc.ts)
+- [x] T023 [P] Implement settings.router in backend/src/api/routers/settings.router.ts (from contracts/settings.router.ts) [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
+      → Artifacts: [settings.ts](backend/src/api/trpc/routers/settings.ts)
+- [x] T024 [P] Seed GlobalSettings and Russian holidays in backend/prisma/seed.ts [EXECUTOR: database-architect] [PARALLEL-GROUP-4]
+      → Artifacts: [seed.ts](backend/prisma/seed.ts)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -102,19 +103,19 @@
 
 ### Implementation for User Story 1
 
-- [X] T025 [US1] Create Telegraf bot instance in backend/src/bot/bot.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T026 [US1] Implement message handler in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T027 [US1] Create SLA timer service in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T028 [US1] Create SLA timer BullMQ queue in backend/src/queues/sla-timer.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T029 [US1] Create SLA timer worker in backend/src/queues/sla-timer.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  → Artifacts: [bot/](backend/src/bot/), [timer.service.ts](backend/src/services/sla/timer.service.ts), [sla-timer.worker.ts](backend/src/queues/sla-timer.worker.ts)
-- [X] T030 [US1] Implement sla.router createRequest procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [X] T031 [US1] Implement sla.router classifyMessage procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [X] T032 [US1] Implement sla.router startTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [sla.ts](backend/src/api/trpc/routers/sla.ts)
-- [X] T033 [US1] Add webhook setup for Telegram bot in backend/src/bot/webhook.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T034 [US1] Wire message flow: receive → classify → create request → start timer in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  → Artifacts: [webhook.ts](backend/src/bot/webhook.ts), [message.handler.ts](backend/src/bot/handlers/message.handler.ts)
+- [x] T025 [US1] Create Telegraf bot instance in backend/src/bot/bot.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T026 [US1] Implement message handler in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T027 [US1] Create SLA timer service in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T028 [US1] Create SLA timer BullMQ queue in backend/src/queues/sla-timer.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T029 [US1] Create SLA timer worker in backend/src/queues/sla-timer.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      → Artifacts: [bot/](backend/src/bot/), [timer.service.ts](backend/src/services/sla/timer.service.ts), [sla-timer.worker.ts](backend/src/queues/sla-timer.worker.ts)
+- [x] T030 [US1] Implement sla.router createRequest procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [x] T031 [US1] Implement sla.router classifyMessage procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [x] T032 [US1] Implement sla.router startTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [sla.ts](backend/src/api/trpc/routers/sla.ts)
+- [x] T033 [US1] Add webhook setup for Telegram bot in backend/src/bot/webhook.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T034 [US1] Wire message flow: receive → classify → create request → start timer in backend/src/bot/handlers/message.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      → Artifacts: [webhook.ts](backend/src/bot/webhook.ts), [message.handler.ts](backend/src/bot/handlers/message.handler.ts)
 
 **Checkpoint**: Client can send message, system classifies and starts SLA timer (FR-001 to FR-010)
 
@@ -128,20 +129,20 @@
 
 ### Implementation for User Story 2
 
-- [X] T035 [US2] Create response detection handler in backend/src/bot/handlers/response.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  -> Artifacts: [response.handler.ts](backend/src/bot/handlers/response.handler.ts)
-- [X] T036 [US2] Implement SLA timer stop logic in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  -> Artifacts: [timer.service.ts](backend/src/services/sla/timer.service.ts) (enhanced with StopTimerOptions, StopTimerResult)
-- [X] T037 [US2] Calculate working hours response time in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  -> Artifacts: [working-hours.service.ts](backend/src/services/sla/working-hours.service.ts) (already implemented calculateWorkingMinutes)
-- [X] T038 [US2] Create request management service in backend/src/services/sla/request.service.ts (CRUD operations for ClientRequest) [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  -> Artifacts: [request.service.ts](backend/src/services/sla/request.service.ts)
-- [X] T039 [US2] Implement sla.router stopTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  -> Artifacts: [sla.ts](backend/src/api/trpc/routers/sla.ts) (already implemented in T032)
-- [X] T040 [US2] Update ClientRequest status on response in backend/src/services/sla/request.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  -> Artifacts: [request.service.ts](backend/src/services/sla/request.service.ts) (markRequestAsAnswered function)
-- [X] T041 [US2] Handle edge case: response outside working hours in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  -> Artifacts: [timer.service.ts](backend/src/services/sla/timer.service.ts) (calculateWorkingMinutes handles any response time)
+- [x] T035 [US2] Create response detection handler in backend/src/bot/handlers/response.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      -> Artifacts: [response.handler.ts](backend/src/bot/handlers/response.handler.ts)
+- [x] T036 [US2] Implement SLA timer stop logic in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      -> Artifacts: [timer.service.ts](backend/src/services/sla/timer.service.ts) (enhanced with StopTimerOptions, StopTimerResult)
+- [x] T037 [US2] Calculate working hours response time in backend/src/services/sla/working-hours.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      -> Artifacts: [working-hours.service.ts](backend/src/services/sla/working-hours.service.ts) (already implemented calculateWorkingMinutes)
+- [x] T038 [US2] Create request management service in backend/src/services/sla/request.service.ts (CRUD operations for ClientRequest) [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      -> Artifacts: [request.service.ts](backend/src/services/sla/request.service.ts)
+- [x] T039 [US2] Implement sla.router stopTimer procedure in backend/src/api/routers/sla.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      -> Artifacts: [sla.ts](backend/src/api/trpc/routers/sla.ts) (already implemented in T032)
+- [x] T040 [US2] Update ClientRequest status on response in backend/src/services/sla/request.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      -> Artifacts: [request.service.ts](backend/src/services/sla/request.service.ts) (markRequestAsAnswered function)
+- [x] T041 [US2] Handle edge case: response outside working hours in backend/src/services/sla/timer.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      -> Artifacts: [timer.service.ts](backend/src/services/sla/timer.service.ts) (calculateWorkingMinutes handles any response time)
 
 **Checkpoint**: Accountant response stops timer, calculates accurate response time (FR-014, FR-015)
 
@@ -155,18 +156,18 @@
 
 ### Implementation for User Story 3
 
-- [X] T042 [US3] Create alert service in backend/src/services/alerts/alert.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T043 [US3] Implement alert message formatting in backend/src/services/alerts/format.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T044 [US3] Create inline keyboard builder in backend/src/bot/keyboards/alert.keyboard.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T045 [US3] Implement alert BullMQ queue in backend/src/queues/alert.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T046 [US3] Implement alert worker (send to Telegram) in backend/src/queues/alert.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T047 [US3] Create escalation scheduler in backend/src/services/alerts/escalation.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-- [X] T048 [US3] Implement alert callback handlers (Notify, Resolve) in backend/src/bot/handlers/alert-callback.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  → Artifacts: [alerts/](backend/src/services/alerts/), [alert.worker.ts](backend/src/queues/alert.worker.ts), [alert-callback.handler.ts](backend/src/bot/handlers/alert-callback.handler.ts)
-- [X] T049 [US3] Implement alert.router createAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [X] T050 [US3] Implement alert.router resolveAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-- [X] T051 [US3] Implement alert.router notifyAccountant in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [alert.ts](backend/src/api/trpc/routers/alert.ts)
+- [x] T042 [US3] Create alert service in backend/src/services/alerts/alert.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T043 [US3] Implement alert message formatting in backend/src/services/alerts/format.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T044 [US3] Create inline keyboard builder in backend/src/bot/keyboards/alert.keyboard.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T045 [US3] Implement alert BullMQ queue in backend/src/queues/alert.queue.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T046 [US3] Implement alert worker (send to Telegram) in backend/src/queues/alert.worker.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T047 [US3] Create escalation scheduler in backend/src/services/alerts/escalation.service.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+- [x] T048 [US3] Implement alert callback handlers (Notify, Resolve) in backend/src/bot/handlers/alert-callback.handler.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      → Artifacts: [alerts/](backend/src/services/alerts/), [alert.worker.ts](backend/src/queues/alert.worker.ts), [alert-callback.handler.ts](backend/src/bot/handlers/alert-callback.handler.ts)
+- [x] T049 [US3] Implement alert.router createAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [x] T050 [US3] Implement alert.router resolveAlert in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+- [x] T051 [US3] Implement alert.router notifyAccountant in backend/src/api/routers/alert.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [alert.ts](backend/src/api/trpc/routers/alert.ts)
 
 **Checkpoint**: Manager receives breach alerts with working buttons (FR-016 to FR-020)
 
@@ -180,20 +181,20 @@
 
 ### Implementation for User Story 4
 
-- [X] T052 [P] [US4] Create settings page layout in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
-  → Artifacts: [page.tsx](frontend/src/app/settings/page.tsx), [settings-page-content.tsx](frontend/src/app/settings/settings-page-content.tsx)
-- [X] T053 [P] [US4] Create working hours form component in frontend/src/components/settings/WorkingHoursForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
-  → Artifacts: [WorkingHoursForm.tsx](frontend/src/components/settings/WorkingHoursForm.tsx)
-- [X] T054 [P] [US4] Create holiday calendar component in frontend/src/components/settings/HolidayCalendar.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
-  → Artifacts: [HolidayCalendar.tsx](frontend/src/components/settings/HolidayCalendar.tsx)
-- [X] T055 [US4] Implement chat.router updateWorkingSchedule in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts)
-- [X] T056 [US4] Implement settings.router updateGlobalSettings in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
-- [X] T057 [US4] Implement settings.router addGlobalHoliday in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
-- [X] T058 [US4] Wire frontend settings page to tRPC in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
-  → Artifacts: [trpc.d.ts](frontend/types/trpc.d.ts), [tsconfig.json](frontend/tsconfig.json) - added @backend path alias
+- [x] T052 [P] [US4] Create settings page layout in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+      → Artifacts: [page.tsx](frontend/src/app/settings/page.tsx), [settings-page-content.tsx](frontend/src/app/settings/settings-page-content.tsx)
+- [x] T053 [P] [US4] Create working hours form component in frontend/src/components/settings/WorkingHoursForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+      → Artifacts: [WorkingHoursForm.tsx](frontend/src/components/settings/WorkingHoursForm.tsx)
+- [x] T054 [P] [US4] Create holiday calendar component in frontend/src/components/settings/HolidayCalendar.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-5]
+      → Artifacts: [HolidayCalendar.tsx](frontend/src/components/settings/HolidayCalendar.tsx)
+- [x] T055 [US4] Implement chat.router updateWorkingSchedule in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [x] T056 [US4] Implement settings.router updateGlobalSettings in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
+- [x] T057 [US4] Implement settings.router addGlobalHoliday in backend/src/api/routers/settings.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: Already existed in [settings.ts](backend/src/api/trpc/routers/settings.ts)
+- [x] T058 [US4] Wire frontend settings page to tRPC in frontend/src/app/settings/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+      → Artifacts: [trpc.d.ts](frontend/types/trpc.d.ts), [tsconfig.json](frontend/tsconfig.json) - added @backend path alias
 
 **Checkpoint**: Admin can configure working hours, holidays respected (FR-011 to FR-015)
 
@@ -207,26 +208,26 @@
 
 ### Implementation for User Story 5
 
-- [X] T059 [P] [US5] Create dashboard layout in frontend/src/app/dashboard/page.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
-  → Artifacts: [page.tsx](frontend/src/app/dashboard/page.tsx), [dashboard-content.tsx](frontend/src/app/dashboard/dashboard-content.tsx)
-- [X] T060 [P] [US5] Create SLA compliance widget in frontend/src/components/dashboard/SlaComplianceWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
-  → Artifacts: [SlaComplianceWidget.tsx](frontend/src/components/dashboard/SlaComplianceWidget.tsx) - Donut chart with animated counter
-- [X] T061 [P] [US5] Create average response time widget in frontend/src/components/dashboard/ResponseTimeWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
-  → Artifacts: [ResponseTimeWidget.tsx](frontend/src/components/dashboard/ResponseTimeWidget.tsx) - Area chart with trend
-- [X] T062 [P] [US5] Create violations counter widget in frontend/src/components/dashboard/ViolationsWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
-  → Artifacts: [ViolationsWidget.tsx](frontend/src/components/dashboard/ViolationsWidget.tsx) - Big number with pulse animation
-- [X] T063 [P] [US5] Create active alerts widget in frontend/src/components/dashboard/ActiveAlertsWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
-  → Artifacts: [ActiveAlertsWidget.tsx](frontend/src/components/dashboard/ActiveAlertsWidget.tsx) - Severity breakdown
-- [X] T064 [P] [US5] Create recent requests table in frontend/src/components/dashboard/RecentRequestsTable.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
-  → Artifacts: [RecentRequestsTable.tsx](frontend/src/components/dashboard/RecentRequestsTable.tsx) - Status badges, hover effects
-- [X] T065 [US5] Implement analytics.router getDashboard in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
-- [X] T066 [US5] Implement analytics.router getAccountantStats in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
-- [X] T067 [US5] Implement analytics.router exportReport in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
-- [X] T068 [US5] Add real-time updates with polling in frontend/src/app/dashboard/dashboard-content.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
-  → Artifacts: [dashboard-content.tsx](frontend/src/app/dashboard/dashboard-content.tsx) - tRPC query with 30s polling
+- [x] T059 [P] [US5] Create dashboard layout in frontend/src/app/dashboard/page.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
+      → Artifacts: [page.tsx](frontend/src/app/dashboard/page.tsx), [dashboard-content.tsx](frontend/src/app/dashboard/dashboard-content.tsx)
+- [x] T060 [P] [US5] Create SLA compliance widget in frontend/src/components/dashboard/SlaComplianceWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
+      → Artifacts: [SlaComplianceWidget.tsx](frontend/src/components/dashboard/SlaComplianceWidget.tsx) - Donut chart with animated counter
+- [x] T061 [P] [US5] Create average response time widget in frontend/src/components/dashboard/ResponseTimeWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
+      → Artifacts: [ResponseTimeWidget.tsx](frontend/src/components/dashboard/ResponseTimeWidget.tsx) - Area chart with trend
+- [x] T062 [P] [US5] Create violations counter widget in frontend/src/components/dashboard/ViolationsWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
+      → Artifacts: [ViolationsWidget.tsx](frontend/src/components/dashboard/ViolationsWidget.tsx) - Big number with pulse animation
+- [x] T063 [P] [US5] Create active alerts widget in frontend/src/components/dashboard/ActiveAlertsWidget.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
+      → Artifacts: [ActiveAlertsWidget.tsx](frontend/src/components/dashboard/ActiveAlertsWidget.tsx) - Severity breakdown
+- [x] T064 [P] [US5] Create recent requests table in frontend/src/components/dashboard/RecentRequestsTable.tsx [EXECUTOR: nextjs-ui-designer] [PARALLEL-GROUP-6]
+      → Artifacts: [RecentRequestsTable.tsx](frontend/src/components/dashboard/RecentRequestsTable.tsx) - Status badges, hover effects
+- [x] T065 [US5] Implement analytics.router getDashboard in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
+- [x] T066 [US5] Implement analytics.router getAccountantStats in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
+- [x] T067 [US5] Implement analytics.router exportReport in backend/src/api/routers/analytics.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [analytics.ts](backend/src/api/trpc/routers/analytics.ts)
+- [x] T068 [US5] Add real-time updates with polling in frontend/src/app/dashboard/dashboard-content.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+      → Artifacts: [dashboard-content.tsx](frontend/src/app/dashboard/dashboard-content.tsx) - tRPC query with 30s polling
 
 **Checkpoint**: Dashboard shows all metrics with real-time updates (FR-021, FR-023, FR-024, FR-026)
 
@@ -240,24 +241,24 @@
 
 ### Implementation for User Story 6
 
-- [X] T069 [P] [US6] Create chats list page in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-  → Artifacts: [page.tsx](frontend/src/app/chats/page.tsx), [ChatsListContent.tsx](frontend/src/components/chats/ChatsListContent.tsx)
-- [X] T070 [P] [US6] Create chat details page in frontend/src/app/chats/[id]/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-  → Artifacts: [page.tsx](frontend/src/app/chats/[id]/page.tsx), [ChatDetailsContent.tsx](frontend/src/components/chats/ChatDetailsContent.tsx)
-- [X] T071 [P] [US6] Create chat settings form in frontend/src/components/chats/ChatSettingsForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-  → Artifacts: [ChatSettingsForm.tsx](frontend/src/components/chats/ChatSettingsForm.tsx)
-- [X] T072 [P] [US6] Create accountant assignment dropdown in frontend/src/components/chats/AccountantSelect.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
-  → Artifacts: [AccountantSelect.tsx](frontend/src/components/chats/AccountantSelect.tsx)
-- [X] T073 [US6] Implement chat.router getChats in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: Already existed as `list` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
-- [X] T074 [US6] Implement chat.router getChatById in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: Already existed as `getById` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
-- [X] T075 [US6] Implement chat.router updateChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: Already existed as `update` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
-- [X] T076 [US6] Implement chat.router registerChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
-  → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts) - upsert with defaults
-- [X] T077 [US6] Wire frontend chat pages to tRPC in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
-  → Artifacts: tRPC integrated in ChatsListContent, ChatDetailsContent, ChatSettingsForm
+- [x] T069 [P] [US6] Create chats list page in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+      → Artifacts: [page.tsx](frontend/src/app/chats/page.tsx), [ChatsListContent.tsx](frontend/src/components/chats/ChatsListContent.tsx)
+- [x] T070 [P] [US6] Create chat details page in frontend/src/app/chats/[id]/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+      → Artifacts: [page.tsx](frontend/src/app/chats/[id]/page.tsx), [ChatDetailsContent.tsx](frontend/src/components/chats/ChatDetailsContent.tsx)
+- [x] T071 [P] [US6] Create chat settings form in frontend/src/components/chats/ChatSettingsForm.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+      → Artifacts: [ChatSettingsForm.tsx](frontend/src/components/chats/ChatSettingsForm.tsx)
+- [x] T072 [P] [US6] Create accountant assignment dropdown in frontend/src/components/chats/AccountantSelect.tsx [EXECUTOR: fullstack-nextjs-specialist] [PARALLEL-GROUP-7]
+      → Artifacts: [AccountantSelect.tsx](frontend/src/components/chats/AccountantSelect.tsx)
+- [x] T073 [US6] Implement chat.router getChats in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: Already existed as `list` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [x] T074 [US6] Implement chat.router getChatById in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: Already existed as `getById` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [x] T075 [US6] Implement chat.router updateChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: Already existed as `update` procedure in [chats.ts](backend/src/api/trpc/routers/chats.ts)
+- [x] T076 [US6] Implement chat.router registerChat in backend/src/api/routers/chat.router.ts [EXECUTOR: api-builder] [SEQUENTIAL]
+      → Artifacts: [chats.ts](backend/src/api/trpc/routers/chats.ts) - upsert with defaults
+- [x] T077 [US6] Wire frontend chat pages to tRPC in frontend/src/app/chats/page.tsx [EXECUTOR: fullstack-nextjs-specialist] [SEQUENTIAL]
+      → Artifacts: tRPC integrated in ChatsListContent, ChatDetailsContent, ChatSettingsForm
 
 **Checkpoint**: Admin can manage chats completely (FR-022, FR-025)
 
@@ -267,41 +268,41 @@
 
 **Purpose**: Integration, optimization, and hardening
 
-- [X] T078 [P] Create app router root with tRPC routes in backend/src/api/index.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
-  → Artifacts: Already existed in [trpc/index.ts](backend/src/api/trpc/index.ts), [router.ts](backend/src/api/trpc/router.ts)
-- [X] T079 [P] Add RLS policies for new tables via migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [PARALLEL-GROUP-8]
-  → Artifacts: [migration.sql](backend/prisma/migrations/20251123000001_add_rls_policies_sla_monitoring/migration.sql)
-- [X] T080 [P] Create health check endpoint in backend/src/api/health.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
-  → Artifacts: Already existed in [health.ts](backend/src/api/health.ts)
-- [X] T081 Add rate limiting middleware in backend/src/bot/middleware/rate-limit.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
-  → Artifacts: [rate-limit.ts](backend/src/bot/middleware/rate-limit.ts)
-- [X] T082 Add error handling middleware in backend/src/bot/middleware/error.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
-  → Artifacts: [error.ts](backend/src/bot/middleware/error.ts), [index.ts](backend/src/bot/middleware/index.ts)
-- [X] T083 Configure Winston logging in backend/src/lib/logger.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
-  → Artifacts: Already existed in [logger.ts](backend/src/utils/logger.ts)
-- [X] T084 Create Docker entrypoint in backend/Dockerfile updates [EXECUTOR: docker-compose-specialist] [SEQUENTIAL]
-  → Artifacts: Already existed in [Dockerfile](backend/Dockerfile)
-- [X] T085 Run type-check and fix any errors [EXECUTOR: MAIN] [SEQUENTIAL]
-  → Artifacts: Backend type-check PASSED, Frontend build PASSED
-- [X] T086 Run quickstart.md validation manually [EXECUTOR: MAIN] [SEQUENTIAL]
-  → Artifacts: All routes and procedures validated
-- [X] T087 [P] Create data retention job in backend/src/jobs/data-retention.job.ts (delete records older than 3 years, BullMQ repeatable daily 3:00 AM) [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-8]
-  → Artifacts: [data-retention.job.ts](backend/src/jobs/data-retention.job.ts)
+- [x] T078 [P] Create app router root with tRPC routes in backend/src/api/index.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
+      → Artifacts: Already existed in [trpc/index.ts](backend/src/api/trpc/index.ts), [router.ts](backend/src/api/trpc/router.ts)
+- [x] T079 [P] Add RLS policies for new tables via migration in backend/prisma/migrations/ [EXECUTOR: database-architect] [PARALLEL-GROUP-8]
+      → Artifacts: [migration.sql](backend/prisma/migrations/20251123000001_add_rls_policies_sla_monitoring/migration.sql)
+- [x] T080 [P] Create health check endpoint in backend/src/api/health.ts [EXECUTOR: api-builder] [PARALLEL-GROUP-8]
+      → Artifacts: Already existed in [health.ts](backend/src/api/health.ts)
+- [x] T081 Add rate limiting middleware in backend/src/bot/middleware/rate-limit.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
+      → Artifacts: [rate-limit.ts](backend/src/bot/middleware/rate-limit.ts)
+- [x] T082 Add error handling middleware in backend/src/bot/middleware/error.ts [EXECUTOR: telegraf-bot-middleware-specialist] [SEQUENTIAL]
+      → Artifacts: [error.ts](backend/src/bot/middleware/error.ts), [index.ts](backend/src/bot/middleware/index.ts)
+- [x] T083 Configure Winston logging in backend/src/lib/logger.ts [EXECUTOR: sla-backend-specialist] [SEQUENTIAL]
+      → Artifacts: Already existed in [logger.ts](backend/src/utils/logger.ts)
+- [x] T084 Create Docker entrypoint in backend/Dockerfile updates [EXECUTOR: docker-compose-specialist] [SEQUENTIAL]
+      → Artifacts: Already existed in [Dockerfile](backend/Dockerfile)
+- [x] T085 Run type-check and fix any errors [EXECUTOR: MAIN] [SEQUENTIAL]
+      → Artifacts: Backend type-check PASSED, Frontend build PASSED
+- [x] T086 Run quickstart.md validation manually [EXECUTOR: MAIN] [SEQUENTIAL]
+      → Artifacts: All routes and procedures validated
+- [x] T087 [P] Create data retention job in backend/src/jobs/data-retention.job.ts (delete records older than 3 years, BullMQ repeatable daily 3:00 AM) [EXECUTOR: sla-backend-specialist] [PARALLEL-GROUP-8]
+      → Artifacts: [data-retention.job.ts](backend/src/jobs/data-retention.job.ts)
 
 ---
 
 ## Executor Summary
 
-| Executor | Task Count | Domain |
-|----------|------------|--------|
-| **MAIN** | 8 | Trivial setup, validation |
-| **database-architect** | 11 | Prisma schema, migrations, RLS, seed |
-| **api-builder** | 18 | tRPC routers, procedures |
-| **sla-backend-specialist** | 25 | SLA services, bot handlers, BullMQ queues |
-| **ai-classifier-specialist** | 4 | OpenRouter, keyword classifier, cache |
-| **fullstack-nextjs-specialist** | 17 | Next.js pages, components, tRPC client |
-| **telegraf-bot-middleware-specialist** | 2 | Rate limit, error middleware |
-| **docker-compose-specialist** | 1 | Dockerfile |
+| Executor                               | Task Count | Domain                                    |
+| -------------------------------------- | ---------- | ----------------------------------------- |
+| **MAIN**                               | 8          | Trivial setup, validation                 |
+| **database-architect**                 | 11         | Prisma schema, migrations, RLS, seed      |
+| **api-builder**                        | 18         | tRPC routers, procedures                  |
+| **sla-backend-specialist**             | 25         | SLA services, bot handlers, BullMQ queues |
+| **ai-classifier-specialist**           | 4          | OpenRouter, keyword classifier, cache     |
+| **fullstack-nextjs-specialist**        | 17         | Next.js pages, components, tRPC client    |
+| **telegraf-bot-middleware-specialist** | 2          | Rate limit, error middleware              |
+| **docker-compose-specialist**          | 1          | Dockerfile                                |
 
 ---
 
@@ -319,15 +320,15 @@
 
 ### Parallel Groups
 
-| Group | Tasks | Executor(s) |
-|-------|-------|-------------|
-| PARALLEL-GROUP-1 | T002, T003, T004, T005 | MAIN, fullstack-nextjs-specialist |
-| PARALLEL-GROUP-2 | T011, T012, T013, T014 | database-architect |
-| PARALLEL-GROUP-3 | T017, T018, T020 | ai-classifier-specialist |
-| PARALLEL-GROUP-4 | T023, T024 | api-builder, database-architect |
-| PARALLEL-GROUP-5 | T052, T053, T054 | fullstack-nextjs-specialist |
-| PARALLEL-GROUP-6 | T059-T064 | fullstack-nextjs-specialist |
-| PARALLEL-GROUP-7 | T069-T072 | fullstack-nextjs-specialist |
+| Group            | Tasks                  | Executor(s)                                             |
+| ---------------- | ---------------------- | ------------------------------------------------------- |
+| PARALLEL-GROUP-1 | T002, T003, T004, T005 | MAIN, fullstack-nextjs-specialist                       |
+| PARALLEL-GROUP-2 | T011, T012, T013, T014 | database-architect                                      |
+| PARALLEL-GROUP-3 | T017, T018, T020       | ai-classifier-specialist                                |
+| PARALLEL-GROUP-4 | T023, T024             | api-builder, database-architect                         |
+| PARALLEL-GROUP-5 | T052, T053, T054       | fullstack-nextjs-specialist                             |
+| PARALLEL-GROUP-6 | T059-T064              | fullstack-nextjs-specialist                             |
+| PARALLEL-GROUP-7 | T069-T072              | fullstack-nextjs-specialist                             |
 | PARALLEL-GROUP-8 | T078, T079, T080, T087 | api-builder, database-architect, sla-backend-specialist |
 
 ---
@@ -356,20 +357,20 @@
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| **Total Tasks** | 91 (P001-P004 + T001-T087) |
-| **Setup Tasks** | 5 |
-| **Foundational Tasks** | 19 |
-| **US1 Tasks** | 10 |
-| **US2 Tasks** | 7 |
-| **US3 Tasks** | 10 |
-| **US4 Tasks** | 7 |
-| **US5 Tasks** | 10 |
-| **US6 Tasks** | 9 |
-| **Polish Tasks** | 10 |
-| **Parallel Groups** | 8 |
-| **MVP Scope** | Phase 1-5 (US1-US3) |
+| Metric                 | Value                      |
+| ---------------------- | -------------------------- |
+| **Total Tasks**        | 91 (P001-P004 + T001-T087) |
+| **Setup Tasks**        | 5                          |
+| **Foundational Tasks** | 19                         |
+| **US1 Tasks**          | 10                         |
+| **US2 Tasks**          | 7                          |
+| **US3 Tasks**          | 10                         |
+| **US4 Tasks**          | 7                          |
+| **US5 Tasks**          | 10                         |
+| **US6 Tasks**          | 9                          |
+| **Polish Tasks**       | 10                         |
+| **Parallel Groups**    | 8                          |
+| **MVP Scope**          | Phase 1-5 (US1-US3)        |
 
 ---
 

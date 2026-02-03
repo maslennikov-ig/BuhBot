@@ -14,12 +14,7 @@
 
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
-import {
-  scheduleSlaCheck,
-  cancelSlaCheck,
-  slaTimerQueue,
-  queueAlert,
-} from '../../queues/setup.js';
+import { scheduleSlaCheck, cancelSlaCheck, slaTimerQueue, queueAlert } from '../../queues/setup.js';
 import {
   calculateDelayUntilBreach,
   calculateWorkingMinutes,
@@ -102,12 +97,8 @@ async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
         return `${hours}:${minutes}`;
       };
 
-      const startTime = firstSchedule
-        ? formatTime(firstSchedule.startTime)
-        : '09:00';
-      const endTime = firstSchedule
-        ? formatTime(firstSchedule.endTime)
-        : '18:00';
+      const startTime = firstSchedule ? formatTime(firstSchedule.startTime) : '09:00';
+      const endTime = firstSchedule ? formatTime(firstSchedule.endTime) : '18:00';
 
       return {
         timezone,
@@ -219,11 +210,7 @@ export async function startSlaTimer(
     }
 
     // Calculate delay until breach in milliseconds
-    const delayMs = calculateDelayUntilBreach(
-      request.receivedAt,
-      thresholdMinutes,
-      schedule
-    );
+    const delayMs = calculateDelayUntilBreach(request.receivedAt, thresholdMinutes, schedule);
 
     // Update request with timer started timestamp
     await prisma.clientRequest.update({
@@ -361,11 +348,7 @@ export async function stopSlaTimer(
 
     // Calculate elapsed working time
     const schedule = await getScheduleForChat(String(request.chatId));
-    const elapsedMinutes = calculateWorkingMinutes(
-      request.receivedAt,
-      responseAt,
-      schedule
-    );
+    const elapsedMinutes = calculateWorkingMinutes(request.receivedAt, responseAt, schedule);
 
     // Get SLA threshold
     const thresholdMinutes = request.chat?.slaThresholdMinutes ?? 60;
@@ -375,9 +358,8 @@ export async function stopSlaTimer(
     const breached = request.slaBreached || elapsedMinutes >= thresholdMinutes;
 
     // Convert responseMessageId to bigint if provided
-    const responseMessageIdBigInt = options.responseMessageId != null
-      ? BigInt(options.responseMessageId)
-      : null;
+    const responseMessageIdBigInt =
+      options.responseMessageId != null ? BigInt(options.responseMessageId) : null;
 
     // Update request with response details
     await prisma.clientRequest.update({
@@ -504,18 +486,9 @@ export async function resumeSlaTimer(requestId: string): Promise<void> {
     const thresholdMinutes = request.chat.slaThresholdMinutes ?? 60;
     const schedule = await getScheduleForChat(String(request.chatId));
 
-    const delayMs = calculateDelayUntilBreach(
-      request.receivedAt,
-      thresholdMinutes,
-      schedule
-    );
+    const delayMs = calculateDelayUntilBreach(request.receivedAt, thresholdMinutes, schedule);
 
-    await scheduleSlaCheck(
-      requestId,
-      String(request.chatId),
-      thresholdMinutes,
-      delayMs
-    );
+    await scheduleSlaCheck(requestId, String(request.chatId), thresholdMinutes, delayMs);
 
     logger.info('SLA timer resumed', {
       requestId,
@@ -566,11 +539,7 @@ export async function getSlaStatus(requestId: string): Promise<SlaStatus | null>
     const schedule = await getScheduleForChat(String(request.chatId));
 
     // Calculate elapsed working time
-    const elapsedMinutes = calculateWorkingMinutes(
-      request.receivedAt,
-      new Date(),
-      schedule
-    );
+    const elapsedMinutes = calculateWorkingMinutes(request.receivedAt, new Date(), schedule);
 
     const remainingMinutes = Math.max(0, thresholdMinutes - elapsedMinutes);
     const breached = elapsedMinutes >= thresholdMinutes || request.slaBreached;
@@ -693,11 +662,7 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
         const schedule = await getScheduleForChat(chatId);
 
         // Calculate elapsed working time
-        const elapsedMinutes = calculateWorkingMinutes(
-          request.receivedAt,
-          new Date(),
-          schedule
-        );
+        const elapsedMinutes = calculateWorkingMinutes(request.receivedAt, new Date(), schedule);
 
         if (elapsedMinutes >= thresholdMinutes) {
           // Breach time has already passed - mark as breached immediately
@@ -754,11 +719,7 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
           result.breached++;
         } else {
           // Breach time not yet passed - reschedule the job
-          const delayMs = calculateDelayUntilBreach(
-            request.receivedAt,
-            thresholdMinutes,
-            schedule
-          );
+          const delayMs = calculateDelayUntilBreach(request.receivedAt, thresholdMinutes, schedule);
 
           // Ensure delay is positive (at least 1 second)
           const actualDelayMs = Math.max(delayMs, 1000);

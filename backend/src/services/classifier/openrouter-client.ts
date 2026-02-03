@@ -122,14 +122,13 @@ function parseAIResponse(content: string): AIClassificationResponse {
 
   // Validate and normalize confidence
   const confidence =
-    typeof response.confidence === 'number'
-      ? Math.min(1, Math.max(0, response.confidence))
-      : 0.5;
+    typeof response.confidence === 'number' ? Math.min(1, Math.max(0, response.confidence)) : 0.5;
 
   return {
     classification: response.classification,
     confidence,
-    reasoning: typeof response.reasoning === 'string' ? response.reasoning : 'No reasoning provided',
+    reasoning:
+      typeof response.reasoning === 'string' ? response.reasoning : 'No reasoning provided',
   };
 }
 
@@ -137,7 +136,7 @@ function parseAIResponse(content: string): AIClassificationResponse {
  * Sleep utility for retry delays
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -187,19 +186,19 @@ class OpenRouterClient {
   private config: ClassifierConfig;
   private circuitBreaker: ICircuitBreaker;
 
-  constructor(
-    config: Partial<ClassifierConfig> = {},
-    circuitBreaker?: ICircuitBreaker
-  ) {
+  constructor(config: Partial<ClassifierConfig> = {}, circuitBreaker?: ICircuitBreaker) {
     this.config = { ...DEFAULT_CLASSIFIER_CONFIG, ...config };
     this.circuitBreaker = circuitBreaker ?? createCircuitBreaker(this.config.circuitBreaker);
 
     // Use API key from config (DB) or fall back to env
     const apiKey = this.config.openRouterApiKey ?? process.env['OPENROUTER_API_KEY'];
     if (!apiKey) {
-      logger.warn('OPENROUTER_API_KEY not set (neither in DB nor env), AI classification will fail', {
-        service: 'classifier',
-      });
+      logger.warn(
+        'OPENROUTER_API_KEY not set (neither in DB nor env), AI classification will fail',
+        {
+          service: 'classifier',
+        }
+      );
     }
 
     this.client = new OpenAI({

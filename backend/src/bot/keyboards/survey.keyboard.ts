@@ -124,9 +124,7 @@ export interface SurveyCallbackData {
  * // Returns: null
  * ```
  */
-export function parseSurveyCallback(
-  callbackData: string
-): SurveyCallbackData | null {
+export function parseSurveyCallback(callbackData: string): SurveyCallbackData | null {
   const match = callbackData.match(/^survey:rating:([^:]+):(\d)$/);
   if (!match || !match[1] || !match[2]) {
     return null;

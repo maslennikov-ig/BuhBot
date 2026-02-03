@@ -42,24 +42,11 @@ const workingHoursSchema = z.object({
   defaultWorkingDays: z
     .array(z.number().min(1).max(7))
     .min(1, 'Выберите хотя бы один рабочий день'),
-  defaultStartTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Формат: ЧЧ:ММ'),
-  defaultEndTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Формат: ЧЧ:ММ'),
-  defaultSlaThreshold: z
-    .number()
-    .min(1, 'Минимум 1 минута')
-    .max(480, 'Максимум 480 минут'),
-  maxEscalations: z
-    .number()
-    .min(1, 'Минимум 1 эскалация')
-    .max(10, 'Максимум 10 эскалаций'),
-  escalationIntervalMin: z
-    .number()
-    .min(5, 'Минимум 5 минут')
-    .max(120, 'Максимум 120 минут'),
+  defaultStartTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Формат: ЧЧ:ММ'),
+  defaultEndTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Формат: ЧЧ:ММ'),
+  defaultSlaThreshold: z.number().min(1, 'Минимум 1 минута').max(480, 'Максимум 480 минут'),
+  maxEscalations: z.number().min(1, 'Минимум 1 эскалация').max(10, 'Максимум 10 эскалаций'),
+  escalationIntervalMin: z.number().min(5, 'Минимум 5 минут').max(120, 'Максимум 120 минут'),
 });
 
 type WorkingHoursFormData = z.infer<typeof workingHoursSchema>;
@@ -110,13 +97,10 @@ export function WorkingHoursForm() {
     if (settings) {
       form.reset({
         defaultTimezone: settings.defaultTimezone ?? DEFAULT_VALUES.defaultTimezone,
-        defaultWorkingDays:
-          settings.defaultWorkingDays ?? DEFAULT_VALUES.defaultWorkingDays,
-        defaultStartTime:
-          settings.defaultStartTime ?? DEFAULT_VALUES.defaultStartTime,
+        defaultWorkingDays: settings.defaultWorkingDays ?? DEFAULT_VALUES.defaultWorkingDays,
+        defaultStartTime: settings.defaultStartTime ?? DEFAULT_VALUES.defaultStartTime,
         defaultEndTime: settings.defaultEndTime ?? DEFAULT_VALUES.defaultEndTime,
-        defaultSlaThreshold:
-          settings.defaultSlaThreshold ?? DEFAULT_VALUES.defaultSlaThreshold,
+        defaultSlaThreshold: settings.defaultSlaThreshold ?? DEFAULT_VALUES.defaultSlaThreshold,
         maxEscalations: settings.maxEscalations ?? DEFAULT_VALUES.maxEscalations,
         escalationIntervalMin:
           settings.escalationIntervalMin ?? DEFAULT_VALUES.escalationIntervalMin,
@@ -155,9 +139,7 @@ export function WorkingHoursForm() {
             <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">
               Настройки рабочего времени
             </h2>
-            <p className="text-sm text-[var(--buh-foreground-muted)]">
-              Загрузка...
-            </p>
+            <p className="text-sm text-[var(--buh-foreground-muted)]">Загрузка...</p>
           </div>
         </div>
         {/* Loading skeleton */}
@@ -251,9 +233,7 @@ export function WorkingHoursForm() {
             name="defaultWorkingDays"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[var(--buh-foreground)]">
-                  Рабочие дни
-                </FormLabel>
+                <FormLabel className="text-[var(--buh-foreground)]">Рабочие дни</FormLabel>
                 <FormControl>
                   <div className="flex flex-wrap gap-2">
                     {DAYS.map((day) => {
@@ -263,9 +243,7 @@ export function WorkingHoursForm() {
                         <button
                           key={day.value}
                           type="button"
-                          onClick={() =>
-                            toggleDay(field.value, day.value, field.onChange)
-                          }
+                          onClick={() => toggleDay(field.value, day.value, field.onChange)}
                           title={day.fullLabel}
                           className={cn(
                             'relative px-4 py-2.5 text-sm font-medium rounded-lg border-2 transition-all duration-200',

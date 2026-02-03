@@ -168,11 +168,7 @@ export function ReportGeneratorModal({
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <GlassCard
-              variant="elevated"
-              padding="lg"
-              className="w-full max-w-lg relative"
-            >
+            <GlassCard variant="elevated" padding="lg" className="w-full max-w-lg relative">
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -184,9 +180,7 @@ export function ReportGeneratorModal({
 
               {/* Header */}
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-[var(--buh-foreground)]">
-                  {reportTitle}
-                </h2>
+                <h2 className="text-2xl font-bold text-[var(--buh-foreground)]">{reportTitle}</h2>
                 <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
                   Настройте параметры формирования отчета
                 </p>
@@ -219,9 +213,7 @@ export function ReportGeneratorModal({
                 {period === 'custom' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-[var(--buh-foreground)]">
-                        От
-                      </label>
+                      <label className="text-sm font-medium text-[var(--buh-foreground)]">От</label>
                       <input
                         type="date"
                         value={customStartDate}
@@ -230,9 +222,7 @@ export function ReportGeneratorModal({
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-[var(--buh-foreground)]">
-                        До
-                      </label>
+                      <label className="text-sm font-medium text-[var(--buh-foreground)]">До</label>
                       <input
                         type="date"
                         value={customEndDate}
@@ -245,9 +235,7 @@ export function ReportGeneratorModal({
 
                 {/* Format */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--buh-foreground)]">
-                    Формат
-                  </label>
+                  <label className="text-sm font-medium text-[var(--buh-foreground)]">Формат</label>
                   <Select value={format} onValueChange={(v: FormatType) => setFormat(v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Выберите формат" />
@@ -267,10 +255,7 @@ export function ReportGeneratorModal({
                     <label className="text-sm font-medium text-[var(--buh-foreground)]">
                       Фильтр по оператору
                     </label>
-                    <Select
-                      value={selectedAccountantId}
-                      onValueChange={setSelectedAccountantId}
-                    >
+                    <Select value={selectedAccountantId} onValueChange={setSelectedAccountantId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Все операторы" />
                       </SelectTrigger>
@@ -295,8 +280,7 @@ export function ReportGeneratorModal({
                 <Button
                   onClick={handleGenerate}
                   disabled={
-                    isGenerating ||
-                    (period === 'custom' && (!customStartDate || !customEndDate))
+                    isGenerating || (period === 'custom' && (!customStartDate || !customEndDate))
                   }
                   className="gap-2 bg-[var(--buh-primary)] text-white hover:bg-[var(--buh-primary-hover)] hover:text-white"
                 >

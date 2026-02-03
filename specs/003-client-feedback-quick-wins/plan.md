@@ -23,19 +23,20 @@ Implement quarterly client satisfaction surveys with role-based access (managers
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0. Re-check after Phase 1.*
+_GATE: Must pass before Phase 0. Re-check after Phase 1._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Context-First Development | PASS | Spec created after reviewing existing Prisma schema, bot handlers, tRPC routers |
-| II. Agent-Based Orchestration | PASS | Tasks will be delegated to specialized agents |
-| III. Test-Driven Development | DEFERRED | Tests optional unless specified in tasks |
-| IV. Atomic Task Execution | PLANNED | Each task independently completable and committable |
-| V. User Story Independence | PASS | 8 user stories (P1-P3), each independently testable |
-| VI. Quality Gates | PLANNED | type-check + build required before each commit |
-| VII. Progressive Specification | PASS | Phase 0 (spec) complete, now in Phase 1 (plan) |
+| Principle                      | Status   | Notes                                                                           |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------- |
+| I. Context-First Development   | PASS     | Spec created after reviewing existing Prisma schema, bot handlers, tRPC routers |
+| II. Agent-Based Orchestration  | PASS     | Tasks will be delegated to specialized agents                                   |
+| III. Test-Driven Development   | DEFERRED | Tests optional unless specified in tasks                                        |
+| IV. Atomic Task Execution      | PLANNED  | Each task independently completable and committable                             |
+| V. User Story Independence     | PASS     | 8 user stories (P1-P3), each independently testable                             |
+| VI. Quality Gates              | PLANNED  | type-check + build required before each commit                                  |
+| VII. Progressive Specification | PASS     | Phase 0 (spec) complete, now in Phase 1 (plan)                                  |
 
 **Security Requirements:**
+
 - RLS policies for feedback data (managers see all, accountants see aggregates only)
 - No hardcoded credentials
 - Supabase Auth for Admin Panel access
@@ -113,5 +114,5 @@ frontend/
 > No Constitution violations identified. Standard feature implementation.
 
 | Violation | Why Needed | Simpler Alternative Rejected |
-|-----------|------------|------------------------------|
-| None | - | - |
+| --------- | ---------- | ---------------------------- |
+| None      | -          | -                            |

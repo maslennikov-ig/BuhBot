@@ -25,19 +25,20 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0. Re-check after Phase 1.*
+_GATE: Must pass before Phase 0. Re-check after Phase 1._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Context-First Development | ✅ PASS | Контекст собран из spec.md, schema.prisma, package.json |
-| II. Agent-Based Orchestration | ✅ PASS | Задачи будут делегированы специализированным агентам |
-| III. TDD (Conditional) | ⏸️ DEFER | Тесты не указаны явно в spec, опционально |
-| IV. Atomic Task Execution | ✅ PASS | Задачи будут атомарными с коммитами |
-| V. User Story Independence | ✅ PASS | 6 независимых user stories в spec (P1/P2) |
-| VI. Quality Gates | ✅ PASS | type-check + build обязательны |
-| VII. Progressive Specification | ✅ PASS | Phase 0 → Phase 1 → tasks.md |
+| Principle                      | Status   | Notes                                                   |
+| ------------------------------ | -------- | ------------------------------------------------------- |
+| I. Context-First Development   | ✅ PASS  | Контекст собран из spec.md, schema.prisma, package.json |
+| II. Agent-Based Orchestration  | ✅ PASS  | Задачи будут делегированы специализированным агентам    |
+| III. TDD (Conditional)         | ⏸️ DEFER | Тесты не указаны явно в spec, опционально               |
+| IV. Atomic Task Execution      | ✅ PASS  | Задачи будут атомарными с коммитами                     |
+| V. User Story Independence     | ✅ PASS  | 6 независимых user stories в spec (P1/P2)               |
+| VI. Quality Gates              | ✅ PASS  | type-check + build обязательны                          |
+| VII. Progressive Specification | ✅ PASS  | Phase 0 → Phase 1 → tasks.md                            |
 
 **Security Check**:
+
 - ✅ Credentials через env variables
 - ✅ RLS policies для Supabase
 - ✅ 152-ФЗ compliance (данные в РФ)
@@ -100,37 +101,38 @@ frontend/
 > Нарушений Constitution не обнаружено. Таблица пуста.
 
 | Violation | Why Needed | Simpler Alternative Rejected |
-|-----------|------------|------------------------------|
-| — | — | — |
+| --------- | ---------- | ---------------------------- |
+| —         | —          | —                            |
 
 ## Phase 0: Research Tasks
 
-| # | Research Question | Classification | Status |
-|---|-------------------|----------------|--------|
-| R1 | BullMQ patterns для отложенных задач с рабочим временем | Simple | ✅ Done |
-| R2 | OpenRouter API: rate limits, pricing, fallback strategy | Simple | ✅ Done |
-| R3 | Telegram inline buttons для алертов менеджеру | Simple | ✅ Done |
-| R4 | Working hours calculation с учётом праздников | Simple | ✅ Done |
+| #   | Research Question                                       | Classification | Status  |
+| --- | ------------------------------------------------------- | -------------- | ------- |
+| R1  | BullMQ patterns для отложенных задач с рабочим временем | Simple         | ✅ Done |
+| R2  | OpenRouter API: rate limits, pricing, fallback strategy | Simple         | ✅ Done |
+| R3  | Telegram inline buttons для алертов менеджеру           | Simple         | ✅ Done |
+| R4  | Working hours calculation с учётом праздников           | Simple         | ✅ Done |
 
 **Output**: [research.md](./research.md)
 
 ## Phase 1: Design Artifacts
 
-| # | Artifact | Description | Status |
-|---|----------|-------------|--------|
-| D1 | data-model.md | Расширение schema.prisma для SLA | ✅ Done |
-| D2 | contracts/sla.router.ts | tRPC API для SLA операций | ✅ Done |
-| D3 | contracts/chat.router.ts | tRPC API для управления чатами | ✅ Done |
-| D4 | contracts/alert.router.ts | tRPC API для алертов | ✅ Done |
-| D5 | contracts/analytics.router.ts | tRPC API для dashboard | ✅ Done |
-| D6 | contracts/settings.router.ts | tRPC API для настроек | ✅ Done |
-| D7 | quickstart.md | Инструкции по запуску | ✅ Done |
+| #   | Artifact                      | Description                      | Status  |
+| --- | ----------------------------- | -------------------------------- | ------- |
+| D1  | data-model.md                 | Расширение schema.prisma для SLA | ✅ Done |
+| D2  | contracts/sla.router.ts       | tRPC API для SLA операций        | ✅ Done |
+| D3  | contracts/chat.router.ts      | tRPC API для управления чатами   | ✅ Done |
+| D4  | contracts/alert.router.ts     | tRPC API для алертов             | ✅ Done |
+| D5  | contracts/analytics.router.ts | tRPC API для dashboard           | ✅ Done |
+| D6  | contracts/settings.router.ts  | tRPC API для настроек            | ✅ Done |
+| D7  | quickstart.md                 | Инструкции по запуску            | ✅ Done |
 
 **Output**: design artifacts в [specs/002-sla-monitoring/](.)
 
 ## Phase-1-Technical-Prompt.md Compliance
 
 ✅ **Все требования MODULE 1.1 покрыты**:
+
 - 1.1.1 Request Tracking (FR-001 — FR-005)
 - 1.1.2 AI Spam Filter (FR-006 — FR-010)
 - 1.1.3 Working Hours Calendar (FR-011 — FR-015)

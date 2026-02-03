@@ -121,13 +121,7 @@ export class ErrorCaptureService {
    */
   async captureError(options: ErrorCaptureOptions): Promise<void> {
     try {
-      const {
-        level,
-        message,
-        stack,
-        service = 'buhbot-backend',
-        metadata
-      } = options;
+      const { level, message, stack, service = 'buhbot-backend', metadata } = options;
 
       // Generate fingerprint
       const fingerprint = this.generateFingerprint(message, stack);
@@ -138,9 +132,9 @@ export class ErrorCaptureService {
       const existingError = await prisma.errorLog.findFirst({
         where: {
           fingerprint,
-          timestamp: { gte: twentyFourHoursAgo }
+          timestamp: { gte: twentyFourHoursAgo },
         },
-        orderBy: { timestamp: 'desc' }
+        orderBy: { timestamp: 'desc' },
       });
 
       if (existingError) {
@@ -154,9 +148,9 @@ export class ErrorCaptureService {
             metadata: {
               ...((existingError.metadata as Record<string, any>) || {}),
               ...(metadata || {}),
-              lastOccurrenceMetadata: metadata
-            }
-          }
+              lastOccurrenceMetadata: metadata,
+            },
+          },
         });
       } else {
         // Create new error log entry
@@ -169,7 +163,7 @@ export class ErrorCaptureService {
           status: 'new' as ErrorStatus,
           occurrenceCount: 1,
           firstSeenAt: new Date(),
-          lastSeenAt: new Date()
+          lastSeenAt: new Date(),
         };
 
         // Only add metadata if present (Prisma requires omission, not undefined)
@@ -182,7 +176,10 @@ export class ErrorCaptureService {
     } catch (error) {
       // Fail silently to prevent logging recursion
       // Only log to console to avoid triggering another database write
-      console.error('[ErrorCaptureService] Failed to capture error:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '[ErrorCaptureService] Failed to capture error:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 }

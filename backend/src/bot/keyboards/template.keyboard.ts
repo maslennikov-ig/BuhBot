@@ -94,23 +94,13 @@ export function createTemplateListKeyboard(
       const first = categoryTemplates[i];
       if (first) {
         const truncatedTitle = truncateTitle(first.title, 25);
-        row.push(
-          Markup.button.callback(
-            `${emoji} ${truncatedTitle}`,
-            `template:use:${first.id}`
-          )
-        );
+        row.push(Markup.button.callback(`${emoji} ${truncatedTitle}`, `template:use:${first.id}`));
       }
 
       const second = categoryTemplates[i + 1];
       if (second) {
         const truncatedTitle = truncateTitle(second.title, 25);
-        row.push(
-          Markup.button.callback(
-            `${emoji} ${truncatedTitle}`,
-            `template:use:${second.id}`
-          )
-        );
+        row.push(Markup.button.callback(`${emoji} ${truncatedTitle}`, `template:use:${second.id}`));
       }
 
       if (row.length > 0) {
@@ -159,7 +149,8 @@ export const TEMPLATE_MESSAGES = {
   LIST_HEADER: '\uD83D\uDCDD *Шаблоны сообщений*\n\nВыберите шаблон для отправки:',
 
   /** No templates available */
-  NO_TEMPLATES: '\uD83D\uDCED Нет доступных шаблонов.\n\nОбратитесь к администратору для добавления шаблонов.',
+  NO_TEMPLATES:
+    '\uD83D\uDCED Нет доступных шаблонов.\n\nОбратитесь к администратору для добавления шаблонов.',
 
   /** Template not found */
   NOT_FOUND: '\u26A0\uFE0F Шаблон не найден.',
@@ -210,9 +201,7 @@ export interface TemplateCallbackData {
  * // Returns: { action: 'cancel' }
  * ```
  */
-export function parseTemplateCallback(
-  callbackData: string
-): TemplateCallbackData | null {
+export function parseTemplateCallback(callbackData: string): TemplateCallbackData | null {
   if (callbackData === 'template:cancel') {
     return { action: 'cancel' };
   }

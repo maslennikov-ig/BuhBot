@@ -40,12 +40,7 @@ import { registerMenuHandler } from './handlers/menu.handler.js';
 import { registerFileHandler } from './handlers/file.handler.js';
 import { registerTemplateHandler } from './handlers/template.handler.js';
 import { registerSystemHandler } from './handlers/system.handler.js';
-import {
-  setupWebhook,
-  removeWebhook,
-  getWebhookInfo,
-  launchPolling,
-} from './webhook.js';
+import { setupWebhook, removeWebhook, getWebhookInfo, launchPolling } from './webhook.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -124,12 +119,7 @@ export function registerHandlers(): void {
 export { bot, stopBot, type BotContext };
 
 // Re-export webhook utilities
-export {
-  setupWebhook,
-  removeWebhook,
-  getWebhookInfo,
-  launchPolling,
-};
+export { setupWebhook, removeWebhook, getWebhookInfo, launchPolling };
 
 // Re-export individual handlers for testing
 export { registerFaqHandler };

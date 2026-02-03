@@ -316,4 +316,3 @@ export function FeedbackContent() {
     </AdminLayout>
   );
 }
-

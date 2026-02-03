@@ -9,6 +9,7 @@
 ## Context for Executing Agent
 
 ### Project Structure
+
 ```
 /home/me/code/bobabuh/
 ├── backend/src/api/trpc/routers/   # tRPC routes (auth.ts, faq.ts, templates.ts)
@@ -24,12 +25,14 @@
 ```
 
 ### Key Design System Classes
+
 - `buh-hover-lift` — translateY(-2px) + shadow on hover (150ms)
 - `buh-shimmer` — loading skeleton animation
 - `buh-animate-fade-in-up` — entrance animation (use with `animationDelay`)
 - `GlassCard` — glassmorphism container component
 
 ### Task Execution Order (Dependencies)
+
 ```
 Task 1 (Critical) — No dependencies, execute first
 Tasks 2-5 (High) — Can run in parallel after Task 1
@@ -40,6 +43,7 @@ Tasks 10-11 (Low) — No dependencies
 ```
 
 ### Important Notes for Agent
+
 1. **Line numbers are approximate** — code may have shifted. Search by code patterns.
 2. **Use `trpc.auth.me.useQuery()` for current user** — already available in tRPC client.
 3. **Toast library**: Install `sonner` (not react-hot-toast) — it's lighter and works with App Router.
@@ -48,6 +52,7 @@ Tasks 10-11 (Low) — No dependencies
 ### Reference Code: Premium Table Pattern (from RequestsTable.tsx)
 
 **Gradient accent bar on hover:**
+
 ```tsx
 <GlassCard className="group relative overflow-hidden">
   <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -56,6 +61,7 @@ Tasks 10-11 (Low) — No dependencies
 ```
 
 **Icon header with gradient background:**
+
 ```tsx
 <div className="flex items-center gap-3">
   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--buh-accent)]/10 to-[var(--buh-primary)]/10">
@@ -69,11 +75,13 @@ Tasks 10-11 (Low) — No dependencies
 ```
 
 **Table header styling:**
+
 ```tsx
 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
 ```
 
 **Staggered row animation:**
+
 ```tsx
 <tr
   className="transition-colors hover:bg-[var(--buh-surface-elevated)]/50 buh-animate-fade-in-up"
@@ -86,6 +94,7 @@ Tasks 10-11 (Low) — No dependencies
 ## Executive Summary
 
 Comprehensive review of Admin CRUD pages implementation completed. **11 issues found**:
+
 - **Critical Issues**: 1 (FAQ/Templates delete permission mismatch)
 - **High Priority Issues**: 4 (design system compliance, UX improvements)
 - **Medium Priority Issues**: 4 (code quality, consistency)
@@ -100,7 +109,9 @@ Comprehensive review of Admin CRUD pages implementation completed. **11 issues f
 ### Critical Issues
 
 #### 1. Permission Mismatch: Delete Operations
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (lines 25-34)
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (lines 33-42)
 
@@ -108,6 +119,7 @@ Comprehensive review of Admin CRUD pages implementation completed. **11 issues f
 Frontend allows **all authenticated users** to delete FAQ/Templates via `trpc.faq.delete` and `trpc.templates.delete`, but backend routers require **admin-only** permission (`adminProcedure`). This will cause runtime errors when non-admin users attempt deletion.
 
 **Evidence**:
+
 - Backend: `faq.ts` line 292 uses `adminProcedure`
 - Backend: `templates.ts` line 230 uses `adminProcedure`
 - Frontend: Both components use `trpc.faq.delete.useMutation()` and `trpc.templates.delete.useMutation()` without role checks
@@ -119,12 +131,15 @@ Frontend allows **all authenticated users** to delete FAQ/Templates via `trpc.fa
 ### High Priority Issues
 
 #### 2. Missing Premium Table Design Pattern
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (lines 72-125)
 - `/home/me/code/bobabuh/frontend/src/components/settings/users/UserList.tsx` (lines 66-122)
 
 **Problem**:
 Tables use basic styling instead of premium design pattern from `RequestsTable.tsx`. Missing:
+
 - Gradient accent bar on hover (top border)
 - Icon header with gradient background
 - Staggered fade-in animations (`buh-animate-fade-in-up` with delays)
@@ -138,21 +153,26 @@ Tables use basic styling instead of premium design pattern from `RequestsTable.t
 ---
 
 #### 3. Missing Hover Lift Effect on Interactive Elements
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (line 88)
 
 **Problem**:
 Template cards use `hover:shadow-md` instead of `buh-hover-lift` utility class. Style guide (section 6.3) specifies:
+
 > `.buh-hover-lift`: translateY(-2px) + shadow | 150ms
 
 **Current Code**:
+
 ```tsx
-className="... hover:border-[var(--buh-primary)] hover:shadow-md"
+className = '... hover:border-[var(--buh-primary)] hover:shadow-md';
 ```
 
 **Expected**:
+
 ```tsx
-className="... buh-hover-lift"
+className = '... buh-hover-lift';
 ```
 
 **Impact**: Inconsistent micro-interactions, missing the signature "lift" animation.
@@ -160,7 +180,9 @@ className="... buh-hover-lift"
 ---
 
 #### 4. Missing Loading State Shimmer
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (line 50)
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (line 57)
 - `/home/me/code/bobabuh/frontend/src/components/settings/users/UserList.tsx` (line 48)
@@ -169,6 +191,7 @@ className="... buh-hover-lift"
 Loading states use generic `buh-shimmer` div without proper structure. Style guide recommends skeleton UI matching final content layout.
 
 **Current**:
+
 ```tsx
 if (isLoading) {
   return <div className="buh-shimmer h-64 w-full rounded-xl" />;
@@ -182,6 +205,7 @@ if (isLoading) {
 ---
 
 #### 5. Variable Chip Insertion UX Issue
+
 **File(s)**: `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateForm.tsx` (lines 93-110)
 
 **Problem**:
@@ -190,6 +214,7 @@ Variable insertion implementation is correct (cursor position preserved), but **
 **Current Behavior**: Silent insertion at cursor position.
 
 **Better UX**:
+
 - Add brief highlight animation on textarea after insertion
 - Or show toast notification: "Переменная {{variable}} добавлена"
 
@@ -200,7 +225,9 @@ Variable insertion implementation is correct (cursor position preserved), but **
 ### Medium Priority Issues
 
 #### 6. Inconsistent Empty State Messaging
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (line 87)
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (line 82)
 - `/home/me/code/bobabuh/frontend/src/components/settings/users/UserList.tsx` (line 80)
@@ -211,6 +238,7 @@ Empty states show generic "Нет данных" without actionable guidance. Com
 **Current**: "Нет данных"
 
 **Better**:
+
 - FAQ: "Нет вопросов в базе знаний. Создайте первый вопрос для автоответов бота."
 - Templates: "Нет шаблонов сообщений. Создайте шаблон для быстрых ответов."
 - Users: "Нет пользователей" (acceptable, rare case)
@@ -220,7 +248,9 @@ Empty states show generic "Нет данных" without actionable guidance. Com
 ---
 
 #### 7. Missing Confirmation Feedback After Delete
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (lines 31-34)
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (lines 39-42)
 
@@ -230,11 +260,12 @@ After successful deletion, no visual confirmation (toast, snackbar, or temporary
 **Current**: Silent deletion after confirmation dialog.
 
 **Better**: Add toast notification on success:
+
 ```tsx
 onSuccess: () => {
   utils.faq.list.invalidate();
   toast.success('Вопрос удален');
-}
+};
 ```
 
 **Impact**: Users may be unsure if deletion succeeded or if there was a network issue.
@@ -242,12 +273,14 @@ onSuccess: () => {
 ---
 
 #### 8. Hardcoded Strings (i18n Readiness)
+
 **File(s)**: All frontend components
 
 **Problem**:
 All user-facing strings are hardcoded in Russian. While acceptable for Russia-only deployment (as per CLAUDE.md), missing i18n keys makes future internationalization harder.
 
 **Examples**:
+
 - "Вопрос обязателен"
 - "Поиск по вопросам..."
 - "Добавить вопрос"
@@ -259,12 +292,15 @@ All user-facing strings are hardcoded in Russian. While acceptable for Russia-on
 ---
 
 #### 9. Missing Keyboard Accessibility on Delete Confirmation
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (line 32)
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (line 40)
 
 **Problem**:
 Uses browser `confirm()` dialog which:
+
 - Is not styleable (breaks design system)
 - Doesn't match BuhBot aesthetics
 - Limited keyboard accessibility
@@ -276,6 +312,7 @@ Uses browser `confirm()` dialog which:
 ---
 
 #### 10. AdminLayout Sidebar Link Issue
+
 **File(s)**: `/home/me/code/bobabuh/frontend/src/components/layout/AdminLayout.tsx` (lines 50-107)
 
 **Problem**:
@@ -288,7 +325,9 @@ Task mentioned fixing `/clients` -> `/chats`, but current code shows correct `/c
 ### Low Priority Issues
 
 #### 11. Missing ARIA Labels on Icon-Only Buttons
+
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx` (lines 112-117)
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx` (lines 96-101)
 
@@ -296,6 +335,7 @@ Task mentioned fixing `/clients` -> `/chats`, but current code shows correct `/c
 Edit and Delete icon buttons in tables don't have `aria-label` attributes. Screen reader users won't know button purpose.
 
 **Current**:
+
 ```tsx
 <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
   <Edit2 className="h-4 w-4" />
@@ -303,6 +343,7 @@ Edit and Delete icon buttons in tables don't have `aria-label` attributes. Scree
 ```
 
 **Better**:
+
 ```tsx
 <Button variant="ghost" size="icon" onClick={() => onEdit(item)} aria-label="Редактировать вопрос">
   <Edit2 className="h-4 w-4" />
@@ -314,12 +355,14 @@ Edit and Delete icon buttons in tables don't have `aria-label` attributes. Scree
 ---
 
 #### 12. Category Dropdown Not Using shadcn Select Component
+
 **File(s)**: `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateForm.tsx` (lines 141-150)
 
 **Problem**:
 Uses native `<select>` element instead of shadcn/ui `Select` component. Inconsistent with design system.
 
 **Current**:
+
 ```tsx
 <select className="flex h-10 w-full rounded-md border..." {...field}>
 ```
@@ -333,14 +376,17 @@ Uses native `<select>` element instead of shadcn/ui `Select` component. Inconsis
 ## Fix Tasks
 
 ### Task 1: Add Role-Based Delete Button Visibility
+
 **Priority**: Critical
 **File(s)**:
+
 - `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx`
 - `/home/me/code/bobabuh/frontend/src/components/settings/templates/TemplateList.tsx`
 
 **Problem**: Non-admin users can see and click delete buttons, causing authorization errors.
 
 **Prompt**:
+
 ```
 In FaqList.tsx and TemplateList.tsx, hide the delete button for non-admin users.
 
@@ -360,13 +406,15 @@ Expected behavior: Only admin users see trash icon buttons. Managers can still c
 ---
 
 ### Task 2: Apply Premium Table Design to FAQ List
+
 **Priority**: High
 **File(s)**: `/home/me/code/bobabuh/frontend/src/components/settings/faq/FaqList.tsx`
 
 **Problem**: Table uses basic styling instead of premium design pattern.
 
 **Prompt**:
-```
+
+````
 Upgrade FaqList table to match premium RequestsTable design pattern.
 
 Reference: /home/me/code/bobabuh/frontend/src/components/requests/RequestsTable.tsx
@@ -388,12 +436,13 @@ Changes needed in FaqList.tsx:
        <p className="text-xs text-[var(--buh-foreground-subtle)]">Управление FAQ ботом</p>
      </div>
    </div>
-   ```
+````
 
 3. Update table headers (line 74-81):
    - Add to th: `className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]"`
 
 4. Add staggered animations to rows (line 91):
+
    ```tsx
    <tr
      key={item.id}
@@ -408,12 +457,17 @@ Changes needed in FaqList.tsx:
      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
        <HelpCircle className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
      </div>
-     <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет вопросов в базе знаний</p>
-     <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">Создайте первый вопрос для автоответов бота</p>
+     <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
+       Нет вопросов в базе знаний
+     </p>
+     <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
+       Создайте первый вопрос для автоответов бота
+     </p>
    </div>
    ```
 
 Expected result: Table matches RequestsTable premium design with gradient accents, staggered animations, and proper header.
+
 ```
 
 ---
@@ -426,9 +480,11 @@ Expected result: Table matches RequestsTable premium design with gradient accent
 
 **Prompt**:
 ```
+
 Apply the same premium table design pattern to UserList.tsx as described in Task 2.
 
 Follow exact same steps but use:
+
 - Icon: `<Users />` instead of MessageSquare
 - Header title: "Пользователи системы"
 - Header description: "Управление ролями и доступом"
@@ -436,6 +492,7 @@ Follow exact same steps but use:
 
 Reference: /home/me/code/bobabuh/frontend/src/components/requests/RequestsTable.tsx
 Apply to: /home/me/code/bobabuh/frontend/src/components/settings/users/UserList.tsx
+
 ```
 
 ---
@@ -448,20 +505,26 @@ Apply to: /home/me/code/bobabuh/frontend/src/components/settings/users/UserList.
 
 **Prompt**:
 ```
+
 Replace custom hover effect with design system utility class in TemplateList.tsx.
 
 Line 88 - Change:
 FROM:
+
 ```tsx
-className="group relative flex flex-col justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-subtle)] p-4 transition-all hover:border-[var(--buh-primary)] hover:shadow-md"
+className =
+  'group relative flex flex-col justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-subtle)] p-4 transition-all hover:border-[var(--buh-primary)] hover:shadow-md';
 ```
 
 TO:
+
 ```tsx
-className="group relative flex flex-col justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-subtle)] p-4 buh-hover-lift hover:border-[var(--buh-primary)]"
+className =
+  'group relative flex flex-col justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-subtle)] p-4 buh-hover-lift hover:border-[var(--buh-primary)]';
 ```
 
 Expected behavior: Cards lift 2px on hover with smooth 150ms transition, matching design system standard.
+
 ```
 
 ---
@@ -477,9 +540,11 @@ Expected behavior: Cards lift 2px on hover with smooth 150ms transition, matchin
 
 **Prompt**:
 ```
+
 Replace loading shimmer with proper skeleton UI matching final layout.
 
 For FAQ and Users (table layouts):
+
 ```tsx
 if (isLoading) {
   return (
@@ -500,6 +565,7 @@ if (isLoading) {
 ```
 
 For Templates (card grid layout):
+
 ```tsx
 if (isLoading) {
   return (
@@ -516,6 +582,7 @@ if (isLoading) {
 ```
 
 Apply to all three files at their respective isLoading checks.
+
 ```
 
 ---
@@ -528,20 +595,24 @@ Apply to all three files at their respective isLoading checks.
 
 **Prompt**:
 ```
+
 Add brief highlight animation when variable is inserted in TemplateForm.tsx.
 
 1. Install sonner for toast notifications (if not already):
+
    ```bash
    cd frontend && pnpm add sonner
    ```
 
 2. Import at top of TemplateForm.tsx:
+
    ```tsx
    import { toast } from 'sonner';
    ```
 
 3. Update insertVariable function (line 93-110):
    Add after line 109 (after textarea.setSelectionRange):
+
    ```tsx
    toast.success(`Переменная ${variable} добавлена`, {
      duration: 1500,
@@ -551,14 +622,16 @@ Add brief highlight animation when variable is inserted in TemplateForm.tsx.
 
 4. Add Toaster to app layout:
    In `/home/me/code/bobabuh/frontend/src/app/layout.tsx`, add:
+
    ```tsx
    import { Toaster } from 'sonner';
 
    // Inside <body>:
-   <Toaster />
+   <Toaster />;
    ```
 
 Expected behavior: Brief toast notification appears when chip is clicked, confirming insertion.
+
 ```
 
 ---
@@ -573,6 +646,7 @@ Expected behavior: Brief toast notification appears when chip is clicked, confir
 
 **Prompt**:
 ```
+
 Update empty state messages to be more helpful and actionable.
 
 FaqList.tsx (line 87):
@@ -586,6 +660,7 @@ TO: "Нет шаблонов сообщений. Создайте шаблон �
 Keep UserList.tsx as is (rare empty case).
 
 Expected: Users understand why list is empty and what action to take.
+
 ```
 
 ---
@@ -600,6 +675,7 @@ Expected: Users understand why list is empty and what action to take.
 
 **Prompt**:
 ```
+
 Add success toast after delete operation completes.
 
 Prerequisites: Task 6 must be completed first (sonner installed).
@@ -607,6 +683,7 @@ Prerequisites: Task 6 must be completed first (sonner installed).
 In both FaqList.tsx and TemplateList.tsx:
 
 1. Import toast:
+
    ```tsx
    import { toast } from 'sonner';
    ```
@@ -614,22 +691,25 @@ In both FaqList.tsx and TemplateList.tsx:
 2. Update deleteMutation onSuccess:
 
 FaqList.tsx (line 26):
+
 ```tsx
 onSuccess: () => {
   utils.faq.list.invalidate();
   toast.success('Вопрос удален');
-}
+};
 ```
 
 TemplateList.tsx (line 34):
+
 ```tsx
 onSuccess: () => {
   utils.templates.list.invalidate();
   toast.success('Шаблон удален');
-}
+};
 ```
 
 Expected: Brief success message appears after deletion completes.
+
 ```
 
 ---
@@ -644,6 +724,7 @@ Expected: Brief success message appears after deletion completes.
 
 **Prompt**:
 ```
+
 Create reusable ConfirmDialog component and replace browser confirm().
 
 1. Create new file: `/home/me/code/bobabuh/frontend/src/components/ui/ConfirmDialog.tsx`
@@ -679,7 +760,11 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <GlassCard variant="elevated" padding="lg" className="w-full max-w-md relative animate-in fade-in zoom-in duration-200">
+      <GlassCard
+        variant="elevated"
+        padding="lg"
+        className="w-full max-w-md relative animate-in fade-in zoom-in duration-200"
+      >
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
@@ -698,8 +783,12 @@ export function ConfirmDialog({
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>{cancelText}</Button>
-          <Button variant="destructive" onClick={onConfirm}>{confirmText}</Button>
+          <Button variant="ghost" onClick={onClose}>
+            {cancelText}
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            {confirmText}
+          </Button>
         </div>
       </GlassCard>
     </div>
@@ -710,6 +799,7 @@ export function ConfirmDialog({
 2. Update FaqList.tsx:
 
 Add state:
+
 ```tsx
 const [deleteConfirm, setDeleteConfirm] = React.useState<{ open: boolean; id: string | null }>({
   open: false,
@@ -718,6 +808,7 @@ const [deleteConfirm, setDeleteConfirm] = React.useState<{ open: boolean; id: st
 ```
 
 Replace handleDelete function (line 31-34):
+
 ```tsx
 const handleDelete = async () => {
   if (!deleteConfirm.id) return;
@@ -727,11 +818,13 @@ const handleDelete = async () => {
 ```
 
 Update delete button onClick (line 115):
+
 ```tsx
 onClick={() => setDeleteConfirm({ open: true, id: item.id })}
 ```
 
 Add dialog before closing </GlassCard>:
+
 ```tsx
 <ConfirmDialog
   open={deleteConfirm.open}
@@ -746,6 +839,7 @@ Add dialog before closing </GlassCard>:
 3. Apply same pattern to TemplateList.tsx with appropriate messaging.
 
 Expected: Custom modal matching BuhBot design replaces browser confirm dialog.
+
 ```
 
 ---
@@ -760,17 +854,21 @@ Expected: Custom modal matching BuhBot design replaces browser confirm dialog.
 
 **Prompt**:
 ```
+
 Add aria-label attributes to all icon-only buttons.
 
 FaqList.tsx:
+
 - Line 112: Add `aria-label="Редактировать вопрос"` to Edit Button
 - Line 115: Add `aria-label="Удалить вопрос"` to Delete Button
 
 TemplateList.tsx:
+
 - Line 96: Add `aria-label="Редактировать шаблон"` to Edit Button
 - Line 99: Add `aria-label="Удалить шаблон"` to Delete Button
 
 Example:
+
 ```tsx
 <Button variant="ghost" size="icon" onClick={() => onEdit(item)} aria-label="Редактировать вопрос">
   <Edit2 className="h-4 w-4" />
@@ -778,6 +876,7 @@ Example:
 ```
 
 Expected: Screen readers announce button purpose when focused.
+
 ```
 
 ---
@@ -790,9 +889,11 @@ Expected: Screen readers announce button purpose when focused.
 
 **Prompt**:
 ```
+
 Replace native <select> with shadcn/ui Select component in TemplateForm.tsx.
 
 1. Import Select components:
+
 ```tsx
 import {
   Select,
@@ -800,10 +901,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 ```
 
 2. Replace FormField for category (lines 134-155):
+
 ```tsx
 <FormField
   control={form.control}
@@ -832,6 +934,7 @@ import {
 ```
 
 Expected: Dropdown matches shadcn/ui design with proper animations and keyboard navigation.
+
 ```
 
 ---
@@ -920,3 +1023,4 @@ Implementation is **functionally complete** with correct backend routes, type-sa
 
 **Review completed**: 2025-11-29
 **Next action**: Execute fix tasks in priority order
+```

@@ -32,10 +32,10 @@ import logger from '../../utils/logger.js';
  * User information extracted from session and database
  */
 interface ContextUser {
-  id: string;           // UUID from Supabase Auth
-  email: string;        // User email
+  id: string; // UUID from Supabase Auth
+  email: string; // User email
   role: 'admin' | 'manager' | 'observer'; // Role for RBAC
-  fullName: string;     // Display name
+  fullName: string; // Display name
 }
 
 /**
@@ -55,8 +55,8 @@ const DEV_MODE_USER: ContextUser = {
  * Supabase session information
  */
 interface ContextSession {
-  accessToken: string;  // JWT access token
-  expiresAt: number;    // Token expiration timestamp (seconds)
+  accessToken: string; // JWT access token
+  expiresAt: number; // Token expiration timestamp (seconds)
 }
 
 /**
@@ -65,8 +65,8 @@ interface ContextSession {
  * Available to all tRPC procedures via `ctx` parameter
  */
 export interface Context {
-  prisma: PrismaClient;           // Database client
-  user: ContextUser | null;       // Authenticated user (null if unauthenticated)
+  prisma: PrismaClient; // Database client
+  user: ContextUser | null; // Authenticated user (null if unauthenticated)
   session: ContextSession | null; // Session info (null if unauthenticated)
 }
 
@@ -108,15 +108,16 @@ function extractToken(authHeader: string | undefined): string | null {
  * @param opts - Express request/response objects
  * @returns Context object with user, session, and prisma client
  */
-export async function createContext({
-  req,
-}: CreateExpressContextOptions): Promise<Context> {
+export async function createContext({ req }: CreateExpressContextOptions): Promise<Context> {
   const reqId = Math.random().toString(36).substring(7);
   const startTime = Date.now();
 
   // DEV MODE: Bypass all authentication
   if (isDevMode) {
-    logger.debug('[context] DEV MODE: Using mock admin user', { reqId, duration: Date.now() - startTime });
+    logger.debug('[context] DEV MODE: Using mock admin user', {
+      reqId,
+      duration: Date.now() - startTime,
+    });
     return {
       prisma,
       user: DEV_MODE_USER,
@@ -132,7 +133,9 @@ export async function createContext({
 
   // If no token, return unauthenticated context
   if (!token) {
-    console.log(`[CTX:${reqId}] No token, returning unauthenticated context (${Date.now() - startTime}ms)`);
+    console.log(
+      `[CTX:${reqId}] No token, returning unauthenticated context (${Date.now() - startTime}ms)`
+    );
     return {
       prisma,
       user: null,
@@ -159,7 +162,9 @@ export async function createContext({
 
     // If JWT validation fails, return unauthenticated context
     if (error || !data.user) {
-      console.log(`[CTX:${reqId}] Auth failed: ${error?.message || 'no user'} (${Date.now() - startTime}ms)`);
+      console.log(
+        `[CTX:${reqId}] Auth failed: ${error?.message || 'no user'} (${Date.now() - startTime}ms)`
+      );
       return {
         prisma,
         user: null,
@@ -212,7 +217,10 @@ export async function createContext({
     };
   } catch (error) {
     // Log error for debugging (production: use structured logging)
-    console.error(`[CTX:${reqId}] Error creating tRPC context (${Date.now() - startTime}ms):`, error);
+    console.error(
+      `[CTX:${reqId}] Error creating tRPC context (${Date.now() - startTime}ms):`,
+      error
+    );
 
     // Return unauthenticated context on any error
     return {

@@ -96,7 +96,7 @@ A visitor wants to jump directly to specific information about features or conta
 - **FR-013**: Mobile navigation MUST provide a hamburger menu that expands to show all navigation options
 - **FR-014**: Navigation links MUST scroll smoothly to corresponding page sections
 - **FR-015**: Landing page MUST NOT require authentication to view
-- **FR-016**: Existing authenticated routes (/login, /dashboard, /feedback, /settings/*) MUST continue to function unchanged
+- **FR-016**: Existing authenticated routes (/login, /dashboard, /feedback, /settings/\*) MUST continue to function unchanged
 
 ### Key Entities
 

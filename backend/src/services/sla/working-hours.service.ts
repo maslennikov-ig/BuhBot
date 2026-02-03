@@ -300,7 +300,7 @@ export function calculateWorkingMinutes(
   const startParsed = parseTime(schedule.startTime);
   const endParsed = parseTime(schedule.endTime);
   const workingMinutesPerDay =
-    (endParsed.hours * 60 + endParsed.minutes) - (startParsed.hours * 60 + startParsed.minutes);
+    endParsed.hours * 60 + endParsed.minutes - (startParsed.hours * 60 + startParsed.minutes);
 
   let totalMinutes = 0;
   let currentDay = startOfDay(zonedStart);
@@ -418,11 +418,7 @@ export function calculateDelayUntilBreach(
  * @param schedule - Working schedule configuration
  * @returns Date after adding working minutes
  */
-function addWorkingMinutes(
-  date: Date,
-  minutes: number,
-  schedule: WorkingSchedule
-): Date {
+function addWorkingMinutes(date: Date, minutes: number, schedule: WorkingSchedule): Date {
   if (minutes <= 0) {
     return date;
   }
@@ -469,10 +465,7 @@ function addWorkingMinutes(
  * Get next working time from a zoned date (internal helper)
  * Works with dates already converted to the schedule timezone
  */
-function getNextWorkingTimeZoned(
-  zonedDate: Date,
-  schedule: WorkingSchedule
-): Date {
+function getNextWorkingTimeZoned(zonedDate: Date, schedule: WorkingSchedule): Date {
   const startParsed = parseTime(schedule.startTime);
   const endParsed = parseTime(schedule.endTime);
 

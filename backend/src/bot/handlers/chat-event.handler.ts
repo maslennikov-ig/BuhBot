@@ -85,29 +85,32 @@ export function registerChatEventHandler(): void {
             // Don't re-enable if it was manually disabled, but ensure we update title
           },
         });
-        
+
         // Optional: Send a welcome message
         // await ctx.reply('Hello! I am ready to work. Please configure me in the dashboard.');
-
       } else if (!isActive && wasActive) {
         // Bot was REMOVED (kicked or left)
         logger.info('Bot removed from chat', { chatId, title, service: 'chat-event-handler' });
-        
-        // Option A: Delete the chat? 
+
+        // Option A: Delete the chat?
         // Option B: Mark as inactive? (We don't have an isActive flag on Chat, only monitoringEnabled)
         // Let's disable monitoring.
-        await prisma.chat.update({
-          where: { id: BigInt(chatId) },
-          data: {
-            monitoringEnabled: false,
-            slaEnabled: false,
-          },
-        }).catch(err => {
+        await prisma.chat
+          .update({
+            where: { id: BigInt(chatId) },
+            data: {
+              monitoringEnabled: false,
+              slaEnabled: false,
+            },
+          })
+          .catch((err) => {
             // Chat might not exist if we never added it
-            logger.warn('Failed to disable chat on remove (might not exist)', { chatId, error: err.message });
-        });
+            logger.warn('Failed to disable chat on remove (might not exist)', {
+              chatId,
+              error: err.message,
+            });
+          });
       }
-
     } catch (error) {
       logger.error('Error handling my_chat_member', {
         error: error instanceof Error ? error.message : String(error),
@@ -119,22 +122,23 @@ export function registerChatEventHandler(): void {
 
   // Handle Chat Title Changes
   bot.on('new_chat_title', async (ctx) => {
-     try {
-        const chatId = ctx.chat.id;
-        const newTitle = ctx.message.new_chat_title;
-        
-        logger.info('Chat title changed', { chatId, newTitle, service: 'chat-event-handler' });
+    try {
+      const chatId = ctx.chat.id;
+      const newTitle = ctx.message.new_chat_title;
 
-        await prisma.chat.update({
-            where: { id: BigInt(chatId) },
-            data: { title: newTitle }
-        }).catch(() => {
-             logger.debug('Could not update title (chat likely not registered)', { chatId });
+      logger.info('Chat title changed', { chatId, newTitle, service: 'chat-event-handler' });
+
+      await prisma.chat
+        .update({
+          where: { id: BigInt(chatId) },
+          data: { title: newTitle },
+        })
+        .catch(() => {
+          logger.debug('Could not update title (chat likely not registered)', { chatId });
         });
-
-     } catch (error) {
-         logger.error('Error handling new_chat_title', { error });
-     }
+    } catch (error) {
+      logger.error('Error handling new_chat_title', { error });
+    }
   });
 
   // Handle Group -> Supergroup Migration
@@ -150,44 +154,43 @@ export function registerChatEventHandler(): void {
       });
 
       // Update the ID in the database
-      // Prisma doesn't support changing IDs easily. We might need to create new and delete old, 
+      // Prisma doesn't support changing IDs easily. We might need to create new and delete old,
       // or use raw SQL if we want to preserve history linked to the old ID.
       // For now, let's just create the new one and maybe flag the old one.
       // Actually, migration usually brings history.
-      
+
       // Simple strategy: Create new chat record, move key properties.
       // Complex strategy: Update FKs.
-      
-      // Let's do a simple upsert for the new ID for now to ensure continuity of service.
-      const oldChat = await prisma.chat.findUnique({ where: { id: BigInt(oldChatId) }});
-      
-      if (oldChat) {
-          await prisma.chat.create({
-              data: {
-                  ...oldChat,
-                  id: BigInt(newChatId),
-                  chatType: 'supergroup',
-                  createdAt: new Date(), // reset created
-              }
-          });
-          // Disable old chat
-          await prisma.chat.update({
-              where: { id: BigInt(oldChatId) },
-              data: { monitoringEnabled: false, slaEnabled: false }
-          });
-      } else {
-          // Just register as new
-          await prisma.chat.create({
-              data: {
-                  id: BigInt(newChatId),
-                  chatType: 'supergroup',
-                  title: 'Migrated Group', // We might not know the title here easily without fetching
-                  slaEnabled: false,
-                  monitoringEnabled: true,
-              }
-          });
-      }
 
+      // Let's do a simple upsert for the new ID for now to ensure continuity of service.
+      const oldChat = await prisma.chat.findUnique({ where: { id: BigInt(oldChatId) } });
+
+      if (oldChat) {
+        await prisma.chat.create({
+          data: {
+            ...oldChat,
+            id: BigInt(newChatId),
+            chatType: 'supergroup',
+            createdAt: new Date(), // reset created
+          },
+        });
+        // Disable old chat
+        await prisma.chat.update({
+          where: { id: BigInt(oldChatId) },
+          data: { monitoringEnabled: false, slaEnabled: false },
+        });
+      } else {
+        // Just register as new
+        await prisma.chat.create({
+          data: {
+            id: BigInt(newChatId),
+            chatType: 'supergroup',
+            title: 'Migrated Group', // We might not know the title here easily without fetching
+            slaEnabled: false,
+            monitoringEnabled: true,
+          },
+        });
+      }
     } catch (error) {
       logger.error('Error handling migration', { error });
     }

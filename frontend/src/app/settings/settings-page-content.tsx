@@ -33,10 +33,7 @@ export function SettingsPageContent() {
         title="Настройки системы"
         description="Управление уведомлениями, рабочим временем и SLA."
         actions={<HelpButton section="settings.general" />}
-        breadcrumbs={[
-          { label: 'Панель управления', href: '/dashboard' },
-          { label: 'Настройки' },
-        ]}
+        breadcrumbs={[{ label: 'Панель управления', href: '/dashboard' }, { label: 'Настройки' }]}
       />
 
       {/* Content sections with staggered animation */}

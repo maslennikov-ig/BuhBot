@@ -39,7 +39,12 @@ import {
 export class ClassifierService {
   private prisma: PrismaClient;
   private config: ClassifierConfig;
-  private settingsCache: { apiKey?: string; model?: string; aiConfidenceThreshold?: number; timestamp: number } | null = null;
+  private settingsCache: {
+    apiKey?: string;
+    model?: string;
+    aiConfidenceThreshold?: number;
+    timestamp: number;
+  } | null = null;
   private readonly SETTINGS_CACHE_TTL_MS = 60000; // 1 minute cache for DB settings
 
   /**
@@ -66,7 +71,11 @@ export class ClassifierService {
    *
    * @returns Settings from DB or empty object if not configured
    */
-  private async getDbSettings(): Promise<{ apiKey?: string; model?: string; aiConfidenceThreshold?: number }> {
+  private async getDbSettings(): Promise<{
+    apiKey?: string;
+    model?: string;
+    aiConfidenceThreshold?: number;
+  }> {
     // Check cache
     if (
       this.settingsCache &&
@@ -75,7 +84,8 @@ export class ClassifierService {
       const result: { apiKey?: string; model?: string; aiConfidenceThreshold?: number } = {};
       if (this.settingsCache.apiKey) result.apiKey = this.settingsCache.apiKey;
       if (this.settingsCache.model) result.model = this.settingsCache.model;
-      if (this.settingsCache.aiConfidenceThreshold !== undefined) result.aiConfidenceThreshold = this.settingsCache.aiConfidenceThreshold;
+      if (this.settingsCache.aiConfidenceThreshold !== undefined)
+        result.aiConfidenceThreshold = this.settingsCache.aiConfidenceThreshold;
       return result;
     }
 
@@ -103,7 +113,8 @@ export class ClassifierService {
       const result: { apiKey?: string; model?: string; aiConfidenceThreshold?: number } = {};
       if (this.settingsCache.apiKey) result.apiKey = this.settingsCache.apiKey;
       if (this.settingsCache.model) result.model = this.settingsCache.model;
-      if (this.settingsCache.aiConfidenceThreshold !== undefined) result.aiConfidenceThreshold = this.settingsCache.aiConfidenceThreshold;
+      if (this.settingsCache.aiConfidenceThreshold !== undefined)
+        result.aiConfidenceThreshold = this.settingsCache.aiConfidenceThreshold;
       return result;
     } catch (error) {
       logger.warn('Failed to fetch OpenRouter settings from DB, using defaults', {
@@ -180,7 +191,8 @@ export class ClassifierService {
       aiResult = await classifyWithAI(text, classifierConfig);
 
       // If AI confidence is above threshold, use it
-      const effectiveThreshold = dbSettings.aiConfidenceThreshold ?? this.config.aiConfidenceThreshold;
+      const effectiveThreshold =
+        dbSettings.aiConfidenceThreshold ?? this.config.aiConfidenceThreshold;
       if (aiResult.confidence >= effectiveThreshold) {
         await setCache(this.prisma, text, aiResult, this.config.cacheTTLHours);
 
@@ -312,9 +324,7 @@ export class ClassifierService {
   async classifyBatch(texts: string[]): Promise<ClassificationResult[]> {
     const startTime = Date.now();
 
-    const results = await Promise.all(
-      texts.map(text => this.classifyMessage(text))
-    );
+    const results = await Promise.all(texts.map((text) => this.classifyMessage(text)));
 
     logger.info('Batch classification completed', {
       count: texts.length,

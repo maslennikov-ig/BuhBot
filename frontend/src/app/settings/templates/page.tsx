@@ -43,22 +43,13 @@ export default function TemplatesPage() {
         title="Шаблоны сообщений"
         description="Управление готовыми ответами и уведомлениями."
         actions={<HelpButton section="settings.templates" />}
-        breadcrumbs={[
-          { label: 'Настройки', href: '/settings' },
-          { label: 'Шаблоны' },
-        ]}
+        breadcrumbs={[{ label: 'Настройки', href: '/settings' }, { label: 'Шаблоны' }]}
       />
 
-      {mode === 'list' && (
-        <TemplateList onEdit={handleEdit} onCreate={handleCreate} />
-      )}
+      {mode === 'list' && <TemplateList onEdit={handleEdit} onCreate={handleCreate} />}
 
       {(mode === 'create' || mode === 'edit') && (
-        <TemplateForm
-          initialData={editingItem}
-          onSuccess={handleSuccess}
-          onCancel={handleCancel}
-        />
+        <TemplateForm initialData={editingItem} onSuccess={handleSuccess} onCancel={handleCancel} />
       )}
     </AdminLayout>
   );

@@ -424,9 +424,9 @@ services:
     networks:
       - buhbot-network
     ports:
-      - "3000:3000"
+      - '3000:3000'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -446,7 +446,7 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -456,8 +456,8 @@ services:
     container_name: buhbot-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
@@ -468,7 +468,7 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ['CMD', 'nginx', '-t']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -477,7 +477,7 @@ services:
     image: prom/prometheus:v2.45.0
     container_name: buhbot-prometheus
     restart: unless-stopped
-    user: "65534:65534"
+    user: '65534:65534'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -490,11 +490,11 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     ports:
-      - "9090:9090"
+      - '9090:9090'
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:9090/-/healthy']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -503,7 +503,7 @@ services:
     image: grafana/grafana:10.0.3
     container_name: buhbot-grafana
     restart: unless-stopped
-    user: "472:472"
+    user: '472:472'
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
@@ -514,13 +514,13 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3001:3000"
+      - '3001:3000'
     depends_on:
       - prometheus
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:3000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -883,8 +883,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "BuhBot application is down"
-          description: "Bot service has been down for more than 2 minutes"
+          summary: 'BuhBot application is down'
+          description: 'Bot service has been down for more than 2 minutes'
 
       # High CPU usage
       - alert: HighCPUUsage
@@ -893,8 +893,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High CPU usage detected"
-          description: "CPU usage is above 80% for more than 5 minutes"
+          summary: 'High CPU usage detected'
+          description: 'CPU usage is above 80% for more than 5 minutes'
 
       # High memory usage
       - alert: HighMemoryUsage
@@ -903,8 +903,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage detected"
-          description: "Available memory is below 20% for more than 5 minutes"
+          summary: 'High memory usage detected'
+          description: 'Available memory is below 20% for more than 5 minutes'
 
       # Disk space running low
       - alert: DiskSpaceLow
@@ -913,8 +913,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Disk space running low"
-          description: "Available disk space is below 15%"
+          summary: 'Disk space running low'
+          description: 'Available disk space is below 15%'
 
       # Redis down
       - alert: RedisDown
@@ -923,8 +923,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Redis is down"
-          description: "Redis has been down for more than 2 minutes"
+          summary: 'Redis is down'
+          description: 'Redis has been down for more than 2 minutes'
 
       # High Redis memory usage
       - alert: RedisHighMemory
@@ -933,8 +933,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Redis memory usage is high"
-          description: "Redis is using more than 90% of allocated memory"
+          summary: 'Redis memory usage is high'
+          description: 'Redis is using more than 90% of allocated memory'
 ```
 
 ---

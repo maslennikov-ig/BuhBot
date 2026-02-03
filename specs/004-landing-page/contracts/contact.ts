@@ -129,15 +129,17 @@ export interface ContactRouterInterface {
       offset: z.ZodDefault<z.ZodNumber>;
     }>;
     output: z.ZodObject<{
-      items: z.ZodArray<z.ZodObject<{
-        id: z.ZodString;
-        name: z.ZodString;
-        email: z.ZodString;
-        company: z.ZodOptional<z.ZodString>;
-        message: z.ZodOptional<z.ZodString>;
-        status: z.ZodEnum<['NEW', 'CONTACTED', 'CONVERTED', 'CLOSED']>;
-        createdAt: z.ZodDate;
-      }>>;
+      items: z.ZodArray<
+        z.ZodObject<{
+          id: z.ZodString;
+          name: z.ZodString;
+          email: z.ZodString;
+          company: z.ZodOptional<z.ZodString>;
+          message: z.ZodOptional<z.ZodString>;
+          status: z.ZodEnum<['NEW', 'CONTACTED', 'CONVERTED', 'CLOSED']>;
+          createdAt: z.ZodDate;
+        }>
+      >;
       total: z.ZodNumber;
     }>;
   };

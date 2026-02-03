@@ -97,9 +97,7 @@ function DateInput({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-[var(--buh-foreground-muted)]">
-        {label}
-      </label>
+      <label className="text-xs font-medium text-[var(--buh-foreground-muted)]">{label}</label>
       <input
         type="date"
         value={value ? value.toISOString().split('T')[0] : ''}
@@ -130,9 +128,7 @@ function RatingFilter({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-[var(--buh-foreground-muted)]">
-        {label}
-      </label>
+      <label className="text-xs font-medium text-[var(--buh-foreground-muted)]">{label}</label>
       <select
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
@@ -223,9 +219,7 @@ export function FeedbackTable({
             <MessageSquare className="h-5 w-5 text-[var(--buh-primary)]" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-[var(--buh-foreground)]">
-              Обратная связь
-            </h3>
+            <h3 className="text-base font-semibold text-[var(--buh-foreground)]">Обратная связь</h3>
             <p className="text-xs text-[var(--buh-foreground-subtle)]">
               {pagination.totalItems} записей
             </p>

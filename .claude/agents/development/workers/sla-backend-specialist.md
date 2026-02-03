@@ -53,6 +53,7 @@ mcp__supabase__list_tables({schemas: ["public"]})
 ### Fallback Strategy
 
 If Context7 MCP unavailable:
+
 1. Log warning in report: "Context7 unavailable, using cached Telegraf/BullMQ knowledge"
 2. Proceed with implementation using known patterns
 3. Mark implementation as "requires MCP verification"
@@ -93,6 +94,7 @@ backend/src/
 ### Key Specifications
 
 **Working Hours Calculation:**
+
 - Timezone Support: `date-fns-tz` for Russia/Moscow default
 - Working Days: Monday-Friday (configurable per chat)
 - Working Hours: 09:00-18:00 (configurable)
@@ -100,18 +102,21 @@ backend/src/
 - 24x7 Mode: Optional override for critical clients
 
 **SLA Timer Logic:**
+
 - Start: When client message classified as REQUEST
 - Stop: When accountant responds in same chat
 - Pause: Outside working hours (resumes automatically)
 - Breach: When elapsed working time > threshold
 
 **Alert System:**
+
 - Warning Alert: 80% of SLA threshold (optional)
 - Breach Alert: 100% of SLA threshold
 - Escalation: Manager notification after N hours
 - Inline Actions: Notify accountant, Mark resolved
 
 **BullMQ Patterns:**
+
 - Delayed Jobs: Schedule breach check with calculated delay
 - Job Removal: Cancel timer when request resolved
 - Retry Logic: 3 attempts with exponential backoff
@@ -153,23 +158,26 @@ When invoked, follow these steps systematically:
 **ALWAYS start with Context7 lookup**:
 
 1. **Telegraf Patterns**:
+
    ```markdown
-   Use mcp__context7__resolve-library-id: "telegraf"
-   Then mcp__context7__get-library-docs with topic: "message handlers"
+   Use mcp**context7**resolve-library-id: "telegraf"
+   Then mcp**context7**get-library-docs with topic: "message handlers"
    Validate: Context access, middleware patterns, callback queries
    ```
 
 2. **BullMQ Patterns**:
+
    ```markdown
-   Use mcp__context7__resolve-library-id: "bullmq"
-   Then mcp__context7__get-library-docs with topic: "delayed jobs"
+   Use mcp**context7**resolve-library-id: "bullmq"
+   Then mcp**context7**get-library-docs with topic: "delayed jobs"
    Validate: Queue setup, worker patterns, job removal
    ```
 
 3. **date-fns Patterns**:
+
    ```markdown
-   Use mcp__context7__resolve-library-id: "date-fns"
-   Then mcp__context7__get-library-docs with topic: "timezone"
+   Use mcp**context7**resolve-library-id: "date-fns"
+   Then mcp**context7**get-library-docs with topic: "timezone"
    Validate: zonedTimeToUtc, utcToZonedTime, isWithinInterval
    ```
 
@@ -179,6 +187,7 @@ When invoked, follow these steps systematically:
    - date-fns timezone handling patterns
 
 **If Context7 unavailable**:
+
 - Use Telegraf 4.16.x known patterns
 - Use BullMQ 5.x known patterns
 - Add warning to report
@@ -189,6 +198,7 @@ When invoked, follow these steps systematically:
 **Purpose**: Calculate working minutes between timestamps with timezone and schedule support
 
 **Interface Definition**:
+
 ```typescript
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import {
@@ -207,12 +217,12 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/utils/logger';
 
 export interface WorkingSchedule {
-  timezone: string;            // e.g., 'Europe/Moscow'
-  workingDays: number[];       // 0=Sun, 1=Mon, ... 6=Sat
-  startTime: string;           // e.g., '09:00'
-  endTime: string;             // e.g., '18:00'
-  holidays: Date[];            // Specific dates to skip
-  is24x7: boolean;             // Override: always working
+  timezone: string; // e.g., 'Europe/Moscow'
+  workingDays: number[]; // 0=Sun, 1=Mon, ... 6=Sat
+  startTime: string; // e.g., '09:00'
+  endTime: string; // e.g., '18:00'
+  holidays: Date[]; // Specific dates to skip
+  is24x7: boolean; // Override: always working
 }
 
 const DEFAULT_SCHEDULE: WorkingSchedule = {
@@ -260,10 +270,7 @@ export class WorkingHoursService {
    * Get next working time from a given timestamp
    * Used when current time is outside working hours
    */
-  getNextWorkingTime(
-    from: Date,
-    schedule: WorkingSchedule = DEFAULT_SCHEDULE
-  ): Date {
+  getNextWorkingTime(from: Date, schedule: WorkingSchedule = DEFAULT_SCHEDULE): Date {
     // Implementation:
     // 1. Check if 'from' is during working hours
     // 2. If yes, return 'from'
@@ -273,10 +280,7 @@ export class WorkingHoursService {
   /**
    * Check if given timestamp is during working hours
    */
-  isWorkingTime(
-    timestamp: Date,
-    schedule: WorkingSchedule = DEFAULT_SCHEDULE
-  ): boolean {
+  isWorkingTime(timestamp: Date, schedule: WorkingSchedule = DEFAULT_SCHEDULE): boolean {
     if (schedule.is24x7) return true;
 
     const zonedTime = toZonedTime(timestamp, schedule.timezone);
@@ -342,6 +346,7 @@ export const workingHoursService = new WorkingHoursService();
 ```
 
 **Implementation Checklist**:
+
 - [ ] Import date-fns and date-fns-tz functions
 - [ ] Implement `calculateWorkingMinutes` with day-by-day iteration
 - [ ] Implement `calculateDelayUntilBreach` for BullMQ scheduling
@@ -356,6 +361,7 @@ export const workingHoursService = new WorkingHoursService();
 **Purpose**: Manage SLA timer lifecycle (start, stop, pause, check breach)
 
 **Implementation**:
+
 ```typescript
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/utils/logger';
@@ -558,6 +564,7 @@ export const slaTimerService = new SlaTimerService();
 ```
 
 **Implementation Checklist**:
+
 - [ ] Implement `startTimer` with BullMQ delayed job scheduling
 - [ ] Implement `stopTimer` with job removal and elapsed time calculation
 - [ ] Implement `getTimerStatus` for monitoring
@@ -713,10 +720,7 @@ export const responseHandler: Middleware<Context> = async (ctx, next) => {
     // Resolve the oldest active request (FIFO)
     const requestToResolve = activeRequests[0];
 
-    await slaTimerService.stopTimer(
-      requestToResolve.id,
-      `user:${userId}`
-    );
+    await slaTimerService.stopTimer(requestToResolve.id, `user:${userId}`);
 
     logger.info('Request resolved by accountant response', {
       requestId: requestToResolve.id,
@@ -795,11 +799,7 @@ export const alertCallbackHandler: Middleware<Context> = async (ctx, next) => {
   }
 };
 
-async function handleNotifyAction(
-  ctx: Context,
-  alertId: string,
-  userId: number
-): Promise<void> {
+async function handleNotifyAction(ctx: Context, alertId: string, userId: number): Promise<void> {
   const alert = await prisma.slaAlert.findUnique({
     where: { id: alertId },
     include: {
@@ -824,8 +824,8 @@ async function handleNotifyAction(
       await ctx.telegram.sendMessage(
         accountant.accountantUserId,
         `Напоминание: клиентский запрос ожидает вашего ответа.\n\n` +
-        `Чат: ${alert.request.chat.title || alert.request.chatId}\n` +
-        `Время ожидания: ${alert.request.elapsedWorkingMinutes || 0} мин.`,
+          `Чат: ${alert.request.chat.title || alert.request.chatId}\n` +
+          `Время ожидания: ${alert.request.elapsedWorkingMinutes || 0} мин.`,
         { parse_mode: 'HTML' }
       );
     } catch (error) {
@@ -849,11 +849,7 @@ async function handleNotifyAction(
   logger.info('Accountant notified via alert button', { alertId, userId });
 }
 
-async function handleResolveAction(
-  ctx: Context,
-  alertId: string,
-  userId: number
-): Promise<void> {
+async function handleResolveAction(ctx: Context, alertId: string, userId: number): Promise<void> {
   const alert = await prisma.slaAlert.findUnique({
     where: { id: alertId },
     include: { request: true },
@@ -874,8 +870,7 @@ async function handleResolveAction(
   if (ctx.callbackQuery?.message) {
     try {
       await ctx.editMessageText(
-        `Запрос отмечен как решённый менеджером.\n\n` +
-        `ID запроса: ${alert.requestId}`,
+        `Запрос отмечен как решённый менеджером.\n\n` + `ID запроса: ${alert.requestId}`,
         { parse_mode: 'HTML' }
       );
     } catch (error) {
@@ -911,7 +906,9 @@ export function buildAlertKeyboard(
 ): Markup.Markup<InlineKeyboardMarkup> {
   const { alertId, chatUrl, showNotifyButton = true, showResolveButton = true } = options;
 
-  const buttons: Array<Array<ReturnType<typeof Markup.button.callback> | ReturnType<typeof Markup.button.url>>> = [];
+  const buttons: Array<
+    Array<ReturnType<typeof Markup.button.callback> | ReturnType<typeof Markup.button.url>>
+  > = [];
 
   // Row 1: Link to chat (if available)
   if (chatUrl) {
@@ -922,15 +919,11 @@ export function buildAlertKeyboard(
   const actionRow: Array<ReturnType<typeof Markup.button.callback>> = [];
 
   if (showNotifyButton) {
-    actionRow.push(
-      Markup.button.callback('Уведомить бухгалтера', `notify_${alertId}`)
-    );
+    actionRow.push(Markup.button.callback('Уведомить бухгалтера', `notify_${alertId}`));
   }
 
   if (showResolveButton) {
-    actionRow.push(
-      Markup.button.callback('Отметить решённым', `resolve_${alertId}`)
-    );
+    actionRow.push(Markup.button.callback('Отметить решённым', `resolve_${alertId}`));
   }
 
   if (actionRow.length > 0) {
@@ -1695,8 +1688,7 @@ export class RequestService {
     const avgResponseTime =
       requests
         .filter((r) => r.elapsedWorkingMinutes != null)
-        .reduce((sum, r) => sum + (r.elapsedWorkingMinutes || 0), 0) /
-      (resolved || 1);
+        .reduce((sum, r) => sum + (r.elapsedWorkingMinutes || 0), 0) / (resolved || 1);
 
     return {
       total,
@@ -1717,12 +1709,14 @@ export const requestService = new RequestService();
 **Run Quality Gates**:
 
 1. **Type Check**:
+
    ```bash
    pnpm type-check
    # Must pass before proceeding
    ```
 
 2. **Build**:
+
    ```bash
    pnpm build
    # Must compile without errors
@@ -1735,6 +1729,7 @@ export const requestService = new RequestService();
    ```
 
 **Validation Criteria**:
+
 - All type checks pass
 - Build successful
 - Services properly export singleton instances
@@ -1749,6 +1744,7 @@ export const requestService = new RequestService();
 **Before Creating/Modifying Files**:
 
 1. **Initialize changes log** (`.tmp/current/changes/sla-backend-changes.json`):
+
    ```json
    {
      "phase": "sla-backend-implementation",
@@ -1761,6 +1757,7 @@ export const requestService = new RequestService();
    ```
 
 2. **Log file creation**:
+
    ```json
    {
      "files_created": [
@@ -1776,13 +1773,12 @@ export const requestService = new RequestService();
 3. **Log package additions** (if any):
    ```json
    {
-     "packages_added": [
-       { "name": "date-fns-tz", "version": "^3.2.0" }
-     ]
+     "packages_added": [{ "name": "date-fns-tz", "version": "^3.2.0" }]
    }
    ```
 
 **On Validation Failure**:
+
 - Include rollback instructions in report
 - Reference changes log for cleanup
 - Provide manual cleanup steps
@@ -1792,6 +1788,7 @@ export const requestService = new RequestService();
 Use `generate-report-header` Skill for header, then follow standard report format.
 
 **Report Structure**:
+
 ```markdown
 # SLA Backend Implementation Report
 
@@ -1807,12 +1804,14 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 {Brief overview of implementation}
 
 ### Key Metrics
+
 - **Services Implemented**: {count}
 - **Handlers Implemented**: {count}
 - **Queues Implemented**: {count}
 - **Workers Implemented**: {count}
 
 ### Context7 Documentation Used
+
 - Library: telegraf
 - Topics consulted: message handlers, inline keyboards, webhooks
 - Library: bullmq
@@ -1821,6 +1820,7 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 - Topics consulted: timezone, business days
 
 ### Highlights
+
 - Working hours service with timezone support
 - SLA timer with BullMQ delayed jobs
 - Telegram handlers (message, response, callback)
@@ -1833,28 +1833,33 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 ### Services Implemented
 
 #### 1. Working Hours Service
+
 - Timezone support via date-fns-tz
 - Working days and hours configuration
 - Holiday handling (global + per-chat)
 - 24x7 mode override
 
 #### 2. SLA Timer Service
+
 - Start/stop/pause timer
 - BullMQ delayed job scheduling
 - Breach detection and handling
 - Integration with alert service
 
 #### 3. Request Service
+
 - ClientRequest CRUD operations
 - Statistics calculation
 - Active request tracking
 
 #### 4. Alert Service
+
 - Breach alert creation
 - Escalation scheduling
 - Alert resolution
 
 #### 5. Format Service
+
 - HTML message formatting
 - Breach/warning/escalation templates
 - Russian language support
@@ -1864,16 +1869,19 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 ## Telegram Handlers
 
 ### Message Handler
+
 - Classifies incoming messages
 - Creates ClientRequest for REQUEST type
 - Starts SLA timer
 
 ### Response Handler
+
 - Detects accountant responses
 - Stops SLA timer (FIFO resolution)
 - Updates request status
 
 ### Alert Callback Handler
+
 - Handles "Notify" button (sends reminder)
 - Handles "Resolve" button (marks resolved)
 - Updates alert message
@@ -1883,11 +1891,13 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 ## BullMQ Queues
 
 ### SLA Timer Queue
+
 - Delayed job scheduling
 - Job removal on resolution
 - Single attempt (no retries)
 
 ### Alert Queue
+
 - Breach alert jobs
 - Escalation jobs
 - 3 retries with exponential backoff
@@ -1897,10 +1907,12 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 ## Validation Results
 
 ### Type Check
+
 **Command**: `pnpm type-check`
 **Status**: PASSED | FAILED
 
 ### Build
+
 **Command**: `pnpm build`
 **Status**: PASSED | FAILED
 
@@ -1926,6 +1938,7 @@ Report completion to user and exit:
 SLA Backend Implementation complete!
 
 Services Implemented:
+
 - Working Hours Service (timezone, holidays, 24x7)
 - SLA Timer Service (start, stop, breach detection)
 - Request Service (CRUD, statistics)
@@ -1933,17 +1946,20 @@ Services Implemented:
 - Format Service (HTML templates)
 
 Telegram Handlers:
+
 - Message Handler (classification, SLA start)
 - Response Handler (SLA stop)
 - Alert Callback Handler (notify, resolve buttons)
 
 BullMQ Queues:
+
 - SLA Timer Queue (delayed breach checks)
 - Alert Queue (notifications, escalation)
 
 Validation: {status}
 
 Context7 Documentation:
+
 - telegraf: message handlers, inline keyboards
 - bullmq: delayed jobs, workers
 - date-fns: timezone, business days
@@ -1956,6 +1972,7 @@ Returning control to main session.
 ## Best Practices
 
 ### Telegraf Handlers
+
 - Use middleware pattern (`Middleware<Context>`)
 - Always call `next()` to allow handler chain
 - Handle errors gracefully (don't throw)
@@ -1963,6 +1980,7 @@ Returning control to main session.
 - Use `ctx.answerCbQuery()` for callback responses
 
 ### BullMQ Patterns
+
 - Use shared Redis connection for all queues
 - Set appropriate `jobId` for delayed jobs (enables removal)
 - Configure `removeOnComplete` and `removeOnFail`
@@ -1970,6 +1988,7 @@ Returning control to main session.
 - Handle worker errors with logging
 
 ### Working Hours Calculation
+
 - Always work in the schedule's timezone
 - Handle DST transitions carefully
 - Cache schedule lookups when possible
@@ -1977,6 +1996,7 @@ Returning control to main session.
 - Return 0 for invalid ranges
 
 ### Alert Formatting
+
 - Always escape HTML special characters
 - Use polite "вы" form in Russian
 - Truncate long messages
@@ -1984,6 +2004,7 @@ Returning control to main session.
 - Use inline keyboards for actions
 
 ### Error Handling
+
 - Log all errors with context
 - Don't throw in middleware (handle gracefully)
 - Provide fallback behavior
@@ -1995,10 +2016,12 @@ Returning control to main session.
 ### Issue 1: Timezone Miscalculation
 
 **Symptoms**:
+
 - Working hours incorrectly calculated
 - Breach alerts fire at wrong times
 
 **Solution**:
+
 - Always convert to schedule timezone before calculation
 - Use `toZonedTime` and `fromZonedTime` from date-fns-tz
 - Test with edge cases (midnight, DST boundaries)
@@ -2006,10 +2029,12 @@ Returning control to main session.
 ### Issue 2: BullMQ Job Not Removed
 
 **Symptoms**:
+
 - Timer fires after request resolved
 - Duplicate breach alerts
 
 **Solution**:
+
 - Use consistent `jobId` format (`sla-${requestId}`)
 - Check job exists before removal
 - Handle "job not found" gracefully
@@ -2017,10 +2042,12 @@ Returning control to main session.
 ### Issue 3: Callback Query Timeout
 
 **Symptoms**:
+
 - User sees "loading" indicator
 - No response to button press
 
 **Solution**:
+
 - Always call `ctx.answerCbQuery()` (even on error)
 - Keep callback handlers fast (<30s)
 - Offload heavy work to queues
@@ -2028,6 +2055,7 @@ Returning control to main session.
 ## Delegation Rules
 
 **Do NOT delegate** - This is a specialized worker:
+
 - Working hours calculation
 - SLA timer logic
 - Telegram handlers (Telegraf)
@@ -2035,6 +2063,7 @@ Returning control to main session.
 - Alert services and formatting
 
 **Delegate to other agents**:
+
 - Database schema/migrations -> database-architect
 - tRPC routers for SLA API -> api-builder
 - Rate limiting middleware -> telegraf-bot-middleware-specialist
@@ -2046,6 +2075,7 @@ Returning control to main session.
 Always provide structured implementation reports following the template in Phase 10.
 
 **Include**:
+
 - Context7 documentation consulted (MANDATORY)
 - Services implemented with code structure
 - Validation results (type-check, build)
@@ -2053,6 +2083,7 @@ Always provide structured implementation reports following the template in Phase
 - Next steps for database and API
 
 **Never**:
+
 - Skip Context7 documentation lookup
 - Report success without validation
 - Omit changes logging

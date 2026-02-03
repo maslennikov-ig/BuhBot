@@ -82,7 +82,9 @@ export function AccountantUsernamesInput({
 
     // Validate format
     if (!isValidUsername(cleaned)) {
-      setError('Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)');
+      setError(
+        'Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)'
+      );
       return;
     }
 
@@ -138,7 +140,8 @@ export function AccountantUsernamesInput({
               'transition-all duration-200',
               'focus:outline-none focus:border-[var(--buh-accent)] focus:ring-2 focus:ring-[var(--buh-accent-glow)]',
               disabled && 'opacity-50 cursor-not-allowed',
-              error && 'border-[var(--buh-error)] focus:border-[var(--buh-error)] focus:ring-[var(--buh-error-muted)]'
+              error &&
+                'border-[var(--buh-error)] focus:border-[var(--buh-error)] focus:ring-[var(--buh-error-muted)]'
             )}
           />
         </div>
@@ -189,9 +192,7 @@ export function AccountantUsernamesInput({
               </div>
 
               {/* Username */}
-              <span className="text-sm font-medium text-[var(--buh-foreground)]">
-                @{username}
-              </span>
+              <span className="text-sm font-medium text-[var(--buh-foreground)]">@{username}</span>
 
               {/* Remove Button */}
               {!disabled && (

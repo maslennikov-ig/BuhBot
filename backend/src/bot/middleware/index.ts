@@ -25,11 +25,6 @@
  * ```
  */
 
-export {
-  rateLimitMiddleware,
-  type RateLimitOptions,
-} from './rate-limit.js';
+export { rateLimitMiddleware, type RateLimitOptions } from './rate-limit.js';
 
-export {
-  errorMiddleware,
-} from './error.js';
+export { errorMiddleware } from './error.js';

@@ -82,7 +82,7 @@ paths:
                         username: ivan_client
                         type: private
                       date: 1700000100
-                      text: "Выберите вопрос:"
+                      text: 'Выберите вопрос:'
                     chat_instance: instance_123
                     data: faq_001
 

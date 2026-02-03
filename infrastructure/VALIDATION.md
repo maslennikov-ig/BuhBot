@@ -6,29 +6,33 @@
 ## Validation Results
 
 ### 1. Syntax Validation
+
 ```bash
 docker compose config --quiet
 ```
+
 **Status**: ✅ PASSED
+
 - Valid YAML syntax
 - All services properly defined
 - Dependencies correctly configured
 
 ### 2. Services Configuration
 
-| Service | Container Name | Port Mapping | Status |
-|---------|---------------|--------------|--------|
-| bot-backend | buhbot-bot-backend | 3000:3000 | ✅ |
-| frontend | buhbot-frontend | 3001:3000 | ✅ |
-| redis | buhbot-redis | (internal) | ✅ |
-| monitoring-stack | buhbot-monitoring-stack | 9090:9090, 3002:3000, 3003:3001 | ✅ |
-| nginx | buhbot-nginx | 80:80, 443:443 | ✅ |
+| Service          | Container Name          | Port Mapping                    | Status |
+| ---------------- | ----------------------- | ------------------------------- | ------ |
+| bot-backend      | buhbot-bot-backend      | 3000:3000                       | ✅     |
+| frontend         | buhbot-frontend         | 3001:3000                       | ✅     |
+| redis            | buhbot-redis            | (internal)                      | ✅     |
+| monitoring-stack | buhbot-monitoring-stack | 9090:9090, 3002:3000, 3003:3001 | ✅     |
+| nginx            | buhbot-nginx            | 80:80, 443:443                  | ✅     |
 
 **Total Services**: 5
 
 ### 3. Health Checks
 
 All services have health checks configured:
+
 - ✅ bot-backend: `curl -f http://localhost:3000/health`
 - ✅ frontend: Node.js HTTP check
 - ✅ redis: `redis-cli ping`
@@ -38,6 +42,7 @@ All services have health checks configured:
 ### 4. Dependencies
 
 Dependency graph (startup order):
+
 ```
 redis (no deps)
   └── bot-backend (waits for redis healthy)
@@ -53,6 +58,7 @@ monitoring-stack (no deps)
 ### 5. Volumes
 
 All volumes properly defined:
+
 - ✅ redis-data (Redis AOF persistence)
 - ✅ prometheus-data (Prometheus TSDB)
 - ✅ grafana-data (Grafana database)
@@ -79,6 +85,7 @@ All services: `unless-stopped` (survive host reboot)
 ### 9. Port Conflicts
 
 No port conflicts detected:
+
 - bot-backend: 3000 (internal)
 - frontend: 3001 → 3000 (mapped)
 - redis: 6379 (not exposed to host)

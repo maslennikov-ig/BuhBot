@@ -47,14 +47,14 @@ export function HowItWorks() {
         <div className="relative">
           {/* Static Connecting Line (Desktop) */}
           <div className="hidden lg:block absolute top-1/2 left-0 w-full h-0.5 bg-[var(--buh-border)] -translate-y-1/2 z-0" />
-          
+
           {/* Animated Connecting Line */}
           <motion.div
             className="hidden lg:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[var(--buh-accent)] to-transparent -translate-y-1/2 z-0"
             initial={{ scaleX: 0, opacity: 0 }}
             whileInView={{ scaleX: 1, opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.5, ease: "easeInOut", delay: 0.5 }}
+            transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.5 }}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
@@ -72,14 +72,14 @@ export function HowItWorks() {
                 <motion.div
                   className="absolute -inset-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] rounded-2xl opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-500"
                   animate={{ scale: [1, 1.02, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 />
 
                 <div className="relative z-10 bg-[var(--buh-surface)] rounded-2xl h-full p-4">
-                   <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[var(--buh-surface)] px-4 text-[var(--buh-primary)] font-black text-5xl opacity-20 group-hover:opacity-40 transition-opacity">
+                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[var(--buh-surface)] px-4 text-[var(--buh-primary)] font-black text-5xl opacity-20 group-hover:opacity-40 transition-opacity">
                     {step.id}
                   </div>
-                  
+
                   <div className="flex flex-col items-center text-center pt-4">
                     <div className="w-16 h-16 rounded-full bg-[var(--buh-surface-elevated)] flex items-center justify-center mb-6 text-[var(--buh-primary)] shadow-md group-hover:scale-110 transition-transform duration-300 border-4 border-[var(--buh-surface)]">
                       <step.icon size={32} />
@@ -87,9 +87,7 @@ export function HowItWorks() {
                     <h3 className="text-xl font-bold text-[var(--buh-foreground)] mb-3">
                       {step.title}
                     </h3>
-                    <p className="text-[var(--buh-foreground-muted)]">
-                      {step.description}
-                    </p>
+                    <p className="text-[var(--buh-foreground-muted)]">{step.description}</p>
                   </div>
                 </div>
               </motion.div>

@@ -62,7 +62,10 @@ export interface ManagerNotificationJobData {
 }
 
 // Union type for all survey job data
-export type SurveyJobData = SurveyDeliveryJobData | SurveyReminderJobData | ManagerNotificationJobData;
+export type SurveyJobData =
+  | SurveyDeliveryJobData
+  | SurveyReminderJobData
+  | ManagerNotificationJobData;
 
 // ============================================================================
 // QUEUE CONFIGURATION

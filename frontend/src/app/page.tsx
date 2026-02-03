@@ -11,25 +11,26 @@ import {
 } from '@/components/landing';
 import { CursorGlow } from '@/components/CursorGlow';
 import { SectionDivider } from '@/components/SectionDivider';
-import type { Metadata } from "next";
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "BuhBot - Автоматизация коммуникаций для бухгалтерских фирм",
-  description: "SLA-мониторинг ответов бухгалтеров в Telegram. Автоматические напоминания о приближении дедлайна. Контролируйте время реакции на обращения клиентов.",
+  title: 'BuhBot - Автоматизация коммуникаций для бухгалтерских фирм',
+  description:
+    'SLA-мониторинг ответов бухгалтеров в Telegram. Автоматические напоминания о приближении дедлайна. Контролируйте время реакции на обращения клиентов.',
   keywords: [
-    "бухгалтерия",
-    "telegram бот",
-    "sla мониторинг",
-    "автоматизация бухгалтерии",
-    "контроль времени ответа",
+    'бухгалтерия',
+    'telegram бот',
+    'sla мониторинг',
+    'автоматизация бухгалтерии',
+    'контроль времени ответа',
   ],
   openGraph: {
-    title: "BuhBot - Контроль времени ответа бухгалтеров",
-    description: "Автоматическое отслеживание SLA в Telegram-чатах с умными алертами",
-    url: "https://buhbot.aidevteam.ru",
-    siteName: "BuhBot",
-    locale: "ru_RU",
-    type: "website",
+    title: 'BuhBot - Контроль времени ответа бухгалтеров',
+    description: 'Автоматическое отслеживание SLA в Telegram-чатах с умными алертами',
+    url: 'https://buhbot.aidevteam.ru',
+    siteName: 'BuhBot',
+    locale: 'ru_RU',
+    type: 'website',
   },
 };
 

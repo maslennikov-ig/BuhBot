@@ -56,10 +56,7 @@ type ChatSettingsFormProps = {
 
 const chatSettingsSchema = z.object({
   slaEnabled: z.boolean(),
-  slaResponseMinutes: z
-    .number()
-    .min(1, 'Минимум 1 минута')
-    .max(480, 'Максимум 480 минут'),
+  slaResponseMinutes: z.number().min(1, 'Минимум 1 минута').max(480, 'Максимум 480 минут'),
   // Allow null, valid UUID, or empty string (transformed to null)
   assignedAccountantId: z
     .union([z.string().uuid(), z.null(), z.literal('')])
@@ -163,9 +160,7 @@ export function ChatSettingsForm({
           <Settings2 className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">
-            Настройки чата
-          </h2>
+          <h2 className="text-lg font-semibold text-[var(--buh-foreground)]">Настройки чата</h2>
           <p className="text-sm text-[var(--buh-foreground-muted)]">
             SLA и назначение ответственного
           </p>
@@ -345,10 +340,7 @@ export function ChatSettingsForm({
                   Бухгалтеры (@username)
                 </FormLabel>
                 <FormControl>
-                  <AccountantUsernamesInput
-                    value={field.value ?? []}
-                    onChange={field.onChange}
-                  />
+                  <AccountantUsernamesInput value={field.value ?? []} onChange={field.onChange} />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
                   Укажите @username бухгалтеров, ответственных за этот чат
@@ -402,4 +394,3 @@ export function ChatSettingsForm({
     </GlassCard>
   );
 }
-

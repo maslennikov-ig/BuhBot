@@ -96,9 +96,7 @@ export function ActiveAlertsWidget({
           <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)]">
             Активные алерты
           </h3>
-          <p className="mt-1 text-xs text-[var(--buh-foreground-subtle)]">
-            Требуют внимания
-          </p>
+          <p className="mt-1 text-xs text-[var(--buh-foreground-subtle)]">Требуют внимания</p>
         </div>
         <div className="relative">
           <div
@@ -137,7 +135,8 @@ export function ActiveAlertsWidget({
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-full bg-[var(--buh-error)]" />
           <span className="text-sm text-[var(--buh-foreground-muted)]">
-            <span className="font-semibold text-[var(--buh-foreground)]">{criticalCount}</span> крит.
+            <span className="font-semibold text-[var(--buh-foreground)]">{criticalCount}</span>{' '}
+            крит.
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -177,9 +176,7 @@ export function ActiveAlertsWidget({
                   <p className="truncate text-sm font-medium text-[var(--buh-foreground)]">
                     {alert.title}
                   </p>
-                  <p className="text-xs text-[var(--buh-foreground-subtle)]">
-                    {alert.time}
-                  </p>
+                  <p className="text-xs text-[var(--buh-foreground-subtle)]">{alert.time}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-[var(--buh-foreground-subtle)] opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
@@ -207,4 +204,3 @@ export function ActiveAlertsWidget({
     </GlassCard>
   );
 }
-

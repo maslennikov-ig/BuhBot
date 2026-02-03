@@ -35,8 +35,8 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  id-token: write      # Required for OIDC authentication
-  actions: read        # Allows Claude to read CI results
+  id-token: write # Required for OIDC authentication
+  actions: read # Allows Claude to read CI results
 
 jobs:
   claude-assistant:
@@ -55,7 +55,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for context
+          fetch-depth: 0 # Full history for context
 
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1

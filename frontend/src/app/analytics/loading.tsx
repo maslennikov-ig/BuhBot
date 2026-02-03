@@ -20,7 +20,10 @@ export default function AnalyticsLoading() {
       {/* KPI Cards Skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-xl border border-[var(--buh-glass-border)] buh-glass-elevated p-6">
+          <div
+            key={i}
+            className="rounded-xl border border-[var(--buh-glass-border)] buh-glass-elevated p-6"
+          >
             <div className="h-5 bg-[var(--buh-surface-elevated)] rounded w-2/3 mb-4" />
             <div className="h-10 bg-[var(--buh-surface-elevated)] rounded w-1/2 mb-2" />
             <div className="h-4 bg-[var(--buh-surface-elevated)] rounded w-1/3" />

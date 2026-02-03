@@ -37,9 +37,7 @@ export function PageHeader({
           <ol className="flex items-center gap-2 text-sm">
             {breadcrumbs.map((item, index) => (
               <li key={index} className="flex items-center gap-2">
-                {index > 0 && (
-                  <span className="text-[var(--buh-foreground-subtle)]">/</span>
-                )}
+                {index > 0 && <span className="text-[var(--buh-foreground-subtle)]">/</span>}
                 {item.href ? (
                   <a
                     href={item.href}
@@ -62,19 +60,12 @@ export function PageHeader({
           <h1 className="text-2xl font-bold tracking-tight text-[var(--buh-foreground)] lg:text-3xl">
             {title}
           </h1>
-          {description && (
-            <p className="text-[var(--buh-foreground-muted)]">{description}</p>
-          )}
+          {description && <p className="text-[var(--buh-foreground-muted)]">{description}</p>}
         </div>
 
         {/* Actions */}
-        {actions && (
-          <div className="flex items-center gap-3 shrink-0">
-            {actions}
-          </div>
-        )}
+        {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}
       </div>
     </div>
   );
 }
-

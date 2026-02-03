@@ -55,7 +55,9 @@ export function registerInvitationHandler(): void {
 
       if (!payload || !chatId || !user) {
         // Normal start without token
-        await ctx.reply('Привет! Я бот-бухгалтер. Чтобы подключить меня, попросите ссылку у вашего менеджера.');
+        await ctx.reply(
+          'Привет! Я бот-бухгалтер. Чтобы подключить меня, попросите ссылку у вашего менеджера.'
+        );
         return;
       }
 
@@ -67,12 +69,11 @@ export function registerInvitationHandler(): void {
 
       await processInvitation(ctx, payload, BigInt(chatId), ctx.chat.type);
       return;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Error handling /start', {
         error: errorMessage,
-        service: 'invitation-handler'
+        service: 'invitation-handler',
       });
       await ctx.reply('Произошла ошибка при обработке приглашения.');
       return;
@@ -104,12 +105,11 @@ export function registerInvitationHandler(): void {
 
       await processInvitation(ctx, token, BigInt(chatId), ctx.chat.type);
       return;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Error handling /connect', {
         error: errorMessage,
-        service: 'invitation-handler'
+        service: 'invitation-handler',
       });
       await ctx.reply('Произошла ошибка при подключении.');
       return;
@@ -143,7 +143,7 @@ export function registerInvitationHandler(): void {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Error handling /help', {
         error: errorMessage,
-        service: 'invitation-handler'
+        service: 'invitation-handler',
       });
       await ctx.reply('Произошла ошибка при отображении справки.');
     }
@@ -175,95 +175,102 @@ async function processInvitation(
 
   try {
     // Use transaction to prevent race condition (double-use of invitation)
-    await prisma.$transaction(async (tx) => {
-      // 1. Find the invitation in DB
-      const invitation = await tx.chatInvitation.findUnique({
-        where: { token },
-      });
-
-      if (!invitation) {
-        throw new Error('INVALID_TOKEN');
-      }
-
-      if (invitation.isUsed) {
-        throw new Error('ALREADY_USED');
-      }
-
-      if (invitation.expiresAt < new Date()) {
-        throw new Error('EXPIRED');
-      }
-
-      // 2. Register or Update the Chat
-      const rawTitle = (ctx.chat && 'title' in ctx.chat ? ctx.chat.title : null)
-                    || invitation.initialTitle
-                    || (ctx.from?.first_name ? `Чат с ${ctx.from.first_name}` : null);
-
-      const title = sanitizeChatTitle(rawTitle);
-
-      // Try to fetch invite link from Telegram API
-      // Bot must be admin with invite_users permission
-      let inviteLink: string | null = null;
-      try {
-        inviteLink = await ctx.telegram.exportChatInviteLink(Number(chatId));
-        logger.info('Fetched invite link for chat', {
-          chatId,
-          hasInviteLink: !!inviteLink,
-          service: 'invitation-handler',
+    await prisma.$transaction(
+      async (tx) => {
+        // 1. Find the invitation in DB
+        const invitation = await tx.chatInvitation.findUnique({
+          where: { token },
         });
-      } catch (error) {
-        // Bot might not have permission to export invite links
-        // This is not critical - we can still register the chat
-        logger.warn('Failed to fetch invite link (bot might lack permissions)', {
-          chatId,
-          error: error instanceof Error ? error.message : String(error),
-          service: 'invitation-handler',
+
+        if (!invitation) {
+          throw new Error('INVALID_TOKEN');
+        }
+
+        if (invitation.isUsed) {
+          throw new Error('ALREADY_USED');
+        }
+
+        if (invitation.expiresAt < new Date()) {
+          throw new Error('EXPIRED');
+        }
+
+        // 2. Register or Update the Chat
+        const rawTitle =
+          (ctx.chat && 'title' in ctx.chat ? ctx.chat.title : null) ||
+          invitation.initialTitle ||
+          (ctx.from?.first_name ? `Чат с ${ctx.from.first_name}` : null);
+
+        const title = sanitizeChatTitle(rawTitle);
+
+        // Try to fetch invite link from Telegram API
+        // Bot must be admin with invite_users permission
+        let inviteLink: string | null = null;
+        try {
+          inviteLink = await ctx.telegram.exportChatInviteLink(Number(chatId));
+          logger.info('Fetched invite link for chat', {
+            chatId,
+            hasInviteLink: !!inviteLink,
+            service: 'invitation-handler',
+          });
+        } catch (error) {
+          // Bot might not have permission to export invite links
+          // This is not critical - we can still register the chat
+          logger.warn('Failed to fetch invite link (bot might lack permissions)', {
+            chatId,
+            error: error instanceof Error ? error.message : String(error),
+            service: 'invitation-handler',
+          });
+        }
+
+        // Upsert Chat within transaction
+        await tx.chat.upsert({
+          where: { id: chatId },
+          create: {
+            id: chatId,
+            chatType: chatType as 'private' | 'group' | 'supergroup',
+            title: title,
+            inviteLink: inviteLink,
+            slaEnabled: true,
+            monitoringEnabled: true,
+            assignedAccountantId: invitation.assignedAccountantId,
+          },
+          update: {
+            ...(invitation.assignedAccountantId && {
+              assignedAccountantId: invitation.assignedAccountantId,
+            }),
+            ...(inviteLink && { inviteLink: inviteLink }),
+            slaEnabled: true,
+            monitoringEnabled: true,
+            title: title,
+          },
         });
+
+        // 3. Mark invitation as used (within same transaction)
+        await tx.chatInvitation.update({
+          where: { id: invitation.id },
+          data: {
+            isUsed: true,
+            usedAt: new Date(),
+            createdChatId: chatId,
+          },
+        });
+      },
+      {
+        timeout: 10000, // 10 second timeout
       }
-
-      // Upsert Chat within transaction
-      await tx.chat.upsert({
-        where: { id: chatId },
-        create: {
-          id: chatId,
-          chatType: chatType as 'private' | 'group' | 'supergroup',
-          title: title,
-          inviteLink: inviteLink,
-          slaEnabled: true,
-          monitoringEnabled: true,
-          assignedAccountantId: invitation.assignedAccountantId,
-        },
-        update: {
-          ...(invitation.assignedAccountantId && { assignedAccountantId: invitation.assignedAccountantId }),
-          ...(inviteLink && { inviteLink: inviteLink }),
-          slaEnabled: true,
-          monitoringEnabled: true,
-          title: title,
-        }
-      });
-
-      // 3. Mark invitation as used (within same transaction)
-      await tx.chatInvitation.update({
-        where: { id: invitation.id },
-        data: {
-          isUsed: true,
-          usedAt: new Date(),
-          createdChatId: chatId,
-        }
-      });
-    }, {
-      timeout: 10000, // 10 second timeout
-    });
+    );
 
     // 4. Success Message (outside transaction)
-    await ctx.reply('✅ Чат успешно подключен!\nТеперь мы на связи. История сообщений сохраняется.');
+    await ctx.reply(
+      '✅ Чат успешно подключен!\nТеперь мы на связи. История сообщений сохраняется.'
+    );
 
     logger.info('Invitation successfully processed', {
       chatId,
       tokenPrefix: token.substring(0, 8) + '...',
-      service: 'invitation-handler'
+      service: 'invitation-handler',
     });
     return;
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 

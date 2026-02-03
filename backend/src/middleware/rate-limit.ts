@@ -113,9 +113,7 @@ export const rateLimitChecksTotal = new Counter({
  * bot.use(rateLimiter);
  * ```
  */
-export function createRateLimiter(
-  options: Partial<RateLimitOptions> = {}
-): Middleware<Context> {
+export function createRateLimiter(options: Partial<RateLimitOptions> = {}): Middleware<Context> {
   const config: RateLimitOptions = { ...DEFAULT_OPTIONS, ...options };
   const store: RateLimitStore = new Map();
 
@@ -263,10 +261,7 @@ export function getRateLimitStoreSize(): number {
  * @param userId - Telegram user ID to reset
  * @param store - The rate limit store (from middleware closure)
  */
-export function resetUserRateLimit(
-  userId: number,
-  store: RateLimitStore
-): boolean {
+export function resetUserRateLimit(userId: number, store: RateLimitStore): boolean {
   if (store.has(userId)) {
     store.delete(userId);
     logger.info('Rate limit reset for user', { userId });
@@ -306,9 +301,7 @@ export function createRedisRateLimiter(
   // - EXPIRE for automatic key expiration
   // - Lua scripts for atomic operations
 
-  logger.warn(
-    'Redis rate limiter not yet implemented, falling back to in-memory'
-  );
+  logger.warn('Redis rate limiter not yet implemented, falling back to in-memory');
   return createRateLimiter(options);
 }
 

@@ -172,9 +172,10 @@ export function errorMiddleware(): Middleware<Context> {
         updateType: ctx.updateType,
         updateId: ctx.update?.update_id,
         // Include message text if available (truncated for safety)
-        messageText: 'message' in ctx.update && ctx.update.message && 'text' in ctx.update.message
-          ? ctx.update.message.text?.substring(0, 100)
-          : undefined,
+        messageText:
+          'message' in ctx.update && ctx.update.message && 'text' in ctx.update.message
+            ? ctx.update.message.text?.substring(0, 100)
+            : undefined,
         service: 'telegram-bot',
       });
 

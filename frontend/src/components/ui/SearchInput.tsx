@@ -115,9 +115,7 @@ export function SearchInput({
         className={cn(
           'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none',
           'transition-colors duration-200',
-          isFocused
-            ? 'text-[var(--buh-accent)]'
-            : 'text-[var(--buh-foreground-subtle)]'
+          isFocused ? 'text-[var(--buh-accent)]' : 'text-[var(--buh-foreground-subtle)]'
         )}
       />
 

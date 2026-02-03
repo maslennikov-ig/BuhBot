@@ -21,6 +21,7 @@ Specialist for creating production-ready Docker Compose configurations, multi-st
    - If not found: Create default configuration, log warning
 
 2. **Extract plan configuration**:
+
    ```json
    {
      "workflow": "infrastructure",
@@ -178,6 +179,7 @@ CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
 ```
 
 **Key Features**:
+
 - Multi-stage builds (builder + production)
 - Alpine base for minimal size
 - Non-root user for security
@@ -199,7 +201,7 @@ services:
     container_name: buhbot-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/buhbot
@@ -215,7 +217,7 @@ services:
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "node", "scripts/healthcheck.js"]
+      test: ['CMD', 'node', 'scripts/healthcheck.js']
       interval: 30s
       timeout: 3s
       start_period: 40s
@@ -238,14 +240,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -260,13 +262,13 @@ services:
     container_name: buhbot-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     networks:
       - buhbot-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -283,9 +285,9 @@ services:
     container_name: buhbot-monitoring
     restart: unless-stopped
     ports:
-      - "9090:9090"  # Prometheus
-      - "3001:3001"  # Grafana
-      - "3002:3002"  # Uptime Kuma
+      - '9090:9090' # Prometheus
+      - '3001:3001' # Grafana
+      - '3002:3002' # Uptime Kuma
     volumes:
       - prometheus-data:/var/lib/prometheus
       - grafana-data:/var/lib/grafana
@@ -318,6 +320,7 @@ networks:
 ```
 
 **Key Features**:
+
 - Service health checks
 - Resource limits and reservations
 - Persistent volumes
@@ -577,10 +580,7 @@ scrape_configs:
 ```typescript
 import { Server } from 'http';
 
-export function setupGracefulShutdown(
-  server: Server,
-  cleanup?: () => Promise<void>
-) {
+export function setupGracefulShutdown(server: Server, cleanup?: () => Promise<void>) {
   let isShuttingDown = false;
 
   async function shutdown(signal: string) {
@@ -715,6 +715,7 @@ docker-compose build --no-cache
 ```
 
 **Pass Criteria**:
+
 - Exit code 0
 - All images built successfully
 - No build errors
@@ -733,6 +734,7 @@ docker-compose ps
 ```
 
 **Pass Criteria**:
+
 - All containers show "healthy" status
 - Health check endpoints respond correctly
 
@@ -743,6 +745,7 @@ curl http://localhost:3000/metrics
 ```
 
 **Pass Criteria**:
+
 - HTTP 200 response
 - Prometheus metrics format
 - Default metrics present
@@ -754,6 +757,7 @@ docker images | grep buhbot
 ```
 
 **Pass Criteria**:
+
 - App image < 200MB (Alpine-based, multi-stage)
 - Monitoring image < 500MB
 - No unnecessary layers
@@ -769,6 +773,7 @@ docker-compose logs app | tail -20
 ```
 
 **Pass Criteria**:
+
 - Shutdown message logged
 - Cleanup executed
 - Exit within 30s timeout
@@ -800,6 +805,7 @@ Document results:
 
 ```markdown
 Use generate-report-header Skill with:
+
 - report_type: "docker-setup"
 - workflow: "infrastructure"
 - phase: "docker-setup"
@@ -875,6 +881,7 @@ Use generate-report-header Skill with:
 ### Steps
 
 1. **Display summary**:
+
    ```
    ✅ Docker Configuration Complete
 
@@ -906,6 +913,7 @@ Use generate-report-header Skill with:
    ```
 
 2. **Cleanup temporary files**:
+
    ```bash
    rm -f .infrastructure-docker-changes.json
    rm -f .infrastructure-docker-plan.json
@@ -920,6 +928,7 @@ Use generate-report-header Skill with:
 ### Missing Dependencies
 
 If Docker/docker-compose not installed:
+
 - Log error in report
 - Mark validation as FAILED
 - Provide installation instructions
@@ -927,6 +936,7 @@ If Docker/docker-compose not installed:
 ### Build Failures
 
 If Docker build fails:
+
 - Capture build output
 - Identify layer causing failure
 - Log in report with context
@@ -935,6 +945,7 @@ If Docker build fails:
 ### Health Check Failures
 
 If health checks fail:
+
 - Check container logs
 - Verify endpoint implementation
 - Log detailed error
@@ -943,6 +954,7 @@ If health checks fail:
 ### Rollback Strategy
 
 On critical failure:
+
 1. Use `rollback-changes` Skill
 2. Remove created Dockerfiles
 3. Restore previous configuration (if any)
@@ -955,6 +967,7 @@ On critical failure:
 **IMPORTANT**: No MCP servers typically needed for Docker configuration. Use standard tools only.
 
 **Exceptions**:
+
 - If Supabase integration: may use `mcp__supabase__*` for database schema
 - If GitHub-based deployment: use `gh` CLI via Bash
 

@@ -8,7 +8,8 @@ const problems = [
   {
     icon: Clock,
     title: 'Забытые сообщения',
-    description: 'Клиент написал в Telegram, бухгалтер увидел, но забыл ответить. Через 3 дня — жалоба руководителю.',
+    description:
+      'Клиент написал в Telegram, бухгалтер увидел, но забыл ответить. Через 3 дня — жалоба руководителю.',
     color: 'text-blue-500',
   },
   {
@@ -20,7 +21,8 @@ const problems = [
   {
     icon: BarChart3,
     title: 'Слепая зона',
-    description: 'Сколько обращений в день? Какое среднее время ответа? Кто из бухгалтеров перегружен? Данных нет.',
+    description:
+      'Сколько обращений в день? Какое среднее время ответа? Кто из бухгалтеров перегружен? Данных нет.',
     color: 'text-purple-500',
   },
   {
@@ -35,7 +37,7 @@ export function PainPoints() {
   const containerRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ['start end', 'end start'],
   });
 
   const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
@@ -76,17 +78,17 @@ export function PainPoints() {
                 y: -8,
                 rotateX: 5,
                 rotateY: 5,
-                transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
+                transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
               }}
               className="bg-[var(--buh-surface)] p-6 rounded-2xl border border-[var(--buh-border)] shadow-[var(--buh-shadow-sm)] hover:shadow-[var(--buh-shadow-lg),0_0_40px_-10px_var(--buh-accent-glow)] transition-all duration-300 perspective-1000"
               style={{ transformStyle: 'preserve-3d' }}
             >
-              <div className={`w-12 h-12 rounded-xl bg-[var(--buh-surface-elevated)] flex items-center justify-center mb-4 ${item.color}`}>
+              <div
+                className={`w-12 h-12 rounded-xl bg-[var(--buh-surface-elevated)] flex items-center justify-center mb-4 ${item.color}`}
+              >
                 <item.icon size={24} />
               </div>
-              <h3 className="text-xl font-bold text-[var(--buh-foreground)] mb-3">
-                {item.title}
-              </h3>
+              <h3 className="text-xl font-bold text-[var(--buh-foreground)] mb-3">{item.title}</h3>
               <p className="text-[var(--buh-foreground-muted)] leading-relaxed">
                 {item.description}
               </p>

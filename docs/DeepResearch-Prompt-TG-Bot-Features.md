@@ -9,6 +9,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 ## Context & Background
 
 ### Business Overview
+
 - **Industry:** Accounting and bookkeeping services for small-medium businesses (B2B)
 - **Scale:** 150 clients, 200-250 Telegram group chats
 - **Team:** Multiple accountants serving different client portfolios
@@ -17,6 +18,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 ### Existing Requirements (Already Planned)
 
 **Priority 0 (High):**
+
 1. **SLA Monitoring** - Track first response time (≤1 hour during business hours)
 2. **Feedback Collection** - Quarterly anonymous client surveys (1-5 stars + comments)
 3. **Communication Analytics:**
@@ -32,6 +34,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
    - Interaction protocols (e.g., "with this supplier - do it this way")
 
 **Priority 1 (Medium):**
+
 - Request status tracking by ID
 - Quick action buttons (order documents, quick replies)
 - Mass newsletters
@@ -45,6 +48,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What are the most impressive, client-delighting features used by modern service-based businesses in Telegram/WhatsApp communication that would make accounting clients say "WOW, this is amazing!"?
 
 **Focus areas:**
+
 - Features that create emotional connection
 - Unexpected automation that saves client time
 - Personalization beyond basic greetings
@@ -53,6 +57,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Features that make the accounting firm "unforgettable"
 
 **Examples to explore:**
+
 - Automated reminders BEFORE deadlines (not just on deadline day)
 - Smart document preparation status with visual progress bars
 - Predictive analytics: "Your tax payment next month will be ~50,000₽"
@@ -65,6 +70,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What additional data points should be extracted from client-accountant conversations to build a comprehensive client profile and improve service quality?
 
 **Current data collected:**
+
 - Important dates (birthdays, anniversaries)
 - Client preferences
 - Interaction protocols
@@ -72,6 +78,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Research areas:**
 
 **A) Client Business Intelligence:**
+
 - What business events to track? (new contracts, employee count changes, location expansion, service/product launches)
 - Financial patterns mentioned in chats (seasonal revenue spikes, payment cycles, budget constraints)
 - Vendor/supplier relationships mentioned
@@ -80,6 +87,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Decision-making patterns (who approves what, how fast decisions are made)
 
 **B) Client Relationship Metadata:**
+
 - Communication style preferences (formal/informal, detailed/brief)
 - Preferred response time expectations (even if not stated explicitly)
 - Proactive vs. reactive communication preference
@@ -88,6 +96,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Trust level indicators (how often they question advice, request clarifications)
 
 **C) Service Quality Indicators:**
+
 - Types of questions repeated (indicates need for better documentation/training)
 - Documents frequently requested together (bundle opportunities)
 - Common confusion points (improve proactive communication)
@@ -96,6 +105,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Competitor mentions or comparisons
 
 **D) Compliance & Risk Data:**
+
 - Mentions of regulatory changes affecting client
 - Audit mentions or concerns
 - Tax authority interaction patterns
@@ -112,6 +122,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Research areas:**
 
 **A) Metrics & KPIs:**
+
 - Beyond first response time, what other response metrics matter?
 - How to measure "quality" of communication (not just speed)?
 - Client engagement metrics specific to professional services
@@ -119,6 +130,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Metrics that correlate with client lifetime value
 
 **B) Sentiment & Tone Analysis:**
+
 - Best tools/approaches for analyzing professional communication tone?
 - How to detect subtle dissatisfaction in formal business communication?
 - Language patterns that indicate client stress or urgency
@@ -126,6 +138,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Cultural/language considerations for Russian business communication
 
 **C) Workload & Efficiency:**
+
 - How to fairly measure accountant productivity from chat data?
 - Benchmarking: what's "normal" time spent per client per month?
 - Task complexity scoring from messages
@@ -139,6 +152,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What proactive features can anticipate client needs before they ask, making the accounting firm feel like a trusted partner rather than just a service provider?
 
 **Examples to explore:**
+
 - Smart reminders (not just deadline reminders, but contextual)
 - Automatic document preparation triggers
 - Regulatory change notifications specific to client's business
@@ -153,6 +167,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What gamification or engagement mechanics work well in B2B professional services contexts WITHOUT seeming unprofessional?
 
 **Focus:**
+
 - Client status/tier systems that feel prestigious not gimmicky
 - Achievement systems that encourage desired behaviors (on-time submissions, proactive communication)
 - Milestone celebrations that strengthen relationship
@@ -167,6 +182,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What features have the best ROI (high client satisfaction, low development complexity) for a Telegram bot in a B2B service context?
 
 **Criteria:**
+
 - Can be implemented in 1-2 weeks
 - Uses existing Telegram Bot API capabilities
 - Requires minimal infrastructure
@@ -174,6 +190,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 - Doesn't require complex AI/ML models
 
 **Examples to research:**
+
 - Status update templates
 - Quick response suggestions for accountants
 - Smart file organization/tagging
@@ -188,6 +205,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What are the best practices for collecting and storing client communication data in accounting/financial services, especially considering data privacy regulations?
 
 **Focus areas:**
+
 - Data minimization principles
 - Anonymization techniques for analytics
 - Client consent mechanisms
@@ -202,6 +220,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What are accounting firms, legal services, and consulting firms doing with Telegram/WhatsApp bots that clients love?
 
 **Research sources:**
+
 - Case studies of successful implementations
 - Client testimonials highlighting specific features
 - Industry forums/discussions
@@ -215,6 +234,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** How can the bot educate clients to become better clients (submit documents on time, understand accounting concepts, ask better questions)?
 
 **Examples:**
+
 - Progressive disclosure of accounting knowledge
 - Contextual tips during interactions
 - "Did you know?" snippets
@@ -229,6 +249,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 **Question:** What third-party integrations or connections to existing systems would create significant value without requiring full ERP integration?
 
 **Focus:**
+
 - Payment system integrations (notifications when client pays invoice)
 - Calendar integrations (automatic meeting scheduling)
 - Email-to-Telegram forwarding for specific cases
@@ -289,6 +310,7 @@ Conduct comprehensive research to identify innovative, practical, and high-impac
 ### Prioritization Criteria:
 
 Rank findings by:
+
 1. **Impact:** How much it improves client experience or operational efficiency
 2. **Feasibility:** How easy to implement (favor simple solutions)
 3. **Uniqueness:** How rare this feature is among competitors
@@ -301,6 +323,7 @@ Rank findings by:
 ### Data Collection Opportunities
 
 The client specifically wants to know:
+
 - **What else to collect from chats?** Beyond birthdays and preferences
 - **How to structure protocol/preference data?** Templates or free-form?
 - **What signals predict client satisfaction/dissatisfaction?**
@@ -309,6 +332,7 @@ The client specifically wants to know:
 ### Practical Examples Needed
 
 Looking for:
+
 - Real chat message examples and what data to extract
 - Sample analytics dashboards for accounting firm managers
 - Template responses/workflows that save time
@@ -319,6 +343,7 @@ Looking for:
 ## Constraints & Context
 
 ### What to AVOID:
+
 - Complex AI/ML solutions requiring large datasets
 - Features requiring integration with proprietary accounting software (Bitrix24, 1C)
 - Expensive third-party services
@@ -326,6 +351,7 @@ Looking for:
 - Anything requiring real-time video/voice processing
 
 ### What to FAVOR:
+
 - Telegram Bot API native features
 - Simple rules-based automation
 - Lightweight NLP (keyword extraction, basic sentiment)
@@ -367,6 +393,7 @@ Looking for:
 ## Additional Context
 
 ### Client's Business Model:
+
 - Monthly retainer fees for ongoing accounting services
 - Additional fees for special services (reports, consultations)
 - High client retention is crucial (low churn)
@@ -374,6 +401,7 @@ Looking for:
 - Personalized service is a key differentiator
 
 ### Current Pain Points:
+
 - Clients don't always submit documents on time
 - Response time varies between accountants
 - Hard to quantify service quality
@@ -382,6 +410,7 @@ Looking for:
 - Limited visibility into team workload
 
 ### Success Criteria:
+
 - Features that improve client retention
 - Automation that reduces accountant workload
 - Data that enables proactive problem-solving
@@ -393,6 +422,7 @@ Looking for:
 ## Timeline
 
 Please conduct this research comprehensively but efficiently, aiming to provide:
+
 - **Quick Scan:** Initial findings within your research process
 - **Deep Dive:** Detailed analysis of most promising areas
 - **Synthesis:** Actionable recommendations ranked by priority

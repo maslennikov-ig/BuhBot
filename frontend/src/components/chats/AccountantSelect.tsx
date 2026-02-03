@@ -70,7 +70,7 @@ export function AccountantSelect({
   const accountants = React.useMemo(() => {
     if (providedAccountants) return providedAccountants;
     if (!fetchedUsers) return [];
-    
+
     return fetchedUsers.map((u) => ({
       id: u.id,
       name: u.fullName,
@@ -86,19 +86,14 @@ export function AccountantSelect({
     if (!searchQuery) return accountants;
     const query = searchQuery.toLowerCase();
     return accountants.filter(
-      (acc) =>
-        acc.name.toLowerCase().includes(query) ||
-        acc.email.toLowerCase().includes(query)
+      (acc) => acc.name.toLowerCase().includes(query) || acc.email.toLowerCase().includes(query)
     );
   }, [accountants, searchQuery]);
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearchQuery('');
       }
@@ -230,10 +225,7 @@ export function AccountantSelect({
           </div>
 
           {/* Options List */}
-          <ul
-            role="listbox"
-            className="max-h-60 overflow-y-auto py-1 buh-scrollbar"
-          >
+          <ul role="listbox" className="max-h-60 overflow-y-auto py-1 buh-scrollbar">
             {/* Unassign Option */}
             <li
               role="option"
@@ -250,9 +242,7 @@ export function AccountantSelect({
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)] border border-dashed border-[var(--buh-border)]">
                 <X className="h-3 w-3 text-[var(--buh-foreground-muted)]" />
               </div>
-              <span className="text-sm text-[var(--buh-foreground-muted)] italic">
-                Не назначен
-              </span>
+              <span className="text-sm text-[var(--buh-foreground-muted)] italic">Не назначен</span>
             </li>
 
             {/* Divider */}
@@ -294,11 +284,7 @@ export function AccountantSelect({
                         stroke="currentColor"
                         strokeWidth={3}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                   )}

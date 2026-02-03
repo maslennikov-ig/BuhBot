@@ -86,7 +86,6 @@ const CHAT_TYPE_ICONS: Record<ChatType, React.ElementType> = {
   supergroup: Users,
 };
 
-
 // ============================================
 // CHATS LIST CONTENT COMPONENT
 // ============================================
@@ -136,10 +135,7 @@ export function ChatsListContent() {
     () =>
       chats.map((chat) => ({
         ...chat,
-        accountantDisplayName:
-          chat.accountantUsername ||
-          chat.assignedAccountantId ||
-          '', // Empty string for unassigned
+        accountantDisplayName: chat.accountantUsername || chat.assignedAccountantId || '', // Empty string for unassigned
         slaStatus: chat.slaEnabled ? 'enabled' : 'disabled',
       })),
     [chats]
@@ -171,10 +167,7 @@ export function ChatsListContent() {
       <PageHeader
         title="Управление чатами"
         description="Просмотр и настройка чатов Telegram с клиентами"
-        breadcrumbs={[
-          { label: 'Панель управления', href: '/dashboard' },
-          { label: 'Чаты' },
-        ]}
+        breadcrumbs={[{ label: 'Панель управления', href: '/dashboard' }, { label: 'Чаты' }]}
         actions={
           <div className="flex items-center gap-3">
             <HelpButton section="chats" />
@@ -211,9 +204,7 @@ export function ChatsListContent() {
                 Фильтры
                 {(filters.assignedTo || filters.slaEnabled !== 'all') && (
                   <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--buh-accent)] text-xs text-white">
-                    {[filters.assignedTo, filters.slaEnabled !== 'all'].filter(
-                      Boolean
-                    ).length}
+                    {[filters.assignedTo, filters.slaEnabled !== 'all'].filter(Boolean).length}
                   </span>
                 )}
               </Button>
@@ -221,7 +212,9 @@ export function ChatsListContent() {
 
             {/* Quick Stats */}
             <div className="flex items-center gap-4 text-sm text-[var(--buh-foreground-muted)]">
-              <span>Всего чатов: <strong className="text-[var(--buh-foreground)]">{total}</strong></span>
+              <span>
+                Всего чатов: <strong className="text-[var(--buh-foreground)]">{total}</strong>
+              </span>
             </div>
           </div>
 
@@ -480,4 +473,3 @@ export function ChatsListContent() {
     </AdminLayout>
   );
 }
-

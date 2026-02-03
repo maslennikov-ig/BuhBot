@@ -7,17 +7,20 @@ description: Remove a git worktree and optionally delete its branch
 Безопасно удаляет git worktree и опционально удаляет связанную ветку.
 
 **Что делает команда:**
+
 - Проверяет статус worktree (есть ли uncommitted changes)
 - Удаляет worktree директорию
 - Опционально удаляет git ветку
 - Выполняет cleanup административных файлов
 
 **Аргументы:**
+
 - `<feature-name>` - название фичи/worktree (обязательно)
 - `[--force]` - принудительное удаление (опционально)
 - `[--delete-branch]` - удалить ветку после удаления worktree (опционально)
 
 **Примеры:**
+
 ```bash
 /worktree-remove admin-panel
 /worktree-remove admin-panel --delete-branch
@@ -32,11 +35,13 @@ description: Remove a git worktree and optionally delete its branch
 ### Step 1: Получение аргументов
 
 Извлеки аргументы из запроса пользователя:
+
 - `FEATURE_NAME` - название фичи (обязательный)
 - `--force` - флаг принудительного удаления (опциональный)
 - `--delete-branch` - флаг удаления ветки (опциональный)
 
 **Валидация:**
+
 - FEATURE_NAME не должно быть пустым
 - Запроси подтверждение перед удалением
 
@@ -45,6 +50,7 @@ description: Remove a git worktree and optionally delete its branch
 ### Step 2: Проверка worktree
 
 1. **Получить список всех worktrees**
+
    ```bash
    git worktree list --porcelain
    ```
@@ -61,6 +67,7 @@ description: Remove a git worktree and optionally delete its branch
 ### Step 3: Проверка состояния
 
 1. **Проверить статус worktree** (если не --force)
+
    ```bash
    cd /путь/к/worktree && git status --short
    ```
@@ -68,6 +75,7 @@ description: Remove a git worktree and optionally delete its branch
 2. **Если есть изменения:**
    - Покажи список изменений
    - Спроси подтверждение у пользователя:
+
      ```
      ⚠️ В worktree есть незакоммиченные изменения!
 
@@ -93,11 +101,13 @@ description: Remove a git worktree and optionally delete its branch
 1. **Удалить worktree**
 
    Без --force:
+
    ```bash
    git worktree remove /путь/к/worktree
    ```
 
    С --force:
+
    ```bash
    git worktree remove --force /путь/к/worktree
    ```
@@ -114,12 +124,14 @@ description: Remove a git worktree and optionally delete its branch
 Если указан флаг `--delete-branch`:
 
 1. **Проверить, смержена ли ветка**
+
    ```bash
    git branch --merged main | grep "feature/FEATURE_NAME"
    ```
 
 2. **Если ветка не смержена:**
    - Спроси подтверждение:
+
      ```
      ⚠️ Ветка "feature/FEATURE_NAME" не смержена в main!
 
@@ -136,11 +148,13 @@ description: Remove a git worktree and optionally delete its branch
 3. **Удалить локальную ветку**
 
    Если смержена:
+
    ```bash
    git branch -d feature/FEATURE_NAME
    ```
 
    Если не смержена (с подтверждением):
+
    ```bash
    git branch -D feature/FEATURE_NAME
    ```
@@ -155,16 +169,19 @@ description: Remove a git worktree and optionally delete its branch
 ### Step 6: Cleanup
 
 1. **Выполнить prune**
+
    ```bash
    git worktree prune
    ```
 
 2. **Проверить, удалена ли директория**
+
    ```bash
    ls -la ../megacampus2-worktrees/FEATURE_NAME 2>&1
    ```
 
    Если директория осталась:
+
    ```bash
    rm -rf ../megacampus2-worktrees/FEATURE_NAME
    ```
@@ -179,10 +196,12 @@ description: Remove a git worktree and optionally delete its branch
 ✅ Worktree успешно удален!
 
 📁 **Удалено:**
+
 - Worktree: `/home/me/code/megacampus2-worktrees/FEATURE_NAME`
 - Ветка: `feature/FEATURE_NAME` [если был флаг --delete-branch]
 
 🔄 **Выполнено:**
+
 - ✅ Worktree directory удалена
 - ✅ Git административные файлы очищены
 - [✅ Локальная ветка удалена] [если --delete-branch]
@@ -192,6 +211,7 @@ description: Remove a git worktree and optionally delete its branch
 [список из git worktree list]
 
 💡 **Полезные команды:**
+
 - `/worktree-list` - список всех worktrees
 - `/worktree-create <name>` - создать новый worktree
 - `/worktree-cleanup` - очистить устаревшие worktrees
@@ -202,23 +222,28 @@ description: Remove a git worktree and optionally delete its branch
 ## Обработка ошибок
 
 **Если worktree не найден:**
-```markdown
+
+````markdown
 ❌ Worktree "FEATURE_NAME" не найден!
 
 **Доступные worktrees:**
 [вывод git worktree list]
 
 Возможно вы имели в виду:
+
 - similar-name-1
 - similar-name-2
 
 Используйте:
+
 ```bash
 /worktree-list  # для просмотра всех worktrees
 /worktree-remove <правильное-имя>
 ```
+````
 
 **Если это основной worktree:**
+
 ```markdown
 ❌ Нельзя удалить основной worktree!
 
@@ -232,34 +257,40 @@ description: Remove a git worktree and optionally delete its branch
 ```
 
 **Если worktree заблокирован:**
-```markdown
+
+````markdown
 ❌ Worktree заблокирован!
 
 Причина: [причина блокировки]
 
 Варианты:
+
 1. Разблокировать и удалить:
    ```bash
    git worktree unlock /путь/к/worktree
    /worktree-remove FEATURE_NAME
    ```
+````
 
 2. Принудительное удаление:
    ```bash
    /worktree-remove FEATURE_NAME --force
    ```
-```
+
+````
 
 **Если есть незакоммиченные изменения (без --force):**
 ```markdown
 ❌ Worktree содержит незакоммиченные изменения!
 
 **Измененные файлы:**
-```
-M  src/file1.ts
-M  src/file2.ts
+````
+
+M src/file1.ts
+M src/file2.ts
 ?? src/file3.ts
-```
+
+````
 
 **Варианты:**
 
@@ -271,9 +302,10 @@ M  src/file2.ts
    git push -u origin feature/FEATURE_NAME
    cd /home/me/code/megacampus2
    /worktree-remove FEATURE_NAME
-   ```
+````
 
 2. **Удалить с потерей изменений:**
+
    ```bash
    /worktree-remove FEATURE_NAME --force
    ```
@@ -281,7 +313,8 @@ M  src/file2.ts
 3. **Отменить операцию**
 
 Что выбираем? (save/force/cancel)
-```
+
+````
 
 **Если ветка не смержена (при --delete-branch):**
 ```markdown
@@ -300,11 +333,12 @@ M  src/file2.ts
    cd ../megacampus2-worktrees/FEATURE_NAME
    git push -u origin feature/FEATURE_NAME
    gh pr create --title "feat: описание" --body "Описание PR"
-   ```
+````
 
-   Затем смержить на GitHub и удалить worktree.
+Затем смержить на GitHub и удалить worktree.
 
 2. **Удалить без сохранения (опасно!):**
+
    ```bash
    /worktree-remove FEATURE_NAME --force --delete-branch
    ```
@@ -316,7 +350,8 @@ M  src/file2.ts
    ```
 
 Что делаем? (pr/force/keep-branch)
-```
+
+````
 
 ---
 
@@ -330,10 +365,12 @@ Worktree чистый (нет изменений) → удаляем сразу:
 
 ✅ Worktree "admin-panel" удален
 ℹ️ Ветка "feature/admin-panel" сохранена (используйте --delete-branch для удаления)
-```
+````
 
 ### Сценарий 2: С изменениями
+
 ```markdown
 Пользователь: /worktree-remove admin-panel
 
 ⚠️ Есть изменения → запрос подтверждения:
+```

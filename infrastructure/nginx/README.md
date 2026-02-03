@@ -15,13 +15,13 @@ This directory contains the production Nginx configuration for BuhBot, providing
 
 ### Services Proxied
 
-| Path | Upstream | Description |
-|------|----------|-------------|
-| `/webhook/telegram` | `bot-backend:3000` | Telegram webhook endpoint (rate limited: 100 req/min) |
-| `/` | `frontend:3000` | Next.js admin panel (rate limited: 10 req/s) |
-| `/grafana` | `monitoring-stack:3000` | Grafana monitoring dashboard |
-| `/uptime` | `monitoring-stack:3001` | Uptime Kuma status page |
-| `/health` | `bot-backend:3000` | Health check endpoint (no rate limit) |
+| Path                | Upstream                | Description                                           |
+| ------------------- | ----------------------- | ----------------------------------------------------- |
+| `/webhook/telegram` | `bot-backend:3000`      | Telegram webhook endpoint (rate limited: 100 req/min) |
+| `/`                 | `frontend:3000`         | Next.js admin panel (rate limited: 10 req/s)          |
+| `/grafana`          | `monitoring-stack:3000` | Grafana monitoring dashboard                          |
+| `/uptime`           | `monitoring-stack:3001` | Uptime Kuma status page                               |
+| `/health`           | `bot-backend:3000`      | Health check endpoint (no rate limit)                 |
 
 ### Rate Limiting
 
@@ -146,6 +146,7 @@ docker exec buhbot-nginx nginx -s reload
 **Cause**: Upstream services (bot-backend, frontend, monitoring-stack) not running
 
 **Solution**:
+
 ```bash
 # Check if services are running
 docker ps | grep buhbot
@@ -160,6 +161,7 @@ docker compose up -d
 **Cause**: SSL certificates not present in `/etc/nginx/ssl/`
 
 **Solution**:
+
 1. Follow "SSL Certificate Setup" instructions above
 2. Or temporarily disable HTTPS by commenting out the HTTPS server block
 
@@ -168,6 +170,7 @@ docker compose up -d
 **Cause**: Burst values too low for legitimate traffic
 
 **Solution**:
+
 ```nginx
 # Edit nginx.conf - increase burst values
 location /webhook/telegram {
@@ -181,6 +184,7 @@ location /webhook/telegram {
 **Cause**: Missing WebSocket upgrade headers
 
 **Solution**: Configuration already includes WebSocket support. Check browser console for errors:
+
 ```javascript
 // Should see "Connection: upgrade" in response headers
 // If not, verify Upgrade headers in proxy configuration
@@ -191,6 +195,7 @@ location /webhook/telegram {
 **Cause**: Load balancer already terminating SSL and forwarding HTTP to Nginx
 
 **Solution**: Check `X-Forwarded-Proto` header and conditionally redirect:
+
 ```nginx
 # Add to HTTPS server block
 if ($http_x_forwarded_proto = "http") {
@@ -264,6 +269,7 @@ location /webhook/a3f7b8c2e9d4f1a6b5c8e2d9f4a7b3c6 {
 ```
 
 Then update Telegram webhook URL:
+
 ```bash
 curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
   -d "url=https://buhbot.example.com/webhook/a3f7b8c2e9d4f1a6b5c8e2d9f4a7b3c6"
@@ -282,6 +288,7 @@ curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
 ### Prometheus Metrics (Future Enhancement)
 
 Consider installing `nginx-prometheus-exporter`:
+
 ```bash
 docker run -d -p 9113:9113 nginx/nginx-prometheus-exporter:latest \
   -nginx.scrape-uri=http://buhbot-nginx:80/stub_status
@@ -308,6 +315,7 @@ docker run -d -p 9113:9113 nginx/nginx-prometheus-exporter:latest \
 ## Support
 
 For issues or questions about this configuration:
+
 1. Check troubleshooting section above
 2. Review Nginx error logs
 3. Consult project documentation in `docs/`

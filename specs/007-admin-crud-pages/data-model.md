@@ -8,7 +8,7 @@
 erDiagram
     User ||--o{ FaqItem : "creates"
     User ||--o{ Template : "creates"
-    
+
     User {
         uuid id PK
         string email

@@ -123,6 +123,7 @@ Administrator adds monitored chats, assigns accountants to chats, sets per-chat 
 ### Functional Requirements
 
 #### Request Tracking
+
 - **FR-001**: System MUST integrate with Telegram Bot API via webhook to receive all messages from monitored chats
 - **FR-002**: System MUST classify each incoming message as REQUEST, SPAM, GRATITUDE, or CLARIFICATION
 - **FR-003**: System MUST start SLA timer only for messages classified as REQUEST
@@ -130,6 +131,7 @@ Administrator adds monitored chats, assigns accountants to chats, sets per-chat 
 - **FR-005**: System MUST store request metadata: client identifier, chat identifier, message content, timestamp, classification, assigned accountant
 
 #### AI Spam Filter
+
 - **FR-006**: System MUST use AI service to classify messages with confidence score (0-1)
 - **FR-007**: System MUST fall back to keyword-based classification when AI is unavailable, rate-limited, or confidence score < 0.7
 - **FR-008**: System MUST support Russian language patterns (see Appendix in Phase-1-Technical-Prompt.md)
@@ -137,6 +139,7 @@ Administrator adds monitored chats, assigns accountants to chats, sets per-chat 
 - **FR-010**: System MUST log model used for each classification (AI provider or keyword-fallback)
 
 #### Working Hours Calendar
+
 - **FR-011**: System MUST support configurable default working schedule (days, hours, timezone)
 - **FR-012**: System MUST allow per-chat schedule overrides (including 24/7 mode)
 - **FR-013**: System MUST support holiday calendar configuration
@@ -144,6 +147,7 @@ Administrator adds monitored chats, assigns accountants to chats, sets per-chat 
 - **FR-015**: System MUST calculate response time counting only working hours elapsed
 
 #### Manager Alerts
+
 - **FR-016**: System MUST send Telegram alert to configured manager(s) when SLA threshold is breached (supports: global default, per-chat override, additional managers per chat)
 - **FR-017**: Alert message MUST include: client name, chat name, accountant name, wait time, request preview (up to 500 characters)
 - **FR-018**: Alert MUST include actionable buttons: Open Chat (deep link), Notify Accountant, Mark Resolved
@@ -151,6 +155,7 @@ Administrator adds monitored chats, assigns accountants to chats, sets per-chat 
 - **FR-020**: System MUST track all alerts in database with delivery status
 
 #### Admin Panel - SLA Configuration
+
 - **FR-021**: System MUST provide dashboard showing: SLA compliance rate, average response time, violations count, active alerts
 - **FR-022**: System MUST provide chat management: list chats, assign accountants, set per-chat SLA threshold, enable/disable monitoring
 - **FR-023**: System MUST provide accountant performance view: table with avg response time, violations, compliance % per accountant

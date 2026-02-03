@@ -3,6 +3,7 @@
 ## Setup
 
 1.  **Database Migration**:
+
     ```bash
     cd backend
     npx prisma migrate dev --name add_onboarding_fields
@@ -14,7 +15,7 @@
 ## Testing the Wizard
 
 1.  Login as a user with `isOnboardingComplete = false`.
-    - *Tip*: Manually toggle this in Supabase Dashboard or via SQL:
+    - _Tip_: Manually toggle this in Supabase Dashboard or via SQL:
       ```sql
       UPDATE users SET is_onboarding_complete = false WHERE email = 'admin@example.com';
       ```

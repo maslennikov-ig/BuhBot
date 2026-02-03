@@ -93,12 +93,12 @@ Developer Push/PR
 
 ### Workflow Files
 
-| File | Purpose | Trigger |
-|------|---------|---------|
-| `.github/workflows/ci.yml` | Continuous Integration (lint, type-check, build, test) | Push to any branch, PRs to main |
-| `.github/workflows/deploy.yml` | Continuous Deployment (build images, deploy to VDS) | Push to main (after CI passes) |
-| `.github/workflows/test.yml` | Extended testing with services (Redis, Supabase) | Push to any branch, PRs |
-| `.github/workflows/build.yml` | Build validation and artifact upload | Push/PR to main |
+| File                           | Purpose                                                | Trigger                         |
+| ------------------------------ | ------------------------------------------------------ | ------------------------------- |
+| `.github/workflows/ci.yml`     | Continuous Integration (lint, type-check, build, test) | Push to any branch, PRs to main |
+| `.github/workflows/deploy.yml` | Continuous Deployment (build images, deploy to VDS)    | Push to main (after CI passes)  |
+| `.github/workflows/test.yml`   | Extended testing with services (Redis, Supabase)       | Push to any branch, PRs         |
+| `.github/workflows/build.yml`  | Build validation and artifact upload                   | Push/PR to main                 |
 
 ### Infrastructure Components
 
@@ -161,26 +161,26 @@ Navigate to: **Settings > Secrets and variables > Actions > New repository secre
 
 ### Required Secrets (Must Configure)
 
-| Secret Name | Description | Example | Where to Get |
-|-------------|-------------|---------|--------------|
-| `VDS_HOST` | VDS server IP address | `123.45.67.89` | FirstVDS control panel |
-| `VDS_USER` | SSH username | `buhbot` | Set during bootstrap |
-| `VDS_SSH_KEY` | Private SSH key (entire contents) | `-----BEGIN OPENSSH PRIVATE KEY-----...` | `~/.ssh/id_ed25519` |
+| Secret Name   | Description                       | Example                                  | Where to Get           |
+| ------------- | --------------------------------- | ---------------------------------------- | ---------------------- |
+| `VDS_HOST`    | VDS server IP address             | `123.45.67.89`                           | FirstVDS control panel |
+| `VDS_USER`    | SSH username                      | `buhbot`                                 | Set during bootstrap   |
+| `VDS_SSH_KEY` | Private SSH key (entire contents) | `-----BEGIN OPENSSH PRIVATE KEY-----...` | `~/.ssh/id_ed25519`    |
 
 ### Optional Secrets (For Notifications)
 
-| Secret Name | Description | Example | Where to Get |
-|-------------|-------------|---------|--------------|
-| `TELEGRAM_BOT_TOKEN` | Bot token for notifications | `123456789:ABCdef...` | @BotFather on Telegram |
-| `TELEGRAM_ADMIN_CHAT_ID` | Chat ID for notifications | `-100123456789` | Send message to bot, check updates |
+| Secret Name              | Description                 | Example               | Where to Get                       |
+| ------------------------ | --------------------------- | --------------------- | ---------------------------------- |
+| `TELEGRAM_BOT_TOKEN`     | Bot token for notifications | `123456789:ABCdef...` | @BotFather on Telegram             |
+| `TELEGRAM_ADMIN_CHAT_ID` | Chat ID for notifications   | `-100123456789`       | Send message to bot, check updates |
 
 ### Testing Secrets (For CI Tests)
 
-| Secret Name | Description | Example |
-|-------------|-------------|---------|
-| `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `SUPABASE_SERVICE_KEY` | Supabase service role key | `eyJhbGciOiJI...` |
-| `SUPABASE_ANON_KEY` | Supabase anon/public key | `eyJhbGciOiJI...` |
+| Secret Name            | Description               | Example                   |
+| ---------------------- | ------------------------- | ------------------------- |
+| `SUPABASE_URL`         | Supabase project URL      | `https://xxx.supabase.co` |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key | `eyJhbGciOiJI...`         |
+| `SUPABASE_ANON_KEY`    | Supabase anon/public key  | `eyJhbGciOiJI...`         |
 
 ### Configuring SSH Key Secret
 
@@ -274,10 +274,10 @@ Environment: production
 
 The CI workflow (`.github/workflows/ci.yml`) triggers on:
 
-| Event | Branches | Purpose |
-|-------|----------|---------|
-| `push` | All branches | Validate every commit |
-| `pull_request` | `main` | Gate merges to main |
+| Event          | Branches     | Purpose               |
+| -------------- | ------------ | --------------------- |
+| `push`         | All branches | Validate every commit |
+| `pull_request` | `main`       | Gate merges to main   |
 
 ### CI Jobs
 
@@ -403,10 +403,10 @@ Jobs run in parallel for faster feedback.
 
 The CD workflow (`.github/workflows/deploy.yml`) triggers on:
 
-| Event | Condition | Purpose |
-|-------|-----------|---------|
-| `push` to `main` | After CI passes | Automatic deployment |
-| `workflow_dispatch` | Manual trigger | Emergency/manual deploys |
+| Event               | Condition       | Purpose                  |
+| ------------------- | --------------- | ------------------------ |
+| `push` to `main`    | After CI passes | Automatic deployment     |
+| `workflow_dispatch` | Manual trigger  | Emergency/manual deploys |
 
 ### CD Jobs
 

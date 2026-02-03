@@ -100,9 +100,7 @@ export function ReportCard({
 
         {/* Content */}
         <div className="flex-1 text-center mb-6">
-          <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">
-            {title}
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">{title}</h3>
           <p className="text-sm text-[var(--buh-foreground-muted)] leading-relaxed">
             {description}
           </p>

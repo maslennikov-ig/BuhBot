@@ -203,19 +203,27 @@ export function HeroChatMockup() {
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--buh-accent)]/20 via-[var(--buh-primary)]/10 to-transparent blur-3xl scale-110" />
 
         {/* Phone body */}
-        <div className={`relative ${phoneFrame} rounded-[2.5rem] p-2 shadow-2xl ${isDark ? 'shadow-black/50' : 'shadow-slate-400/30'} border ${phoneFrameBorder}`}>
+        <div
+          className={`relative ${phoneFrame} rounded-[2.5rem] p-2 shadow-2xl ${isDark ? 'shadow-black/50' : 'shadow-slate-400/30'} border ${phoneFrameBorder}`}
+        >
           {/* Phone notch */}
-          <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 ${phoneFrame} rounded-b-2xl z-20`} />
+          <div
+            className={`absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 ${phoneFrame} rounded-b-2xl z-20`}
+          />
 
           {/* Screen */}
           <div className={`relative ${screenBg} rounded-[2rem] overflow-hidden min-h-[420px]`}>
             {/* Chat Header */}
-            <div className={`${headerBg} backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b ${headerBorder}`}>
+            <div
+              className={`${headerBg} backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b ${headerBorder}`}
+            >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
                 {currentScenario.clientInitials}
               </div>
               <div className="flex-1">
-                <div className={`${clientNameColor} font-medium text-sm`}>{currentScenario.clientName}</div>
+                <div className={`${clientNameColor} font-medium text-sm`}>
+                  {currentScenario.clientName}
+                </div>
                 <div className={`${clientTypeColor} text-xs`}>{currentScenario.clientType}</div>
               </div>
 
@@ -257,9 +265,13 @@ export function HeroChatMockup() {
                     </div>
                     <div className="max-w-[85%]">
                       <div className={`${messageBubbleBg} rounded-2xl rounded-tl-sm px-4 py-2.5`}>
-                        <p className={`${messageTextColor} text-sm leading-relaxed`}>{currentScenario.clientQuestion}</p>
+                        <p className={`${messageTextColor} text-sm leading-relaxed`}>
+                          {currentScenario.clientQuestion}
+                        </p>
                       </div>
-                      <span className={`text-[10px] ${timeColor} mt-1 ml-2`}>{currentScenario.questionTime}</span>
+                      <span className={`text-[10px] ${timeColor} mt-1 ml-2`}>
+                        {currentScenario.questionTime}
+                      </span>
                     </div>
                   </motion.div>
                 )}
@@ -278,10 +290,14 @@ export function HeroChatMockup() {
                   >
                     <div className="max-w-[85%]">
                       <div className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] rounded-2xl rounded-tr-sm px-4 py-2.5">
-                        <p className="text-white text-sm leading-relaxed">{currentScenario.accountantResponse}</p>
+                        <p className="text-white text-sm leading-relaxed">
+                          {currentScenario.accountantResponse}
+                        </p>
                       </div>
                       <div className="flex items-center justify-end gap-1 mt-1 mr-2">
-                        <span className={`text-[10px] ${timeColor}`}>{currentScenario.responseTime}</span>
+                        <span className={`text-[10px] ${timeColor}`}>
+                          {currentScenario.responseTime}
+                        </span>
                         <CheckCheck className="w-3 h-3 text-[var(--buh-accent)]" />
                       </div>
                     </div>
@@ -322,7 +338,9 @@ export function HeroChatMockup() {
 
             {/* Input field mock */}
             <div className={`absolute bottom-0 left-0 right-0 p-3 ${inputGradient}`}>
-              <div className={`${inputBg} rounded-full px-4 py-2.5 flex items-center gap-2 border ${inputBorder}`}>
+              <div
+                className={`${inputBg} rounded-full px-4 py-2.5 flex items-center gap-2 border ${inputBorder}`}
+              >
                 <span className={`${inputText} text-sm`}>Написать сообщение...</span>
               </div>
             </div>
@@ -367,7 +385,9 @@ export function HeroChatMockup() {
             className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
               index === scenarioIndex
                 ? 'bg-[var(--buh-accent)] w-4'
-                : isDark ? 'bg-white/20' : 'bg-slate-300'
+                : isDark
+                  ? 'bg-white/20'
+                  : 'bg-slate-300'
             }`}
           />
         ))}
@@ -377,7 +397,7 @@ export function HeroChatMockup() {
       <motion.div
         animate={{
           y: [0, -10, 0],
-          rotate: [0, 5, 0]
+          rotate: [0, 5, 0],
         }}
         transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
         className="absolute -bottom-8 -left-8 w-16 h-16 bg-[var(--buh-accent)]/10 rounded-full blur-xl"
@@ -385,7 +405,7 @@ export function HeroChatMockup() {
       <motion.div
         animate={{
           y: [0, 10, 0],
-          rotate: [0, -5, 0]
+          rotate: [0, -5, 0],
         }}
         transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut', delay: 1 }}
         className="absolute -top-4 -right-4 w-20 h-20 bg-[var(--buh-primary)]/10 rounded-full blur-xl"
@@ -395,5 +415,5 @@ export function HeroChatMockup() {
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

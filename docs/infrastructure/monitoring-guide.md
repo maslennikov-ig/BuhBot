@@ -29,6 +29,7 @@ BuhBot uses a unified monitoring stack running in a single Docker container (`bu
 - **Uptime Kuma**: Uptime monitoring and status pages
 
 The monitoring stack provides visibility into:
+
 - Bot performance (message throughput, processing latency, errors)
 - System health (CPU, memory, disk usage)
 - SLA compliance (uptime, response times)
@@ -77,6 +78,7 @@ The monitoring stack provides visibility into:
 ```
 
 **Resource Allocation** (from docker-compose.prod.yml):
+
 - Reserved: 1.0 cores, 1.5 GB RAM
 - Limits: 1.5 cores, 2.5 GB RAM
 
@@ -86,11 +88,11 @@ The monitoring stack provides visibility into:
 
 ### Production Environment
 
-| Service    | Internal URL                     | External URL (via Nginx)         | Host Port |
-|------------|----------------------------------|----------------------------------|-----------|
-| Grafana    | `http://monitoring-stack:3000`   | `https://bot.example.com/grafana`| 3002      |
-| Prometheus | `http://monitoring-stack:9090`   | `https://bot.example.com/prometheus` | 9090 |
-| Uptime Kuma| `http://monitoring-stack:3001`   | `https://bot.example.com/uptime` | 3003      |
+| Service     | Internal URL                   | External URL (via Nginx)             | Host Port |
+| ----------- | ------------------------------ | ------------------------------------ | --------- |
+| Grafana     | `http://monitoring-stack:3000` | `https://bot.example.com/grafana`    | 3002      |
+| Prometheus  | `http://monitoring-stack:9090` | `https://bot.example.com/prometheus` | 9090      |
+| Uptime Kuma | `http://monitoring-stack:3001` | `https://bot.example.com/uptime`     | 3003      |
 
 ### Direct Access (from VDS)
 
@@ -107,10 +109,10 @@ curl http://localhost:3003
 
 ### Default Credentials
 
-| Service    | Username | Default Password | Change Required |
-|------------|----------|------------------|-----------------|
-| Grafana    | admin    | admin            | YES - on first login |
-| Uptime Kuma| -        | Set on first run | YES - create admin account |
+| Service     | Username | Default Password | Change Required            |
+| ----------- | -------- | ---------------- | -------------------------- |
+| Grafana     | admin    | admin            | YES - on first login       |
+| Uptime Kuma | -        | Set on first run | YES - create admin account |
 
 ---
 
@@ -125,6 +127,7 @@ curl http://localhost:3003
 3. On first login, you will be prompted to change the password
 
 **Session Settings** (from grafana.ini):
+
 - Maximum inactive lifetime: 7 days
 - Maximum session lifetime: 30 days
 
@@ -138,15 +141,16 @@ BuhBot includes three pre-configured dashboards:
 
 **Panels**:
 
-| Panel | Description | Key Metrics |
-|-------|-------------|-------------|
-| Messages Received (rate) | Message throughput over 5m window | `bot_messages_received_total` |
-| Message Processing Duration | Latency percentiles (p50, p95, p99) | `bot_message_processing_duration_bucket` |
-| Webhook Signature Failures | Security validation failures | `bot_webhook_signature_failures_total` |
-| Active Conversations | Current Redis session count | `redis_sessions_count` |
-| Error Rate | Percentage of failed messages | `bot_errors_total / bot_messages_received_total` |
+| Panel                       | Description                         | Key Metrics                                      |
+| --------------------------- | ----------------------------------- | ------------------------------------------------ |
+| Messages Received (rate)    | Message throughput over 5m window   | `bot_messages_received_total`                    |
+| Message Processing Duration | Latency percentiles (p50, p95, p99) | `bot_message_processing_duration_bucket`         |
+| Webhook Signature Failures  | Security validation failures        | `bot_webhook_signature_failures_total`           |
+| Active Conversations        | Current Redis session count         | `redis_sessions_count`                           |
+| Error Rate                  | Percentage of failed messages       | `bot_errors_total / bot_messages_received_total` |
 
 **Thresholds**:
+
 - Processing duration: Green < 3s, Yellow 3-5s, Red > 5s
 - Error rate: Green < 1%, Yellow 1-5%, Red > 5%
 
@@ -156,13 +160,13 @@ BuhBot includes three pre-configured dashboards:
 
 **Panels**:
 
-| Panel | Description | Alert Threshold |
-|-------|-------------|-----------------|
-| CPU Usage | Per-core and total CPU utilization | Warning > 80% |
-| Memory Usage | RAM consumption vs available | Warning > 80% |
-| Disk Usage | Root filesystem utilization | Critical > 85% |
-| Container Status | Health state of all containers | - |
-| Network I/O | Bytes in/out per interface | - |
+| Panel            | Description                        | Alert Threshold |
+| ---------------- | ---------------------------------- | --------------- |
+| CPU Usage        | Per-core and total CPU utilization | Warning > 80%   |
+| Memory Usage     | RAM consumption vs available       | Warning > 80%   |
+| Disk Usage       | Root filesystem utilization        | Critical > 85%  |
+| Container Status | Health state of all containers     | -               |
+| Network I/O      | Bytes in/out per interface         | -               |
 
 #### 3. SLA Metrics Dashboard (`buhbot-sla-metrics`)
 
@@ -170,12 +174,12 @@ BuhBot includes three pre-configured dashboards:
 
 **Panels**:
 
-| Panel | Description | SLA Target |
-|-------|-------------|------------|
-| Uptime | Service availability percentage | 99.9% |
-| Response Time | API endpoint latency | p95 < 500ms |
-| Error Budget | Remaining error margin | - |
-| Incident Count | Number of outages | - |
+| Panel          | Description                     | SLA Target  |
+| -------------- | ------------------------------- | ----------- |
+| Uptime         | Service availability percentage | 99.9%       |
+| Response Time  | API endpoint latency            | p95 < 500ms |
+| Error Budget   | Remaining error margin          | -           |
+| Incident Count | Number of outages               | -           |
 
 ### How to Customize Dashboards
 
@@ -187,6 +191,7 @@ BuhBot includes three pre-configured dashboards:
 6. **Save**: Click "Apply" then "Save dashboard"
 
 **Best Practices**:
+
 - Create copies before modifying default dashboards
 - Use variables (`$instance`) for reusable filters
 - Set appropriate time ranges for each panel type
@@ -194,21 +199,23 @@ BuhBot includes three pre-configured dashboards:
 ### Time Range Selection
 
 **Predefined Ranges** (top-right picker):
+
 - Last 15 minutes, 1 hour, 6 hours, 24 hours
 - Last 7 days, 30 days
 - Custom range with date picker
 
 **Recommended Ranges by Use Case**:
 
-| Use Case | Recommended Range |
-|----------|-------------------|
-| Real-time monitoring | Last 15 minutes |
-| Daily review | Last 24 hours |
-| Trend analysis | Last 7 days |
-| Capacity planning | Last 30 days |
+| Use Case               | Recommended Range                |
+| ---------------------- | -------------------------------- |
+| Real-time monitoring   | Last 15 minutes                  |
+| Daily review           | Last 24 hours                    |
+| Trend analysis         | Last 7 days                      |
+| Capacity planning      | Last 30 days                     |
 | Incident investigation | Custom (incident window + 30min) |
 
 **Auto-Refresh**:
+
 - Default: 30 seconds
 - Available intervals: 10s, 30s, 1m, 5m, 15m, 30m, 1h, 2h, 1d
 
@@ -218,11 +225,11 @@ BuhBot includes three pre-configured dashboards:
 
 ### Alert Severity Levels
 
-| Severity | Color | Response Time | Notification Channel | Examples |
-|----------|-------|---------------|----------------------|----------|
-| Critical | Red | Immediate (< 15 min) | PagerDuty, SMS, Call | Service down, disk full |
-| Warning | Yellow | Within 4 hours | Telegram, Email | High CPU, slow queries |
-| Info | Blue | Next business day | Dashboard only | Routine maintenance |
+| Severity | Color  | Response Time        | Notification Channel | Examples                |
+| -------- | ------ | -------------------- | -------------------- | ----------------------- |
+| Critical | Red    | Immediate (< 15 min) | PagerDuty, SMS, Call | Service down, disk full |
+| Warning  | Yellow | Within 4 hours       | Telegram, Email      | High CPU, slow queries  |
+| Info     | Blue   | Next business day    | Dashboard only       | Routine maintenance     |
 
 ### Configured Alert Rules
 
@@ -230,32 +237,32 @@ Alerts are defined in `/infrastructure/monitoring/prometheus/alerts.yml`:
 
 #### System Resources Group
 
-| Alert | Condition | Duration | Severity |
-|-------|-----------|----------|----------|
-| HighCPU | CPU > 80% | 5 minutes | Warning |
-| HighMemory | Memory > 80% | 5 minutes | Warning |
-| HighDisk | Disk > 85% | 10 minutes | Critical |
+| Alert      | Condition    | Duration   | Severity |
+| ---------- | ------------ | ---------- | -------- |
+| HighCPU    | CPU > 80%    | 5 minutes  | Warning  |
+| HighMemory | Memory > 80% | 5 minutes  | Warning  |
+| HighDisk   | Disk > 85%   | 10 minutes | Critical |
 
 #### Bot Health Group
 
-| Alert | Condition | Duration | Severity |
-|-------|-----------|----------|----------|
-| BotDown | Health check failing | 1 minute | Critical |
-| HighMessageLatency | p95 latency > 5s | 5 minutes | Warning |
+| Alert              | Condition            | Duration  | Severity |
+| ------------------ | -------------------- | --------- | -------- |
+| BotDown            | Health check failing | 1 minute  | Critical |
+| HighMessageLatency | p95 latency > 5s     | 5 minutes | Warning  |
 
 #### Supabase Connectivity Group
 
-| Alert | Condition | Duration | Severity |
-|-------|-----------|----------|----------|
-| SupabaseErrors | > 10 errors in 5 min | 5 minutes | Warning |
-| HighSupabaseLatency | p95 query > 0.5s | 5 minutes | Warning |
+| Alert               | Condition            | Duration  | Severity |
+| ------------------- | -------------------- | --------- | -------- |
+| SupabaseErrors      | > 10 errors in 5 min | 5 minutes | Warning  |
+| HighSupabaseLatency | p95 query > 0.5s     | 5 minutes | Warning  |
 
 #### Redis Cache Group
 
-| Alert | Condition | Duration | Severity |
-|-------|-----------|----------|----------|
-| RedisHighMemory | Memory > 80% | 5 minutes | Warning |
-| RedisConnectionPoolSaturated | Connections > 80% | 5 minutes | Warning |
+| Alert                        | Condition         | Duration  | Severity |
+| ---------------------------- | ----------------- | --------- | -------- |
+| RedisHighMemory              | Memory > 80%      | 5 minutes | Warning  |
+| RedisConnectionPoolSaturated | Connections > 80% | 5 minutes | Warning  |
 
 ### Alert Notification Flow
 
@@ -359,12 +366,12 @@ Action: Check memory-intensive processes, investigate memory leaks.
 
 **Silence Duration Guidelines**:
 
-| Scenario | Recommended Duration |
-|----------|---------------------|
-| Investigating issue | 30 minutes - 1 hour |
-| Planned maintenance | Duration of maintenance window |
-| Known issue with ETA | Until fix deployment |
-| False positive investigation | 4 hours |
+| Scenario                     | Recommended Duration           |
+| ---------------------------- | ------------------------------ |
+| Investigating issue          | 30 minutes - 1 hour            |
+| Planned maintenance          | Duration of maintenance window |
+| Known issue with ETA         | Until fix deployment           |
+| False positive investigation | 4 hours                        |
 
 **Removing a Silence**:
 
@@ -429,46 +436,46 @@ Action: Check memory-intensive processes, investigate memory leaks.
 
 **HTTP Monitor Example (Bot Health)**:
 
-| Field | Value |
-|-------|-------|
-| Monitor Type | HTTP(s) |
-| Friendly Name | Bot Backend Health |
-| URL | `http://bot-backend:3000/health` |
-| Heartbeat Interval | 60 seconds |
-| Retries | 3 |
-| Accepted Status Codes | 200-299 |
+| Field                 | Value                            |
+| --------------------- | -------------------------------- |
+| Monitor Type          | HTTP(s)                          |
+| Friendly Name         | Bot Backend Health               |
+| URL                   | `http://bot-backend:3000/health` |
+| Heartbeat Interval    | 60 seconds                       |
+| Retries               | 3                                |
+| Accepted Status Codes | 200-299                          |
 
 **TCP Monitor Example (Redis)**:
 
-| Field | Value |
-|-------|-------|
-| Monitor Type | TCP Port |
-| Friendly Name | Redis Service |
-| Hostname | redis |
-| Port | 6379 |
-| Heartbeat Interval | 60 seconds |
+| Field              | Value         |
+| ------------------ | ------------- |
+| Monitor Type       | TCP Port      |
+| Friendly Name      | Redis Service |
+| Hostname           | redis         |
+| Port               | 6379          |
+| Heartbeat Interval | 60 seconds    |
 
 **Docker Monitor Example**:
 
-| Field | Value |
-|-------|-------|
-| Monitor Type | Docker Container |
-| Friendly Name | Bot Backend Container |
-| Container Name | buhbot-bot-backend |
-| Docker Host | `/var/run/docker.sock` |
+| Field          | Value                  |
+| -------------- | ---------------------- |
+| Monitor Type   | Docker Container       |
+| Friendly Name  | Bot Backend Container  |
+| Container Name | buhbot-bot-backend     |
+| Docker Host    | `/var/run/docker.sock` |
 
 3. Click "Save"
 
 ### Recommended Monitors for BuhBot
 
-| Monitor Name | Type | Target | Interval |
-|--------------|------|--------|----------|
-| Bot Backend Health | HTTP | `http://bot-backend:3000/health` | 60s |
-| Frontend Health | HTTP | `http://frontend:3000/api/health` | 60s |
-| Redis | TCP | `redis:6379` | 60s |
-| Prometheus | HTTP | `http://localhost:9090/-/healthy` | 120s |
-| Grafana | HTTP | `http://localhost:3000/api/health` | 120s |
-| Nginx HTTPS | HTTP | `https://bot.example.com/health` | 60s |
+| Monitor Name       | Type | Target                             | Interval |
+| ------------------ | ---- | ---------------------------------- | -------- |
+| Bot Backend Health | HTTP | `http://bot-backend:3000/health`   | 60s      |
+| Frontend Health    | HTTP | `http://frontend:3000/api/health`  | 60s      |
+| Redis              | TCP  | `redis:6379`                       | 60s      |
+| Prometheus         | HTTP | `http://localhost:9090/-/healthy`  | 120s     |
+| Grafana            | HTTP | `http://localhost:3000/api/health` | 120s     |
+| Nginx HTTPS        | HTTP | `https://bot.example.com/health`   | 60s      |
 
 ### Configuring Notifications
 
@@ -478,24 +485,24 @@ Action: Check memory-intensive processes, investigate memory leaks.
 
 **Telegram Bot Notification**:
 
-| Field | Value |
-|-------|-------|
-| Notification Type | Telegram |
-| Bot Token | `YOUR_MONITORING_BOT_TOKEN` |
-| Chat ID | `YOUR_ADMIN_CHAT_ID` |
+| Field             | Value                       |
+| ----------------- | --------------------------- |
+| Notification Type | Telegram                    |
+| Bot Token         | `YOUR_MONITORING_BOT_TOKEN` |
+| Chat ID           | `YOUR_ADMIN_CHAT_ID`        |
 
 **Email Notification**:
 
-| Field | Value |
-|-------|-------|
-| Notification Type | Email (SMTP) |
-| SMTP Host | `smtp.example.com` |
-| SMTP Port | 587 |
-| Security | STARTTLS |
-| Username | `alerts@example.com` |
-| Password | `[SMTP_PASSWORD]` |
-| From Email | `alerts@example.com` |
-| To Email | `oncall@example.com` |
+| Field             | Value                |
+| ----------------- | -------------------- |
+| Notification Type | Email (SMTP)         |
+| SMTP Host         | `smtp.example.com`   |
+| SMTP Port         | 587                  |
+| Security          | STARTTLS             |
+| Username          | `alerts@example.com` |
+| Password          | `[SMTP_PASSWORD]`    |
+| From Email        | `alerts@example.com` |
+| To Email          | `oncall@example.com` |
 
 4. Test notification: Click "Test"
 5. Save configuration
@@ -506,12 +513,12 @@ Action: Check memory-intensive processes, investigate memory leaks.
 2. Click "New Status Page"
 3. Configure:
 
-| Field | Value |
-|-------|-------|
-| Name | BuhBot Status |
-| Slug | status |
+| Field       | Value                      |
+| ----------- | -------------------------- |
+| Name        | BuhBot Status              |
+| Slug        | status                     |
 | Description | BuhBot service status page |
-| Theme | Auto |
+| Theme       | Auto                       |
 
 4. Add monitors to status page:
    - Drag monitors from left panel
@@ -591,6 +598,7 @@ redis_connected_clients / redis_config_maxclients * 100
 6. **Adjust Time Range**: Use time picker at top
 
 **Tips**:
+
 - Use autocomplete for metric names
 - Start with `bot_` prefix for application metrics
 - Use `rate()` for counter metrics
@@ -611,13 +619,14 @@ redis_connected_clients / redis_config_maxclients * 100
     severity: warning
     service: your-service
   annotations:
-    summary: "Short description"
+    summary: 'Short description'
     description: |
       Detailed description with {{ $value }}.
       Action: What to do.
 ```
 
 4. Restart Prometheus to load new rules:
+
 ```bash
 docker compose -f infrastructure/docker-compose.yml restart monitoring-stack
 ```
@@ -633,6 +642,7 @@ docker compose -f infrastructure/docker-compose.yml restart monitoring-stack
 **Symptom**: Grafana page returns 502 Bad Gateway or timeout
 
 **Diagnosis**:
+
 ```bash
 # Check container status
 docker ps | grep monitoring-stack
@@ -644,14 +654,17 @@ docker exec buhbot-monitoring-stack supervisorctl tail grafana
 **Solutions**:
 
 1. **Container not running**: Restart monitoring stack
+
    ```bash
    docker compose -f infrastructure/docker-compose.yml restart monitoring-stack
    ```
 
 2. **Grafana crashed**: Check memory limits
+
    ```bash
    docker stats buhbot-monitoring-stack
    ```
+
    If near memory limit, increase in `docker-compose.prod.yml`
 
 3. **Database corrupted**: Reset Grafana data (loses dashboards)
@@ -666,6 +679,7 @@ docker exec buhbot-monitoring-stack supervisorctl tail grafana
 **Symptom**: Dashboards show "No data" or stale metrics
 
 **Diagnosis**:
+
 ```bash
 # Check Prometheus targets
 curl http://localhost:9090/api/v1/targets
@@ -677,11 +691,13 @@ curl http://localhost:3000/metrics
 **Solutions**:
 
 1. **Target down**: Check target service is running
+
    ```bash
    docker logs buhbot-bot-backend --tail=50
    ```
 
 2. **Network issue**: Verify container network
+
    ```bash
    docker network inspect buhbot-network
    ```
@@ -696,6 +712,7 @@ curl http://localhost:3000/metrics
 **Symptom**: Condition met but no alert
 
 **Diagnosis**:
+
 ```bash
 # Check alert rules loaded
 curl http://localhost:9090/api/v1/rules
@@ -707,6 +724,7 @@ curl http://localhost:9090/api/v1/alerts
 **Solutions**:
 
 1. **Rules not loaded**: Check alerts.yml exists and is valid
+
    ```bash
    docker exec buhbot-monitoring-stack promtool check rules /etc/prometheus/alerts.yml
    ```
@@ -720,6 +738,7 @@ curl http://localhost:9090/api/v1/alerts
 **Symptom**: All monitors showing down despite services working
 
 **Diagnosis**:
+
 ```bash
 # Check Uptime Kuma logs
 docker exec buhbot-monitoring-stack supervisorctl tail uptime-kuma
@@ -736,13 +755,13 @@ docker exec buhbot-monitoring-stack curl -f http://bot-backend:3000/health
 
 ### Log Locations
 
-| Component | Location | Access Command |
-|-----------|----------|----------------|
-| Prometheus | Container stdout | `docker exec buhbot-monitoring-stack supervisorctl tail prometheus` |
-| Grafana | Container stdout | `docker exec buhbot-monitoring-stack supervisorctl tail grafana` |
+| Component   | Location         | Access Command                                                       |
+| ----------- | ---------------- | -------------------------------------------------------------------- |
+| Prometheus  | Container stdout | `docker exec buhbot-monitoring-stack supervisorctl tail prometheus`  |
+| Grafana     | Container stdout | `docker exec buhbot-monitoring-stack supervisorctl tail grafana`     |
 | Uptime Kuma | Container stdout | `docker exec buhbot-monitoring-stack supervisorctl tail uptime-kuma` |
-| Bot Backend | Container logs | `docker logs buhbot-bot-backend` |
-| Nginx | Container logs | `docker logs buhbot-nginx` |
+| Bot Backend | Container logs   | `docker logs buhbot-bot-backend`                                     |
+| Nginx       | Container logs   | `docker logs buhbot-nginx`                                           |
 
 ### Health Check Commands
 
@@ -793,6 +812,7 @@ docker exec buhbot-monitoring-stack supervisorctl status
 ```
 
 Expected supervisor status:
+
 ```
 grafana                          RUNNING   pid 123, uptime 0:01:00
 prometheus                       RUNNING   pid 124, uptime 0:01:00
@@ -805,12 +825,12 @@ uptime-kuma                      RUNNING   pid 125, uptime 0:01:00
 
 ### Key URLs (Production)
 
-| Service | URL |
-|---------|-----|
-| Grafana | `https://bot.example.com/grafana` |
-| Prometheus | `https://bot.example.com/prometheus` |
-| Uptime Kuma | `https://bot.example.com/uptime` |
-| Bot Health | `https://bot.example.com/health` |
+| Service          | URL                                        |
+| ---------------- | ------------------------------------------ |
+| Grafana          | `https://bot.example.com/grafana`          |
+| Prometheus       | `https://bot.example.com/prometheus`       |
+| Uptime Kuma      | `https://bot.example.com/uptime`           |
+| Bot Health       | `https://bot.example.com/health`           |
 | Metrics Endpoint | `http://localhost:3000/metrics` (internal) |
 
 ### Essential Commands

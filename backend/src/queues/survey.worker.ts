@@ -32,7 +32,11 @@ import {
   SURVEY_MESSAGE_TEXT,
   SURVEY_REMINDER_TEXT,
 } from '../bot/keyboards/survey.keyboard.js';
-import { queueConfig, getSurveyReminderDelayMs, getSurveyManagerNotifyDelayMs } from '../config/queue.config.js';
+import {
+  queueConfig,
+  getSurveyReminderDelayMs,
+  getSurveyManagerNotifyDelayMs,
+} from '../config/queue.config.js';
 import type { DeliveryStatus } from '@prisma/client';
 
 // ============================================================================
@@ -139,23 +143,16 @@ async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Promise<v
     const keyboard = createSurveyRatingKeyboard(surveyId, deliveryId);
 
     // Send survey message to chat
-    const message = await bot.telegram.sendMessage(
-      chatId,
-      SURVEY_MESSAGE_TEXT,
-      {
-        parse_mode: 'Markdown',
-        ...keyboard,
-      }
-    );
+    const message = await bot.telegram.sendMessage(chatId, SURVEY_MESSAGE_TEXT, {
+      parse_mode: 'Markdown',
+      ...keyboard,
+    });
 
     // Update delivery status to 'delivered'
     await updateDeliveryStatus(deliveryId, 'delivered', BigInt(message.message_id));
 
     // Schedule reminder for day 2
-    await queueSurveyReminder(
-      { surveyId, chatId, deliveryId },
-      REMINDER_DELAY_MS
-    );
+    await queueSurveyReminder({ surveyId, chatId, deliveryId }, REMINDER_DELAY_MS);
 
     // Increment delivered count on survey
     await prisma.feedbackSurvey.update({
@@ -247,14 +244,10 @@ async function processReminder(job: Job<SurveyReminderJobData>): Promise<void> {
     const keyboard = createSurveyRatingKeyboard(surveyId, deliveryId);
 
     // Send reminder message
-    await bot.telegram.sendMessage(
-      chatId,
-      SURVEY_REMINDER_TEXT,
-      {
-        parse_mode: 'Markdown',
-        ...keyboard,
-      }
-    );
+    await bot.telegram.sendMessage(chatId, SURVEY_REMINDER_TEXT, {
+      parse_mode: 'Markdown',
+      ...keyboard,
+    });
 
     // Update delivery status to 'reminded'
     await updateDeliveryStatus(deliveryId, 'reminded');
@@ -426,18 +419,14 @@ async function processJob(job: Job<SurveyJobData>): Promise<void> {
  * - Concurrency: 5 (process up to 5 jobs concurrently)
  * - Rate limit: 30 jobs per second (Telegram API limit)
  */
-export const surveyWorker = new Worker<SurveyJobData>(
-  SURVEY_QUEUE_NAME,
-  processJob,
-  {
-    connection: redis,
-    concurrency: queueConfig.surveyConcurrency, // Process up to 5 jobs concurrently
-    limiter: {
-      max: queueConfig.surveyRateLimitMax, // Max 30 jobs
-      duration: queueConfig.surveyRateLimitDuration, // Per second (Telegram rate limit ~30 msg/sec)
-    },
-  }
-);
+export const surveyWorker = new Worker<SurveyJobData>(SURVEY_QUEUE_NAME, processJob, {
+  connection: redis,
+  concurrency: queueConfig.surveyConcurrency, // Process up to 5 jobs concurrently
+  limiter: {
+    max: queueConfig.surveyRateLimitMax, // Max 30 jobs
+    duration: queueConfig.surveyRateLimitDuration, // Per second (Telegram rate limit ~30 msg/sec)
+  },
+});
 
 // Register worker for graceful shutdown
 registerWorker(surveyWorker);

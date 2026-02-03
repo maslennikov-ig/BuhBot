@@ -24,6 +24,7 @@ Automatically rollback changes from failed workflow phases by reading changes lo
 Use Read tool to load the changes log file.
 
 **Expected Input**:
+
 - `changes_log_path`: String (path to changes log JSON, e.g., `.bug-changes.json`)
 - `phase`: String (workflow phase name, e.g., "bug-fixing")
 - `confirmation_required`: Boolean (default: true, ask user before rollback)
@@ -35,6 +36,7 @@ Use Read tool to load the changes log file.
 Parse the JSON content and validate structure.
 
 **Required Fields**:
+
 - `phase`: String (workflow phase that made changes)
 - `timestamp`: String (ISO-8601 timestamp)
 - `files_modified`: Array of objects with `{path, backup}` (files with backups)
@@ -43,6 +45,7 @@ Parse the JSON content and validate structure.
 - `git_commits`: Array of strings (commit SHAs if any)
 
 **Optional Fields**:
+
 - `artifacts`: Array of strings (temporary files to remove)
 - `plan_files`: Array of strings (plan files to remove)
 - `metadata`: Object (additional context)
@@ -52,6 +55,7 @@ Parse the JSON content and validate structure.
 If `confirmation_required` is true, ask user for confirmation.
 
 **Confirmation Prompt**:
+
 ```
 Rollback changes from phase "{phase}"?
 
@@ -79,6 +83,7 @@ Proceed with rollback? (yes/no)
 For each file in `files_modified`, restore from backup.
 
 **Restoration Process**:
+
 ```bash
 # For each {path, backup} in files_modified:
 if [ -f "{backup}" ]; then
@@ -90,6 +95,7 @@ fi
 ```
 
 **Error Handling**:
+
 - Missing backup file: Log warning, continue with other files
 - Copy failure: Log error, continue with other files
 - Permission issues: Log error, continue with other files
@@ -101,6 +107,7 @@ fi
 For each file in `files_created`, delete if it exists.
 
 **Deletion Process**:
+
 ```bash
 # For each file in files_created:
 if [ -f "{file}" ]; then
@@ -115,6 +122,7 @@ fi
 ```
 
 **Error Handling**:
+
 - File not found: Log warning (may already be deleted)
 - Permission issues: Log error, continue with other files
 - Directory not empty: Use `rm -rf` with caution
@@ -126,6 +134,7 @@ fi
 For each command in `commands_executed`, attempt to revert.
 
 **Revert Mapping**:
+
 - `pnpm install` → `pnpm install` (re-run to restore lockfile)
 - `git add {files}` → `git restore --staged {files}`
 - `git commit` → Handled in Step 7
@@ -133,6 +142,7 @@ For each command in `commands_executed`, attempt to revert.
 - Custom commands → Log only (cannot automatically revert)
 
 **Revert Process**:
+
 ```bash
 # For each command:
 case "{command}" in
@@ -155,6 +165,7 @@ esac
 ```
 
 **Error Handling**:
+
 - Command fails: Log error, continue with other commands
 - Unknown command: Log warning, cannot revert
 - Already reverted: Log info, continue
@@ -166,6 +177,7 @@ esac
 For each commit SHA in `git_commits`, revert the commit.
 
 **Revert Process**:
+
 ```bash
 # For each SHA in git_commits (in reverse order):
 git revert --no-edit {sha}
@@ -177,6 +189,7 @@ fi
 ```
 
 **Error Handling**:
+
 - Revert conflicts: Log error, provide manual instructions
 - Commit not found: Log error, skip commit
 - Detached HEAD: Log error, skip git operations
@@ -188,6 +201,7 @@ fi
 Remove temporary files and plan files.
 
 **Cleanup Process**:
+
 ```bash
 # Remove plan files
 rm -f .{workflow}-plan.json
@@ -212,6 +226,7 @@ fi
 Create a structured report of all actions taken.
 
 **Report Structure**:
+
 ```json
 {
   "success": true|false,
@@ -243,6 +258,7 @@ Create a structured report of all actions taken.
 Return complete rollback result.
 
 **Expected Output**:
+
 ```json
 {
   "success": true,
@@ -281,6 +297,7 @@ Return complete rollback result.
 ### Example 1: Full Rollback (All Operations Succeed)
 
 **Input**:
+
 ```json
 {
   "changes_log_path": ".bug-changes.json",
@@ -290,13 +307,14 @@ Return complete rollback result.
 ```
 
 **Changes Log Content**:
+
 ```json
 {
   "phase": "bug-fixing",
   "timestamp": "2025-10-18T14:30:00Z",
   "files_modified": [
-    {"path": "src/app.ts", "backup": ".rollback/src-app.ts.backup"},
-    {"path": "src/utils.ts", "backup": ".rollback/src-utils.ts.backup"}
+    { "path": "src/app.ts", "backup": ".rollback/src-app.ts.backup" },
+    { "path": "src/utils.ts", "backup": ".rollback/src-utils.ts.backup" }
   ],
   "files_created": ["src/new-helper.ts"],
   "commands_executed": ["pnpm install", "pnpm build"],
@@ -306,6 +324,7 @@ Return complete rollback result.
 ```
 
 **Output**:
+
 ```json
 {
   "success": true,
@@ -334,6 +353,7 @@ Return complete rollback result.
 ### Example 2: Partial Rollback (Some Backups Missing)
 
 **Input**:
+
 ```json
 {
   "changes_log_path": ".security-changes.json",
@@ -343,13 +363,14 @@ Return complete rollback result.
 ```
 
 **Changes Log Content**:
+
 ```json
 {
   "phase": "security-remediation",
   "timestamp": "2025-10-18T14:30:00Z",
   "files_modified": [
-    {"path": "src/auth.ts", "backup": ".rollback/src-auth.ts.backup"},
-    {"path": "src/db.ts", "backup": ".rollback/src-db.ts.backup"}
+    { "path": "src/auth.ts", "backup": ".rollback/src-auth.ts.backup" },
+    { "path": "src/db.ts", "backup": ".rollback/src-db.ts.backup" }
   ],
   "files_created": ["src/new-auth.ts"],
   "commands_executed": [],
@@ -360,6 +381,7 @@ Return complete rollback result.
 **Scenario**: Backup for `src/db.ts` is missing
 
 **Output**:
+
 ```json
 {
   "success": true,
@@ -374,9 +396,7 @@ Return complete rollback result.
   "git_commits_reverted": 0,
   "artifacts_cleaned": 0,
   "errors": [],
-  "warnings": [
-    "Backup not found: .rollback/src-db.ts.backup (file not restored)"
-  ],
+  "warnings": ["Backup not found: .rollback/src-db.ts.backup (file not restored)"],
   "timestamp": "2025-10-18T14:45:00Z",
   "duration_ms": 456
 }
@@ -385,6 +405,7 @@ Return complete rollback result.
 ### Example 3: Dry Run (User Declines)
 
 **Input**:
+
 ```json
 {
   "changes_log_path": ".refactor-changes.json",
@@ -396,6 +417,7 @@ Return complete rollback result.
 **User Response**: "no"
 
 **Output**:
+
 ```json
 {
   "success": false,
@@ -417,6 +439,7 @@ Return complete rollback result.
 ### Example 4: No Changes Log (File Missing)
 
 **Input**:
+
 ```json
 {
   "changes_log_path": ".nonexistent-changes.json",
@@ -426,6 +449,7 @@ Return complete rollback result.
 ```
 
 **Output**:
+
 ```json
 {
   "success": false,
@@ -436,9 +460,7 @@ Return complete rollback result.
   "commands_reverted": 0,
   "git_commits_reverted": 0,
   "artifacts_cleaned": 0,
-  "errors": [
-    "Changes log not found at .nonexistent-changes.json"
-  ],
+  "errors": ["Changes log not found at .nonexistent-changes.json"],
   "warnings": [],
   "timestamp": "2025-10-18T14:45:00Z",
   "duration_ms": 10
@@ -448,6 +470,7 @@ Return complete rollback result.
 ### Example 5: Git Revert with Conflicts
 
 **Input**:
+
 ```json
 {
   "changes_log_path": ".bug-changes.json",
@@ -457,6 +480,7 @@ Return complete rollback result.
 ```
 
 **Changes Log Content**:
+
 ```json
 {
   "phase": "bug-fixing",
@@ -471,24 +495,19 @@ Return complete rollback result.
 **Scenario**: Reverting `abc123` causes conflicts
 
 **Output**:
+
 ```json
 {
   "success": true,
   "phase": "bug-fixing",
-  "actions_taken": [
-    "Reverted git commit def456"
-  ],
+  "actions_taken": ["Reverted git commit def456"],
   "files_restored": 0,
   "files_deleted": 0,
   "commands_reverted": 0,
   "git_commits_reverted": 1,
   "artifacts_cleaned": 0,
-  "errors": [
-    "Failed to revert commit abc123: Merge conflict in src/app.ts"
-  ],
-  "warnings": [
-    "Manual resolution required for commit abc123"
-  ],
+  "errors": ["Failed to revert commit abc123: Merge conflict in src/app.ts"],
+  "warnings": ["Manual resolution required for commit abc123"],
   "timestamp": "2025-10-18T14:45:00Z",
   "duration_ms": 876
 }
@@ -512,26 +531,31 @@ Return complete rollback result.
 ## Safety Features
 
 ### Confirmation by Default
+
 - Always ask for confirmation unless explicitly disabled
 - Show clear summary of what will be reverted
 - Allow user to cancel before any changes
 
 ### Partial Rollback Acceptable
+
 - Don't fail entirely if some backups are missing
 - Continue with other operations when one fails
 - Document all issues in warnings array
 
 ### No Silent Failures
+
 - Log all errors and warnings explicitly
 - Return detailed actions_taken array
 - Provide troubleshooting context in errors
 
 ### Backup Verification
+
 - Never delete original files without verifying backup exists
 - Check backup file exists before restoration
 - Preserve backups until full rollback succeeds
 
 ### Audit Trail
+
 - Log all rollback actions for debugging
 - Include timestamps and durations
 - Return complete report for documentation
@@ -544,6 +568,7 @@ Workers should create changes log files during operations:
 ## Step 2: Track Changes
 
 Before making any modifications:
+
 1. Create changes log: `.{domain}-changes.json`
 2. For each file modified:
    - Create backup in `.rollback/{path}.backup`
@@ -559,6 +584,7 @@ Before making any modifications:
 ## Step 5: Rollback on Failure
 
 If quality gate fails or error occurs:
+
 1. Use rollback-changes Skill with:
    - changes_log_path: ".{domain}-changes.json"
    - phase: "{current-phase}"

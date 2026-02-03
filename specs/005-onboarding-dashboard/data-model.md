@@ -29,7 +29,7 @@ model GlobalSettings {
   botId           BigInt? @map("bot_id")
 
   // Onboarding State (Alternative to User flag if workspace-wide)
-  // We will stick to User flag for "User has seen wizard" 
+  // We will stick to User flag for "User has seen wizard"
   // AND GlobalSettings presence for "Workspace is ready"
 
   // ... existing SLA fields
@@ -48,7 +48,7 @@ type SlaComplianceMetric = {
   metSla: number;
   breachedSla: number;
   compliancePercentage: number; // (met / total) * 100
-}
+};
 
 // Response Time Widget
 type ResponseTimeMetric = {
@@ -56,7 +56,7 @@ type ResponseTimeMetric = {
   averageMinutes: number;
   previousPeriodAverage: number; // for trend calculation
   trendPercentage: number; // +15% or -10%
-}
+};
 
 // Active Alert Item
 type ActiveAlertItem = {
@@ -66,8 +66,8 @@ type ActiveAlertItem = {
   messagePreview: string;
   receivedAt: Date;
   slaDeadline: Date; // Calculated based on working hours
-  status: "warning" | "breach";
-}
+  status: 'warning' | 'breach';
+};
 ```
 
 ## Database Migrations

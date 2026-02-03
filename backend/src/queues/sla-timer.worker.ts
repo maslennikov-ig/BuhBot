@@ -18,12 +18,7 @@ import { Worker, Job } from 'bullmq';
 import { redis } from '../lib/redis.js';
 import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
-import {
-  QUEUE_NAMES,
-  registerWorker,
-  queueAlert,
-  type SlaTimerJobData,
-} from './setup.js';
+import { QUEUE_NAMES, registerWorker, queueAlert, type SlaTimerJobData } from './setup.js';
 import { queueConfig } from '../config/queue.config.js';
 import { bot } from '../bot/bot.js';
 import { formatBreachChatNotification } from '../services/alerts/format.service.js';
@@ -128,11 +123,9 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
           minutesElapsed: threshold,
         });
 
-        await bot.telegram.sendMessage(
-          String(chatId),
-          chatNotificationMessage,
-          { parse_mode: 'HTML' }
-        );
+        await bot.telegram.sendMessage(String(chatId), chatNotificationMessage, {
+          parse_mode: 'HTML',
+        });
 
         logger.info('Breach notification sent to group chat', {
           requestId,
@@ -144,7 +137,8 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
         logger.warn('Failed to send breach notification to group chat', {
           requestId,
           chatId,
-          error: chatNotifyError instanceof Error ? chatNotifyError.message : String(chatNotifyError),
+          error:
+            chatNotifyError instanceof Error ? chatNotifyError.message : String(chatNotifyError),
           service: 'sla-timer-worker',
         });
       }
@@ -179,13 +173,16 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       });
     } else {
       // CRITICAL: No managers to receive alert - this is a configuration error
-      logger.error('CRITICAL: No managers configured for SLA alerts - notification cannot be delivered', {
-        requestId,
-        chatId,
-        alertId: alert.id,
-        threshold,
-        service: 'sla-timer-worker',
-      });
+      logger.error(
+        'CRITICAL: No managers configured for SLA alerts - notification cannot be delivered',
+        {
+          requestId,
+          chatId,
+          alertId: alert.id,
+          threshold,
+          service: 'sla-timer-worker',
+        }
+      );
 
       // Mark alert as failed since no one can receive it
       await prisma.slaAlert.update({
@@ -211,18 +208,14 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
  * Processes breach check jobs from the sla-timers queue.
  * Limited concurrency to prevent overwhelming the database.
  */
-export const slaTimerWorker = new Worker<SlaTimerJobData>(
-  QUEUE_NAMES.SLA_TIMERS,
-  processSlaTimer,
-  {
-    connection: redis,
-    concurrency: queueConfig.slaConcurrency,
-    limiter: {
-      max: queueConfig.slaRateLimitMax,
-      duration: queueConfig.slaRateLimitDuration, // Max 10 jobs per second
-    },
-  }
-);
+export const slaTimerWorker = new Worker<SlaTimerJobData>(QUEUE_NAMES.SLA_TIMERS, processSlaTimer, {
+  connection: redis,
+  concurrency: queueConfig.slaConcurrency,
+  limiter: {
+    max: queueConfig.slaRateLimitMax,
+    duration: queueConfig.slaRateLimitDuration, // Max 10 jobs per second
+  },
+});
 
 // Event handlers for monitoring
 slaTimerWorker.on('completed', (job) => {

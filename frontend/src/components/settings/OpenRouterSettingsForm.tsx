@@ -107,9 +107,7 @@ export function OpenRouterSettingsForm() {
           </div>
           <div>
             <CardTitle>OpenRouter API</CardTitle>
-            <CardDescription>
-              Настройки AI-классификации сообщений
-            </CardDescription>
+            <CardDescription>Настройки AI-классификации сообщений</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -122,7 +120,9 @@ export function OpenRouterSettingsForm() {
               <Input
                 id="openrouterApiKey"
                 type={showApiKey ? 'text' : 'password'}
-                placeholder={hasExistingKey ? 'Ключ настроен (введите новый для замены)' : 'sk-or-...'}
+                placeholder={
+                  hasExistingKey ? 'Ключ настроен (введите новый для замены)' : 'sk-or-...'
+                }
                 {...form.register('openrouterApiKey', {
                   onChange: () => setKeyChanged(true),
                 })}
@@ -176,9 +176,7 @@ export function OpenRouterSettingsForm() {
 
           {/* Info */}
           <div className="rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-overlay)] p-4 text-sm">
-            <h4 className="font-medium text-[var(--buh-foreground)] mb-2">
-              Как это работает
-            </h4>
+            <h4 className="font-medium text-[var(--buh-foreground)] mb-2">Как это работает</h4>
             <ul className="list-disc list-inside space-y-1 text-[var(--buh-foreground-muted)]">
               <li>AI анализирует сообщения клиентов</li>
               <li>Запросы (REQUEST) запускают SLA-таймер</li>

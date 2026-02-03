@@ -40,8 +40,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -72,7 +72,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.8'  # Strict limit to kill miners
+          cpus: '0.8' # Strict limit to kill miners
           memory: 768M
         reservations:
           cpus: '0.25'
@@ -80,8 +80,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -107,8 +107,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # ==========================================================================
   # Monitoring Stack Service - LOWEST PRIORITY
@@ -130,8 +130,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   # ==========================================================================
   # Nginx Service - LIGHTWEIGHT
@@ -152,8 +152,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
 # ============================================================================
 # Resource Summary

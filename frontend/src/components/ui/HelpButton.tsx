@@ -1,9 +1,5 @@
 import { HelpCircle } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { documentation } from '@/config/documentation';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +32,7 @@ export function HelpButton({ section, className }: HelpButtonProps) {
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            'inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             className
           )}
           aria-label="Показать справку"
@@ -47,9 +43,7 @@ export function HelpButton({ section, className }: HelpButtonProps) {
       <PopoverContent className="w-80 p-4">
         <div className="space-y-2">
           <h4 className="font-medium leading-none text-base">{content.title}</h4>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {content.description}
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{content.description}</p>
         </div>
       </PopoverContent>
     </Popover>

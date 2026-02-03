@@ -21,22 +21,15 @@ type ChatMessageThreadProps = {
 
 export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
   // Fetch messages with cursor-based pagination
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = trpc.messages.listByChat.useInfiniteQuery(
-    { chatId, limit: 30 },
-    {
-      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-      retry: 3,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    }
-  );
+  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    trpc.messages.listByChat.useInfiniteQuery(
+      { chatId, limit: 30 },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        retry: 3,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      }
+    );
 
   // Flatten messages from all pages
   const messages = React.useMemo(() => {
@@ -86,17 +79,11 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--buh-error)]/10 mb-4">
           <AlertTriangle className="h-8 w-8 text-[var(--buh-error)]" />
         </div>
-        <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">
-          Ошибка загрузки
-        </h3>
+        <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">Ошибка загрузки</h3>
         <p className="text-sm text-[var(--buh-foreground-muted)] mb-4 max-w-xs">
           {error.message || 'Не удалось загрузить историю сообщений'}
         </p>
-        <Button
-          variant="outline"
-          onClick={() => refetch()}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={() => refetch()} className="gap-2">
           <RefreshCw className="h-4 w-4" />
           Повторить
         </Button>
@@ -110,9 +97,7 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--buh-surface-overlay)] mb-4">
           <MessageSquare className="h-8 w-8 text-[var(--buh-foreground-muted)]" />
         </div>
-        <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">
-          Нет сообщений
-        </h3>
+        <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">Нет сообщений</h3>
         <p className="text-sm text-[var(--buh-foreground-muted)]">
           Сообщения появятся здесь после того, как бот начнёт их логировать
         </p>

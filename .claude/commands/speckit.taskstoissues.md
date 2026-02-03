@@ -35,6 +35,7 @@ gh --version
 ```
 
 If `gh` is not installed, inform the user:
+
 ```
 GitHub CLI (gh) is not installed. Install it:
 - macOS: brew install gh
@@ -80,6 +81,7 @@ Create project structure per implementation plan
 ```
 
 **Formatting rules**:
+
 - Title: `T###: <short description>`
 - Body: Task details, phase, parallel info, acceptance criteria
 - Label: `speckit` (create if doesn't exist)
@@ -104,6 +106,7 @@ gh label create user-story --description "User story implementation" --color "D4
 ## Options
 
 User can specify in `$ARGUMENTS`:
+
 - `--dry-run` — показать какие issues будут созданы, но не создавать
 - `--phase N` — создать issues только для Phase N
 - `--limit N` — создать только первые N issues

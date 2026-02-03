@@ -232,7 +232,7 @@ export const appRouter = router({
 
   /**
    * User router - User account management
-   * 
+   *
    * Procedures:
    * - linkTelegram: Link Telegram account to user
    * - unlinkTelegram: Unlink Telegram account

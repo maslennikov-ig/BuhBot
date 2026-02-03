@@ -18,11 +18,7 @@ import {
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 import { Button } from '@/components/ui/button';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { HelpButton } from '@/components/ui/HelpButton';
 
@@ -112,29 +108,26 @@ export default function ViolationsPage() {
     // Get today's violations
     const today = new Date(now);
     today.setHours(0, 0, 0, 0);
-    const todayViolations = items.filter(
-      (v) => new Date(v.receivedAt) >= today
-    ).length;
+    const todayViolations = items.filter((v) => new Date(v.receivedAt) >= today).length;
 
     // Get week violations (last 7 days)
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const weekViolations = items.filter(
-      (v) => new Date(v.receivedAt) >= weekAgo
-    ).length;
+    const weekViolations = items.filter((v) => new Date(v.receivedAt) >= weekAgo).length;
 
     // Get last week violations for trend calculation
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const lastWeekViolations = items.filter(
-      (v) => {
-        const date = new Date(v.receivedAt);
-        return date >= twoWeeksAgo && date < weekAgo;
-      }
-    ).length;
+    const lastWeekViolations = items.filter((v) => {
+      const date = new Date(v.receivedAt);
+      return date >= twoWeeksAgo && date < weekAgo;
+    }).length;
 
     // Calculate trend
-    const trend = lastWeekViolations > 0
-      ? Math.round(((weekViolations - lastWeekViolations) / lastWeekViolations) * 100)
-      : weekViolations > 0 ? 100 : 0;
+    const trend =
+      lastWeekViolations > 0
+        ? Math.round(((weekViolations - lastWeekViolations) / lastWeekViolations) * 100)
+        : weekViolations > 0
+          ? 100
+          : 0;
 
     // Calculate average per day (last 7 days)
     const avgPerDay = Math.round(weekViolations / 7);
@@ -180,9 +173,8 @@ export default function ViolationsPage() {
     const items = violationsQuery.data?.items ?? [];
     return items.map((req) => {
       // Create preview from messageText (max 100 chars)
-      const messagePreview = req.messageText.length > 100
-        ? `${req.messageText.substring(0, 100)}...`
-        : req.messageText;
+      const messagePreview =
+        req.messageText.length > 100 ? `${req.messageText.substring(0, 100)}...` : req.messageText;
 
       // Use slaWorkingMinutes from request, default to 60 if not set
       const slaMinutes = req.slaWorkingMinutes || 60;
@@ -213,11 +205,12 @@ export default function ViolationsPage() {
     'desc'
   );
 
-  const TrendIcon = stats.trendDirection === 'up'
-    ? TrendingUp
-    : stats.trendDirection === 'down'
-      ? TrendingDown
-      : Minus;
+  const TrendIcon =
+    stats.trendDirection === 'up'
+      ? TrendingUp
+      : stats.trendDirection === 'down'
+        ? TrendingDown
+        : Minus;
 
   return (
     <AdminLayout>
@@ -257,7 +250,12 @@ export default function ViolationsPage() {
           value={`${stats.trend > 0 ? '+' : ''}${stats.trend}%`}
           change={{
             value: Math.abs(stats.trend),
-            type: stats.trendDirection === 'up' ? 'increase' : stats.trendDirection === 'down' ? 'decrease' : 'neutral',
+            type:
+              stats.trendDirection === 'up'
+                ? 'increase'
+                : stats.trendDirection === 'down'
+                  ? 'decrease'
+                  : 'neutral',
             label: 'vs прошлая неделя',
           }}
           icon={<TrendIcon className="h-6 w-6" />}
@@ -276,12 +274,13 @@ export default function ViolationsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-[var(--buh-accent)]" />
             </div>
           ) : (
-            <div className="h-64 overflow-hidden" role="img" aria-label="График нарушений SLA за последние 30 дней">
+            <div
+              className="h-64 overflow-hidden"
+              role="img"
+              aria-label="График нарушений SLA за последние 30 дней"
+            >
               <ChartContainer config={chartConfig} className="h-full w-full">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 10, right: 10, bottom: 20, left: 10 }}
-                >
+                <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 20, left: 10 }}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
@@ -423,8 +422,8 @@ export default function ViolationsPage() {
 
                       <td className="px-4 py-4">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-error)]">
-                          <AlertTriangle className="h-3 w-3" />
-                          +{formatDuration(violation.excessMinutes)}
+                          <AlertTriangle className="h-3 w-3" />+
+                          {formatDuration(violation.excessMinutes)}
                         </span>
                       </td>
 

@@ -116,7 +116,12 @@ function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   // Map UI status to API status
-  const apiStatus = currentStatus === 'resolved' ? 'answered' : currentStatus === 'violated' ? 'escalated' : currentStatus;
+  const apiStatus =
+    currentStatus === 'resolved'
+      ? 'answered'
+      : currentStatus === 'violated'
+        ? 'escalated'
+        : currentStatus;
 
   const updateMutation = trpc.requests.update.useMutation({
     onSuccess: () => {
@@ -191,8 +196,7 @@ function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
             disabled={isLoading || apiStatus === 'in_progress'}
             className="cursor-pointer"
           >
-            <AlertCircle className="h-3.5 w-3.5" />
-            В работе
+            <AlertCircle className="h-3.5 w-3.5" />В работе
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => handleStatusChange('answered')}
@@ -259,24 +263,12 @@ function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
 // COMPONENT
 // ============================================
 
-export function RequestsTable({
-  requests,
-  className,
-  onRefresh,
-}: RequestsTableProps) {
+export function RequestsTable({ requests, className, onRefresh }: RequestsTableProps) {
   // Initialize table sorting (default: sort by time descending)
-  const { sortedData, requestSort, getSortIcon } = useTableSort(
-    requests,
-    'time',
-    'desc'
-  );
+  const { sortedData, requestSort, getSortIcon } = useTableSort(requests, 'time', 'desc');
 
   return (
-    <GlassCard
-      variant="elevated"
-      padding="none"
-      className={cn('relative group', className)}
-    >
+    <GlassCard variant="elevated" padding="none" className={cn('relative group', className)}>
       {/* Gradient accent on hover */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -290,9 +282,7 @@ export function RequestsTable({
             <h3 className="text-base font-semibold text-[var(--buh-foreground)]">
               Список запросов
             </h3>
-            <p className="text-xs text-[var(--buh-foreground-subtle)]">
-              Все обращения клиентов
-            </p>
+            <p className="text-xs text-[var(--buh-foreground-subtle)]">Все обращения клиентов</p>
           </div>
         </div>
       </div>
@@ -384,14 +374,13 @@ export function RequestsTable({
                         {request.responseMessage}
                       </span>
                       <div className="flex items-center gap-2 text-xs text-[var(--buh-foreground-subtle)]">
-                        {request.responseUsername && (
-                          <span>@{request.responseUsername}</span>
-                        )}
-                        {request.responseTimeMinutes !== null && request.responseTimeMinutes !== undefined && (
-                          <span className="text-[var(--buh-success)]">
-                            • {request.responseTimeMinutes} мин
-                          </span>
-                        )}
+                        {request.responseUsername && <span>@{request.responseUsername}</span>}
+                        {request.responseTimeMinutes !== null &&
+                          request.responseTimeMinutes !== undefined && (
+                            <span className="text-[var(--buh-success)]">
+                              • {request.responseTimeMinutes} мин
+                            </span>
+                          )}
                       </div>
                     </div>
                   ) : (
@@ -402,9 +391,7 @@ export function RequestsTable({
                 {/* Time */}
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex flex-col">
-                    <span className="text-sm text-[var(--buh-foreground)]">
-                      {request.time}
-                    </span>
+                    <span className="text-sm text-[var(--buh-foreground)]">{request.time}</span>
                     {request.slaRemaining && (
                       <span
                         className={cn(
@@ -440,9 +427,7 @@ export function RequestsTable({
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
             <MessageSquare className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
           </div>
-          <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
-            Нет запросов
-          </p>
+          <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет запросов</p>
           <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
             Запросы от клиентов появятся здесь
           </p>
@@ -451,4 +436,3 @@ export function RequestsTable({
     </GlassCard>
   );
 }
-

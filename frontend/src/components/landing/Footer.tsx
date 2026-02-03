@@ -24,13 +24,24 @@ export function Footer() {
 
           {/* Center: Navigation */}
           <nav className="flex items-center gap-6">
-            <button onClick={() => scrollToSection('features')} className="hover:text-[var(--buh-primary)] transition-colors">
+            <button
+              onClick={() => scrollToSection('features')}
+              className="hover:text-[var(--buh-primary)] transition-colors"
+            >
               Возможности
             </button>
-            <button onClick={() => scrollToSection('contact')} className="hover:text-[var(--buh-primary)] transition-colors">
+            <button
+              onClick={() => scrollToSection('contact')}
+              className="hover:text-[var(--buh-primary)] transition-colors"
+            >
               Контакты
             </button>
-            <a href="https://t.me/buhbot_support" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--buh-primary)] transition-colors">
+            <a
+              href="https://t.me/buhbot_support"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--buh-primary)] transition-colors"
+            >
               Telegram
             </a>
           </nav>

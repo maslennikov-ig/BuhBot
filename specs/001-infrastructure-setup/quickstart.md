@@ -7,6 +7,7 @@
 ---
 
 > **Note**: This guide contains placeholder values that you must replace with your actual production values before deployment:
+>
 > - `YOUR_VDS_IP` - Your VDS server IP address (e.g., `123.45.67.89`)
 > - `YOUR_DOMAIN` or `bot.example.com` - Your actual domain name
 > - `YOUR_PROJECT.supabase.co` or `[PROJECT-REF]` - Your Supabase project reference
@@ -152,6 +153,7 @@ Before starting, ensure you have:
    - **documents**: Public = ❌ (private), File size limit = 10 MB
    - **files**: Public = ❌ (private), File size limit = 5 MB
 3. For each bucket, go to **Policies** and create:
+
    ```sql
    -- Example for 'invoices' bucket
    CREATE POLICY "Authenticated users can upload invoices"
@@ -192,32 +194,38 @@ Before starting, ensure you have:
 ### 2.2 Initial Server Configuration
 
 SSH into server:
+
 ```bash
 ssh root@YOUR_VDS_IP
 ```
 
 Update system packages:
+
 ```bash
 apt update && apt upgrade -y
 ```
 
 Set hostname:
+
 ```bash
 hostnamectl set-hostname buhbot-prod
 ```
 
 Configure timezone (Moscow):
+
 ```bash
 timedatectl set-timezone Europe/Moscow
 ```
 
 Create non-root user with sudo:
+
 ```bash
 adduser buhbot
 usermod -aG sudo buhbot
 ```
 
 Configure SSH key authentication:
+
 ```bash
 # On local machine, generate SSH key if needed:
 ssh-keygen -t ed25519 -C "buhbot-deploy"
@@ -233,6 +241,7 @@ sudo systemctl restart sshd
 ### 2.3 Install Docker & Docker Compose
 
 Install Docker:
+
 ```bash
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
@@ -240,11 +249,13 @@ sudo usermod -aG docker buhbot
 ```
 
 Install Docker Compose:
+
 ```bash
 sudo apt install docker-compose-plugin -y
 ```
 
 Verify installation:
+
 ```bash
 docker --version        # Expected: Docker version 24.0+
 docker compose version  # Expected: Docker Compose version 2.20+
@@ -253,6 +264,7 @@ docker compose version  # Expected: Docker Compose version 2.20+
 ### 2.4 Configure Firewall (UFW)
 
 Enable UFW and allow required ports:
+
 ```bash
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
@@ -279,12 +291,14 @@ cd BuhBot
 ### 3.2 Configure Environment Variables
 
 Create `.env.production` file:
+
 ```bash
 cp .env.example .env.production
 nano .env.production
 ```
 
 Fill in credentials (replace all `YOUR_*` placeholders with your actual values):
+
 ```bash
 # Supabase (replace YOUR_PROJECT with your Supabase project reference)
 DATABASE_URL="postgresql://postgres:YOUR_DB_PASSWORD@YOUR_PROJECT.supabase.co:5432/postgres?pgbouncer=true&connection_limit=10"
@@ -312,6 +326,7 @@ PORT="3000"
 ```
 
 ⚠️ **Security**:
+
 ```bash
 # Ensure .env.production is NOT tracked by git
 chmod 600 .env.production
@@ -338,11 +353,13 @@ docker compose -f infrastructure/docker-compose.yml up -d
 ```
 
 Verify all containers running:
+
 ```bash
 docker compose ps
 ```
 
 Expected output:
+
 ```
 NAME                STATUS              PORTS
 bot                 Up 30 seconds       0.0.0.0:3000->3000/tcp
@@ -352,6 +369,7 @@ monitoring-stack    Up 30 seconds       0.0.0.0:3000->3000/tcp (Grafana), 0.0.0.
 ```
 
 Check logs:
+
 ```bash
 docker compose logs -f bot
 ```
@@ -363,6 +381,7 @@ docker compose logs -f bot
 ### 4.1 Configure Domain DNS
 
 Add A record in DNS provider:
+
 ```
 Type: A
 Name: bot (or @)
@@ -371,6 +390,7 @@ TTL: 300
 ```
 
 Wait for DNS propagation (~5-15 minutes):
+
 ```bash
 dig YOUR_DOMAIN +short
 ```
@@ -378,6 +398,7 @@ dig YOUR_DOMAIN +short
 ### 4.2 Obtain Let's Encrypt Certificate
 
 Run Certbot in Docker (replace `YOUR_DOMAIN` and `YOUR_EMAIL` with actual values):
+
 ```bash
 docker run -it --rm --name certbot \
   -v "/opt/BuhBot/infrastructure/nginx/ssl:/etc/letsencrypt" \
@@ -392,12 +413,14 @@ docker run -it --rm --name certbot \
 ```
 
 Certificate will be saved to:
+
 - `/opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/fullchain.pem`
 - `/opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/privkey.pem`
 
 ### 4.3 Configure Nginx
 
 Edit `infrastructure/nginx/nginx.conf` (replace `YOUR_DOMAIN` with your actual domain):
+
 ```nginx
 server {
     listen 80;
@@ -445,6 +468,7 @@ server {
 ```
 
 Reload Nginx:
+
 ```bash
 docker compose restart nginx
 ```
@@ -452,11 +476,13 @@ docker compose restart nginx
 ### 4.4 Configure Certificate Auto-Renewal
 
 Add cron job:
+
 ```bash
 sudo crontab -e
 ```
 
 Add line (certificate renewal runs automatically twice daily):
+
 ```cron
 0 0,12 * * * docker run --rm --name certbot -v "/opt/BuhBot/infrastructure/nginx/ssl:/etc/letsencrypt" -v "/opt/BuhBot/infrastructure/nginx/certbot:/var/www/certbot" certbot/certbot renew --quiet && docker compose -f /opt/BuhBot/infrastructure/docker-compose.yml restart nginx
 ```
@@ -470,6 +496,7 @@ Add line (certificate renewal runs automatically twice daily):
 ### 5.1 Set Webhook URL
 
 Use Telegram Bot API (replace placeholders with your actual values):
+
 ```bash
 curl -F "url=https://YOUR_DOMAIN/webhook/telegram" \
      -F "secret_token=YOUR_WEBHOOK_SECRET" \
@@ -478,18 +505,21 @@ curl -F "url=https://YOUR_DOMAIN/webhook/telegram" \
 ```
 
 Expected response:
+
 ```json
-{"ok":true,"result":true,"description":"Webhook was set"}
+{ "ok": true, "result": true, "description": "Webhook was set" }
 ```
 
 ### 5.2 Verify Webhook
 
 Check webhook info (replace `YOUR_BOT_TOKEN` with your actual token):
+
 ```bash
 curl https://api.telegram.org/botYOUR_BOT_TOKEN/getWebhookInfo
 ```
 
 Expected response:
+
 ```json
 {
   "ok": true,
@@ -506,16 +536,19 @@ Expected response:
 ### 5.3 Test Bot
 
 Send message to bot in Telegram:
+
 ```
 /start
 ```
 
 Check bot logs:
+
 ```bash
 docker compose logs -f bot | grep "Received message"
 ```
 
 Expected output:
+
 ```
 [2025-11-17T12:00:00.000Z] INFO: Received message from user 111222333: /start
 ```
@@ -529,6 +562,7 @@ Expected output:
 Open browser: `https://YOUR_DOMAIN/grafana`
 
 Default credentials:
+
 - **Username**: `admin`
 - **Password**: `YOUR_GRAFANA_PASSWORD` (the value you set in `.env.production`)
 
@@ -562,6 +596,7 @@ Open browser: `https://YOUR_DOMAIN/uptime`
 ### 6.4 Test Alerting
 
 Simulate bot downtime:
+
 ```bash
 docker compose stop bot
 ```
@@ -569,6 +604,7 @@ docker compose stop bot
 Wait 5 minutes → Uptime Kuma should send Telegram alert.
 
 Restart bot:
+
 ```bash
 docker compose start bot
 ```
@@ -580,21 +616,25 @@ docker compose start bot
 ### 7.1 Create Backup Script
 
 Already created at `infrastructure/scripts/backup.sh`. Review and customize:
+
 ```bash
 nano infrastructure/scripts/backup.sh
 ```
 
 Make executable:
+
 ```bash
 chmod +x infrastructure/scripts/backup.sh
 ```
 
 Test backup:
+
 ```bash
 sudo ./infrastructure/scripts/backup.sh
 ```
 
 Verify backup files in `/var/backups/buhbot/`:
+
 ```bash
 ls -lh /var/backups/buhbot/
 ```
@@ -602,11 +642,13 @@ ls -lh /var/backups/buhbot/
 ### 7.2 Schedule Weekly Backups
 
 Add cron job (Sunday 3 AM Moscow time):
+
 ```bash
 sudo crontab -e
 ```
 
 Add line:
+
 ```cron
 0 3 * * 0 /opt/BuhBot/infrastructure/scripts/backup.sh >> /var/log/buhbot-backup.log 2>&1
 ```
@@ -620,6 +662,7 @@ Add line:
 Navigate to GitHub repository → Settings → Secrets and variables → Actions
 
 Add secrets (replace placeholders with your actual values):
+
 - **VDS_HOST**: `YOUR_VDS_IP`
 - **VDS_USER**: `buhbot`
 - **VDS_SSH_KEY**: (your private SSH key content from `~/.ssh/id_ed25519`)
@@ -635,6 +678,7 @@ Enable **"Required reviewers"** → Add yourself as reviewer
 ### 8.3 Test Deployment Workflow
 
 Commit trivial change:
+
 ```bash
 echo "# Production deployed $(date)" >> README.md
 git add README.md
@@ -667,11 +711,13 @@ After completing all steps, verify (replace `YOUR_DOMAIN` with your actual domai
 ### Bot Not Responding
 
 Check logs:
+
 ```bash
 docker compose logs bot --tail=100
 ```
 
 Common issues:
+
 - **Invalid webhook secret**: Verify `TELEGRAM_WEBHOOK_SECRET` matches in `.env` and `setWebhook` call
 - **Database connection failed**: Check `DATABASE_URL` in `.env`, verify Supabase project not paused
 - **Redis connection refused**: Restart redis container: `docker compose restart redis`
@@ -679,6 +725,7 @@ Common issues:
 ### SSL Certificate Issues
 
 Verify certificate paths (replace `YOUR_DOMAIN` with your actual domain):
+
 ```bash
 ls -la /opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/
 ```
@@ -686,6 +733,7 @@ ls -la /opt/BuhBot/infrastructure/nginx/ssl/live/YOUR_DOMAIN/
 If missing, re-run Certbot (Step 4.2).
 
 Check Nginx logs:
+
 ```bash
 docker compose logs nginx
 ```
@@ -693,6 +741,7 @@ docker compose logs nginx
 ### Monitoring Stack Not Starting
 
 Check system resources:
+
 ```bash
 free -h        # RAM usage
 df -h          # Disk space
@@ -700,10 +749,11 @@ docker stats   # Container resource usage
 ```
 
 If RAM exhausted, consider upgrading VDS or reducing Prometheus retention:
+
 ```yaml
 # infrastructure/monitoring/prometheus/prometheus.yml
 global:
-  retention.time: 7d  # Reduce from 15d to 7d
+  retention.time: 7d # Reduce from 15d to 7d
 ```
 
 ---
@@ -736,6 +786,7 @@ global:
 ## Support
 
 For issues or questions:
+
 - **Documentation**: `docs/infrastructure/`
 - **GitHub Issues**: https://github.com/maslennikov-ig/BuhBot/issues
 - **Email**: Contact your system administrator

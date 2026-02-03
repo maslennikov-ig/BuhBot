@@ -53,13 +53,11 @@ export function Benefits() {
               <span className="text-xl font-bold text-[var(--buh-foreground)] mb-2">
                 {stat.label}
               </span>
-              <span className="text-sm text-[var(--buh-foreground-muted)]">
-                {stat.sub}
-              </span>
+              <span className="text-sm text-[var(--buh-foreground-muted)]">{stat.sub}</span>
             </motion.div>
           ))}
         </div>
-        
+
         <div className="mt-8 text-center">
           <p className="text-sm text-[var(--buh-foreground-subtle)] italic">
             * По данным пилотных внедрений

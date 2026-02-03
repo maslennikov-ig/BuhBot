@@ -43,22 +43,13 @@ export default function FaqPage() {
         title="База знаний (FAQ)"
         description="Управление ответами на часто задаваемые вопросы."
         actions={<HelpButton section="settings.faq" />}
-        breadcrumbs={[
-          { label: 'Настройки', href: '/settings' },
-          { label: 'FAQ' },
-        ]}
+        breadcrumbs={[{ label: 'Настройки', href: '/settings' }, { label: 'FAQ' }]}
       />
 
-      {mode === 'list' && (
-        <FaqList onEdit={handleEdit} onCreate={handleCreate} />
-      )}
+      {mode === 'list' && <FaqList onEdit={handleEdit} onCreate={handleCreate} />}
 
       {(mode === 'create' || mode === 'edit') && (
-        <FaqForm
-          initialData={editingItem}
-          onSuccess={handleSuccess}
-          onCancel={handleCancel}
-        />
+        <FaqForm initialData={editingItem} onSuccess={handleSuccess} onCancel={handleCancel} />
       )}
     </AdminLayout>
   );

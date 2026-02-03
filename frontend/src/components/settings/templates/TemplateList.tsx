@@ -97,8 +97,12 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredItems.length === 0 ? (
           <div className="col-span-full py-12 text-center">
-             <p className="text-sm font-medium text-[var(--buh-foreground)]">Нет шаблонов сообщений</p>
-             <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">Создайте шаблон для быстрых ответов</p>
+            <p className="text-sm font-medium text-[var(--buh-foreground)]">
+              Нет шаблонов сообщений
+            </p>
+            <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
+              Создайте шаблон для быстрых ответов
+            </p>
           </div>
         ) : (
           filteredItems.map((item) => (
@@ -108,19 +112,31 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
             >
               <div>
                 <div className="mb-2 flex items-start justify-between">
-                    <span className="rounded-full bg-[var(--buh-surface)] px-2 py-0.5 text-xs font-medium text-[var(--buh-foreground-muted)] border border-[var(--buh-border)]">
-                        {CATEGORIES[item.category as keyof typeof CATEGORIES] || item.category}
-                    </span>
-                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEdit(item)} aria-label="Редактировать шаблон">
-                            <Edit2 className="h-3 w-3" />
-                        </Button>
-                        {currentUser?.role === 'admin' && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-[var(--buh-error)] hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]" onClick={() => setDeleteConfirm({ open: true, id: item.id })} aria-label="Удалить шаблон">
-                                <Trash2 className="h-3 w-3" />
-                            </Button>
-                        )}
-                    </div>
+                  <span className="rounded-full bg-[var(--buh-surface)] px-2 py-0.5 text-xs font-medium text-[var(--buh-foreground-muted)] border border-[var(--buh-border)]">
+                    {CATEGORIES[item.category as keyof typeof CATEGORIES] || item.category}
+                  </span>
+                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => onEdit(item)}
+                      aria-label="Редактировать шаблон"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    {currentUser?.role === 'admin' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-[var(--buh-error)] hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]"
+                        onClick={() => setDeleteConfirm({ open: true, id: item.id })}
+                        aria-label="Удалить шаблон"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <h3 className="mb-1 font-semibold text-[var(--buh-foreground)]">{item.title}</h3>
                 <p className="text-sm text-[var(--buh-foreground-muted)] line-clamp-3 whitespace-pre-wrap">

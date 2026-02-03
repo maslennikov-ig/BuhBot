@@ -114,22 +114,20 @@ function ActionMenu({
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const utils = trpc.useUtils();
 
-  const { mutate: updateStatus, isPending: isUpdating } =
-    trpc.logs.updateStatus.useMutation({
-      onSuccess: () => {
-        utils.logs.invalidate();
-        onRefresh?.();
-      },
-    });
+  const { mutate: updateStatus, isPending: isUpdating } = trpc.logs.updateStatus.useMutation({
+    onSuccess: () => {
+      utils.logs.invalidate();
+      onRefresh?.();
+    },
+  });
 
-  const { mutate: deleteError, isPending: isDeleting } =
-    trpc.logs.delete.useMutation({
-      onSuccess: () => {
-        utils.logs.invalidate();
-        onRefresh?.();
-        setShowDeleteConfirm(false);
-      },
-    });
+  const { mutate: deleteError, isPending: isDeleting } = trpc.logs.delete.useMutation({
+    onSuccess: () => {
+      utils.logs.invalidate();
+      onRefresh?.();
+      setShowDeleteConfirm(false);
+    },
+  });
 
   const isLoading = isUpdating || isDeleting;
 
@@ -146,12 +144,7 @@ function ActionMenu({
     <div onClick={(e) => e.stopPropagation()}>
       <DropdownMenu onOpenChange={(open) => !open && setShowDeleteConfirm(false)}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            disabled={isLoading}
-          >
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={isLoading}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -159,10 +152,7 @@ function ActionMenu({
           <DropdownMenuLabel>Действия</DropdownMenuLabel>
 
           <DropdownMenuItem asChild>
-            <Link
-              href={`/logs/${errorId}`}
-              className="flex cursor-pointer items-center gap-2"
-            >
+            <Link href={`/logs/${errorId}`} className="flex cursor-pointer items-center gap-2">
               <ExternalLink className="h-3.5 w-3.5" />
               Подробности
             </Link>
@@ -176,8 +166,7 @@ function ActionMenu({
             disabled={isLoading || currentStatus === 'in_progress'}
             className="cursor-pointer text-[var(--buh-warning)]"
           >
-            <PlayCircle className="h-3.5 w-3.5" />
-            В работе
+            <PlayCircle className="h-3.5 w-3.5" />В работе
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => handleStatusChange('resolved')}
@@ -211,9 +200,7 @@ function ActionMenu({
             </DropdownMenuItem>
           ) : (
             <div className="p-2">
-              <p className="mb-2 text-xs text-[var(--buh-foreground-muted)]">
-                Удалить запись?
-              </p>
+              <p className="mb-2 text-xs text-[var(--buh-foreground-muted)]">Удалить запись?</p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -246,25 +233,12 @@ function ActionMenu({
 // COMPONENT
 // ============================================
 
-export function LogsTable({
-  errors,
-  viewMode,
-  className,
-  onRefresh,
-}: LogsTableProps) {
+export function LogsTable({ errors, viewMode, className, onRefresh }: LogsTableProps) {
   // Initialize table sorting (default: sort by timestamp descending)
-  const { sortedData, requestSort, getSortIcon } = useTableSort(
-    errors,
-    'timestamp',
-    'desc'
-  );
+  const { sortedData, requestSort, getSortIcon } = useTableSort(errors, 'timestamp', 'desc');
 
   return (
-    <GlassCard
-      variant="elevated"
-      padding="none"
-      className={cn('group relative', className)}
-    >
+    <GlassCard variant="elevated" padding="none" className={cn('group relative', className)}>
       {/* Gradient accent on hover */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -279,9 +253,7 @@ export function LogsTable({
               {viewMode === 'grouped' ? 'Группы ошибок' : 'Все ошибки'}
             </h3>
             <p className="text-xs text-[var(--buh-foreground-subtle)]">
-              {viewMode === 'grouped'
-                ? 'Сгруппированные по fingerprint'
-                : 'Полный список записей'}
+              {viewMode === 'grouped' ? 'Сгруппированные по fingerprint' : 'Полный список записей'}
             </p>
           </div>
         </div>
@@ -419,9 +391,7 @@ export function LogsTable({
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
             <FileWarning className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
           </div>
-          <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
-            Нет записей
-          </p>
+          <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет записей</p>
           <p className="mt-1 text-sm text-[var(--buh-foreground-subtle)]">
             Логи ошибок появятся здесь
           </p>

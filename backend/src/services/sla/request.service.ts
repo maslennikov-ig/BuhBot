@@ -48,9 +48,7 @@ export interface ResponseData {
  * }
  * ```
  */
-export async function getRequestById(
-  requestId: string
-): Promise<ClientRequest | null> {
+export async function getRequestById(requestId: string): Promise<ClientRequest | null> {
   try {
     return await prisma.clientRequest.findUnique({
       where: { id: requestId },
@@ -190,9 +188,7 @@ export async function markRequestAsAnswered(
  * const chatActive = await getActiveRequests('123456789');
  * ```
  */
-export async function getActiveRequests(
-  chatId?: string
-): Promise<ClientRequest[]> {
+export async function getActiveRequests(chatId?: string): Promise<ClientRequest[]> {
   try {
     const where: Record<string, unknown> = {
       status: { in: ['pending', 'in_progress', 'escalated'] },
@@ -236,9 +232,7 @@ export async function getActiveRequests(
  * }
  * ```
  */
-export async function getPendingRequestsForChat(
-  chatId: string
-): Promise<ClientRequest[]> {
+export async function getPendingRequestsForChat(chatId: string): Promise<ClientRequest[]> {
   try {
     return await prisma.clientRequest.findMany({
       where: {
@@ -326,9 +320,7 @@ export async function getRequestByMessage(
  * @param chatId - Telegram chat ID
  * @returns The most recent pending request, or null if none found
  */
-export async function findLatestPendingRequest(
-  chatId: string
-): Promise<ClientRequest | null> {
+export async function findLatestPendingRequest(chatId: string): Promise<ClientRequest | null> {
   try {
     return await prisma.clientRequest.findFirst({
       where: {

@@ -93,7 +93,8 @@ function NPSScoreDisplay({ score }: { score: number }) {
           className="text-6xl font-bold tracking-tight transition-colors duration-300"
           style={{ color: scoreColor }}
         >
-          {animatedScore > 0 ? '+' : ''}{animatedScore}
+          {animatedScore > 0 ? '+' : ''}
+          {animatedScore}
         </span>
         {/* Glow effect */}
         <div
@@ -101,9 +102,7 @@ function NPSScoreDisplay({ score }: { score: number }) {
           style={{ background: scoreColor }}
         />
       </div>
-      <span className="mt-2 text-sm font-medium text-[var(--buh-foreground-muted)]">
-        NPS Score
-      </span>
+      <span className="mt-2 text-sm font-medium text-[var(--buh-foreground-muted)]">NPS Score</span>
       <span
         className="mt-1 text-xs font-semibold uppercase tracking-wider"
         style={{ color: scoreColor }}
@@ -236,9 +235,7 @@ function TrendChart({ data }: { data: TrendDataPoint[] }) {
                   className="w-full min-w-6 rounded-t transition-all duration-500"
                   style={{
                     height: `${barHeight}px`,
-                    backgroundColor: isPositive
-                      ? 'var(--buh-success)'
-                      : 'var(--buh-error)',
+                    backgroundColor: isPositive ? 'var(--buh-success)' : 'var(--buh-error)',
                     opacity: index === data.length - 1 ? 1 : 0.6,
                   }}
                 />

@@ -109,11 +109,7 @@ export function buildAlertKeyboard(
   data: AlertKeyboardData,
   options: AlertKeyboardOptions = {}
 ): Markup.Markup<InlineKeyboardMarkup> {
-  const {
-    showChatLink = true,
-    showNotifyButton = true,
-    showResolveButton = true,
-  } = options;
+  const { showChatLink = true, showNotifyButton = true, showResolveButton = true } = options;
 
   const { alertId, chatId, inviteLink, chatType } = data;
 
@@ -198,14 +194,7 @@ export function buildResolvedKeyboard(
   }
 
   if (chatUrl) {
-    return Markup.inlineKeyboard([
-      [
-        Markup.button.url(
-          '\uD83D\uDCAC Открыть чат',
-          chatUrl
-        ),
-      ],
-    ]);
+    return Markup.inlineKeyboard([[Markup.button.url('\uD83D\uDCAC Открыть чат', chatUrl)]]);
   }
 
   // No link available - return empty keyboard
@@ -238,12 +227,7 @@ export function buildAccountantNotificationKeyboard(
 
   if (chatUrl) {
     return Markup.inlineKeyboard([
-      [
-        Markup.button.url(
-          '\uD83D\uDCAC Открыть чат и ответить',
-          chatUrl
-        ),
-      ],
+      [Markup.button.url('\uD83D\uDCAC Открыть чат и ответить', chatUrl)],
     ]);
   }
 
@@ -308,7 +292,9 @@ export function buildLowRatingAlertKeyboard(
     chatUrl = `https://t.me/c/${formattedChatId}`;
   }
 
-  const rows: Array<Array<ReturnType<typeof Markup.button.callback> | ReturnType<typeof Markup.button.url>>> = [];
+  const rows: Array<
+    Array<ReturnType<typeof Markup.button.callback> | ReturnType<typeof Markup.button.url>>
+  > = [];
 
   // Row 1: Open chat (only if URL available)
   if (chatUrl) {

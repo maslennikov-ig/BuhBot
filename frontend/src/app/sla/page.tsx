@@ -13,25 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Clock,
-  CheckCircle,
-  XCircle,
-  Filter,
-  X,
-  Loader2,
-  User,
-  MessageSquare,
-} from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Filter, X, Loader2, User, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 import { Button } from '@/components/ui/button';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { RadialBar, RadialBarChart, PolarAngleAxis } from 'recharts';
 import { HelpButton } from '@/components/ui/HelpButton';
 
@@ -129,7 +116,12 @@ export default function SlaPage() {
       {
         name: 'compliance',
         value: compliancePercent,
-        fill: compliancePercent >= 90 ? 'var(--buh-success)' : compliancePercent >= 70 ? 'var(--buh-warning)' : 'var(--buh-error)',
+        fill:
+          compliancePercent >= 90
+            ? 'var(--buh-success)'
+            : compliancePercent >= 70
+              ? 'var(--buh-warning)'
+              : 'var(--buh-error)',
       },
     ];
   }, [stats]);
@@ -139,9 +131,8 @@ export default function SlaPage() {
     const requests = requestsQuery.data?.items ?? [];
     return requests.map((req) => {
       // Create preview from messageText (max 100 chars)
-      const messagePreview = req.messageText.length > 100
-        ? `${req.messageText.substring(0, 100)}...`
-        : req.messageText;
+      const messagePreview =
+        req.messageText.length > 100 ? `${req.messageText.substring(0, 100)}...` : req.messageText;
 
       return {
         id: req.id,
@@ -219,7 +210,11 @@ export default function SlaPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-[var(--buh-accent)]" />
               </div>
             ) : (
-              <div className="relative h-48" role="img" aria-label={`SLA соответствие ${stats?.compliancePercentage?.toFixed(1) ?? 0} процентов`}>
+              <div
+                className="relative h-48"
+                role="img"
+                aria-label={`SLA соответствие ${stats?.compliancePercentage?.toFixed(1) ?? 0} процентов`}
+              >
                 <ChartContainer config={chartConfig}>
                   <RadialBarChart
                     data={chartData}
@@ -241,9 +236,7 @@ export default function SlaPage() {
                   <span className="text-4xl font-bold text-[var(--buh-foreground)]">
                     {stats?.compliancePercentage?.toFixed(1) ?? 0}%
                   </span>
-                  <span className="text-xs text-[var(--buh-foreground-subtle)]">
-                    соответствие
-                  </span>
+                  <span className="text-xs text-[var(--buh-foreground-subtle)]">соответствие</span>
                 </div>
               </div>
             )}
@@ -269,9 +262,7 @@ export default function SlaPage() {
                   <div className="text-3xl font-bold text-[var(--buh-foreground)] mb-1">
                     {stats?.averageResponseMinutes?.toFixed(0) ?? 0}
                   </div>
-                  <div className="text-xs text-[var(--buh-foreground-muted)]">
-                    Среднее (мин)
-                  </div>
+                  <div className="text-xs text-[var(--buh-foreground-muted)]">Среднее (мин)</div>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-2">
@@ -280,9 +271,7 @@ export default function SlaPage() {
                   <div className="text-3xl font-bold text-[var(--buh-foreground)] mb-1">
                     {stats?.medianResponseMinutes?.toFixed(0) ?? 0}
                   </div>
-                  <div className="text-xs text-[var(--buh-foreground-muted)]">
-                    Медиана (мин)
-                  </div>
+                  <div className="text-xs text-[var(--buh-foreground-muted)]">Медиана (мин)</div>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-2">
@@ -327,7 +316,10 @@ export default function SlaPage() {
             {/* Quick Stats */}
             <div className="flex items-center gap-6 text-sm text-[var(--buh-foreground-muted)]">
               <span>
-                Всего запросов: <strong className="text-[var(--buh-foreground)]">{requestsQuery.data?.total ?? 0}</strong>
+                Всего запросов:{' '}
+                <strong className="text-[var(--buh-foreground)]">
+                  {requestsQuery.data?.total ?? 0}
+                </strong>
               </span>
             </div>
           </div>
@@ -470,8 +462,7 @@ export default function SlaPage() {
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-success)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-success)]">
-                            <CheckCircle className="h-3 w-3" />
-                            В норме
+                            <CheckCircle className="h-3 w-3" />В норме
                           </span>
                         )}
                       </td>
@@ -491,9 +482,7 @@ export default function SlaPage() {
           {/* Pagination */}
           {sortedData.length > 0 && (
             <div className="flex items-center justify-between border-t border-[var(--buh-border)] px-4 py-3">
-              <p className="text-sm text-[var(--buh-foreground-muted)]">
-                Страница {page + 1}
-              </p>
+              <p className="text-sm text-[var(--buh-foreground-muted)]">Страница {page + 1}</p>
               <div className="flex gap-2">
                 <Button
                   variant="outline"

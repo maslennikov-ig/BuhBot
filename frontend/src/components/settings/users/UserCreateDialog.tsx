@@ -20,8 +20,16 @@ interface UserCreateDialogProps {
 }
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
-  { value: 'admin', label: 'Администратор', description: 'Полный доступ ко всем функциям системы.' },
-  { value: 'manager', label: 'Менеджер', description: 'Управление клиентами, задачами и базой знаний.' },
+  {
+    value: 'admin',
+    label: 'Администратор',
+    description: 'Полный доступ ко всем функциям системы.',
+  },
+  {
+    value: 'manager',
+    label: 'Менеджер',
+    description: 'Управление клиентами, задачами и базой знаний.',
+  },
   { value: 'observer', label: 'Наблюдатель', description: 'Только просмотр статистики и отчетов.' },
 ];
 
@@ -87,7 +95,11 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <GlassCard variant="elevated" padding="lg" className="w-full max-w-md relative animate-in fade-in zoom-in duration-200">
+      <GlassCard
+        variant="elevated"
+        padding="lg"
+        className="w-full max-w-md relative animate-in fade-in zoom-in duration-200"
+      >
         <button
           onClick={handleClose}
           className="absolute right-4 top-4 text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
@@ -95,7 +107,9 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
           <X className="h-5 w-5" />
         </button>
 
-        <h2 className="text-xl font-semibold mb-2 text-[var(--buh-foreground)]">Добавить пользователя</h2>
+        <h2 className="text-xl font-semibold mb-2 text-[var(--buh-foreground)]">
+          Добавить пользователя
+        </h2>
         <p className="text-sm text-[var(--buh-foreground-muted)] mb-6">
           Приглашение с ссылкой для установки пароля будет отправлено на указанный email.
         </p>
@@ -150,16 +164,16 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className={`font-medium ${selectedRole === role.value ? 'text-[var(--buh-primary)]' : 'text-[var(--buh-foreground)]'}`}>
+                      <span
+                        className={`font-medium ${selectedRole === role.value ? 'text-[var(--buh-primary)]' : 'text-[var(--buh-foreground)]'}`}
+                      >
                         {role.label}
                       </span>
                       {selectedRole === role.value && (
                         <div className="h-2 w-2 rounded-full bg-[var(--buh-primary)]" />
                       )}
                     </div>
-                    <p className="text-xs text-[var(--buh-foreground-muted)]">
-                      {role.description}
-                    </p>
+                    <p className="text-xs text-[var(--buh-foreground-muted)]">{role.description}</p>
                   </div>
                 ))}
               </div>
@@ -167,7 +181,9 @@ export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogP
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="ghost" onClick={handleClose}>Отмена</Button>
+            <Button type="button" variant="ghost" onClick={handleClose}>
+              Отмена
+            </Button>
             <Button
               type="submit"
               className="buh-btn-primary"

@@ -73,10 +73,7 @@ async function getActiveTemplates(): Promise<TemplateButtonData[]> {
       title: true,
       category: true,
     },
-    orderBy: [
-      { category: 'asc' },
-      { usageCount: 'desc' },
-    ],
+    orderBy: [{ category: 'asc' }, { usageCount: 'desc' }],
   });
 
   return templates;
@@ -229,7 +226,9 @@ export function registerTemplateHandler(): void {
       await sendTemplate(
         ctx.reply.bind(ctx),
         ctx.from,
-        ctx.chat && 'title' in ctx.chat ? { title: ctx.chat.title, id: ctx.chat.id } : { id: ctx.chat?.id },
+        ctx.chat && 'title' in ctx.chat
+          ? { title: ctx.chat.title, id: ctx.chat.id }
+          : { id: ctx.chat?.id },
         arg
       );
     } catch (error) {
@@ -282,10 +281,9 @@ export function registerTemplateHandler(): void {
 
         // Update the message to show which template was selected
         await ctx.answerCbQuery(`Sending: ${template.title}`);
-        await ctx.editMessageText(
-          `\u2705 *Шаблон:* ${template.title}\n\n${substitutedContent}`,
-          { parse_mode: 'Markdown' }
-        );
+        await ctx.editMessageText(`\u2705 *Шаблон:* ${template.title}\n\n${substitutedContent}`, {
+          parse_mode: 'Markdown',
+        });
 
         // Track usage
         void incrementUsageCount(parsed.templateId);

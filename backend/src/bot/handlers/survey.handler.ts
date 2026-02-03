@@ -131,9 +131,12 @@ export function registerSurveyHandler(): void {
         awaitingComment.set(chatId, { feedbackId, chatId });
 
         // Clear after 10 minutes
-        setTimeout(() => {
-          awaitingComment.delete(chatId);
-        }, 10 * 60 * 1000);
+        setTimeout(
+          () => {
+            awaitingComment.delete(chatId);
+          },
+          10 * 60 * 1000
+        );
       }
 
       logger.info('Survey rating recorded', {

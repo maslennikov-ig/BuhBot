@@ -8,6 +8,7 @@
 ---
 
 > **Note**: This guide contains placeholder values that you must replace with your actual production values before deployment:
+>
 > - `YOUR_VDS_IP` - Your VDS server IP address (e.g., `123.45.67.89`)
 > - `YOUR_DOMAIN` or `bot.example.com` - Your actual domain name
 > - `YOUR_PROJECT.supabase.co` - Your Supabase project reference
@@ -46,6 +47,7 @@ Before starting, ensure you have:
 - ✅ **Basic Linux command-line knowledge**
 
 **Optional**:
+
 - Password manager for storing credentials
 - Local copy of this documentation for offline reference
 
@@ -101,6 +103,7 @@ The BuhBot application runs on a single VDS server with the following containeri
 ```
 
 **Resource Allocation** (VDS: 2-4 vCPU, 4-8 GB RAM):
+
 - Bot Backend: 1.5-2.0 cores, 1.5-2.0 GB RAM (highest priority)
 - Frontend: 0.5-1.0 cores, 512 MB-1 GB RAM
 - Redis: 0.25-0.5 cores, 256-512 MB RAM
@@ -129,6 +132,7 @@ The BuhBot application runs on a single VDS server with the following containeri
 4. **Complete order** and wait for provisioning (~5-10 minutes)
 
 5. **Save server credentials** (sent to email):
+
    ```
    IP Address: YOUR_VDS_IP (replace with your actual VDS IP)
    Root Password: [AUTO_GENERATED_PASSWORD]
@@ -152,22 +156,26 @@ If you don't have SSH configured yet, use the VDS control panel's web console:
 ### Step 1.3: Configure Server Hostname and Timezone
 
 Set hostname:
+
 ```bash
 hostnamectl set-hostname buhbot-prod
 ```
 
 Set timezone (Moscow):
+
 ```bash
 timedatectl set-timezone Europe/Moscow
 ```
 
 Verify configuration:
+
 ```bash
 hostnamectl
 timedatectl
 ```
 
 ✅ **Expected output**:
+
 ```
 Static hostname: buhbot-prod
 Timezone: Europe/Moscow (MSK, +0300)
@@ -188,10 +196,12 @@ ssh-keygen -t ed25519 -C "buhbot-production-deploy"
 ```
 
 **Prompts**:
+
 - **File location**: Press Enter (default: `~/.ssh/id_ed25519`)
 - **Passphrase**: Enter strong passphrase (recommended) or leave empty
 
 ✅ **Expected output**:
+
 ```
 Your identification has been saved in /home/user/.ssh/id_ed25519
 Your public key has been saved in /home/user/.ssh/id_ed25519.pub
@@ -210,6 +220,7 @@ ssh-copy-id root@YOUR_VDS_IP
 **Prompt**: Enter root password (from Step 1.1)
 
 ✅ **Expected output**:
+
 ```
 Number of key(s) added: 1
 ```
@@ -225,6 +236,7 @@ ssh root@YOUR_VDS_IP
 ✅ **Success**: You should be logged in **without** entering a password
 
 If successful, exit and continue to next step:
+
 ```bash
 exit
 ```
@@ -234,6 +246,7 @@ exit
 ### Step 2.4: Disable Password Authentication (Handled by Bootstrap)
 
 Password authentication will be disabled automatically by the bootstrap script in Step 3. This ensures:
+
 - ✅ Only SSH key-based authentication allowed
 - ✅ Root login disabled (after `buhbot` user created)
 - ✅ Protection against brute-force attacks
@@ -245,6 +258,7 @@ Password authentication will be disabled automatically by the bootstrap script i
 ### Estimated Time: 10 minutes
 
 The bootstrap script (`infrastructure/scripts/bootstrap-vds.sh`) automates:
+
 1. System package updates
 2. Docker CE and Docker Compose installation
 3. UFW firewall configuration (ports 22, 80, 443)
@@ -284,6 +298,7 @@ sudo ./bootstrap-vds.sh
 ⚠️ **IMPORTANT**: The script will prompt for confirmation before certain operations (Docker reinstall, firewall reset). Answer carefully.
 
 ✅ **Expected output** (final lines):
+
 ```
 [SUCCESS] ========================================
 [SUCCESS] Bootstrap completed successfully!
@@ -302,23 +317,27 @@ Log file: /var/log/buhbot-bootstrap-YYYYMMDD-HHMMSS.log
 ### Step 3.4: Verify Docker Installation
 
 Check Docker version:
+
 ```bash
 docker --version
 docker compose version
 ```
 
 ✅ **Expected output**:
+
 ```
 Docker version 24.0+
 Docker Compose version v2.20+
 ```
 
 Test Docker (hello-world container):
+
 ```bash
 docker run --rm hello-world
 ```
 
 ✅ **Expected output**:
+
 ```
 Hello from Docker!
 This message shows that your installation appears to be working correctly.
@@ -327,16 +346,19 @@ This message shows that your installation appears to be working correctly.
 ### Step 3.5: Verify buhbot User Created
 
 Check user exists:
+
 ```bash
 id buhbot
 ```
 
 ✅ **Expected output**:
+
 ```
 uid=1001(buhbot) gid=1001(buhbot) groups=1001(buhbot),999(docker)
 ```
 
 Verify buhbot home directory:
+
 ```bash
 ls -la /home/buhbot/
 ```
@@ -354,6 +376,7 @@ ssh buhbot@YOUR_VDS_IP
 ✅ **Success**: Passwordless login works (using same SSH key)
 
 If successful:
+
 1. Exit `buhbot` session
 2. Exit `root` session
 3. All future access will be as `buhbot` user
@@ -375,6 +398,7 @@ sudo tail -n 100 /var/log/buhbot-bootstrap-*.log
 ### Estimated Time: 30 minutes
 
 The deployment script (`infrastructure/scripts/deploy.sh`) automates:
+
 1. Pre-flight checks (Docker, files, disk space)
 2. Backup of current deployment state
 3. Docker image pulling
@@ -479,6 +503,7 @@ chmod 600 backend/.env frontend/.env.local infrastructure/.env
 ```
 
 ✅ **Verify**:
+
 ```bash
 ls -l backend/.env frontend/.env.local
 ```
@@ -514,11 +539,13 @@ chmod +x infrastructure/scripts/deploy.sh
 ```
 
 **Prompts**:
+
 - **Continue with deployment?**: Type `yes` and press Enter
 
 ⏱️ **Deployment time**: 5-10 minutes (depends on image pull speed)
 
 ✅ **Expected output** (final lines):
+
 ```
 [SUCCESS] ========================================
 [SUCCESS] Deployment completed successfully!
@@ -629,6 +656,7 @@ sudo apt-get install certbot -y
 ```
 
 ✅ **Verify installation**:
+
 ```bash
 certbot --version
 ```
@@ -650,16 +678,19 @@ sudo certbot certonly \
 ```
 
 **Replace**:
+
 - `YOUR_DOMAIN` - your actual domain (e.g., `bot.example.com`)
 - `YOUR_EMAIL` - your email for renewal notifications
 
 **Prompts**:
+
 - **Terms of Service**: Accept
 - **Share email**: Optional (recommend: No)
 
 ⏱️ **Generation time**: 1-2 minutes
 
 ✅ **Expected output**:
+
 ```
 Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem
@@ -693,6 +724,7 @@ sudo chmod 600 /home/buhbot/BuhBot/infrastructure/nginx/ssl/*.pem
 ```
 
 ✅ **Verify**:
+
 ```bash
 ls -l /home/buhbot/BuhBot/infrastructure/nginx/ssl/
 ```
@@ -708,12 +740,14 @@ nano /home/buhbot/BuhBot/infrastructure/nginx/nginx.conf
 ```
 
 **Check these lines** (around line 138-139):
+
 ```nginx
 ssl_certificate /etc/nginx/ssl/fullchain.pem;
 ssl_certificate_key /etc/nginx/ssl/privkey.pem;
 ```
 
 These paths are correct because the volume mount in `docker-compose.yml` maps:
+
 ```yaml
 volumes:
   - ./nginx/ssl:/etc/nginx/ssl:ro
@@ -731,6 +765,7 @@ docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-com
 ```
 
 ✅ **Expected output**:
+
 ```
 [+] Running 1/1
  ✔ Container buhbot-nginx  Started
@@ -753,6 +788,7 @@ curl -I https://YOUR_DOMAIN/health
 ```
 
 ✅ **Expected output**:
+
 ```
 HTTP/2 200
 server: nginx/1.25
@@ -828,6 +864,7 @@ sudo crontab -e
 Save and exit
 
 ✅ **Verify cron job**:
+
 ```bash
 sudo crontab -l
 ```
@@ -848,6 +885,7 @@ docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-com
 ```
 
 ✅ **Expected output**:
+
 ```
 NAME                     STATUS              PORTS
 buhbot-bot-backend       Up 10 minutes       0.0.0.0:3000->3000/tcp (healthy)
@@ -858,6 +896,7 @@ buhbot-nginx             Up 10 minutes       0.0.0.0:80->80/tcp, 0.0.0.0:443->44
 ```
 
 All containers must show:
+
 - **Status**: `Up` (not `Restarting` or `Exited`)
 - **Health**: `(healthy)` where applicable
 
@@ -866,6 +905,7 @@ All containers must show:
 From **external network** (local machine or browser):
 
 **Health endpoint**:
+
 ```bash
 curl https://YOUR_DOMAIN/health
 ```
@@ -873,6 +913,7 @@ curl https://YOUR_DOMAIN/health
 ✅ **Expected**: `{"status":"healthy"}` with HTTP 200
 
 **Frontend (admin panel)**:
+
 ```bash
 curl -I https://YOUR_DOMAIN/
 ```
@@ -952,6 +993,7 @@ docker system df
 ```
 
 ✅ **Monitor**:
+
 - Images: < 5 GB
 - Containers: < 1 GB
 - Volumes: < 2 GB
@@ -972,6 +1014,7 @@ ls -lh /var/backups/buhbot-pre-deploy-*/
 ```
 
 ✅ **Expected**: Directory exists with backup files:
+
 - `backend.env`
 - `frontend.env.local`
 - `buhbot-redis-data.tar.gz`
@@ -986,6 +1029,7 @@ sudo ufw status verbose
 ```
 
 ✅ **Expected output**:
+
 ```
 Status: active
 Logging: on (low)
@@ -1015,6 +1059,7 @@ docker logs <container_name> --tail=100
 **Common causes**:
 
 1. **Environment variable missing**: Check `.env` files
+
    ```bash
    # Verify all required variables set
    cat backend/.env | grep "SUPABASE_URL"
@@ -1022,12 +1067,15 @@ docker logs <container_name> --tail=100
    ```
 
 2. **Port conflict**: Another service using port
+
    ```bash
    sudo netstat -tlnp | grep <port_number>
    ```
+
    Solution: Stop conflicting service or change port in `docker-compose.yml`
 
 3. **Database connection failed**: Check `DATABASE_URL` and Supabase project status
+
    ```bash
    # Test database connection from VDS
    docker run --rm postgres:15 psql "$DATABASE_URL" -c "SELECT 1"
@@ -1042,6 +1090,7 @@ docker logs <container_name> --tail=100
 **Resolution**:
 
 After fixing issue, restart container:
+
 ```bash
 docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml restart <service_name>
 ```
@@ -1067,11 +1116,12 @@ docker inspect <container_name> | grep -A 10 Health
 **Resolution**:
 
 Increase health check timeout in `docker-compose.yml`:
+
 ```yaml
 healthcheck:
   interval: 30s
-  timeout: 10s  # Increase from 3s to 10s
-  start_period: 40s  # Increase from 10s to 40s
+  timeout: 10s # Increase from 3s to 10s
+  start_period: 40s # Increase from 10s to 40s
   retries: 3
 ```
 
@@ -1104,6 +1154,7 @@ docker logs buhbot-nginx | grep ssl
 **Resolution**:
 
 Force certificate renewal:
+
 ```bash
 sudo certbot renew --force-renewal
 sudo /usr/local/bin/renew-letsencrypt.sh
@@ -1123,6 +1174,7 @@ free -h
 **Resolution**:
 
 1. **Restart container** to clear memory leaks:
+
    ```bash
    docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml restart <service_name>
    ```
@@ -1130,10 +1182,11 @@ free -h
 2. **Reduce heap size** (for Node.js services):
 
    Edit `docker-compose.prod.yml`:
+
    ```yaml
    bot-backend:
      environment:
-       - NODE_OPTIONS=--max-old-space-size=1024  # Reduce from 1536 to 1024
+       - NODE_OPTIONS=--max-old-space-size=1024 # Reduce from 1536 to 1024
    ```
 
 3. **Upgrade VDS** if persistent (increase RAM from 4 GB to 8 GB)
@@ -1253,6 +1306,7 @@ sudo crontab -l
 ```
 
 Expected cron entry:
+
 ```cron
 0 3 * * 0 /opt/BuhBot/infrastructure/scripts/backup.sh >> /var/log/buhbot-backup.log 2>&1
 ```
@@ -1274,6 +1328,7 @@ sudo certbot certificates
 ```
 
 ✅ **Expected output**:
+
 ```
 Certificate Name: YOUR_DOMAIN
   Expiry Date: YYYY-MM-DD (VALID: XX days)
@@ -1342,17 +1397,20 @@ git pull origin main
 ### Additional Recommendations
 
 1. **Enable automatic security updates**:
+
    ```bash
    sudo apt-get install unattended-upgrades -y
    sudo dpkg-reconfigure -plow unattended-upgrades
    ```
 
 2. **Configure fail2ban for Nginx**:
+
    ```bash
    sudo nano /etc/fail2ban/jail.local
    ```
 
    Add:
+
    ```ini
    [nginx-http-auth]
    enabled = true
@@ -1363,16 +1421,19 @@ git pull origin main
    ```
 
    Restart:
+
    ```bash
    sudo systemctl restart fail2ban
    ```
 
 3. **Monitor failed login attempts**:
+
    ```bash
    sudo fail2ban-client status sshd
    ```
 
 4. **Regular security audits**:
+
    ```bash
    # Check open ports
    sudo netstat -tlnp

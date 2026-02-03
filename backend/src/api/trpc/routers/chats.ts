@@ -102,7 +102,19 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats: chats.map((chat: { id: bigint; chatType: 'private' | 'group' | 'supergroup'; title: string | null; accountantUsername: string | null; accountantUsernames: string[]; assignedAccountantId: string | null; slaEnabled: boolean; slaResponseMinutes: number; createdAt: Date }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })),
+        chats: chats.map(
+          (chat: {
+            id: bigint;
+            chatType: 'private' | 'group' | 'supergroup';
+            title: string | null;
+            accountantUsername: string | null;
+            accountantUsernames: string[];
+            assignedAccountantId: string | null;
+            slaEnabled: boolean;
+            slaResponseMinutes: number;
+            createdAt: Date;
+          }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })
+        ),
         total,
       };
     }),
@@ -283,10 +295,11 @@ export const chatsRouter = router({
           .array(
             z
               .string()
-              .transform((val) => val.startsWith('@') ? val.slice(1) : val)
+              .transform((val) => (val.startsWith('@') ? val.slice(1) : val))
               .transform((val) => val.toLowerCase())
               .refine((val) => /^[a-z0-9][a-z0-9_]{3,30}[a-z0-9]$/.test(val), {
-                message: 'Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)',
+                message:
+                  'Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)',
               })
           )
           .default([]),
@@ -336,7 +349,8 @@ export const chatsRouter = router({
         if (!hasManagers) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: 'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
+            message:
+              'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
           });
         }
       }
@@ -367,9 +381,7 @@ export const chatsRouter = router({
         });
 
         if (assignedUser?.telegramUsername) {
-          const normalizedUsername = assignedUser.telegramUsername
-            .replace(/^@/, '')
-            .toLowerCase();
+          const normalizedUsername = assignedUser.telegramUsername.replace(/^@/, '').toLowerCase();
 
           // Add to list if not already present
           if (!finalUsernames.includes(normalizedUsername)) {

@@ -6,11 +6,7 @@ import { GlassCard } from '@/components/layout/GlassCard';
 import { CheckCircle, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Pie, PieChart, Cell } from 'recharts';
 
 // ============================================
@@ -51,14 +47,14 @@ const cardVariants = {
     transition: {
       duration: 0.5,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
   hover: {
     y: -4,
     transition: {
       duration: 0.2,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -71,7 +67,7 @@ const iconVariants = {
       delay: 0.2,
       duration: 0.4,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -84,7 +80,7 @@ const metricVariants = {
       delay: 0.1,
       duration: 0.5,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -97,7 +93,7 @@ const chartVariants = {
       delay: 0.3,
       duration: 0.6,
       ease: [0.16, 1, 0.3, 1] as const,
-    }
+    },
   },
 };
 
@@ -198,9 +194,7 @@ export function SlaComplianceWidget({
             <h3 className="text-sm font-medium text-[var(--buh-foreground-muted)] mb-1">
               Соответствие SLA
             </h3>
-            <p className="text-xs text-[var(--buh-foreground-subtle)]">
-              За последние 24 часа
-            </p>
+            <p className="text-xs text-[var(--buh-foreground-subtle)]">За последние 24 часа</p>
           </div>
           <motion.div
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--buh-success)]/10 via-[var(--buh-primary)]/10 to-[var(--buh-accent)]/10 ring-1 ring-[var(--buh-success)]/20"
@@ -248,9 +242,7 @@ export function SlaComplianceWidget({
             >
               {animatedCompliance.toFixed(1)}%
             </span>
-            <span className="text-xs text-[var(--buh-foreground-subtle)]">
-              соответствие
-            </span>
+            <span className="text-xs text-[var(--buh-foreground-subtle)]">соответствие</span>
           </motion.div>
         </motion.div>
 
@@ -259,13 +251,15 @@ export function SlaComplianceWidget({
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-[var(--buh-success)]" />
             <span className="text-sm text-[var(--buh-foreground-muted)]">
-              В норме: <span className="font-semibold text-[var(--buh-foreground)]">{compliantCount}</span>
+              В норме:{' '}
+              <span className="font-semibold text-[var(--buh-foreground)]">{compliantCount}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-[var(--buh-error)]" />
             <span className="text-sm text-[var(--buh-foreground-muted)]">
-              Нарушения: <span className="font-semibold text-[var(--buh-foreground)]">{violatedCount}</span>
+              Нарушения:{' '}
+              <span className="font-semibold text-[var(--buh-foreground)]">{violatedCount}</span>
             </span>
           </div>
         </div>
@@ -290,11 +284,10 @@ export function SlaComplianceWidget({
           transition={{
             duration: 4,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: 'easeInOut',
           }}
         />
       </GlassCard>
     </motion.div>
   );
 }
-

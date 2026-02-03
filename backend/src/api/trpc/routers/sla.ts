@@ -24,12 +24,11 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma, ClientRequest, Chat, User } from '@prisma/client';
 import { classifyMessage as classifyMessageService } from '../../../services/classifier/index.js';
+import { startSlaTimer, stopSlaTimer, getSlaStatus } from '../../../services/sla/timer.service.js';
 import {
-  startSlaTimer,
-  stopSlaTimer,
-  getSlaStatus,
-} from '../../../services/sla/timer.service.js';
-import { calculateWorkingMinutes, DEFAULT_WORKING_SCHEDULE } from '../../../services/sla/working-hours.service.js';
+  calculateWorkingMinutes,
+  DEFAULT_WORKING_SCHEDULE,
+} from '../../../services/sla/working-hours.service.js';
 
 // ============================================================================
 // INPUT SCHEMAS
@@ -286,10 +285,7 @@ export const slaRouter = router({
       }
 
       // 2. Classify message using classifier service
-      const classificationResult = await classifyMessageService(
-        ctx.prisma,
-        input.messageText
-      );
+      const classificationResult = await classifyMessageService(ctx.prisma, input.messageText);
 
       // 3. Create ClientRequest with classification
       const receivedAt = input.receivedAt ?? new Date();
@@ -382,11 +378,7 @@ export const slaRouter = router({
       const thresholdMinutes = request.chat?.slaThresholdMinutes ?? 60;
 
       // 3. Call startSlaTimer service
-      await startSlaTimer(
-        input.requestId,
-        String(request.chatId),
-        thresholdMinutes
-      );
+      await startSlaTimer(input.requestId, String(request.chatId), thresholdMinutes);
 
       // 4. Return result
       return {
@@ -527,9 +519,7 @@ export const slaRouter = router({
       ]);
 
       // Format output
-      const items = requests.map((req) =>
-        formatRequestOutput(req, req.chat, req.assignedUser)
-      );
+      const items = requests.map((req) => formatRequestOutput(req, req.chat, req.assignedUser));
 
       return {
         items,

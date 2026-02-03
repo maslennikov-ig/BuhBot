@@ -12,6 +12,7 @@ This is the DEFAULT pattern used in 95% of cases for feature development, bug fi
 **1. GATHER FULL CONTEXT FIRST (MANDATORY)**
 
 Before delegating or implementing any task:
+
 - Read existing code in related files
 - Search codebase for similar patterns
 - Review relevant documentation (specs, design docs, ADRs)
@@ -23,10 +24,12 @@ NEVER delegate or implement blindly.
 **2. DELEGATE TO SUBAGENTS**
 
 Before delegation:
+
 - Provide complete context (code snippets, file paths, patterns, docs)
 - Specify exact expected output and validation criteria
 
 After delegation (CRITICAL):
+
 - ALWAYS verify results (read modified files, run type-check)
 - NEVER skip verification
 - If incorrect: re-delegate with corrections and errors
@@ -35,6 +38,7 @@ After delegation (CRITICAL):
 **3. EXECUTE DIRECTLY (MINIMAL ONLY)**
 
 Direct execution only for:
+
 - Single dependency install
 - Single-line fixes (typos, obvious bugs)
 - Simple imports
@@ -51,10 +55,13 @@ Everything else: delegate.
 **5. COMMIT STRATEGY**
 
 Run `/push patch` after EACH completed task:
+
 - Mark task [X] in tasks.md
 - Add artifacts: `→ Artifacts: [file1](path), [file2](path)`
 - Update TodoWrite to completed
 - Then `/push patch`
+
+Commit messages MUST follow [docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please). Use the **format-commit-message** skill for every commit (including when passing `-m "..."` to `/push`).
 
 **6. EXECUTION PATTERN**
 
@@ -74,6 +81,7 @@ FOR EACH TASK:
 **7. HANDLING CONTRADICTIONS**
 
 If contradictions occur:
+
 - Gather context, analyze project patterns
 - If truly ambiguous: ask user with specific options
 - Only ask when unable to determine best practice (rare, ~10%)
@@ -81,16 +89,19 @@ If contradictions occur:
 **8. LIBRARY-FIRST APPROACH (MANDATORY)**
 
 Before writing new code (>20 lines), ALWAYS search for existing libraries:
+
 - WebSearch: "npm {functionality} library 2024" or "python {functionality} package"
 - Context7: documentation for candidate libraries
 - Check: weekly downloads >1000, commits in last 6 months, TypeScript/types support
 
 **Use library when**:
+
 - Covers >70% of required functionality
 - Actively maintained, no critical vulnerabilities
 - Reasonable bundle size (check bundlephobia.com)
 
 **Write custom code when**:
+
 - <20 lines of simple logic
 - All libraries abandoned or insecure
 - Core business logic requiring full control
@@ -98,6 +109,7 @@ Before writing new code (>20 lines), ALWAYS search for existing libraries:
 ### Planning Phase (ALWAYS First)
 
 Before implementing tasks:
+
 - Analyze execution model (parallel/sequential)
 - Assign executors: MAIN for trivial, existing if 100% match, FUTURE otherwise
 - Create FUTURE agents: launch N meta-agent-v3 calls in single message, ask restart
@@ -159,14 +171,14 @@ git push                # 6. Push to remote
 
 ### When to Use What
 
-| Scenario | Tool | Command |
-|----------|------|---------|
-| Big feature (>1 day) | Spec-kit → Beads | `/speckit.specify` → `/speckit.tobeads` |
-| Small feature (<1 day) | Beads | `bd create -t feature` |
-| Bug | Beads | `bd create -t bug` |
-| Tech debt | Beads | `bd create -t chore` |
-| Research/spike | Beads wisp | `bd mol wisp exploration` |
-| Hotfix (urgent!) | Beads wisp | `bd mol wisp hotfix` |
+| Scenario               | Tool             | Command                                 |
+| ---------------------- | ---------------- | --------------------------------------- |
+| Big feature (>1 day)   | Spec-kit → Beads | `/speckit.specify` → `/speckit.tobeads` |
+| Small feature (<1 day) | Beads            | `bd create -t feature`                  |
+| Bug                    | Beads            | `bd create -t bug`                      |
+| Tech debt              | Beads            | `bd create -t chore`                    |
+| Research/spike         | Beads wisp       | `bd mol wisp exploration`               |
+| Hotfix (urgent!)       | Beads wisp       | `bd mol wisp hotfix`                    |
 
 ### Documentation
 
@@ -179,6 +191,7 @@ git push                # 6. Push to remote
 ## Project Conventions
 
 **File Organization**:
+
 - Agents: `.claude/agents/{domain}/{orchestrators|workers}/`
 - Commands: `.claude/commands/`
 - Skills: `.claude/skills/{skill-name}/SKILL.md`
@@ -186,21 +199,25 @@ git push                # 6. Push to remote
 - Reports: `docs/reports/{domain}/{YYYY-MM}/`
 
 **Code Standards**:
+
 - Type-check must pass before commit
 - Build must pass before commit
 - No hardcoded credentials
 
 **Agent Selection**:
+
 - Worker: Plan file specifies nextAgent (health workflows only)
 - Skill: Reusable utility, no state, <100 lines
 
 **BuhBot Specific**:
+
 - Project: BuhBot - автоматизация коммуникаций для бухгалтерских фирм
 - Repository: https://github.com/maslennikov-ig/BuhBot
 - Hosting: VDS (FirstVDS.ru, 152-ФЗ compliance)
 - Database: PostgreSQL (Supabase Cloud)
 
 **MCP Configuration**:
+
 - BASE (`.mcp.base.json`): context7 + sequential-thinking (~600 tokens)
 - FULL (`.mcp.full.json`): + supabase + playwright + n8n + shadcn (~5000 tokens)
 - Switch: `./switch-mcp.sh`
@@ -219,10 +236,12 @@ git push                # 6. Push to remote
 > **LTS Policy**: Используем только стабильные LTS-версии. Обновление major-версий — после 3+ месяцев стабильности.
 
 **Runtime & Language:**
+
 - Node.js 20.x LTS (Active LTS до апреля 2026)
 - TypeScript 5.7.x (strict mode)
 
 **Backend:**
+
 - Express 5.1.x (HTTP server)
 - Prisma 7.0.x (ORM, driver adapter pattern)
 - tRPC 11.x (type-safe API)
@@ -233,22 +252,26 @@ git push                # 6. Push to remote
 - prom-client 15.x (Prometheus metrics)
 
 **Frontend:**
+
 - Next.js 16.x LTS (App Router, Turbopack)
 - React 19.x
 - Tailwind CSS 4.x
 - shadcn/ui (Radix primitives)
 
 **Database:**
+
 - PostgreSQL 15+ (Supabase Cloud, EU region)
 - Supabase Auth (JWT)
 - Row Level Security (RLS)
 - Redis 7.x (BullMQ, caching)
 
 **AI/Classification:**
+
 - OpenRouter API (primary, spam classification)
 - OpenAI API (fallback)
 
 **Infrastructure:**
+
 - VDS: FirstVDS.ru (152-ФЗ compliance)
 - Docker + Docker Compose
 - Nginx (reverse proxy, SSL)
@@ -259,6 +282,7 @@ git push                # 6. Push to remote
 ## Quick Access (For New Sessions)
 
 **VDS Server**: `.tmp/current/vds-credentials.md`
+
 - IP: `185.200.177.180`
 - Domain: `buhbot.aidevteam.ru`
 - SSH: `ssh buhbot@185.200.177.180` (key-based, password disabled)
@@ -266,12 +290,14 @@ git push                # 6. Push to remote
 - Status: All containers deployed and healthy
 
 **Key Paths**:
+
 - Server access: `.claude/local.md` (SSH commands, containers)
 - Full credentials: `.tmp/current/vds-credentials.md`
 - Tasks: `docs/speckit/tasks.md`
 - Spec: `docs/speckit/spec.md`
 
 ## Recent Changes
+
 - 2025-11-23: Frontend Docker multi-stage build for tRPC types
 - 2025-11-23: CI fully passing (all jobs green)
 - 2025-11-22: Migrated Prisma 5.22 → 7.0.0 (driver adapter pattern)

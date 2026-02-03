@@ -8,7 +8,16 @@
  * Usage: pnpm prisma:seed
  */
 
-import { PrismaClient, UserRole, ChatType, RequestStatus, AlertType, MessageClassification, AlertDeliveryStatus, TemplateCategory } from '@prisma/client';
+import {
+  PrismaClient,
+  UserRole,
+  ChatType,
+  RequestStatus,
+  AlertType,
+  MessageClassification,
+  AlertDeliveryStatus,
+  TemplateCategory,
+} from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { randomUUID } from 'crypto';
@@ -128,21 +137,82 @@ const DEV_ADMIN = {
 
 // Test user IDs (consistent UUIDs for idempotent seeding)
 const TEST_USERS = [
-  { id: DEV_ADMIN.id, email: DEV_ADMIN.email, fullName: DEV_ADMIN.fullName, role: DEV_ADMIN.role, telegramId: DEV_ADMIN.telegramId },
-  { id: '11111111-1111-1111-1111-111111111111', email: 'admin@buhbot.ru', fullName: 'Иван Администратор', role: 'admin' as UserRole, telegramId: BigInt(100001) },
-  { id: '22222222-2222-2222-2222-222222222222', email: 'manager@buhbot.ru', fullName: 'Мария Менеджер', role: 'manager' as UserRole, telegramId: BigInt(100002) },
-  { id: '33333333-3333-3333-3333-333333333333', email: 'accountant1@buhbot.ru', fullName: 'Анна Бухгалтер', role: 'observer' as UserRole, telegramId: BigInt(100003) },
-  { id: '44444444-4444-4444-4444-444444444444', email: 'accountant2@buhbot.ru', fullName: 'Петр Счетовод', role: 'observer' as UserRole, telegramId: BigInt(100004) },
-  { id: '55555555-5555-5555-5555-555555555555', email: 'accountant3@buhbot.ru', fullName: 'Елена Финансист', role: 'observer' as UserRole, telegramId: BigInt(100005) },
+  {
+    id: DEV_ADMIN.id,
+    email: DEV_ADMIN.email,
+    fullName: DEV_ADMIN.fullName,
+    role: DEV_ADMIN.role,
+    telegramId: DEV_ADMIN.telegramId,
+  },
+  {
+    id: '11111111-1111-1111-1111-111111111111',
+    email: 'admin@buhbot.ru',
+    fullName: 'Иван Администратор',
+    role: 'admin' as UserRole,
+    telegramId: BigInt(100001),
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222222',
+    email: 'manager@buhbot.ru',
+    fullName: 'Мария Менеджер',
+    role: 'manager' as UserRole,
+    telegramId: BigInt(100002),
+  },
+  {
+    id: '33333333-3333-3333-3333-333333333333',
+    email: 'accountant1@buhbot.ru',
+    fullName: 'Анна Бухгалтер',
+    role: 'observer' as UserRole,
+    telegramId: BigInt(100003),
+  },
+  {
+    id: '44444444-4444-4444-4444-444444444444',
+    email: 'accountant2@buhbot.ru',
+    fullName: 'Петр Счетовод',
+    role: 'observer' as UserRole,
+    telegramId: BigInt(100004),
+  },
+  {
+    id: '55555555-5555-5555-5555-555555555555',
+    email: 'accountant3@buhbot.ru',
+    fullName: 'Елена Финансист',
+    role: 'observer' as UserRole,
+    telegramId: BigInt(100005),
+  },
 ];
 
 // Test chat IDs
 const TEST_CHATS = [
-  { id: BigInt(-1001234567001), title: 'ООО "Ромашка" - Бухгалтерия', accountantIdx: 2, slaMinutes: 60 },
-  { id: BigInt(-1001234567002), title: 'ИП Сидоров - Отчётность', accountantIdx: 2, slaMinutes: 45 },
-  { id: BigInt(-1001234567003), title: 'ООО "Восток" - Консультации', accountantIdx: 3, slaMinutes: 30 },
-  { id: BigInt(-1001234567004), title: 'АО "ТехноПром" - Налоги', accountantIdx: 3, slaMinutes: 60 },
-  { id: BigInt(-1001234567005), title: 'ООО "Стройка" - Документы', accountantIdx: 4, slaMinutes: 90 },
+  {
+    id: BigInt(-1001234567001),
+    title: 'ООО "Ромашка" - Бухгалтерия',
+    accountantIdx: 2,
+    slaMinutes: 60,
+  },
+  {
+    id: BigInt(-1001234567002),
+    title: 'ИП Сидоров - Отчётность',
+    accountantIdx: 2,
+    slaMinutes: 45,
+  },
+  {
+    id: BigInt(-1001234567003),
+    title: 'ООО "Восток" - Консультации',
+    accountantIdx: 3,
+    slaMinutes: 30,
+  },
+  {
+    id: BigInt(-1001234567004),
+    title: 'АО "ТехноПром" - Налоги',
+    accountantIdx: 3,
+    slaMinutes: 60,
+  },
+  {
+    id: BigInt(-1001234567005),
+    title: 'ООО "Стройка" - Документы',
+    accountantIdx: 4,
+    slaMinutes: 90,
+  },
 ];
 
 // Sample client messages
@@ -264,7 +334,8 @@ async function seedClientRequests(): Promise<void> {
             receivedAt,
             assignedTo: accountant.id,
             responseAt: status === 'pending' || status === 'in_progress' ? null : responseAt,
-            responseTimeMinutes: status === 'pending' || status === 'in_progress' ? null : responseTimeMinutes,
+            responseTimeMinutes:
+              status === 'pending' || status === 'in_progress' ? null : responseTimeMinutes,
             status,
             classification: 'REQUEST' as MessageClassification,
             classificationScore: 0.95,
@@ -304,11 +375,31 @@ async function seedTemplates(): Promise<void> {
   console.log('Seeding test templates...');
 
   const templates = [
-    { title: 'Приветствие', content: 'Добрый день, {{client_name}}! Чем могу помочь?', category: 'greeting' as TemplateCategory },
-    { title: 'Запрос документов', content: 'Для обработки вашего запроса, пожалуйста, пришлите {{document_name}}.', category: 'document_request' as TemplateCategory },
-    { title: 'Статус готов', content: 'Ваш запрос обработан. {{result_description}}', category: 'status' as TemplateCategory },
-    { title: 'Напоминание', content: 'Напоминаем о необходимости {{action}} до {{deadline}}.', category: 'reminder' as TemplateCategory },
-    { title: 'Закрытие', content: 'Рады были помочь! Если возникнут вопросы - обращайтесь.', category: 'closing' as TemplateCategory },
+    {
+      title: 'Приветствие',
+      content: 'Добрый день, {{client_name}}! Чем могу помочь?',
+      category: 'greeting' as TemplateCategory,
+    },
+    {
+      title: 'Запрос документов',
+      content: 'Для обработки вашего запроса, пожалуйста, пришлите {{document_name}}.',
+      category: 'document_request' as TemplateCategory,
+    },
+    {
+      title: 'Статус готов',
+      content: 'Ваш запрос обработан. {{result_description}}',
+      category: 'status' as TemplateCategory,
+    },
+    {
+      title: 'Напоминание',
+      content: 'Напоминаем о необходимости {{action}} до {{deadline}}.',
+      category: 'reminder' as TemplateCategory,
+    },
+    {
+      title: 'Закрытие',
+      content: 'Рады были помочь! Если возникнут вопросы - обращайтесь.',
+      category: 'closing' as TemplateCategory,
+    },
   ];
 
   const adminId = TEST_USERS[0]!.id;
@@ -335,9 +426,24 @@ async function seedFaqItems(): Promise<void> {
   console.log('Seeding test FAQ items...');
 
   const faqItems = [
-    { question: 'Когда сдавать декларацию по НДС?', answer: 'Декларация по НДС сдаётся ежеквартально до 25 числа месяца, следующего за отчётным кварталом.', keywords: ['ндс', 'декларация', 'сроки'] },
-    { question: 'Как оформить командировку?', answer: 'Для оформления командировки необходимо: 1) Приказ о командировке, 2) Командировочное удостоверение, 3) Авансовый отчёт.', keywords: ['командировка', 'оформление', 'документы'] },
-    { question: 'Какие документы нужны для возврата НДС?', answer: 'Для возврата НДС потребуются: счета-фактуры, товарные накладные, акты выполненных работ, платёжные документы.', keywords: ['ндс', 'возврат', 'документы'] },
+    {
+      question: 'Когда сдавать декларацию по НДС?',
+      answer:
+        'Декларация по НДС сдаётся ежеквартально до 25 числа месяца, следующего за отчётным кварталом.',
+      keywords: ['ндс', 'декларация', 'сроки'],
+    },
+    {
+      question: 'Как оформить командировку?',
+      answer:
+        'Для оформления командировки необходимо: 1) Приказ о командировке, 2) Командировочное удостоверение, 3) Авансовый отчёт.',
+      keywords: ['командировка', 'оформление', 'документы'],
+    },
+    {
+      question: 'Какие документы нужны для возврата НДС?',
+      answer:
+        'Для возврата НДС потребуются: счета-фактуры, товарные накладные, акты выполненных работ, платёжные документы.',
+      keywords: ['ндс', 'возврат', 'документы'],
+    },
   ];
 
   const adminId = TEST_USERS[0]!.id;

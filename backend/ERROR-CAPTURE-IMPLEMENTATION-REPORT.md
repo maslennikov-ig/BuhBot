@@ -19,6 +19,7 @@ Successfully implemented ErrorCaptureService with MD5 fingerprinting for error d
 **Purpose**: Error fingerprinting and database persistence service
 
 **Key Features**:
+
 - **MD5 Fingerprinting**: Generates deterministic hash from normalized error message + stack trace
 - **Normalization Rules**:
   - UUIDs → `<UUID>`
@@ -31,6 +32,7 @@ Successfully implemented ErrorCaptureService with MD5 fingerprinting for error d
 - **Silent Failures**: Prevents logging recursion by failing gracefully
 
 **Interface**:
+
 ```typescript
 interface ErrorCaptureOptions {
   level: 'error' | 'warn' | 'info';
@@ -42,6 +44,7 @@ interface ErrorCaptureOptions {
 ```
 
 **Methods**:
+
 - `generateFingerprint(message, stack?)`: Returns MD5 hash
 - `captureError(options)`: Persists error to database with deduplication
 
@@ -50,11 +53,13 @@ interface ErrorCaptureOptions {
 ### 2. `/backend/src/utils/logger.ts` (MODIFIED)
 
 **Changes**:
+
 - Added import: `ErrorCaptureService`, `TransportStream`
 - Created `DatabaseTransport` class extending `TransportStream`
 - Added DatabaseTransport to logger's transports array
 
 **DatabaseTransport Features**:
+
 - Extends `winston-transport` (TransportStream base class)
 - Only captures `error` and `warn` level logs
 - Extracts metadata (excludes Winston internals: timestamp, level, message, service)
@@ -63,6 +68,7 @@ interface ErrorCaptureOptions {
 - Uses `override` modifier for type safety
 
 **Integration Point**:
+
 ```typescript
 transports: [
   new DatabaseTransport({}),  // First transport (database persistence)
@@ -78,6 +84,7 @@ transports: [
 ### `/backend/src/lib/prisma.ts` (NO CHANGES NEEDED)
 
 Existing Prisma client singleton already configured correctly with:
+
 - PostgreSQL adapter (driver adapter pattern)
 - Connection pooling (max 10 connections)
 - Proper logging (query/error/warn in dev, error only in prod)
@@ -93,6 +100,7 @@ Existing Prisma client singleton already configured correctly with:
 **Solution**: Use only first line of stack trace (error type + message)
 
 **Example**:
+
 ```
 Stack 1: Error: Test error
     at function1 (/path/file.ts:22:11)
@@ -120,11 +128,13 @@ Both generate same fingerprint: 93a7751d8abe15adf43d8c369049177c
 ### Error Handling
 
 **Circular Dependency Prevention**:
+
 - ErrorCaptureService is imported by logger
 - Logger is NOT imported by ErrorCaptureService
 - Test scripts must import logger, not ErrorCaptureService directly
 
 **Logging Loop Prevention**:
+
 - DatabaseTransport wraps `captureError()` in try-catch
 - Failures logged to `console.error` only (not Winston)
 - No recursive logging possible
@@ -136,6 +146,7 @@ Both generate same fingerprint: 93a7751d8abe15adf43d8c369049177c
 ### Test Script: `/backend/src/test-error-capture.ts`
 
 **Executed Tests**:
+
 1. Trigger error with UUID `123e4567...` and timestamp `2024-01-16T12:00:00Z`
 2. Wait 2 seconds for database write
 3. Trigger same error with UUID `ffffffff...` and timestamp `2024-01-16T12:05:00Z`
@@ -165,6 +176,7 @@ Both generate same fingerprint: 93a7751d8abe15adf43d8c369049177c
 ```
 
 **✅ Verification**:
+
 - Same fingerprint for both errors despite different UUIDs/timestamps
 - `occurrence_count = 2` (incremented from 1)
 - Metadata merged correctly
@@ -173,6 +185,7 @@ Both generate same fingerprint: 93a7751d8abe15adf43d8c369049177c
 ### SQL Verification Script: `/backend/verify-error-logs.sql`
 
 Provides queries to:
+
 - Show recent error logs with fingerprint grouping
 - Count errors by fingerprint (verify deduplication)
 
@@ -183,6 +196,7 @@ Provides queries to:
 ### Example 1: Database Connection Error
 
 **Input**:
+
 ```
 Message: "Database connection failed"
 Stack: "Error: Database connection failed
@@ -191,6 +205,7 @@ Stack: "Error: Database connection failed
 ```
 
 **Normalization**:
+
 - Message: `database connection failed`
 - Stack first line: `error: database connection failed`
 - Combined: `database connection failed|||error: database connection failed`
@@ -200,18 +215,21 @@ Stack: "Error: Database connection failed
 ### Example 2: API Request with Dynamic Data
 
 **Input 1**:
+
 ```
 Message: "API request failed for user 123e4567-e89b-12d3-a456-426614174000 at 2024-01-16T10:30:00Z"
 Stack: "Error: API request failed for user 123e4567-e89b-12d3-a456-426614174000 at 2024-01-16T10:30:00Z"
 ```
 
 **Input 2**:
+
 ```
 Message: "API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff at 2024-01-16T15:45:00Z"
 Stack: "Error: API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff at 2024-01-16T15:45:00Z"
 ```
 
 **Normalized**:
+
 - Message: `api request failed for user <uuid> at <timestamp>`
 - Stack: `error: api request failed for user <uuid> at <timestamp>`
 
@@ -230,6 +248,7 @@ Stack: "Error: API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff 
 ```
 
 **Key Type Fixes**:
+
 1. Extended `TransportStream` from `winston-transport` package
 2. Used `override` modifier for `log()` method
 3. Fixed Prisma metadata field (omit instead of undefined)
@@ -242,10 +261,12 @@ Stack: "Error: API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff 
 ### Database Queries
 
 **Per Error Log**:
+
 1. `SELECT` query to find existing error by fingerprint (indexed)
 2. `UPDATE` query to increment occurrence count OR `INSERT` for new error
 
 **Optimization**:
+
 - `fingerprint` field is indexed (fast lookup)
 - 24-hour window limits query scope
 - Async operation (non-blocking)
@@ -263,6 +284,7 @@ Stack: "Error: API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff 
 ## Future Enhancements
 
 ### Phase 2 (Planned)
+
 1. **Alert on High Occurrence Count**: Notify admins when occurrence_count > threshold
 2. **Error Assignment**: Assign errors to specific developers via `assignedTo`
 3. **Bulk Resolution**: Mark multiple errors as `resolved` or `ignored`
@@ -270,6 +292,7 @@ Stack: "Error: API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff 
 5. **Error Trends**: Dashboard showing error frequency over time
 
 ### Phase 3 (Stretch)
+
 1. **Source Maps**: Resolve minified stack traces
 2. **Error Grouping UI**: Visual interface for error management
 3. **Slack Integration**: Send critical errors to Slack
@@ -293,6 +316,7 @@ Stack: "Error: API request failed for user ffffffff-ffff-ffff-ffff-ffffffffffff 
 ## Dependencies
 
 **No new packages required**. Used existing dependencies:
+
 - `winston` (already installed)
 - `winston-transport` (peer dependency of winston)
 - `crypto` (Node.js built-in)

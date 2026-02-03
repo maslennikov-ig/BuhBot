@@ -113,7 +113,10 @@ export function Hero() {
             className="text-center lg:text-left"
           >
             {/* Badge */}
-            <motion.div variants={itemVariants} className="mb-8 flex justify-center lg:justify-start">
+            <motion.div
+              variants={itemVariants}
+              className="mb-8 flex justify-center lg:justify-start"
+            >
               <span className="inline-flex items-center px-4 py-1.5 rounded-full border border-[var(--buh-accent-glow)] bg-[rgba(0,212,170,0.05)] text-[var(--buh-accent)] text-xs md:text-sm font-bold uppercase tracking-wider shadow-[0_0_20px_-5px_var(--buh-accent-glow)]">
                 Для бухгалтерских фирм
               </span>
@@ -139,9 +142,8 @@ export function Hero() {
               variants={itemVariants}
               className="text-lg md:text-xl 2xl:text-2xl text-[var(--buh-foreground-muted)] max-w-xl 2xl:max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed"
             >
-              BuhBot автоматически отслеживает время ответа бухгалтеров
-              и уведомляет о приближении дедлайна — прежде чем клиент
-              успеет пожаловаться.
+              BuhBot автоматически отслеживает время ответа бухгалтеров и уведомляет о приближении
+              дедлайна — прежде чем клиент успеет пожаловаться.
             </motion.p>
 
             {/* CTAs */}
@@ -155,7 +157,9 @@ export function Hero() {
                 onMouseLeave={handleMouseLeave}
                 animate={{ x: mousePosition.x, y: mousePosition.y }}
                 transition={{ type: 'spring', stiffness: 150, damping: 15 }}
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() =>
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+                }
                 className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-[var(--buh-primary)] rounded-full hover:bg-[var(--buh-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--buh-primary)] shadow-[0_0_20px_-5px_var(--buh-primary-muted)] hover:shadow-[0_0_40px_-5px_var(--buh-primary),0_0_60px_-10px_var(--buh-accent)] overflow-hidden"
               >
                 {/* Shimmer effect */}
@@ -169,7 +173,9 @@ export function Hero() {
               </motion.button>
 
               <button
-                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() =>
+                  document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
+                }
                 className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-[var(--buh-foreground)] transition-all duration-200 bg-[var(--buh-surface)] border border-[var(--buh-border)] rounded-full hover:bg-[var(--buh-surface-elevated)] hover:border-[var(--buh-foreground-subtle)] focus:outline-none hover:-translate-y-1"
               >
                 Как это работает
@@ -224,7 +230,7 @@ export function Hero() {
           <div className="relative w-6 h-10 border-2 border-[var(--buh-border)] rounded-full flex justify-center pt-2 group-hover:border-[var(--buh-primary)] transition-colors overflow-hidden">
             <motion.div
               animate={{ y: [0, 14, 0] }}
-              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+              transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
               className="w-1.5 h-1.5 bg-[var(--buh-foreground-subtle)] rounded-full group-hover:bg-[var(--buh-primary)] group-hover:shadow-[0_0_8px_var(--buh-primary)]"
             />
           </div>

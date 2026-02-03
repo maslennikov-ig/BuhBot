@@ -240,9 +240,7 @@ export class TelegramAlertService {
     if (details.context && Object.keys(details.context).length > 0) {
       message += '\n<b>Детали:</b>\n';
       for (const [key, value] of Object.entries(details.context)) {
-        const formattedValue = typeof value === 'object'
-          ? JSON.stringify(value)
-          : String(value);
+        const formattedValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
         message += `• ${this.escapeHtml(key)}: <code>${this.escapeHtml(formattedValue)}</code>\n`;
       }
     }
@@ -316,18 +314,13 @@ export class TelegramAlertService {
     const severity = ALERTMANAGER_SEVERITY_MAP[severityLabel.toLowerCase()] || 'warning';
 
     // Build title from alertname or summary
-    const title = alert.annotations['summary'] ||
-      alert.labels['alertname'] ||
-      'Prometheus Alert';
+    const title = alert.annotations['summary'] || alert.labels['alertname'] || 'Prometheus Alert';
 
     // Build message from description
-    const message = alert.annotations['description'] ||
-      `Alert ${alert.status}: ${title}`;
+    const message = alert.annotations['description'] || `Alert ${alert.status}: ${title}`;
 
     // Add resolved status indicator
-    const statusPrefix = alert.status === 'resolved'
-      ? '[RESOLVED] '
-      : '';
+    const statusPrefix = alert.status === 'resolved' ? '[RESOLVED] ' : '';
 
     // Build context from labels
     const context: Record<string, unknown> = {};
@@ -378,18 +371,18 @@ export class TelegramAlertService {
    * @param message - Alert message
    * @returns Promise resolving to success status
    */
-  async sendSimpleAlert(
-    severity: AlertSeverity,
-    title: string,
-    message: string
-  ): Promise<boolean> {
+  async sendSimpleAlert(severity: AlertSeverity, title: string, message: string): Promise<boolean> {
     return this.sendAlert({ severity, title, message });
   }
 
   /**
    * Send critical alert (convenience method)
    */
-  async sendCritical(title: string, message: string, context?: Record<string, unknown>): Promise<boolean> {
+  async sendCritical(
+    title: string,
+    message: string,
+    context?: Record<string, unknown>
+  ): Promise<boolean> {
     const details: AlertDetails = { severity: 'critical', title, message };
     if (context !== undefined) {
       details.context = context;
@@ -400,7 +393,11 @@ export class TelegramAlertService {
   /**
    * Send warning alert (convenience method)
    */
-  async sendWarning(title: string, message: string, context?: Record<string, unknown>): Promise<boolean> {
+  async sendWarning(
+    title: string,
+    message: string,
+    context?: Record<string, unknown>
+  ): Promise<boolean> {
     const details: AlertDetails = { severity: 'warning', title, message };
     if (context !== undefined) {
       details.context = context;
@@ -411,7 +408,11 @@ export class TelegramAlertService {
   /**
    * Send info alert (convenience method)
    */
-  async sendInfo(title: string, message: string, context?: Record<string, unknown>): Promise<boolean> {
+  async sendInfo(
+    title: string,
+    message: string,
+    context?: Record<string, unknown>
+  ): Promise<boolean> {
     const details: AlertDetails = { severity: 'info', title, message };
     if (context !== undefined) {
       details.context = context;

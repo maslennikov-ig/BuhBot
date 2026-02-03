@@ -120,14 +120,11 @@ export const analyticsRouter = router({
       // Calculate median
       const sortedTimes = [...responseTimes].sort((a, b) => a - b);
       const medianResponseMinutes =
-        sortedTimes.length > 0
-          ? sortedTimes[Math.floor(sortedTimes.length / 2)] || 0
-          : 0;
+        sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length / 2)] || 0 : 0;
 
       // Calculate 95th percentile
       const p95Index = Math.floor(sortedTimes.length * 0.95);
-      const p95ResponseMinutes =
-        sortedTimes.length > 0 ? sortedTimes[p95Index] || 0 : 0;
+      const p95ResponseMinutes = sortedTimes.length > 0 ? sortedTimes[p95Index] || 0 : 0;
 
       return {
         totalRequests,
@@ -336,8 +333,7 @@ export const analyticsRouter = router({
 
           const averageFeedbackRating =
             feedbackResponses.length > 0
-              ? feedbackResponses.reduce((sum, f) => sum + f.rating, 0) /
-                feedbackResponses.length
+              ? feedbackResponses.reduce((sum, f) => sum + f.rating, 0) / feedbackResponses.length
               : null;
 
           return {
@@ -347,9 +343,7 @@ export const analyticsRouter = router({
             answeredWithinSLA,
             averageResponseMinutes: Math.round(averageResponseMinutes * 100) / 100,
             averageFeedbackRating:
-              averageFeedbackRating !== null
-                ? Math.round(averageFeedbackRating * 100) / 100
-                : null,
+              averageFeedbackRating !== null ? Math.round(averageFeedbackRating * 100) / 100 : null,
           };
         })
       );
@@ -545,7 +539,8 @@ export const analyticsRouter = router({
         id: r.id,
         chatTitle: r.chat?.title ?? null,
         clientUsername: r.clientUsername,
-        messagePreview: r.messageText.length > 100 ? r.messageText.slice(0, 100) + '...' : r.messageText,
+        messagePreview:
+          r.messageText.length > 100 ? r.messageText.slice(0, 100) + '...' : r.messageText,
         status: r.status as 'pending' | 'in_progress' | 'answered' | 'escalated',
         receivedAt: r.receivedAt,
         responseMinutes: r.responseTimeMinutes,
@@ -601,7 +596,10 @@ export const analyticsRouter = router({
       // Top 5 accountants by compliance (only those with requests)
       const topAccountants = accountantStats
         .filter((a) => a.totalRequests > 0)
-        .sort((a, b) => b.compliancePercent - a.compliancePercent || a.avgResponseMinutes - b.avgResponseMinutes)
+        .sort(
+          (a, b) =>
+            b.compliancePercent - a.compliancePercent || a.avgResponseMinutes - b.avgResponseMinutes
+        )
         .slice(0, 5)
         .map((a) => ({
           id: a.id,
@@ -649,11 +647,11 @@ export const analyticsRouter = router({
           },
         });
 
-        const responseTimes = dayRequests
-          .map((r) => r.responseTimeMinutes as number);
-        const avgTime = responseTimes.length > 0
-          ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-          : 0;
+        const responseTimes = dayRequests.map((r) => r.responseTimeMinutes as number);
+        const avgTime =
+          responseTimes.length > 0
+            ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+            : 0;
 
         responseTimeChartData.push({
           date: dayStart,
@@ -820,12 +818,10 @@ export const analyticsRouter = router({
           let medianResponseMinutes = 0;
 
           if (responseTimes.length > 0) {
-            avgResponseMinutes =
-              responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+            avgResponseMinutes = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
             minResponseMinutes = responseTimes[0] ?? 0;
             maxResponseMinutes = responseTimes[responseTimes.length - 1] ?? 0;
-            medianResponseMinutes =
-              responseTimes[Math.floor(responseTimes.length / 2)] ?? 0;
+            medianResponseMinutes = responseTimes[Math.floor(responseTimes.length / 2)] ?? 0;
           }
 
           return {
@@ -1155,7 +1151,10 @@ export const analyticsRouter = router({
           const values = headers.map((h) => {
             const val = row[h];
             // Escape quotes and wrap in quotes if contains comma or newline
-            if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+            if (
+              typeof val === 'string' &&
+              (val.includes(',') || val.includes('"') || val.includes('\n'))
+            ) {
               return `"${val.replace(/"/g, '""')}"`;
             }
             return String(val ?? '');
@@ -1335,9 +1334,8 @@ export const analyticsRouter = router({
       const allTimes = requests.map((r) => r.responseTimeMinutes as number);
       const totalRequests = allTimes.length;
 
-      const summaryAvg = totalRequests > 0
-        ? allTimes.reduce((a, b) => a + b, 0) / totalRequests
-        : 0;
+      const summaryAvg =
+        totalRequests > 0 ? allTimes.reduce((a, b) => a + b, 0) / totalRequests : 0;
       const summaryMedian = percentile(allTimes, 50);
       const summaryP95 = percentile(allTimes, 95);
       const summaryMin = totalRequests > 0 ? Math.min(...allTimes) : 0;
@@ -1359,9 +1357,8 @@ export const analyticsRouter = router({
       });
 
       const prevTimes = prevRequests.map((r) => r.responseTimeMinutes as number);
-      const prevAvg = prevTimes.length > 0
-        ? prevTimes.reduce((a, b) => a + b, 0) / prevTimes.length
-        : 0;
+      const prevAvg =
+        prevTimes.length > 0 ? prevTimes.reduce((a, b) => a + b, 0) / prevTimes.length : 0;
       const prevMedian = percentile(prevTimes, 50);
       const prevP95 = percentile(prevTimes, 95);
 

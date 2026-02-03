@@ -17,7 +17,7 @@ export default function RequestsPage() {
     if (!data) return [];
     return data.requests.map((req) => {
       let status: 'pending' | 'in_progress' | 'resolved' | 'violated' = 'pending';
-      
+
       if (req.status === 'answered') status = 'resolved';
       else if (req.status === 'escalated') status = 'violated';
       else if (req.status === 'in_progress') status = 'in_progress';
@@ -29,7 +29,10 @@ export default function RequestsPage() {
         clientName: req.clientUsername || 'Неизвестный',
         message: req.messageText,
         status,
-        time: new Date(req.receivedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date(req.receivedAt).toLocaleTimeString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
         slaRemaining: undefined,
         responseTimeMinutes: req.responseTimeMinutes,
         responseMessage: req.responseMessage?.messageText ?? null,

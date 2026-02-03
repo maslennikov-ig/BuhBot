@@ -21,7 +21,10 @@ import {
   formatResolutionConfirmation,
   escapeHtml,
 } from '../../services/alerts/format.service.js';
-import { buildResolvedKeyboard, buildAccountantNotificationKeyboard } from '../keyboards/alert.keyboard.js';
+import {
+  buildResolvedKeyboard,
+  buildAccountantNotificationKeyboard,
+} from '../keyboards/alert.keyboard.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -162,7 +165,9 @@ export function registerAlertCallbackHandler(): void {
       // Add accountants from accountantUsernames array
       if (request.chat.accountantUsernames && request.chat.accountantUsernames.length > 0) {
         // Query users by telegram username
-        const normalizedUsernames = request.chat.accountantUsernames.map(u => u.replace(/^@/, ''));
+        const normalizedUsernames = request.chat.accountantUsernames.map((u) =>
+          u.replace(/^@/, '')
+        );
 
         try {
           const accountantUsers = await prisma.user.findMany({
@@ -182,8 +187,10 @@ export function registerAlertCallbackHandler(): void {
           }
 
           // Log if some usernames not found
-          const foundUsernames = new Set(accountantUsers.map(u => u.telegramUsername).filter((u): u is string => u !== null));
-          const notFoundUsernames = normalizedUsernames.filter(u => !foundUsernames.has(u));
+          const foundUsernames = new Set(
+            accountantUsers.map((u) => u.telegramUsername).filter((u): u is string => u !== null)
+          );
+          const notFoundUsernames = normalizedUsernames.filter((u) => !foundUsernames.has(u));
           if (notFoundUsernames.length > 0) {
             logger.warn('Some accountant usernames not found in database', {
               notFound: notFoundUsernames,
@@ -206,14 +213,10 @@ export function registerAlertCallbackHandler(): void {
 
       for (const telegramId of accountantTelegramIds) {
         try {
-          await bot.telegram.sendMessage(
-            telegramId,
-            notificationMessage,
-            {
-              parse_mode: 'HTML',
-              ...keyboard,
-            }
-          );
+          await bot.telegram.sendMessage(telegramId, notificationMessage, {
+            parse_mode: 'HTML',
+            ...keyboard,
+          });
 
           successCount++;
           logger.info('Accountant notified via DM', {
@@ -250,14 +253,10 @@ export function registerAlertCallbackHandler(): void {
         try {
           const mentionMessage = notificationMessage + `\n\n@${escapeHtml(accountantUsername)}`;
 
-          await bot.telegram.sendMessage(
-            String(request.chatId),
-            mentionMessage,
-            {
-              parse_mode: 'HTML',
-              ...keyboard,
-            }
-          );
+          await bot.telegram.sendMessage(String(request.chatId), mentionMessage, {
+            parse_mode: 'HTML',
+            ...keyboard,
+          });
 
           notificationSent = true;
           logger.info('Accountant notified via group mention', {

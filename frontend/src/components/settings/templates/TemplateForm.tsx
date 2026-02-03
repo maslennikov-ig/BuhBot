@@ -25,7 +25,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Название обязательно').max(100, 'Максимум 100 символов'),
@@ -105,19 +105,20 @@ export function TemplateForm({ initialData, onSuccess, onCancel }: TemplateFormP
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const currentContent = form.getValues('content');
-    
-    const newContent = currentContent.substring(0, start) + variable + currentContent.substring(end);
-    
+
+    const newContent =
+      currentContent.substring(0, start) + variable + currentContent.substring(end);
+
     form.setValue('content', newContent, { shouldValidate: true });
-    
+
     // Restore focus and cursor position (after inserted text)
     setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + variable.length, start + variable.length);
-        toast.success(`Переменная ${variable} добавлена`, {
-            duration: 1500,
-            position: 'bottom-right',
-        });
+      textarea.focus();
+      textarea.setSelectionRange(start + variable.length, start + variable.length);
+      toast.success(`Переменная ${variable} добавлена`, {
+        duration: 1500,
+        position: 'bottom-right',
+      });
     }, 0);
   };
 
@@ -126,7 +127,7 @@ export function TemplateForm({ initialData, onSuccess, onCancel }: TemplateFormP
       <h2 className="text-xl font-semibold mb-6 text-[var(--buh-foreground)]">
         {isEdit ? 'Редактирование шаблона' : 'Новый шаблон'}
       </h2>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -175,31 +176,29 @@ export function TemplateForm({ initialData, onSuccess, onCancel }: TemplateFormP
               <FormItem>
                 <FormLabel>Содержание</FormLabel>
                 <div className="mb-2 flex flex-wrap gap-2">
-                    {VARIABLES.map((v) => (
-                        <button
-                            key={v.value}
-                            type="button"
-                            onClick={() => insertVariable(v.value)}
-                            className="inline-flex items-center rounded-full bg-[var(--buh-primary-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--buh-primary)] hover:bg-[var(--buh-primary)] hover:text-white transition-colors"
-                        >
-                            {v.label}
-                        </button>
-                    ))}
+                  {VARIABLES.map((v) => (
+                    <button
+                      key={v.value}
+                      type="button"
+                      onClick={() => insertVariable(v.value)}
+                      className="inline-flex items-center rounded-full bg-[var(--buh-primary-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--buh-primary)] hover:bg-[var(--buh-primary)] hover:text-white transition-colors"
+                    >
+                      {v.label}
+                    </button>
+                  ))}
                 </div>
                 <FormControl>
-                  <Textarea 
+                  <Textarea
                     placeholder="Текст сообщения..."
                     rows={8}
                     {...field}
                     ref={(e) => {
-                        field.ref(e);
-                        textareaRef.current = e;
+                      field.ref(e);
+                      textareaRef.current = e;
                     }}
                   />
                 </FormControl>
-                 <FormDescription>
-                  Используйте переменные для персонализации.
-                </FormDescription>
+                <FormDescription>Используйте переменные для персонализации.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -209,7 +208,11 @@ export function TemplateForm({ initialData, onSuccess, onCancel }: TemplateFormP
             <Button type="button" variant="ghost" onClick={onCancel}>
               Отмена
             </Button>
-            <Button type="submit" className="buh-btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+            <Button
+              type="submit"
+              className="buh-btn-primary"
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
               {isEdit ? 'Сохранить' : 'Создать'}
             </Button>
           </div>

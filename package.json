@@ -23,7 +23,23 @@
     "lint:frontend": "cd frontend && npm run lint",
     "knip": "npm run knip:backend && npm run knip:frontend",
     "knip:backend": "cd backend && npx knip",
-    "knip:frontend": "cd frontend && npx knip"
+    "knip:frontend": "cd frontend && npx knip",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "backend/src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "frontend/src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "telegram-bot",
@@ -51,8 +67,13 @@
   },
   "private": true,
   "devDependencies": {
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
     "knip": "^5.73.3",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   }
 }

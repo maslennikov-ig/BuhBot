@@ -65,8 +65,11 @@ export function FaqForm({ initialData, onSuccess, onCancel }: FaqFormProps) {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const keywordsArray = values.keywords.split(',').map((k) => k.trim()).filter((k) => k);
-    
+    const keywordsArray = values.keywords
+      .split(',')
+      .map((k) => k.trim())
+      .filter((k) => k);
+
     if (isEdit) {
       await updateMutation.mutateAsync({
         id: initialData.id,
@@ -88,7 +91,7 @@ export function FaqForm({ initialData, onSuccess, onCancel }: FaqFormProps) {
       <h2 className="text-xl font-semibold mb-6 text-[var(--buh-foreground)]">
         {isEdit ? 'Редактирование вопроса' : 'Новый вопрос'}
       </h2>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -112,15 +115,9 @@ export function FaqForm({ initialData, onSuccess, onCancel }: FaqFormProps) {
               <FormItem>
                 <FormLabel>Ответ</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="Для изменения пароля..."
-                    rows={5}
-                    {...field}
-                  />
+                  <Textarea placeholder="Для изменения пароля..." rows={5} {...field} />
                 </FormControl>
-                 <FormDescription>
-                  Текст ответа бота.
-                </FormDescription>
+                <FormDescription>Текст ответа бота.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -135,9 +132,7 @@ export function FaqForm({ initialData, onSuccess, onCancel }: FaqFormProps) {
                 <FormControl>
                   <Input placeholder="пароль, сброс, доступ" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Разделяйте ключевые слова запятыми.
-                </FormDescription>
+                <FormDescription>Разделяйте ключевые слова запятыми.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -147,7 +142,11 @@ export function FaqForm({ initialData, onSuccess, onCancel }: FaqFormProps) {
             <Button type="button" variant="ghost" onClick={onCancel}>
               Отмена
             </Button>
-            <Button type="submit" className="buh-btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+            <Button
+              type="submit"
+              className="buh-btn-primary"
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
               {isEdit ? 'Сохранить' : 'Создать'}
             </Button>
           </div>

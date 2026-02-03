@@ -25,6 +25,7 @@ Execute validation commands as quality gates with configurable blocking/non-bloc
 Accept gate configuration as input.
 
 **Expected Input**:
+
 ```json
 {
   "gate": "type-check|build|tests|lint|custom",
@@ -34,6 +35,7 @@ Accept gate configuration as input.
 ```
 
 **Parameters**:
+
 - `gate`: Type of quality gate to run (required)
 - `blocking`: Whether failure should stop workflow (default: true)
 - `custom_command`: Command to run when gate="custom" (required for custom gates)
@@ -43,6 +45,7 @@ Accept gate configuration as input.
 Determine command to execute based on gate type.
 
 **Gate Commands**:
+
 - `type-check` → `pnpm type-check`
 - `build` → `pnpm build`
 - `tests` → `pnpm test`
@@ -50,6 +53,7 @@ Determine command to execute based on gate type.
 - `custom` → Use `custom_command` parameter
 
 **Validation**:
+
 - If gate="custom", `custom_command` must be provided
 - Command must be valid shell command
 
@@ -58,6 +62,7 @@ Determine command to execute based on gate type.
 Run command via Bash tool with timeout.
 
 **Execution Parameters**:
+
 - Timeout: 300000ms (5 minutes)
 - Capture stdout and stderr
 - Record exit code
@@ -70,11 +75,13 @@ Run command via Bash tool with timeout.
 Determine if gate passed based on exit code.
 
 **Pass/Fail Logic**:
+
 - Exit code 0 → Passed
 - Exit code non-zero → Failed
 
 **Extract Errors**:
 Look for error patterns in output:
+
 - Lines containing "error"
 - Lines containing "failed"
 - Lines containing "✗"
@@ -86,6 +93,7 @@ Look for error patterns in output:
 Calculate action based on result and blocking flag.
 
 **Action Logic**:
+
 ```
 IF exit_code == 0:
   action = "continue"
@@ -103,6 +111,7 @@ ELSE:
 Return complete quality gate result.
 
 **Expected Output**:
+
 ```json
 {
   "gate": "type-check",
@@ -118,6 +127,7 @@ Return complete quality gate result.
 ```
 
 **Output Fields**:
+
 - `gate`: Gate type that was run
 - `passed`: Whether gate passed (boolean)
 - `blocking`: Whether gate was blocking
@@ -141,6 +151,7 @@ Return complete quality gate result.
 ### Example 1: Blocking Type-Check that Passes
 
 **Input**:
+
 ```json
 {
   "gate": "type-check",
@@ -149,6 +160,7 @@ Return complete quality gate result.
 ```
 
 **Command Output**:
+
 ```
 $ pnpm type-check
 ✓ No type errors found
@@ -156,6 +168,7 @@ Done in 2.3s
 ```
 
 **Output**:
+
 ```json
 {
   "gate": "type-check",
@@ -173,6 +186,7 @@ Done in 2.3s
 ### Example 2: Blocking Build that Fails (Should Stop)
 
 **Input**:
+
 ```json
 {
   "gate": "build",
@@ -181,6 +195,7 @@ Done in 2.3s
 ```
 
 **Command Output**:
+
 ```
 $ pnpm build
 ✗ Build failed
@@ -190,16 +205,14 @@ exit code: 1
 ```
 
 **Output**:
+
 ```json
 {
   "gate": "build",
   "passed": false,
   "blocking": true,
   "action": "stop",
-  "errors": [
-    "ERROR in src/app.ts",
-    "Module not found: Error: Can't resolve 'missing-module'"
-  ],
+  "errors": ["ERROR in src/app.ts", "Module not found: Error: Can't resolve 'missing-module'"],
   "exit_code": 1,
   "duration_ms": 5432,
   "command": "pnpm build",
@@ -210,6 +223,7 @@ exit code: 1
 ### Example 3: Non-Blocking Lint that Fails (Should Warn)
 
 **Input**:
+
 ```json
 {
   "gate": "lint",
@@ -218,6 +232,7 @@ exit code: 1
 ```
 
 **Command Output**:
+
 ```
 $ pnpm lint
 ✗ 12 problems (8 errors, 4 warnings)
@@ -227,6 +242,7 @@ exit code: 1
 ```
 
 **Output**:
+
 ```json
 {
   "gate": "lint",
@@ -247,6 +263,7 @@ exit code: 1
 ### Example 4: Custom Command Example
 
 **Input**:
+
 ```json
 {
   "gate": "custom",
@@ -256,6 +273,7 @@ exit code: 1
 ```
 
 **Command Output**:
+
 ```
 $ pnpm validate-schemas
 ✓ All schemas valid
@@ -263,6 +281,7 @@ exit code: 0
 ```
 
 **Output**:
+
 ```json
 {
   "gate": "custom",
@@ -280,6 +299,7 @@ exit code: 0
 ### Example 5: Timeout Example
 
 **Input**:
+
 ```json
 {
   "gate": "tests",
@@ -288,15 +308,14 @@ exit code: 0
 ```
 
 **Output** (after 5 minutes):
+
 ```json
 {
   "gate": "tests",
   "passed": false,
   "blocking": true,
   "action": "stop",
-  "errors": [
-    "Command timed out after 300000ms (5 minutes)"
-  ],
+  "errors": ["Command timed out after 300000ms (5 minutes)"],
   "exit_code": -1,
   "duration_ms": 300000,
   "command": "pnpm test",
@@ -307,6 +326,7 @@ exit code: 0
 ### Example 6: Command Not Found
 
 **Input**:
+
 ```json
 {
   "gate": "build",
@@ -315,21 +335,21 @@ exit code: 0
 ```
 
 **Command Output**:
+
 ```
 bash: pnpm: command not found
 exit code: 127
 ```
 
 **Output**:
+
 ```json
 {
   "gate": "build",
   "passed": false,
   "blocking": true,
   "action": "stop",
-  "errors": [
-    "bash: pnpm: command not found"
-  ],
+  "errors": ["bash: pnpm: command not found"],
   "exit_code": 127,
   "duration_ms": 45,
   "command": "pnpm build",
@@ -368,6 +388,7 @@ If action="continue", proceed to next phase.
 ## Step 5: Self-Validation
 
 Use run-quality-gate Skill to validate changes:
+
 1. Run type-check (blocking=true)
 2. Run build (blocking=true)
 3. Run tests (blocking=false)
@@ -381,13 +402,13 @@ If any blocking gate returns action="stop", rollback changes.
 ## Phase 2: Execute Quality Gates
 
 For each gate in [type-check, build, tests, lint]:
-  result = run-quality-gate(gate, blocking=true)
+result = run-quality-gate(gate, blocking=true)
 
-  if result.action == "stop":
-    HALT and report failure
+if result.action == "stop":
+HALT and report failure
 
-  if result.action == "warn":
-    LOG warning and continue
+if result.action == "warn":
+LOG warning and continue
 ```
 
 ## Supporting Files

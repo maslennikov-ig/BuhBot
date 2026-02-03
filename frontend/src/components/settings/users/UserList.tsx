@@ -69,7 +69,11 @@ export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserL
   }
 
   return (
-    <GlassCard variant="default" padding="md" className="group relative flex flex-col gap-4 overflow-hidden">
+    <GlassCard
+      variant="default"
+      padding="md"
+      className="group relative flex flex-col gap-4 overflow-hidden"
+    >
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="flex items-center gap-3 mb-4">
@@ -77,8 +81,12 @@ export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserL
           <Users className="h-5 w-5 text-[var(--buh-primary)]" />
         </div>
         <div>
-          <h3 className="text-base font-semibold text-[var(--buh-foreground)]">Пользователи системы</h3>
-          <p className="text-xs text-[var(--buh-foreground-subtle)]">Управление ролями и доступом</p>
+          <h3 className="text-base font-semibold text-[var(--buh-foreground)]">
+            Пользователи системы
+          </h3>
+          <p className="text-xs text-[var(--buh-foreground-subtle)]">
+            Управление ролями и доступом
+          </p>
         </div>
       </div>
 
@@ -123,8 +131,12 @@ export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserL
                 onClick={() => requestSort('role')}
                 className="px-6 py-3"
               />
-              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Telegram</th>
-              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">Действия</th>
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                Telegram
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                Действия
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--buh-border)] bg-[var(--buh-surface)]">
@@ -135,46 +147,56 @@ export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserL
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
                       <Users className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
                     </div>
-                    <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">Нет пользователей</p>
+                    <p className="mt-4 text-sm font-medium text-[var(--buh-foreground)]">
+                      Нет пользователей
+                    </p>
                   </div>
                 </td>
               </tr>
             ) : (
               sortedData.map((user, index) => (
-                <tr 
-                  key={user.id} 
+                <tr
+                  key={user.id}
                   className="hover:bg-[var(--buh-surface-elevated)] transition-colors buh-animate-fade-in-up"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <td className="px-4 py-3 font-medium text-[var(--buh-foreground)]">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]">
-                            <UserIcon className="h-4 w-4" />
-                        </div>
-                        {user.fullName}
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]">
+                        <UserIcon className="h-4 w-4" />
+                      </div>
+                      {user.fullName}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[var(--buh-foreground-muted)]">
-                    {user.email}
-                  </td>
+                  <td className="px-4 py-3 text-[var(--buh-foreground-muted)]">{user.email}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role as keyof typeof ROLE_COLORS] || ROLE_COLORS.observer}`}>
-                        {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role as keyof typeof ROLE_COLORS] || ROLE_COLORS.observer}`}
+                    >
+                      {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     {user.telegramId ? (
-                        <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]" title="Подключен к Telegram">
-                             <MessageCircle className="h-4 w-4" />
-                        </div>
+                      <div
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]"
+                        title="Подключен к Telegram"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </div>
                     ) : (
-                        <span className="text-[var(--buh-foreground-subtle)]">-</span>
+                      <span className="text-[var(--buh-foreground-subtle)]">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
                       {isAdmin && (
-                        <Button variant="ghost" size="sm" onClick={() => onEditRole(user)} className="text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)]">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditRole(user)}
+                          className="text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)]"
+                        >
                           Изменить роль
                         </Button>
                       )}

@@ -91,9 +91,7 @@ export default function LogDetailPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <FileWarning className="mx-auto h-12 w-12 text-[var(--buh-foreground-subtle)]" />
-            <p className="mt-4 text-[var(--buh-foreground-subtle)]">
-              Ошибка не найдена
-            </p>
+            <p className="mt-4 text-[var(--buh-foreground-subtle)]">Ошибка не найдена</p>
           </div>
         </div>
       </AdminLayout>
@@ -119,9 +117,7 @@ export default function LogDetailPage() {
           <div className="space-y-6 p-6">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-[var(--buh-foreground)]">
-                  {error.message}
-                </h1>
+                <h1 className="text-2xl font-bold text-[var(--buh-foreground)]">{error.message}</h1>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--buh-foreground-subtle)]">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="h-4 w-4" />
@@ -151,13 +147,9 @@ export default function LogDetailPage() {
             {/* Stack trace */}
             {error.stack && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-[var(--buh-foreground)]">
-                  Stack Trace
-                </h3>
+                <h3 className="font-semibold text-[var(--buh-foreground)]">Stack Trace</h3>
                 <pre className="overflow-x-auto rounded-lg bg-[var(--buh-surface)] p-4 text-xs">
-                  <code className="text-[var(--buh-foreground-muted)]">
-                    {error.stack}
-                  </code>
+                  <code className="text-[var(--buh-foreground-muted)]">{error.stack}</code>
                 </pre>
               </div>
             )}
@@ -165,9 +157,7 @@ export default function LogDetailPage() {
             {/* Metadata */}
             {error.metadata && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-[var(--buh-foreground)]">
-                  Metadata
-                </h3>
+                <h3 className="font-semibold text-[var(--buh-foreground)]">Metadata</h3>
                 <pre className="overflow-x-auto rounded-lg bg-[var(--buh-surface)] p-4 text-xs">
                   <code className="text-[var(--buh-foreground-muted)]">
                     {JSON.stringify(error.metadata, null, 2)}
@@ -179,20 +169,14 @@ export default function LogDetailPage() {
             {/* Notes */}
             {error.notes && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-[var(--buh-foreground)]">
-                  Заметки
-                </h3>
-                <p className="text-sm text-[var(--buh-foreground-muted)]">
-                  {error.notes}
-                </p>
+                <h3 className="font-semibold text-[var(--buh-foreground)]">Заметки</h3>
+                <p className="text-sm text-[var(--buh-foreground-muted)]">{error.notes}</p>
               </div>
             )}
 
             {/* Fingerprint */}
             <div className="space-y-2">
-              <h3 className="font-semibold text-[var(--buh-foreground)]">
-                Fingerprint
-              </h3>
+              <h3 className="font-semibold text-[var(--buh-foreground)]">Fingerprint</h3>
               <code className="block rounded-lg bg-[var(--buh-surface)] p-3 text-xs text-[var(--buh-foreground-muted)]">
                 {error.fingerprint}
               </code>

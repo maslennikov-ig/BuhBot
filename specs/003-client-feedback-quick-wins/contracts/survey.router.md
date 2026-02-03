@@ -16,16 +16,18 @@ tRPC router for survey campaign management (manager only).
 **Description**: List all survey campaigns.
 
 **Input**:
+
 ```typescript
 z.object({
   status: z.enum(['scheduled', 'sending', 'active', 'closed', 'expired']).optional(),
   year: z.number().min(2024).optional(),
   page: z.number().min(1).default(1),
   pageSize: z.number().min(10).max(50).default(10),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   items: {
@@ -41,13 +43,14 @@ z.object({
     responseCount: number;
     responseRate: number; // percentage
     averageRating: number | null;
-  }[];
+  }
+  [];
   pagination: {
     page: number;
     pageSize: number;
     totalItems: number;
     totalPages: number;
-  };
+  }
 }
 ```
 
@@ -60,13 +63,15 @@ z.object({
 **Description**: Get detailed survey campaign info.
 
 **Input**:
+
 ```typescript
 z.object({
   id: z.string().uuid(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   id: string;
@@ -110,15 +115,17 @@ z.object({
 **Description**: Schedule a new survey campaign.
 
 **Input**:
+
 ```typescript
 z.object({
   quarter: z.string().regex(/^\d{4}-Q[1-4]$/), // "2025-Q1"
   scheduledAt: z.date(),
   validityDays: z.number().min(1).max(30).optional(), // Override global setting
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   id: string;
@@ -130,6 +137,7 @@ z.object({
 ```
 
 **Business Logic**:
+
 - Calculate expiresAt from scheduledAt + validityDays
 - Validate no active survey for same quarter
 - Create BullMQ job scheduled for scheduledAt
@@ -143,13 +151,15 @@ z.object({
 **Description**: Manually close an active survey.
 
 **Input**:
+
 ```typescript
 z.object({
   id: z.string().uuid(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -158,11 +168,12 @@ z.object({
     responseCount: number;
     responseRate: number;
     averageRating: number | null;
-  };
+  }
 }
 ```
 
 **Business Logic**:
+
 - Only close if status is 'active' or 'sending'
 - Set status to 'closed', closedAt, closedBy
 - Cancel any pending delivery/reminder jobs
@@ -177,13 +188,15 @@ z.object({
 **Description**: Immediately start sending a scheduled survey.
 
 **Input**:
+
 ```typescript
 z.object({
   id: z.string().uuid(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -193,6 +206,7 @@ z.object({
 ```
 
 **Business Logic**:
+
 - Only for status = 'scheduled'
 - Update status to 'sending'
 - Queue delivery jobs for all active clients
@@ -206,16 +220,18 @@ z.object({
 **Description**: List delivery status for a survey.
 
 **Input**:
+
 ```typescript
 z.object({
   surveyId: z.string().uuid(),
   status: z.enum(['pending', 'delivered', 'reminded', 'expired', 'failed', 'responded']).optional(),
   page: z.number().min(1).default(1),
   pageSize: z.number().min(10).max(100).default(50),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   items: {
@@ -251,14 +267,16 @@ z.object({
 **Description**: Retry failed deliveries for a survey.
 
 **Input**:
+
 ```typescript
 z.object({
   surveyId: z.string().uuid(),
   deliveryIds: z.array(z.string().uuid()).optional(), // All failed if not specified
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   retriedCount: number;
@@ -275,6 +293,7 @@ z.object({
 **Description**: Get survey-related global settings.
 
 **Output**:
+
 ```typescript
 {
   surveyValidityDays: number;
@@ -293,16 +312,18 @@ z.object({
 **Description**: Update survey-related global settings.
 
 **Input**:
+
 ```typescript
 z.object({
   surveyValidityDays: z.number().min(1).max(30).optional(),
   surveyReminderDay: z.number().min(1).max(7).optional(),
   lowRatingThreshold: z.number().min(1).max(5).optional(),
   surveyQuarterDay: z.number().min(1).max(28).optional(),
-})
+});
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -311,17 +332,17 @@ z.object({
     surveyReminderDay: number;
     lowRatingThreshold: number;
     surveyQuarterDay: number;
-  };
+  }
 }
 ```
 
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| UNAUTHORIZED | Not authenticated |
-| FORBIDDEN | Role not permitted (requires manager/admin) |
-| NOT_FOUND | Survey not found |
-| INVALID_STATUS | Operation not allowed for current status |
-| DUPLICATE_QUARTER | Survey already exists for this quarter |
-| INVALID_SCHEDULE | Scheduled date must be in the future |
+| Code              | Description                                 |
+| ----------------- | ------------------------------------------- |
+| UNAUTHORIZED      | Not authenticated                           |
+| FORBIDDEN         | Role not permitted (requires manager/admin) |
+| NOT_FOUND         | Survey not found                            |
+| INVALID_STATUS    | Operation not allowed for current status    |
+| DUPLICATE_QUARTER | Survey already exists for this quarter      |
+| INVALID_SCHEDULE  | Scheduled date must be in the future        |

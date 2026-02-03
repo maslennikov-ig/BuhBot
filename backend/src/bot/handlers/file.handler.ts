@@ -68,11 +68,7 @@ export function formatTimestamp(date: Date): string {
  * @param timestamp - Formatted timestamp
  * @returns Confirmation message in Russian
  */
-function buildConfirmationMessage(
-  filename: string,
-  size: string,
-  timestamp: string
-): string {
+function buildConfirmationMessage(filename: string, size: string, timestamp: string): string {
   return `\u2705 Файл получен!
 
 \uD83D\uDCC4 Название: ${filename}
@@ -125,11 +121,7 @@ export function registerFileHandler(): void {
     try {
       const formattedSize = formatFileSize(fileSize);
       const timestamp = formatTimestamp(new Date());
-      const confirmationMessage = buildConfirmationMessage(
-        filename,
-        formattedSize,
-        timestamp
-      );
+      const confirmationMessage = buildConfirmationMessage(filename, formattedSize, timestamp);
 
       await ctx.reply(confirmationMessage);
 
@@ -191,11 +183,7 @@ export function registerFileHandler(): void {
     try {
       const formattedSize = formatFileSize(fileSize);
       const timestamp = formatTimestamp(new Date());
-      const confirmationMessage = buildConfirmationMessage(
-        filename,
-        formattedSize,
-        timestamp
-      );
+      const confirmationMessage = buildConfirmationMessage(filename, formattedSize, timestamp);
 
       await ctx.reply(confirmationMessage);
 

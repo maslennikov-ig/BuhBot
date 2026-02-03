@@ -228,12 +228,12 @@ sudo tail -f /var/log/letsencrypt-renewal.log
 
 ### Certificate Renewal Alert Thresholds
 
-| Days Until Expiry | Action Required |
-|-------------------|-----------------|
-| > 30 days | Normal - no action needed |
-| 15-30 days | Warning - verify auto-renewal working |
-| 7-14 days | Critical - manually investigate |
-| < 7 days | Emergency - renew immediately |
+| Days Until Expiry | Action Required                       |
+| ----------------- | ------------------------------------- |
+| > 30 days         | Normal - no action needed             |
+| 15-30 days        | Warning - verify auto-renewal working |
+| 7-14 days         | Critical - manually investigate       |
+| < 7 days          | Emergency - renew immediately         |
 
 ---
 
@@ -243,24 +243,24 @@ sudo tail -f /var/log/letsencrypt-renewal.log
 
 **Backend (.env) - Required secrets:**
 
-| Variable | Description | How to Generate |
-|----------|-------------|-----------------|
-| `SUPABASE_URL` | Supabase project URL | Supabase Dashboard |
-| `SUPABASE_SERVICE_ROLE_KEY` | Admin API key | Supabase Dashboard > API |
-| `DATABASE_URL` | Connection pooler URL | Supabase Dashboard > Database |
-| `DIRECT_URL` | Direct DB URL (migrations) | Supabase Dashboard > Database |
-| `TELEGRAM_BOT_TOKEN` | Bot API token | @BotFather |
-| `TELEGRAM_WEBHOOK_SECRET` | Webhook validation | `openssl rand -hex 32` |
-| `JWT_SECRET` | JWT signing key | `openssl rand -base64 32` |
-| `ENCRYPTION_KEY` | Data encryption | `openssl rand -base64 32` |
-| `REDIS_PASSWORD` | Redis auth (if enabled) | `openssl rand -base64 32` |
+| Variable                    | Description                | How to Generate               |
+| --------------------------- | -------------------------- | ----------------------------- |
+| `SUPABASE_URL`              | Supabase project URL       | Supabase Dashboard            |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin API key              | Supabase Dashboard > API      |
+| `DATABASE_URL`              | Connection pooler URL      | Supabase Dashboard > Database |
+| `DIRECT_URL`                | Direct DB URL (migrations) | Supabase Dashboard > Database |
+| `TELEGRAM_BOT_TOKEN`        | Bot API token              | @BotFather                    |
+| `TELEGRAM_WEBHOOK_SECRET`   | Webhook validation         | `openssl rand -hex 32`        |
+| `JWT_SECRET`                | JWT signing key            | `openssl rand -base64 32`     |
+| `ENCRYPTION_KEY`            | Data encryption            | `openssl rand -base64 32`     |
+| `REDIS_PASSWORD`            | Redis auth (if enabled)    | `openssl rand -base64 32`     |
 
 **Frontend (.env.local) - Required secrets:**
 
-| Variable | Description | Source |
-|----------|-------------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase Dashboard |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key | Supabase Dashboard > API |
+| Variable                        | Description          | Source                   |
+| ------------------------------- | -------------------- | ------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL | Supabase Dashboard       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key      | Supabase Dashboard > API |
 
 ### How to Rotate Secrets
 
@@ -300,13 +300,13 @@ curl http://localhost:3000/health
 
 ### Secret Rotation Schedule
 
-| Secret | Rotation Frequency | Notes |
-|--------|-------------------|-------|
-| `TELEGRAM_BOT_TOKEN` | On compromise only | Requires BotFather regeneration |
-| `JWT_SECRET` | Quarterly | Invalidates existing sessions |
-| `ENCRYPTION_KEY` | Annually | Requires data re-encryption |
-| `SUPABASE_SERVICE_ROLE_KEY` | On compromise | Regenerate in Supabase Dashboard |
-| `DATABASE_URL` password | On compromise | Update in Supabase Dashboard |
+| Secret                      | Rotation Frequency | Notes                            |
+| --------------------------- | ------------------ | -------------------------------- |
+| `TELEGRAM_BOT_TOKEN`        | On compromise only | Requires BotFather regeneration  |
+| `JWT_SECRET`                | Quarterly          | Invalidates existing sessions    |
+| `ENCRYPTION_KEY`            | Annually           | Requires data re-encryption      |
+| `SUPABASE_SERVICE_ROLE_KEY` | On compromise      | Regenerate in Supabase Dashboard |
+| `DATABASE_URL` password     | On compromise      | Update in Supabase Dashboard     |
 
 ### .env.example Usage
 
@@ -455,11 +455,11 @@ CREATE POLICY "policy_name" ON public.table_name ...
 
 **Current limits:**
 
-| Zone | Limit | Burst | Purpose |
-|------|-------|-------|---------|
-| `webhook_limit` | 100 req/min | 20 | Telegram webhook protection |
-| `general_limit` | 10 req/sec | 20 | General API protection |
-| `conn_limit` | 10 connections | - | Connection limiting per IP |
+| Zone            | Limit          | Burst | Purpose                     |
+| --------------- | -------------- | ----- | --------------------------- |
+| `webhook_limit` | 100 req/min    | 20    | Telegram webhook protection |
+| `general_limit` | 10 req/sec     | 20    | General API protection      |
+| `conn_limit`    | 10 connections | -     | Connection limiting per IP  |
 
 ### Application Rate Limits
 
@@ -467,11 +467,11 @@ CREATE POLICY "policy_name" ON public.table_name ...
 
 **Current limits:**
 
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| `windowMs` | 60000ms | Time window (1 minute) |
-| `limit` | 10 | Messages per user per window |
-| `skipUsers` | [] | Admin users to skip (optional) |
+| Parameter   | Value   | Description                    |
+| ----------- | ------- | ------------------------------ |
+| `windowMs`  | 60000ms | Time window (1 minute)         |
+| `limit`     | 10      | Messages per user per window   |
+| `skipUsers` | []      | Admin users to skip (optional) |
 
 ### Testing Commands (curl examples)
 
@@ -629,6 +629,7 @@ apt list --upgradable 2>/dev/null | head -10
 **If security audit fails:**
 
 1. **Certificate issues:**
+
    ```bash
    # Force renewal
    sudo certbot renew --force-renewal
@@ -642,12 +643,14 @@ apt list --upgradable 2>/dev/null | head -10
    - Review git history and clean if necessary
 
 3. **RLS not enabled:**
+
    ```bash
    # Enable via Supabase Dashboard or SQL
    psql "$DATABASE_URL" -c "ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;"
    ```
 
 4. **Firewall inactive:**
+
    ```bash
    sudo ufw enable
    sudo ufw default deny incoming
@@ -690,10 +693,10 @@ apt list --upgradable 2>/dev/null | head -10
 
 ### Emergency Contacts
 
-| Role | Contact |
-|------|---------|
-| Security Lead | [Your contact] |
-| DevOps Lead | [Your contact] |
+| Role             | Contact              |
+| ---------------- | -------------------- |
+| Security Lead    | [Your contact]       |
+| DevOps Lead      | [Your contact]       |
 | Supabase Support | support@supabase.com |
 
 ### Log Locations for Investigation

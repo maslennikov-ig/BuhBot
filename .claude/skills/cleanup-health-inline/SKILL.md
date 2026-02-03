@@ -22,6 +22,7 @@ Detection → Validate → Remove by Priority → Verify → Repeat if needed
 ## Phase 1: Pre-flight
 
 1. **Setup directories**:
+
    ```bash
    mkdir -p .tmp/current/{plans,changes,backups}
    ```
@@ -33,12 +34,32 @@ Detection → Validate → Remove by Priority → Verify → Repeat if needed
 3. **Initialize TodoWrite**:
    ```json
    [
-     {"content": "Dead code detection", "status": "in_progress", "activeForm": "Detecting dead code"},
-     {"content": "Remove critical dead code", "status": "pending", "activeForm": "Removing critical dead code"},
-     {"content": "Remove high priority dead code", "status": "pending", "activeForm": "Removing high dead code"},
-     {"content": "Remove medium priority dead code", "status": "pending", "activeForm": "Removing medium dead code"},
-     {"content": "Remove low priority dead code", "status": "pending", "activeForm": "Removing low dead code"},
-     {"content": "Verification scan", "status": "pending", "activeForm": "Verifying cleanup"}
+     {
+       "content": "Dead code detection",
+       "status": "in_progress",
+       "activeForm": "Detecting dead code"
+     },
+     {
+       "content": "Remove critical dead code",
+       "status": "pending",
+       "activeForm": "Removing critical dead code"
+     },
+     {
+       "content": "Remove high priority dead code",
+       "status": "pending",
+       "activeForm": "Removing high dead code"
+     },
+     {
+       "content": "Remove medium priority dead code",
+       "status": "pending",
+       "activeForm": "Removing medium dead code"
+     },
+     {
+       "content": "Remove low priority dead code",
+       "status": "pending",
+       "activeForm": "Removing low dead code"
+     },
+     { "content": "Verification scan", "status": "pending", "activeForm": "Verifying cleanup" }
    ]
    ```
 
@@ -67,6 +88,7 @@ prompt: |
 ```
 
 **After dead-code-hunter returns**:
+
 1. Read `dead-code-report.md`
 2. Parse dead code counts by priority
 3. If zero dead code → skip to Final Summary
@@ -98,6 +120,7 @@ pnpm build
 2. **Update TodoWrite**: mark current priority in_progress
 
 3. **Invoke dead-code-remover** via Task tool:
+
    ```
    subagent_type: "dead-code-remover"
    description: "Remove {priority} dead code"
@@ -115,6 +138,7 @@ pnpm build
    ```
 
 4. **Quality Gate** (inline):
+
    ```bash
    pnpm type-check
    pnpm build
@@ -136,6 +160,7 @@ After all priorities cleaned:
 1. **Update TodoWrite**: mark verification in_progress
 
 2. **Invoke dead-code-hunter** (verification mode):
+
    ```
    subagent_type: "dead-code-hunter"
    description: "Verification scan"
@@ -167,21 +192,25 @@ Generate summary for user:
 **Status**: {SUCCESS/PARTIAL}
 
 ### Results
+
 - Found: {total} dead code items
 - Removed: {removed} ({percentage}%)
 - Remaining: {remaining}
 
 ### By Priority
+
 - Critical: {removed}/{total}
 - High: {removed}/{total}
 - Medium: {removed}/{total}
 - Low: {removed}/{total}
 
 ### Validation
+
 - Type Check: {status}
 - Build: {status}
 
 ### Artifacts
+
 - Detection: `dead-code-report.md`
 - Cleanup: `dead-code-cleanup-summary.md`
 ```
@@ -191,6 +220,7 @@ Generate summary for user:
 ## Error Handling
 
 **If quality gate fails**:
+
 ```
 Rollback available: .tmp/current/changes/cleanup-changes.json
 
@@ -201,6 +231,7 @@ To rollback:
 ```
 
 **If worker fails**:
+
 - Report error to user
 - Suggest manual intervention
 - Exit workflow
@@ -209,13 +240,13 @@ To rollback:
 
 ## Key Differences from Old Approach
 
-| Old (Orchestrator Agent) | New (Inline Skill) |
-|--------------------------|-------------------|
-| 9+ orchestrator calls | 0 orchestrator calls |
-| ~1400 lines (cmd + agent) | ~150 lines |
-| Context reload each call | Single session context |
-| Plan files for each phase | Direct execution |
-| ~10,000+ tokens overhead | ~500 tokens |
+| Old (Orchestrator Agent)  | New (Inline Skill)     |
+| ------------------------- | ---------------------- |
+| 9+ orchestrator calls     | 0 orchestrator calls   |
+| ~1400 lines (cmd + agent) | ~150 lines             |
+| Context reload each call  | Single session context |
+| Plan files for each phase | Direct execution       |
+| ~10,000+ tokens overhead  | ~500 tokens            |
 
 ---
 

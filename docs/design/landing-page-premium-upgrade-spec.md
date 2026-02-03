@@ -3,6 +3,7 @@
 **You are tasked with implementing a comprehensive design upgrade** for the BuhBot landing page. This is a B2B SaaS platform for accounting firms. Your goal is to transform the current functional landing page into a stunning, modern design with "wow" moments while maintaining professional credibility.
 
 **What you need to do:**
+
 1. Read and analyze all existing landing page components
 2. Implement ALL enhancements described in this specification
 3. Add dark theme support with smooth theme toggle
@@ -24,6 +25,7 @@
 You are transforming the landing page for BuhBot - a B2B SaaS platform for accounting firms that automates communication monitoring and SLA tracking in Telegram. The current implementation is functional but needs a design upgrade to create "wow" moments while maintaining professional credibility for B2B clients.
 
 **Current Stack:**
+
 - Next.js 16 (App Router)
 - React 19
 - Tailwind CSS 4
@@ -33,11 +35,13 @@ You are transforming the landing page for BuhBot - a B2B SaaS platform for accou
 - JetBrains Mono (monospace)
 
 **Current Color Palette:**
+
 - Light Mode: Primary #0066cc, Accent #00d4aa (teal), Secondary Accent #7c3aed (purple)
 - Dark Mode: Primary #38bdf8, Accent #00d4aa, Secondary Accent #a78bfa
 - Background: Light #fafbfc / Dark #0c1222
 
 **Existing Components:**
+
 - Header (sticky, scroll-aware)
 - Hero (aurora background, animated)
 - PainPoints (4-card grid)
@@ -375,6 +379,7 @@ export function PainPoints() {
 ```
 
 Add to globals.css:
+
 ```css
 .perspective-1000 {
   perspective: 1000px;
@@ -856,9 +861,11 @@ Reduce motion for users with preferences:
 ```typescript
 const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const variants = shouldReduceMotion ? {} : {
-  // Full animation variants
-};
+const variants = shouldReduceMotion
+  ? {}
+  : {
+      // Full animation variants
+    };
 ```
 
 ---
@@ -866,6 +873,7 @@ const variants = shouldReduceMotion ? {} : {
 ## Acceptance Criteria
 
 ### Visual Quality
+
 - [ ] Dark theme toggle works smoothly with 300ms transition
 - [ ] All text meets WCAG AA contrast ratios (4.5:1 minimum)
 - [ ] Animations are smooth 60fps on desktop, 30fps acceptable on mobile
@@ -873,6 +881,7 @@ const variants = shouldReduceMotion ? {} : {
 - [ ] No flashing/jarring transitions
 
 ### Functionality
+
 - [ ] Theme preference persists in localStorage
 - [ ] Smooth scroll works across all browsers (Chrome, Firefox, Safari, Edge)
 - [ ] All interactive elements have hover, focus, and active states
@@ -880,12 +889,14 @@ const variants = shouldReduceMotion ? {} : {
 - [ ] Touch gestures work on mobile (no hover-only interactions)
 
 ### Performance
+
 - [ ] Lighthouse Performance score > 90
 - [ ] First Contentful Paint < 1.5s
 - [ ] Time to Interactive < 3.5s
 - [ ] Bundle size increase < 50KB (gzipped)
 
 ### Accessibility
+
 - [ ] All interactive elements keyboard navigable
 - [ ] Focus indicators visible and distinct
 - [ ] ARIA labels present where needed
@@ -893,6 +904,7 @@ const variants = shouldReduceMotion ? {} : {
 - [ ] Color contrast verified with axe DevTools
 
 ### Browser Compatibility
+
 - [ ] Chrome 120+
 - [ ] Firefox 120+
 - [ ] Safari 17+
@@ -929,6 +941,7 @@ const variants = shouldReduceMotion ? {} : {
 ## Testing Checklist
 
 **Manual Testing:**
+
 - [ ] Theme toggle on first load (system preference detection)
 - [ ] Theme toggle persistence across page refreshes
 - [ ] Smooth scroll on all internal links
@@ -940,6 +953,7 @@ const variants = shouldReduceMotion ? {} : {
 - [ ] Keyboard navigation through all interactive elements
 
 **Automated Testing:**
+
 - [ ] Run Lighthouse audit (Performance, Accessibility, Best Practices)
 - [ ] Run axe DevTools accessibility scan
 - [ ] Visual regression tests (Percy/Chromatic if available)
@@ -966,6 +980,7 @@ const variants = shouldReduceMotion ? {} : {
 ## Expected Outcome
 
 A stunning, professional B2B SaaS landing page that:
+
 - Creates memorable "wow" moments through subtle, sophisticated animations
 - Provides a seamless dark mode experience with smooth theme switching
 - Maintains exceptional accessibility and performance standards

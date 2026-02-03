@@ -30,10 +30,7 @@ const DEFAULT_TTL_HOURS = 24;
  * @returns Normalized text
  */
 function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ');
+  return text.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 /**
@@ -50,7 +47,9 @@ export function hashMessage(text: string): string {
 /**
  * Map database classification enum to service type
  */
-function dbToServiceClassification(dbValue: MessageClassification): ClassificationResult['classification'] {
+function dbToServiceClassification(
+  dbValue: MessageClassification
+): ClassificationResult['classification'] {
   // The Prisma enum values match our service types
   return dbValue as ClassificationResult['classification'];
 }
@@ -58,7 +57,9 @@ function dbToServiceClassification(dbValue: MessageClassification): Classificati
 /**
  * Map service classification to database enum
  */
-function serviceToDbClassification(value: ClassificationResult['classification']): MessageClassification {
+function serviceToDbClassification(
+  value: ClassificationResult['classification']
+): MessageClassification {
   // The values are identical, just typed differently
   return value as MessageClassification;
 }
@@ -96,15 +97,13 @@ export async function getCached(
     // Check expiration
     if (cached.expiresAt < new Date()) {
       // Clean up expired entry asynchronously (don't await)
-      prisma.classificationCache
-        .delete({ where: { messageHash: hash } })
-        .catch(error => {
-          logger.warn('Failed to delete expired cache entry', {
-            hash: hash.substring(0, 16),
-            error: error instanceof Error ? error.message : String(error),
-            service: 'classifier',
-          });
+      prisma.classificationCache.delete({ where: { messageHash: hash } }).catch((error) => {
+        logger.warn('Failed to delete expired cache entry', {
+          hash: hash.substring(0, 16),
+          error: error instanceof Error ? error.message : String(error),
+          service: 'classifier',
         });
+      });
 
       logger.debug('Cache entry expired', {
         hash: hash.substring(0, 16),

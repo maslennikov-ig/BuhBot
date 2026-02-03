@@ -5,7 +5,7 @@ description: Automatically creates user-facing changelogs from git commits by an
 
 # Changelog Generator
 
-This skill transforms technical git commits into polished, user-friendly changelogs that your customers and users will actually understand and appreciate.
+This skill transforms technical git commits into polished, user-friendly changelogs that your customers and users will actually understand and appreciate. **Note:** CHANGELOG for the repo is maintained by Release Please; this skill is for user-facing or alternate changelog content (e.g. RELEASE_NOTES, announcements).
 
 ## When to Use This Skill
 

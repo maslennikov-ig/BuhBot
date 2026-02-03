@@ -6,7 +6,7 @@ allowed-tools: Read, Bash
 
 # Generate Changelog
 
-Automatically generate changelog entries following Keep a Changelog format.
+Automatically generate changelog entries following Keep a Changelog format. **Note:** CHANGELOG.md for the main repo is maintained by Release Please. Use this skill for ad-hoc changelog text (e.g. a different format or a one-off report).
 
 ## When to Use
 

@@ -64,6 +64,8 @@ Run `/push patch` after EACH completed task:
 
 Commit messages MUST follow [docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please). Use the **format-commit-message** skill for every commit (including when passing `-m "..."` to `/push`).
 
+**Release automation:** Releases and CHANGELOG are produced by **Release Please** when changes are merged to `main`. Commits must follow the conventions so Release Please can parse them. **`/push patch`** is for committing and pushing feature work (and optionally running the legacy release script); **version bumps and CHANGELOG updates** for the mainline release happen via the Release Please-created PR, not by running `/push` on `main` to create a release commit.
+
 **6. EXECUTION PATTERN**
 
 ```

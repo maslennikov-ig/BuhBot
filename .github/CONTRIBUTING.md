@@ -81,7 +81,7 @@ pnpm lint
 - `docs:` — только документация
 - `refactor:` / `test:` / `chore:` / `style:` / `perf:` / `ci:` — см. [COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md)
 
-Subject: imperative, lowercase, без точки в конце, до 72 символов. Не используйте `chore(release):` — это зарезервировано для релизов.
+Subject: imperative, lowercase, без точки в конце, до 72 символов. Не используйте `chore(release):` — это зарезервировано для релизов. Релизы и CHANGELOG автоматически формирует Release Please из conventional commits в `main`.
 
 Пример:
 

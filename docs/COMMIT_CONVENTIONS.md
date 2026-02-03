@@ -117,12 +117,13 @@ Use the format your issue tracker expects (e.g. `gh-42`, `#42`, `buh-xxx`).
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - [Semantic Versioning](https://semver.org/)
-- [Release Please](https://github.com/googleapis/release-please) (when adopted)
+- [Release Please](https://github.com/googleapis/release-please) (in use)
 
 ---
 
 ## 6. Enforcement
 
+- **Release process:** Releases and CHANGELOG are created by Release Please when changes are merged to `main`. Conventional commits drive CHANGELOG and version bumps. Do not rely on manual `/push` for normal releases.
 - **commitlint** runs on `commit-msg` (Husky) to enforce format locally. Config: `commitlint.config.js`.
 - **CI** runs `pnpm format:check` as a safety net; it may run commitlint on PRs as a backup.
 - **Agents** MUST use the `format-commit-message` skill (or these rules) for every commit, including when using `/push patch -m "..."`.

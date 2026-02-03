@@ -36,20 +36,28 @@ export function Header() {
   // Check auth status
   useEffect(() => {
     // DEV MODE: Skip auth check, use mock user
-    if (isDevMode || !supabase) {
+    if (isDevMode) {
       setIsLoggedIn(true);
       setUserEmail(devMockUser.email);
       return;
     }
 
+    // Supabase not configured - skip auth
+    if (!supabase) {
+      return;
+    }
+
+    // Capture non-null supabase for use in async functions
+    const sb = supabase;
+
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sb.auth.getSession();
       setIsLoggedIn(!!session);
       setUserEmail(session?.user?.email ?? null);
     };
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session);
       setUserEmail(session?.user?.email ?? null);
     });

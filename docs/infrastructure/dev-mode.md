@@ -51,6 +51,7 @@ docker compose -f infrastructure/docker-compose.local.yml ps
 ## Step 2: Backend configuration
 
 1. Copy the example env file:
+
    ```bash
    cd backend
    cp .env.example .env
@@ -69,6 +70,7 @@ docker compose -f infrastructure/docker-compose.local.yml ps
 3. Optional: set `DEV_USER_EMAIL=admin@buhbot.local` to match the mock user email shown in the UI.
 
 4. Run migrations and seed (if applicable):
+
    ```bash
    pnpm prisma migrate deploy
    pnpm prisma db seed
@@ -86,6 +88,7 @@ The API will be available at `http://localhost:3000` (or the port set in `PORT`)
 ## Step 3: Frontend configuration
 
 1. Copy the example env file:
+
    ```bash
    cd frontend
    cp .env.example .env.local
@@ -110,15 +113,15 @@ Open the app in the browser; the login page will show a DEV MODE banner. Clickin
 
 ## Summary of environment variables
 
-| Variable | Where | Purpose |
-|----------|--------|---------|
-| `DEV_MODE` | backend `.env` | Enable backend mock auth (use `true`). |
-| `DEV_USER_EMAIL` | backend `.env` | Optional; email for mock user. |
-| `NEXT_PUBLIC_DEV_MODE` | frontend `.env.local` | Enable frontend dev-mode login and headers. |
-| `NEXT_PUBLIC_DEV_USER_EMAIL` | frontend `.env.local` | Optional; email shown in UI. |
-| `DATABASE_URL` / `DIRECT_URL` | backend `.env` | Point to local Postgres (e.g. `localhost:5432/buhbot`). |
-| `REDIS_HOST` / `REDIS_PORT` | backend `.env` | Point to local Redis. |
-| `NEXT_PUBLIC_API_URL` | frontend `.env.local` | Backend URL for tRPC (e.g. `http://localhost:3000`). |
+| Variable                      | Where                 | Purpose                                                 |
+| ----------------------------- | --------------------- | ------------------------------------------------------- |
+| `DEV_MODE`                    | backend `.env`        | Enable backend mock auth (use `true`).                  |
+| `DEV_USER_EMAIL`              | backend `.env`        | Optional; email for mock user.                          |
+| `NEXT_PUBLIC_DEV_MODE`        | frontend `.env.local` | Enable frontend dev-mode login and headers.             |
+| `NEXT_PUBLIC_DEV_USER_EMAIL`  | frontend `.env.local` | Optional; email shown in UI.                            |
+| `DATABASE_URL` / `DIRECT_URL` | backend `.env`        | Point to local Postgres (e.g. `localhost:5432/buhbot`). |
+| `REDIS_HOST` / `REDIS_PORT`   | backend `.env`        | Point to local Redis.                                   |
+| `NEXT_PUBLIC_API_URL`         | frontend `.env.local` | Backend URL for tRPC (e.g. `http://localhost:3000`).    |
 
 ---
 

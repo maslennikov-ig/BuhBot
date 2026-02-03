@@ -7,7 +7,7 @@ description: Generate standardized conventional commit messages with Claude Code
 
 Generate conventional commit messages following project standards with proper attribution.
 
-**Authority:** Commit format MUST follow [docs/COMMIT_CONVENTIONS.md](../../../docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please rules). Use this skill for every commit so Release Please and changelog generation parse correctly.
+**Authority:** Commit format MUST follow [docs/COMMIT_CONVENTIONS.md](../../../docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please rules). Release Please is in use; use this skill for every commit so Release Please and changelog generation parse correctly.
 
 ## When to Use
 

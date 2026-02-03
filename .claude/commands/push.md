@@ -3,6 +3,8 @@ description: Automated release management with version bumping and dual changelo
 argument-hint: [patch|minor|major] [-m "message"]
 ---
 
+**Release Please** is the primary release automation: it opens a release PR from `main` that updates CHANGELOG and version; merging that PR creates the tag and GitHub release. This command runs the **legacy** [.claude/scripts/release.sh](.claude/scripts/release.sh) (version bump + CHANGELOG + tag). Use it for optional/local releases or RELEASE_NOTES; for normal product releases, rely on merging the Release Please PR.
+
 Execute the release automation script with auto-confirmation for Claude Code.
 
 **Features:**

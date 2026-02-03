@@ -426,7 +426,8 @@ function Header({
   );
 }
 
-import { supabase, isDevMode, devMockSession } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { isDevMode, devMockUser } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 
@@ -453,7 +454,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
       // DEV MODE: Bypass auth when Supabase is not configured
       if (isDevMode) {
         setIsAuthorized(true);
-        setUserEmail(devMockSession.user.email ?? 'dev@localhost');
+        setUserEmail(devMockUser.email);
         return;
       }
 

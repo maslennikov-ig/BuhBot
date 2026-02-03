@@ -6,7 +6,8 @@ import { Menu, X, User } from 'lucide-react';
 import { ThemeLogo } from '../ThemeLogo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { supabase, isDevMode, devMockSession } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { isDevMode, devMockUser } from '@/lib/config';
 
 const navLinks = [
   { name: 'Возможности', href: '#features' },
@@ -22,7 +23,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(isDevMode); // In dev mode, always logged in
-  const [userEmail, setUserEmail] = useState<string | null>(isDevMode ? devMockSession.user.email : null);
+  const [userEmail, setUserEmail] = useState<string | null>(isDevMode ? devMockUser.email : null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,10 +35,10 @@ export function Header() {
 
   // Check auth status
   useEffect(() => {
-    // DEV MODE: Skip auth check, use mock session
+    // DEV MODE: Skip auth check, use mock user
     if (isDevMode || !supabase) {
       setIsLoggedIn(true);
-      setUserEmail(devMockSession.user.email ?? 'dev@localhost');
+      setUserEmail(devMockUser.email);
       return;
     }
 

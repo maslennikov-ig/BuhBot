@@ -21,3 +21,11 @@ The [.claude/scripts/release.sh](../../.claude/scripts/release.sh) script and `/
 - **Workflow:** [.github/workflows/release-please.yml](../../.github/workflows/release-please.yml)
 - **Config:** [release-please-config.json](../../release-please-config.json)
 - **Manifest:** [.release-please-manifest.json](../../.release-please-manifest.json)
+
+## Troubleshooting
+
+- **"Resource not accessible by integration" or "Resource not accessible by personal access token"**  
+  The workflow must grant `actions: read` in addition to `contents`, `pull-requests`, and `issues`. See [release-please-action#1048](https://github.com/googleapis/release-please-action/issues/1048). The workflow file already sets these permissions.
+
+- **Release Please runs but cannot open or update the release PR**  
+  In **Settings → Actions → General**, enable **"Allow GitHub Actions to create and approve pull requests"** so the default `GITHUB_TOKEN` can create/update the release PR.

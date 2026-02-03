@@ -27,5 +27,11 @@ The [.claude/scripts/release.sh](../../.claude/scripts/release.sh) script and `/
 - **"Resource not accessible by integration" or "Resource not accessible by personal access token"**  
   The workflow must grant `actions: read` in addition to `contents`, `pull-requests`, and `issues`. See [release-please-action#1048](https://github.com/googleapis/release-please-action/issues/1048). The workflow file already sets these permissions.
 
-- **Release Please runs but cannot open or update the release PR**  
-  In **Settings → Actions → General**, enable **"Allow GitHub Actions to create and approve pull requests"** so the default `GITHUB_TOKEN` can create/update the release PR.
+- **"GitHub Actions is not permitted to create or approve pull requests"** (Release Please fails at creating the release PR)  
+  Enable the setting so the default `GITHUB_TOKEN` can create and update the release PR:
+  1. On GitHub: **Settings** → **Actions** → **General**.
+  2. Under **Workflow permissions**, enable **"Allow GitHub Actions to create and approve pull requests"**.
+  3. Click **Save**.
+
+  If the checkbox is grayed out, the repository’s organization is overriding it: an org admin must enable it in **Organization** → **Settings** → **Actions** → **General** first.  
+  See [GitHub Docs: Preventing GitHub Actions from creating or approving pull requests](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#preventing-github-actions-from-creating-or-approving-pull-requests).

@@ -427,6 +427,7 @@ function Header({
 }
 
 import { supabase } from '@/lib/supabase';
+import { isDevMode, devMockUser } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 
@@ -450,6 +451,19 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   // Check authentication
   React.useEffect(() => {
     const checkAuth = async () => {
+      // DEV MODE: Bypass auth when Supabase is not configured
+      if (isDevMode) {
+        setIsAuthorized(true);
+        setUserEmail(devMockUser.email);
+        return;
+      }
+
+      // Production: Use Supabase Auth
+      if (!supabase) {
+        router.push('/login');
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');

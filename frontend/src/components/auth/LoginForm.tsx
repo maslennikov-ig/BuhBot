@@ -51,6 +51,11 @@ export function LoginForm() {
         return;
       }
 
+      // Supabase not configured (shouldn't happen in production)
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,

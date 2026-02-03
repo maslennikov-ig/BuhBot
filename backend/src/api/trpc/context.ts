@@ -94,10 +94,11 @@ function extractToken(authHeader: string | undefined): string | null {
  *
  * This function is called for every tRPC request to build the context object.
  * It handles authentication by:
- * 1. Extracting JWT from Authorization header
- * 2. Validating JWT with Supabase Auth
- * 3. Fetching user profile from database
- * 4. Building context with user info or null for unauthenticated
+ * 1. DEV MODE: If Supabase is not configured, bypass auth with mock user
+ * 2. Extracting JWT from Authorization header
+ * 3. Validating JWT with Supabase Auth
+ * 4. Fetching user profile from database
+ * 5. Building context with user info or null for unauthenticated
  *
  * Error Handling:
  * - Invalid/missing JWT → Returns unauthenticated context (user: null)
@@ -132,6 +133,16 @@ export async function createContext({
   // If no token, return unauthenticated context
   if (!token) {
     console.log(`[CTX:${reqId}] No token, returning unauthenticated context (${Date.now() - startTime}ms)`);
+    return {
+      prisma,
+      user: null,
+      session: null,
+    };
+  }
+
+  // If Supabase is not configured and not in dev mode, return unauthenticated
+  if (!supabase) {
+    console.log(`[CTX:${reqId}] Supabase not configured, returning unauthenticated context`);
     return {
       prisma,
       user: null,

@@ -38,8 +38,8 @@ function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Default to localhost in development
-  return 'http://localhost:3001';
+  // Default to localhost in development (backend runs on port 3000)
+  return 'http://localhost:3000';
 }
 
 /**
@@ -49,6 +49,7 @@ function getBaseUrl(): string {
  * - Automatic request batching
  * - JWT token injection from localStorage
  * - Error handling middleware
+ * - DEV MODE: Uses mock token when Supabase is not configured
  */
 export function createTRPCClient() {
   return trpc.createClient({
@@ -65,7 +66,7 @@ export function createTRPCClient() {
           }
 
           // Get JWT token from Supabase session (client-side only)
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && supabase) {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.access_token) {
               return {
@@ -79,5 +80,4 @@ export function createTRPCClient() {
     ],
   });
 }
-
 

@@ -151,6 +151,7 @@ Use [Lefthook](https://github.com/evilmartians/lefthook) - a fast Git hooks mana
 - CI still runs lint checks as a safety net for `--no-verify` bypasses
 - Documentation updated to explain the workflow
 - Hooks use `--fix` to auto-resolve most issues
+- **For agents:** When running `git commit`, always check the command's exit code and output. Hook failures (lint-staged, commitlint) are reported there. See AGENTS.md and CLAUDE.md (Session Close Protocol, Commit Strategy) for required behavior.
 
 ## References
 

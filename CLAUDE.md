@@ -60,6 +60,7 @@ Run `/push patch` after EACH completed task:
 - Add artifacts: `→ Artifacts: [file1](path), [file2](path)`
 - Update TodoWrite to completed
 - Then `/push patch`
+- After the command that runs `git commit`, **verify it succeeded** (exit code 0). If it failed, the output contains ESLint/Prettier/commitlint errors—fix those and commit again.
 
 Commit messages MUST follow [docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please). Use the **format-commit-message** skill for every commit (including when passing `-m "..."` to `/push`).
 
@@ -160,14 +161,20 @@ All issues use `buh-` prefix: `buh-abc123`
 
 ```bash
 git status              # 1. What changed?
-git add <files>         # 2. Stage code
+git add <files>         # 2. Stage the right files (match lint-staged patterns if unsure)
 bd sync                 # 3. Sync beads
 git commit -m "... (buh-xxx)"  # 4. Commit with issue ID
+# If step 4 fails: read the command output. Pre-commit runs ESLint+Prettier on staged files;
+# commit-msg runs commitlint. Fix the reported issues (code or message), then re-run from step 2.
 bd sync                 # 5. Sync any new changes
 git push                # 6. Push to remote
 ```
 
 **Work is NOT done until pushed!**
+
+**Commit failures:** Always check the **exit code and full output** of `git commit`. On failure, the output shows either lint/format errors (fix code and re-stage) or commitlint errors (fix the message and retry). Retry until `git commit` succeeds, then continue with `bd sync` and `git push`.
+
+**Git hooks (Husky):** Pre-commit runs `lint-staged` (ESLint + Prettier on staged files). Commit-msg runs `commitlint`. Both print to the **same terminal** as `git commit`. There are no separate log files. To "see" hook errors, always capture and check the **output and exit code** of `git commit`.
 
 ### When to Use What
 
@@ -202,6 +209,7 @@ git push                # 6. Push to remote
 
 - Type-check must pass before commit
 - Build must pass before commit
+- **Pre-commit hooks (Husky)** run on `git commit`: lint-staged (ESLint + Prettier on staged files) and commitlint (message format). If commit fails, the **terminal output** of the commit command contains the errors; fix and retry. Do not use `--no-verify` unless explicitly asked.
 - No hardcoded credentials
 
 **Agent Selection**:

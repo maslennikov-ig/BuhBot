@@ -154,6 +154,23 @@ preflight_checks() {
         errors=$((errors + 1))
     fi
 
+    # Backend .env is required (workflow does not sync .env for security)
+    local backend_env="${PROJECT_ROOT}/backend/.env"
+    if [ ! -f "$backend_env" ]; then
+        log_error "backend/.env is required on the server but not found at: $backend_env"
+        log_error "Create it from backend/.env.example and set at least DATABASE_URL and TELEGRAM_BOT_TOKEN"
+        errors=$((errors + 1))
+    else
+        if ! grep -qE '^DATABASE_URL=' "$backend_env" 2>/dev/null; then
+            log_error "backend/.env must contain DATABASE_URL"
+            errors=$((errors + 1))
+        fi
+        if ! grep -qE '^TELEGRAM_BOT_TOKEN=' "$backend_env" 2>/dev/null; then
+            log_error "backend/.env must contain TELEGRAM_BOT_TOKEN"
+            errors=$((errors + 1))
+        fi
+    fi
+
     if [ $errors -gt 0 ]; then
         log_error "Pre-flight checks failed with $errors error(s)"
         exit 1

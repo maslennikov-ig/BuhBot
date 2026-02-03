@@ -20,6 +20,9 @@ const __dirname = path.dirname(__filename);
 // Load .env file from backend root
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+// In test, required vars get dummy defaults so unit tests can load the app without real credentials
+const isTestEnv = process.env['NODE_ENV'] === 'test';
+
 // Environment schema with Zod
 const envSchema = z.object({
   // Node Environment
@@ -29,7 +32,9 @@ const envSchema = z.object({
   PORT: z.string().transform(Number).pipe(z.number().min(1).max(65535)).default('3000'),
 
   // Database (Supabase PostgreSQL)
-  DATABASE_URL: z.string().url().describe('PostgreSQL connection string from Supabase'),
+  DATABASE_URL: isTestEnv
+    ? z.string().url().optional().default('postgresql://localhost:5432/test')
+    : z.string().url().describe('PostgreSQL connection string from Supabase'),
 
   // Redis (for BullMQ)
   REDIS_HOST: z.string().default('localhost'),
@@ -38,7 +43,9 @@ const envSchema = z.object({
   REDIS_DB: z.string().transform(Number).pipe(z.number().min(0).max(15)).default('0'),
 
   // Telegram Bot
-  TELEGRAM_BOT_TOKEN: z.string().min(1).describe('Telegram Bot Token from @BotFather'),
+  TELEGRAM_BOT_TOKEN: isTestEnv
+    ? z.string().min(1).optional().default('test-token')
+    : z.string().min(1).describe('Telegram Bot Token from @BotFather'),
   TELEGRAM_WEBHOOK_URL: z
     .string()
     .url()

@@ -50,7 +50,7 @@ Production-ready Docker Compose orchestration for all BuhBot services.
 
 1. **Docker** (v20.10+) and **Docker Compose** (v2.0+)
 2. **Environment Files**:
-   - `backend/.env` (see `backend/.env.example`)
+   - `backend/.env` (see `backend/.env.example`) — must contain at least `DATABASE_URL` and `TELEGRAM_BOT_TOKEN`. For GitHub-triggered deploys, the workflow does not sync `.env` to the VDS; the server must have this file configured before deploy.
    - `frontend/.env.local` (see `frontend/.env.example`)
    - `infrastructure/.env` (see `infrastructure/.env.example`)
 

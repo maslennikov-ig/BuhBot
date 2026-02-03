@@ -276,6 +276,7 @@ jobs:
             echo "No tests configured or tests passed"
           fi
         env:
+          NODE_ENV: test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
 

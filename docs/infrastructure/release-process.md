@@ -33,5 +33,9 @@ The [.claude/scripts/release.sh](../../.claude/scripts/release.sh) script and `/
   2. Under **Workflow permissions**, enable **"Allow GitHub Actions to create and approve pull requests"**.
   3. Click **Save**.
 
-  If the checkbox is grayed out, the repository’s organization is overriding it: an org admin must enable it in **Organization** → **Settings** → **Actions** → **General** first.  
+  If the checkbox is grayed out, the repository's organization is overriding it: an org admin must enable it in **Organization** → **Settings** → **Actions** → **General** first.  
   See [GitHub Docs: Preventing GitHub Actions from creating or approving pull requests](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#preventing-github-actions-from-creating-or-approving-pull-requests).
+
+## VDS deployment requirement
+
+The **Deploy to Production** workflow does not sync `backend/.env` (or other `.env` files) to the VDS for security. The server must already have `backend/.env` with at least `DATABASE_URL` and `TELEGRAM_BOT_TOKEN` before running a GitHub-triggered deploy. The deploy script ([infrastructure/scripts/github-deploy.sh](../../infrastructure/scripts/github-deploy.sh)) runs a pre-flight check and fails with a clear error if the file is missing or incomplete.

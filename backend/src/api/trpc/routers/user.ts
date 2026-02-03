@@ -152,7 +152,7 @@ export const userRouter = router({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      console.log('[DEBUG] user.list input:', input);
+      logger.debug('[DEBUG] user.list input:', input);
       const start = Date.now();
 
       const where: any = {};
@@ -165,7 +165,7 @@ export const userRouter = router({
         }
       }
 
-      console.log('[DEBUG] user.list query where:', JSON.stringify(where));
+      logger.debug('[DEBUG] user.list query where:', JSON.stringify(where));
 
       const users = await ctx.prisma.user.findMany({
         where,
@@ -178,7 +178,7 @@ export const userRouter = router({
         orderBy: { fullName: 'asc' },
       });
 
-      console.log(
+      logger.debug(
         `[DEBUG] user.list finished in ${Date.now() - start}ms. Found ${users.length} users.`
       );
 

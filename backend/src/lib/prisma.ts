@@ -18,8 +18,8 @@
  * @module lib/prisma
  */
 
-// Ensure env is loaded first
-import '../config/env.js';
+// Ensure env is loaded first; use validated env for connection (includes test defaults)
+import env from '../config/env.js';
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -48,13 +48,14 @@ declare global {
  * Direct connection is preferred for production but may have IPv6 issues locally.
  */
 function createPool(): pg.Pool {
-  const isDev = process.env['NODE_ENV'] === 'development';
+  const isDev = env.NODE_ENV === 'development';
 
+  // Use validated env (includes test defaults when NODE_ENV=test)
   // In development, prefer DATABASE_URL (local) over DIRECT_URL
   // In production, prefer DIRECT_URL to bypass Supabase pooler JWT requirement
   const connectionString = isDev
-    ? process.env['DATABASE_URL'] || process.env['DIRECT_URL']
-    : process.env['DIRECT_URL'] || process.env['DATABASE_URL'];
+    ? env.DIRECT_URL || env.DATABASE_URL
+    : env.DIRECT_URL || env.DATABASE_URL;
 
   if (!connectionString) {
     throw new Error('DIRECT_URL or DATABASE_URL environment variable is required');
@@ -99,7 +100,7 @@ function createPrismaClient(pool: pg.Pool): PrismaClient {
 
   return new PrismaClient({
     adapter,
-    log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 }
 
@@ -108,7 +109,7 @@ const pool = global.pgPool || createPool();
 export const prisma = global.prisma || createPrismaClient(pool);
 
 // Cache in global scope for development hot-reload
-if (process.env['NODE_ENV'] === 'development') {
+if (env.NODE_ENV === 'development') {
   global.pgPool = pool;
   global.prisma = prisma;
 }

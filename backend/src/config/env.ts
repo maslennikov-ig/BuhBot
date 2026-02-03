@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // In test, required vars get dummy defaults so unit tests can load the app without real credentials
-const isTestEnv = process.env.NODE_ENV === 'test';
+const isTestEnv = process.env['NODE_ENV'] === 'test';
 
 // Environment schema with Zod
 const envSchema = z.object({

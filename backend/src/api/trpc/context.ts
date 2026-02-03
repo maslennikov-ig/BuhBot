@@ -133,7 +133,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
 
   // If no token, return unauthenticated context
   if (!token) {
-    console.log(
+    logger.debug(
       `[CTX:${reqId}] No token, returning unauthenticated context (${Date.now() - startTime}ms)`
     );
     return {
@@ -145,7 +145,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
 
   // If Supabase is not configured and not in dev mode, return unauthenticated
   if (!supabase) {
-    console.log(`[CTX:${reqId}] Supabase not configured, returning unauthenticated context`);
+    logger.debug(`[CTX:${reqId}] Supabase not configured, returning unauthenticated context`);
     return {
       prisma,
       user: null,
@@ -155,14 +155,14 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
 
   try {
     // Validate JWT with Supabase Auth
-    console.log(`[CTX:${reqId}] Starting supabase.auth.getUser()...`);
+    logger.debug(`[CTX:${reqId}] Starting supabase.auth.getUser()...`);
     const authStart = Date.now();
     const { data, error } = await supabase.auth.getUser(token);
-    console.log(`[CTX:${reqId}] supabase.auth.getUser() completed in ${Date.now() - authStart}ms`);
+    logger.debug(`[CTX:${reqId}] supabase.auth.getUser() completed in ${Date.now() - authStart}ms`);
 
     // If JWT validation fails, return unauthenticated context
     if (error || !data.user) {
-      console.log(
+      logger.debug(
         `[CTX:${reqId}] Auth failed: ${error?.message || 'no user'} (${Date.now() - startTime}ms)`
       );
       return {
@@ -175,7 +175,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
     const supabaseUser = data.user;
 
     // Fetch user profile from database (includes role for RBAC)
-    console.log(`[CTX:${reqId}] Starting prisma.user.findUnique()...`);
+    logger.debug(`[CTX:${reqId}] Starting prisma.user.findUnique()...`);
     const dbStart = Date.now();
     const dbUser = await prisma.user.findUnique({
       where: { id: supabaseUser.id },
@@ -186,11 +186,11 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         role: true,
       },
     });
-    console.log(`[CTX:${reqId}] prisma.user.findUnique() completed in ${Date.now() - dbStart}ms`);
+    logger.debug(`[CTX:${reqId}] prisma.user.findUnique() completed in ${Date.now() - dbStart}ms`);
 
     // If user not found in database, return unauthenticated context
     if (!dbUser) {
-      console.log(`[CTX:${reqId}] User not in DB (${Date.now() - startTime}ms)`);
+      logger.debug(`[CTX:${reqId}] User not in DB (${Date.now() - startTime}ms)`);
       return {
         prisma,
         user: null,
@@ -198,7 +198,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       };
     }
 
-    console.log(`[CTX:${reqId}] Context created successfully (${Date.now() - startTime}ms)`);
+    logger.debug(`[CTX:${reqId}] Context created successfully (${Date.now() - startTime}ms)`);
     // Build authenticated context
     return {
       prisma,

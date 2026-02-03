@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ADR-001: pre-commit hooks with Husky; CONTRIBUTING and README updates (87fba45)
 - chore: add .pnpm-store to .gitignore (f2bf257)
+- style: format codebase with Prettier (9a19b09)
 
 ## [0.9.19] - 2026-01-30
 

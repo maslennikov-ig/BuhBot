@@ -1,339 +1,325 @@
-# GitHub Issues Processing Plan
+# DEV MODE Implementation Plan
 
-## Summary
-
-| #   | Issue | Type   | Priority | Status            | Fix Approach                 |
-| --- | ----- | ------ | -------- | ----------------- | ---------------------------- |
-| 1   | #17   | bug    | P1       | Ready             | Code fix + migration + tests |
-| 2   | #16   | bug    | P2       | Ready             | Code fix + tests             |
-| 3   | #8    | config | P3       | **Already Fixed** | Closed by owner              |
+**Date**: 2026-01-30
+**Based on**: PR #18 by Dahgoth
+**Status**: PLANNING
 
 ---
 
-## Issue #8: Bot Privacy Mode (CLOSED)
+## Goal
 
-**Status:** Закрыт владельцем. Privacy Mode уже отключён.
+Реализовать DEV MODE — режим локальной разработки без Supabase, с лучшими практиками:
+- Явная активация через env variable (не автоопределение)
+- Non-nullable types (без breaking changes)
+- Использование существующего logger вместо console.log
+- Интеграция с существующим seed скриптом
 
 ---
 
-## Issue #17: SLA Breach Notification Not Sent to Group Chat (P1)
+## Architecture Decision
 
-### Root Cause (verified in code)
-
-В `chats.ts:584-596` (`registerChat`) поле `notifyInChatOnBreach` НЕ указано явно:
-
+### Подход PR #18 (отклоняем)
 ```typescript
-create: {
-  id: chatId,
-  // MISSING: notifyInChatOnBreach NOT explicitly set!
+// Проблема: nullable client ломает типы везде
+export const supabase: SupabaseClient | null = isConfigured ? createClient() : null;
+```
+
+### Наш подход (лучшая практика)
+```typescript
+// Явный env flag, client всегда non-null, bypass на уровне context
+if (process.env.DEV_MODE === 'true') {
+  // Bypass auth in context.ts, клиент создаётся с placeholder values
 }
 ```
 
-Prisma `@default(true)` не работает для существующих записей с `NULL`.
-Worker проверяет `if (request.chat?.notifyInChatOnBreach)` — `NULL` = `false`.
-
-### Solution
-
-1. Add `notifyInChatOnBreach: true` to `registerChat` create block
-2. Migration to set `notifyInChatOnBreach = true` for existing chats
-
-### Files to Modify
-
-| File                                        | Change                                                                                    |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `backend/src/api/trpc/routers/chats.ts:596` | Add `notifyInChatOnBreach: true`                                                          |
-| Migration                                   | `UPDATE chats SET notify_in_chat_on_breach = true WHERE notify_in_chat_on_breach IS NULL` |
-
-### Proposed Tests (from issue)
-
-**File**: `backend/src/__tests__/routers/chats.test.ts`
-
-1. **Unit Test**: Chat creation sets `notifyInChatOnBreach` explicitly
-2. **Integration Test**: Group notification sent when enabled / NOT sent when disabled
-3. **Integration Test**: sendMessage errors handled gracefully
-4. **Logging Test**: Verify skip reason is logged
+**Преимущества:**
+1. Нет breaking TypeScript changes
+2. Явный контроль через `DEV_MODE=true`
+3. Работает даже когда Supabase частично настроен (staging)
 
 ---
 
-## Issue #16: Global SLA Threshold Doesn't Update Existing Chats (P2)
+## Implementation Tasks
 
-### Root Cause (verified in code)
+### Task 1: Backend — ENV Configuration
 
-`settings.ts:640-658` (`updateSlaThresholds`) updates only `GlobalSettings.defaultSlaThreshold`, NOT existing chats.
-
-### Solution
-
-Add `chat.updateMany()` to also update all existing chats:
+**File**: `backend/src/config/env.ts`
 
 ```typescript
-await ctx.prisma.chat.updateMany({
-  where: {},
-  data: {
-    slaThresholdMinutes: input.slaThreshold,
-    slaResponseMinutes: input.slaThreshold,
-  },
+const envSchema = z.object({
+  // ... existing
+  DEV_MODE: z.enum(['true', 'false']).optional().default('false'),
+  DEV_USER_EMAIL: z.string().email().optional().default('admin@buhbot.local'),
 });
+
+export const isDevMode = env.DEV_MODE === 'true' && env.NODE_ENV === 'development';
 ```
 
-### Files to Modify
-
-| File                                               | Change                  |
-| -------------------------------------------------- | ----------------------- |
-| `backend/src/api/trpc/routers/settings.ts:646-656` | Add `chat.updateMany()` |
-
-### Proposed Tests (from issue)
-
-**File**: `backend/src/__tests__/routers/settings.test.ts`
-
-1. **Integration Test**: `updateSlaThresholds` updates all existing chats
-2. **Integration Test**: `GlobalSettings.defaultSlaThreshold` is updated
-3. **Regression Test**: New chats use global default
+**File**: `backend/.env.example` (add)
+```bash
+# DEV MODE (local development without Supabase)
+# DEV_MODE=true
+# DEV_USER_EMAIL=admin@buhbot.local
+```
 
 ---
 
-## Implementation Plan
+### Task 2: Backend — Context Auth Bypass
 
-### Phase 1: Create Beads Tasks
-
-```bash
-bd create --type=bug --priority=1 --title="Fix notifyInChatOnBreach not set on chat creation (gh-17)" --external-ref="gh-17"
-bd create --type=bug --priority=2 --title="Global SLA threshold should update existing chats (gh-16)" --external-ref="gh-16"
-```
-
-### Phase 2: Fix Issue #17 (P1)
-
-**Step 2.1:** Edit `backend/src/api/trpc/routers/chats.ts`
-
-Add `notifyInChatOnBreach: true` to the create block at line 596:
+**File**: `backend/src/api/trpc/context.ts`
 
 ```typescript
-create: {
-  id: chatId,
-  chatType: input.chatType,
-  title: input.title ?? null,
-  accountantUsername: input.accountantUsername ?? null,
-  slaEnabled: true,
-  slaResponseMinutes: defaultThreshold,
-  slaThresholdMinutes: defaultThreshold,
-  monitoringEnabled: true,
-  is24x7Mode: false,
-  managerTelegramIds: [],
-  notifyInChatOnBreach: true,  // ADD THIS
-},
+import { isDevMode, env } from '../../config/env.js';
+import logger from '../../utils/logger.js';
+
+const DEV_MODE_USER: ContextUser = {
+  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  email: env.DEV_USER_EMAIL || 'admin@buhbot.local',
+  role: 'admin',
+  fullName: 'DEV Admin',
+};
+
+export async function createContext({ req }: CreateExpressContextOptions): Promise<Context> {
+  // DEV MODE: Bypass all auth
+  if (isDevMode) {
+    logger.debug('[context] DEV MODE: Using mock admin user');
+    return {
+      prisma,
+      user: DEV_MODE_USER,
+      session: { accessToken: 'dev-mode-token', expiresAt: Math.floor(Date.now() / 1000) + 86400 },
+    };
+  }
+  // ... existing code
+}
 ```
 
-**Step 2.2:** Create migration
+---
 
-```bash
-cd backend
-npx prisma migrate dev --name fix_notify_in_chat_default
-```
+### Task 3: Backend — Supabase Client (Keep Non-Nullable)
 
-Migration SQL:
-
-```sql
-UPDATE "chats" SET "notify_in_chat_on_breach" = true WHERE "notify_in_chat_on_breach" IS NULL;
-```
-
-**Step 2.3:** Write tests for Issue #17
-
-Create/update `backend/src/__tests__/routers/chats.test.ts`:
+**File**: `backend/src/lib/supabase.ts`
 
 ```typescript
-describe('chats.registerChat', () => {
-  it('should explicitly set notifyInChatOnBreach to true on creation', async () => {
-    const chat = await caller.chats.registerChat({
-      telegramChatId: '123456',
-      chatType: 'group',
-    });
+import logger from '../utils/logger.js';
+import { isDevMode } from '../config/env.js';
 
-    const dbChat = await prisma.chat.findUnique({ where: { id: 123456n } });
-    expect(dbChat?.notifyInChatOnBreach).toBe(true);
-  });
+const supabaseUrl = process.env['SUPABASE_URL'] || 'https://placeholder.supabase.co';
+const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'placeholder-key';
+
+if (isDevMode && !process.env['SUPABASE_URL']) {
+  logger.warn('[Supabase] DEV MODE: Auth bypassed in context.ts');
+}
+
+if (!isDevMode && (!process.env['SUPABASE_URL'] || !process.env['SUPABASE_SERVICE_ROLE_KEY'])) {
+  throw new Error('Missing: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
 });
 ```
 
-Create/update `backend/src/__tests__/workers/sla-timer.worker.test.ts`:
+---
+
+### Task 4: Backend — Prisma Improvements (From PR)
+
+**File**: `backend/src/lib/prisma.ts`
 
 ```typescript
-describe('SLA Timer Worker - Group Notifications', () => {
-  it('should send notification to group chat when notifyInChatOnBreach is true', async () => {
-    // Mock bot.telegram.sendMessage
-    // Create chat with notifyInChatOnBreach = true
-    // Process SLA breach
-    // Assert sendMessage called with chat ID
-  });
+import '../config/env.js'; // Ensure env loaded first
 
-  it('should NOT send notification when notifyInChatOnBreach is false', async () => {
-    // Create chat with notifyInChatOnBreach = false
-    // Process SLA breach
-    // Assert sendMessage NOT called for chat ID
-  });
+function createPool(): pg.Pool {
+  const isDev = process.env['NODE_ENV'] === 'development';
+  const connectionString = isDev
+    ? process.env['DATABASE_URL'] || process.env['DIRECT_URL']
+    : process.env['DIRECT_URL'] || process.env['DATABASE_URL'];
 
-  it('should handle sendMessage errors gracefully without failing the job', async () => {
-    // Mock sendMessage to reject
-    // Process SLA breach
-    // Assert no throw, alert still created
+  return new Pool({
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: isDev ? 15000 : 5000,
+    // @ts-expect-error - IPv4 fix for WSL2
+    family: 4,
   });
+}
+```
+
+---
+
+### Task 5: Frontend — Config Module
+
+**File**: `frontend/src/lib/config.ts` (NEW)
+
+```typescript
+export const isDevMode =
+  process.env.NEXT_PUBLIC_DEV_MODE === 'true' &&
+  process.env.NODE_ENV === 'development';
+
+export const devMockUser = {
+  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  email: 'admin@buhbot.local',
+  role: 'admin',
+};
+```
+
+**File**: `frontend/.env.example` (add)
+```bash
+# DEV MODE
+# NEXT_PUBLIC_DEV_MODE=true
+```
+
+---
+
+### Task 6: Frontend — tRPC Client
+
+**File**: `frontend/src/lib/trpc.ts`
+
+```typescript
+import { isDevMode } from './config';
+
+async headers() {
+  if (isDevMode) {
+    return { 'X-Dev-Mode': 'true', Authorization: 'Bearer dev-mode-token' };
+  }
+  // ... existing Supabase session code
+}
+```
+
+---
+
+### Task 7: Frontend — Login Form
+
+**File**: `frontend/src/components/auth/LoginForm.tsx`
+
+```tsx
+import { isDevMode, devMockUser } from '@/lib/config';
+
+// Before form:
+{isDevMode && (
+  <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900 rounded-md">
+    <p className="text-sm font-medium">🛠️ DEV MODE</p>
+    <p className="text-xs">Auth bypassed. Click login.</p>
+  </div>
+)}
+
+// In onSubmit:
+if (isDevMode) {
+  toast.success('DEV MODE: ' + devMockUser.email);
+  router.push('/dashboard');
+  return;
+}
+```
+
+---
+
+### Task 8: Seed Script — Dev User
+
+**File**: `backend/prisma/seed.ts`
+
+```typescript
+const DEV_ADMIN = {
+  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  email: 'admin@buhbot.local',
+  fullName: 'DEV Admin',
+  role: 'admin',
+  isOnboardingComplete: true,
+};
+
+await prisma.user.upsert({
+  where: { id: DEV_ADMIN.id },
+  update: {},
+  create: DEV_ADMIN,
 });
 ```
 
-### Phase 3: Fix Issue #16 (P2)
+---
 
-**Step 3.1:** Edit `backend/src/api/trpc/routers/settings.ts`
+### Task 9: docker-compose.local.yml (From PR)
 
-Modify `updateSlaThresholds` mutation (lines 646-658):
+**File**: `infrastructure/docker-compose.local.yml` (NEW)
 
-```typescript
-updateSlaThresholds: adminProcedure
-  .input(z.object({
-    slaThreshold: z.number().min(1).max(480),
-  }))
-  .output(z.object({
-    success: z.boolean(),
-    updatedChats: z.number(),
-  }))
-  .mutation(async ({ ctx, input }) => {
-    // 1. Update global default
-    await ctx.prisma.globalSettings.upsert({
-      where: { id: 'default' },
-      create: { id: 'default', defaultSlaThreshold: input.slaThreshold },
-      update: { defaultSlaThreshold: input.slaThreshold },
-    });
+```yaml
+services:
+  postgres:
+    image: postgres:15-alpine
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: buhbot
+    volumes:
+      - postgres-local-data:/var/lib/postgresql/data
 
-    // 2. Update ALL existing chats
-    const result = await ctx.prisma.chat.updateMany({
-      where: {},
-      data: {
-        slaThresholdMinutes: input.slaThreshold,
-        slaResponseMinutes: input.slaThreshold,
-      },
-    });
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: redis-server --appendonly yes --maxmemory 256mb
+    volumes:
+      - redis-local-data:/data
 
-    return { success: true, updatedChats: result.count };
-  }),
+volumes:
+  postgres-local-data:
+  redis-local-data:
 ```
 
-**Step 3.2:** Write tests for Issue #16
+---
 
-Create/update `backend/src/__tests__/routers/settings.test.ts`:
+## Files Summary
 
-```typescript
-describe('settings.updateSlaThresholds', () => {
-  it('should update slaThresholdMinutes for all existing chats', async () => {
-    // Create 3 chats with different thresholds
-    // Update global threshold to 15
-    // Assert all chats now have threshold = 15
-  });
+| File | Action |
+|------|--------|
+| `backend/src/config/env.ts` | Modify |
+| `backend/src/api/trpc/context.ts` | Modify |
+| `backend/src/lib/supabase.ts` | Modify |
+| `backend/src/lib/prisma.ts` | Modify |
+| `backend/.env.example` | Modify |
+| `backend/prisma/seed.ts` | Modify |
+| `frontend/.env.example` | Modify |
+| `frontend/src/lib/config.ts` | Create |
+| `frontend/src/lib/trpc.ts` | Modify |
+| `frontend/src/components/auth/LoginForm.tsx` | Modify |
+| `infrastructure/docker-compose.local.yml` | Create |
 
-  it('should update GlobalSettings.defaultSlaThreshold', async () => {
-    // Update global threshold
-    // Assert GlobalSettings.defaultSlaThreshold updated
-  });
+---
 
-  it('should return count of updated chats', async () => {
-    // Create N chats
-    // Update threshold
-    // Assert result.updatedChats === N
-  });
-});
-```
-
-### Phase 4: Verification
+## Verification
 
 ```bash
-cd backend
+# 1. Backend DEV MODE
+cd backend && DEV_MODE=true npm run dev
+curl http://localhost:3000/api/trpc/user.me
+# → Returns dev user without auth
 
-# Type check
+# 2. Frontend DEV MODE
+cd frontend && NEXT_PUBLIC_DEV_MODE=true npm run dev
+# → See DEV MODE banner on /login
+# → Login redirects to /dashboard
+
+# 3. Production safety
+NODE_ENV=production npm run build
+# → Fails if SUPABASE_URL not set
+
+# 4. Type check
 npm run type-check
-
-# Build
-npm run build
-
-# Run all tests
-npm test
-
-# Run specific test files
-npm test -- --grep "chats.registerChat"
-npm test -- --grep "SLA Timer Worker"
-npm test -- --grep "settings.updateSlaThresholds"
-```
-
-### Phase 5: Close Issues & Sync
-
-```bash
-# Close GitHub issues
-gh issue close 17 --comment "Fixed in commit <sha>
-
-**Changes:**
-1. Added explicit \`notifyInChatOnBreach: true\` to \`registerChat\` create block
-2. Migration to update existing chats with NULL values
-3. Tests added: chats.test.ts, sla-timer.worker.test.ts
-
-Beads task: buh-xxx"
-
-gh issue close 16 --comment "Fixed in commit <sha>
-
-**Changes:**
-1. \`updateSlaThresholds\` now updates all existing chats via \`chat.updateMany()\`
-2. Returns \`updatedChats\` count in response
-3. Tests added: settings.test.ts
-
-Beads task: buh-yyy"
-
-# Close Beads tasks
-bd close buh-xxx --reason="Fixed gh-17"
-bd close buh-yyy --reason="Fixed gh-16"
-
-# Sync and push
-bd sync
-git push
+# → Passes
 ```
 
 ---
 
-## Execution Summary
+## What We Don't Take from PR #18
 
-| Task                     | Complexity | Executor | Test Coverage |
-| ------------------------ | ---------- | -------- | ------------- |
-| #17: Add field to create | Simple     | Direct   | Yes           |
-| #17: Migration           | Simple     | Direct   | N/A           |
-| #17: Tests               | Medium     | Direct   | 4 tests       |
-| #16: Add updateMany      | Simple     | Direct   | Yes           |
-| #16: Tests               | Medium     | Direct   | 3 tests       |
-
-**Total: 5 code changes + 7 tests.**
+| Feature | Reason |
+|---------|--------|
+| Nullable `supabase` client | Breaking TypeScript change |
+| `NODE_TLS_REJECT_UNAUTHORIZED=0` | Security concern |
+| Auto-detect dev mode | Prefer explicit flag |
+| All UI component changes | Minimal scope |
 
 ---
 
-## Verification Checklist
+## After Implementation
 
-### Code Changes
-
-- [ ] `notifyInChatOnBreach: true` added to `registerChat` create block
-- [ ] Migration created and applied for existing chats
-- [ ] `updateSlaThresholds` updates all chats with `updateMany`
-- [ ] Output schema updated to return `updatedChats` count
-
-### Tests
-
-- [ ] `chats.test.ts`: notifyInChatOnBreach set on creation
-- [ ] `sla-timer.worker.test.ts`: notification sent when enabled
-- [ ] `sla-timer.worker.test.ts`: notification NOT sent when disabled
-- [ ] `sla-timer.worker.test.ts`: errors handled gracefully
-- [ ] `settings.test.ts`: all chats updated on threshold change
-- [ ] `settings.test.ts`: GlobalSettings updated
-- [ ] `settings.test.ts`: updatedChats count returned
-
-### Quality Gates
-
-- [ ] `npm run type-check` passes
-- [ ] `npm run build` passes
-- [ ] `npm test` passes
-
-### Closure
-
-- [ ] GitHub issues #16, #17 closed with comments
-- [ ] Beads tasks created and closed
-- [ ] Changes committed with issue refs
-- [ ] Changes pushed to remote
+1. Close PR #18 with comment explaining our approach
+2. Create GitHub Issue for follow-up improvements
+3. Update README with DEV MODE instructions

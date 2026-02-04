@@ -32,11 +32,11 @@ const { mockPrisma, mockLogger } = vi.hoisted(() => {
 });
 
 // Mock modules before importing (uses hoisted variables)
-vi.mock('@/lib/prisma.js', () => ({
+vi.mock('../../../lib/prisma.js', () => ({
   prisma: mockPrisma,
 }));
 
-vi.mock('@/utils/logger.js', () => ({
+vi.mock('../../../utils/logger.js', () => ({
   default: mockLogger,
 }));
 

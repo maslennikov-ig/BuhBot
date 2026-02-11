@@ -13,10 +13,7 @@ import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
 
 describe('Analytics SLA field regression', () => {
-  const analyticsSource = readFileSync(
-    resolve(__dirname, '../analytics.ts'),
-    'utf-8'
-  );
+  const analyticsSource = readFileSync(resolve(__dirname, '../analytics.ts'), 'utf-8');
 
   it('should NOT reference deprecated slaResponseMinutes field', () => {
     expect(analyticsSource).not.toContain('slaResponseMinutes');

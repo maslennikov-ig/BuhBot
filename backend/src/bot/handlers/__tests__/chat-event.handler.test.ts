@@ -13,10 +13,7 @@ import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
 
 describe('Chat migration handler regression', () => {
-  const handlerSource = readFileSync(
-    resolve(__dirname, '../chat-event.handler.ts'),
-    'utf-8'
-  );
+  const handlerSource = readFileSync(resolve(__dirname, '../chat-event.handler.ts'), 'utf-8');
 
   it('should use upsert (not create) in migrate_to_chat_id handler', () => {
     // Extract the migration section (after 'migrate_to_chat_id')
@@ -45,7 +42,7 @@ describe('notifyInChatOnBreach default regression', () => {
     );
 
     // Find the notifyInChatOnBreach line
-    const line = schemaSource.split('\n').find(l => l.includes('notifyInChatOnBreach'));
+    const line = schemaSource.split('\n').find((l) => l.includes('notifyInChatOnBreach'));
     expect(line).toBeDefined();
     expect(line).toContain('@default(false)');
     expect(line).not.toContain('@default(true)');

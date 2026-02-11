@@ -54,6 +54,8 @@ type ChatSettingsFormProps = {
 // FORM SCHEMA
 // ============================================
 
+const DEFAULT_SLA_THRESHOLD_MINUTES = 60;
+
 const chatSettingsSchema = z.object({
   slaEnabled: z.boolean(),
   slaThresholdMinutes: z.number().min(1, 'Минимум 1 минута').max(480, 'Максимум 480 минут'),
@@ -73,7 +75,7 @@ type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
 
 const DEFAULT_VALUES: ChatSettingsFormData = {
   slaEnabled: true,
-  slaThresholdMinutes: 60,
+  slaThresholdMinutes: DEFAULT_SLA_THRESHOLD_MINUTES,
   assignedAccountantId: null,
   accountantUsernames: [],
   notifyInChatOnBreach: false,

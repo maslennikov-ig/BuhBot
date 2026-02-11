@@ -53,7 +53,6 @@
 | accountantUsername   | String        | NULLABLE                | Telegram username         |
 | assignedAccountantId | String (UUID) | NULLABLE, FK → users.id | Assigned accountant       |
 | slaEnabled           | Boolean       | DEFAULT true            | Enable SLA monitoring     |
-| slaResponseMinutes   | Int           | DEFAULT 60              | SLA threshold in minutes  |
 | createdAt            | DateTime      | DEFAULT now()           | First message timestamp   |
 | updatedAt            | DateTime      | AUTO UPDATE             | Last update timestamp     |
 

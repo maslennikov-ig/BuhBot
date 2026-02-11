@@ -341,7 +341,7 @@ setup_test_data() {
 
     # Create test chat
     run_sql "
-        INSERT INTO chats (id, chat_type, title, sla_enabled, sla_response_minutes, created_at, updated_at)
+        INSERT INTO chats (id, chat_type, title, sla_enabled, sla_threshold_minutes, created_at, updated_at)
         VALUES ($TEST_CHAT_ID, 'private', 'Test Chat', true, 60, NOW(), NOW())
         ON CONFLICT (id) DO NOTHING;
     " > /dev/null 2>&1 || true

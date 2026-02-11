@@ -77,7 +77,6 @@ export function registerChatEventHandler(): void {
             monitoringEnabled: true,
             is24x7Mode: false,
             slaThresholdMinutes: defaultThreshold,
-            slaResponseMinutes: defaultThreshold,
           },
           update: {
             title: title,
@@ -174,7 +173,6 @@ export function registerChatEventHandler(): void {
             title: oldChat.title,
             slaEnabled: oldChat.slaEnabled,
             slaThresholdMinutes: oldChat.slaThresholdMinutes,
-            slaResponseMinutes: oldChat.slaResponseMinutes,
             monitoringEnabled: oldChat.monitoringEnabled,
             is24x7Mode: oldChat.is24x7Mode,
             managerTelegramIds: oldChat.managerTelegramIds,
@@ -188,7 +186,6 @@ export function registerChatEventHandler(): void {
             title: oldChat.title,
             slaEnabled: oldChat.slaEnabled,
             slaThresholdMinutes: oldChat.slaThresholdMinutes,
-            slaResponseMinutes: oldChat.slaResponseMinutes,
             monitoringEnabled: oldChat.monitoringEnabled,
             is24x7Mode: oldChat.is24x7Mode,
             managerTelegramIds: oldChat.managerTelegramIds,

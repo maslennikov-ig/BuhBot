@@ -77,7 +77,6 @@ describe('chats.registerChat', () => {
         title: 'Test Chat',
         accountantUsername: null,
         slaEnabled: true,
-        slaResponseMinutes: defaultThreshold,
         slaThresholdMinutes: defaultThreshold,
         monitoringEnabled: true,
         is24x7Mode: false,
@@ -138,7 +137,6 @@ describe('chats.registerChat', () => {
         title: null,
         accountantUsername: null,
         slaEnabled: true,
-        slaResponseMinutes: defaultThreshold,
         slaThresholdMinutes: defaultThreshold,
         monitoringEnabled: true,
         is24x7Mode: false,
@@ -148,7 +146,6 @@ describe('chats.registerChat', () => {
       select: {},
     });
 
-    expect(capturedCreateData!.slaResponseMinutes).toBe(customThreshold);
     expect(capturedCreateData!.slaThresholdMinutes).toBe(customThreshold);
   });
 
@@ -185,7 +182,6 @@ describe('chats.registerChat', () => {
         title: null,
         accountantUsername: null,
         slaEnabled: true,
-        slaResponseMinutes: defaultThreshold,
         slaThresholdMinutes: defaultThreshold,
         monitoringEnabled: true,
         is24x7Mode: false,
@@ -195,7 +191,6 @@ describe('chats.registerChat', () => {
       select: {},
     });
 
-    expect(capturedCreateData!.slaResponseMinutes).toBe(60);
     expect(capturedCreateData!.slaThresholdMinutes).toBe(60);
   });
 });

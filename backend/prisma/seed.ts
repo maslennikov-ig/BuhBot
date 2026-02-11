@@ -266,7 +266,6 @@ async function seedChats(): Promise<void> {
         assignedAccountantId: accountant?.id,
         accountantUsername: accountant?.fullName.split(' ')[0]?.toLowerCase(),
         slaEnabled: true,
-        slaResponseMinutes: chat.slaMinutes,
         slaThresholdMinutes: chat.slaMinutes,
         monitoringEnabled: true,
       },

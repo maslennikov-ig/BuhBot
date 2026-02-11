@@ -40,9 +40,9 @@ describe('settings.updateSlaThresholds', () => {
   it('should update slaThresholdMinutes for all existing chats', async () => {
     const newThreshold = 15;
     const existingChats = [
-      { id: BigInt(1), slaThresholdMinutes: 60, slaResponseMinutes: 60 },
-      { id: BigInt(2), slaThresholdMinutes: 30, slaResponseMinutes: 30 },
-      { id: BigInt(3), slaThresholdMinutes: 45, slaResponseMinutes: 45 },
+      { id: BigInt(1), slaThresholdMinutes: 60 },
+      { id: BigInt(2), slaThresholdMinutes: 30 },
+      { id: BigInt(3), slaThresholdMinutes: 45 },
     ];
 
     mockPrisma.globalSettings.upsert.mockResolvedValue({
@@ -63,7 +63,6 @@ describe('settings.updateSlaThresholds', () => {
       where: {},
       data: {
         slaThresholdMinutes: newThreshold,
-        slaResponseMinutes: newThreshold,
       },
     });
 
@@ -72,7 +71,6 @@ describe('settings.updateSlaThresholds', () => {
       where: {},
       data: {
         slaThresholdMinutes: newThreshold,
-        slaResponseMinutes: newThreshold,
       },
     });
 
@@ -125,7 +123,6 @@ describe('settings.updateSlaThresholds', () => {
       where: {},
       data: {
         slaThresholdMinutes: newThreshold,
-        slaResponseMinutes: newThreshold,
       },
     });
 
@@ -151,7 +148,6 @@ describe('settings.updateSlaThresholds', () => {
       where: {},
       data: {
         slaThresholdMinutes: newThreshold,
-        slaResponseMinutes: newThreshold,
       },
     });
 

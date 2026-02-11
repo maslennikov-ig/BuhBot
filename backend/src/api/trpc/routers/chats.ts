@@ -600,7 +600,6 @@ export const chatsRouter = router({
           accountantUsername: input.accountantUsername ?? null,
           // Defaults from Prisma schema
           slaEnabled: true,
-          slaResponseMinutes: defaultThreshold,
           slaThresholdMinutes: defaultThreshold,
           monitoringEnabled: true,
           is24x7Mode: false,

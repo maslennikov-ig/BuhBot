@@ -36,7 +36,7 @@ describe('chats.registerChat', () => {
     vi.clearAllMocks();
   });
 
-  it('should explicitly set notifyInChatOnBreach to true on chat creation', async () => {
+  it('should explicitly set notifyInChatOnBreach to false on chat creation', async () => {
     // Setup: GlobalSettings returns default threshold
     mockPrisma.globalSettings.findUnique.mockResolvedValue({
       defaultSlaThreshold: 60,
@@ -53,7 +53,7 @@ describe('chats.registerChat', () => {
         accountantUsername: null,
         assignedAccountantId: null,
         slaEnabled: true,
-        slaResponseMinutes: 60,
+        slaThresholdMinutes: 60,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -82,7 +82,7 @@ describe('chats.registerChat', () => {
         monitoringEnabled: true,
         is24x7Mode: false,
         managerTelegramIds: [],
-        notifyInChatOnBreach: true, // gh-17: This should be explicitly set
+        notifyInChatOnBreach: false, // Security: disabled by default
       },
       select: {
         id: true,
@@ -91,15 +91,15 @@ describe('chats.registerChat', () => {
         accountantUsername: true,
         assignedAccountantId: true,
         slaEnabled: true,
-        slaResponseMinutes: true,
+        slaThresholdMinutes: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    // Verify notifyInChatOnBreach is explicitly set to true in create block
+    // Verify notifyInChatOnBreach is explicitly set to false in create block
     expect(capturedCreateData).not.toBeNull();
-    expect(capturedCreateData!.notifyInChatOnBreach).toBe(true);
+    expect(capturedCreateData!.notifyInChatOnBreach).toBe(false);
   });
 
   it('should use global default threshold when creating new chat', async () => {
@@ -118,7 +118,7 @@ describe('chats.registerChat', () => {
         accountantUsername: null,
         assignedAccountantId: null,
         slaEnabled: true,
-        slaResponseMinutes: customThreshold,
+        slaThresholdMinutes: customThreshold,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -143,7 +143,7 @@ describe('chats.registerChat', () => {
         monitoringEnabled: true,
         is24x7Mode: false,
         managerTelegramIds: [],
-        notifyInChatOnBreach: true,
+        notifyInChatOnBreach: false,
       },
       select: {},
     });
@@ -165,7 +165,7 @@ describe('chats.registerChat', () => {
         accountantUsername: null,
         assignedAccountantId: null,
         slaEnabled: true,
-        slaResponseMinutes: 60,
+        slaThresholdMinutes: 60,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -190,7 +190,7 @@ describe('chats.registerChat', () => {
         monitoringEnabled: true,
         is24x7Mode: false,
         managerTelegramIds: [],
-        notifyInChatOnBreach: true,
+        notifyInChatOnBreach: false,
       },
       select: {},
     });

@@ -60,7 +60,7 @@ export const chatsRouter = router({
             accountantUsernames: z.array(z.string()),
             assignedAccountantId: z.string().uuid().nullable(),
             slaEnabled: z.boolean(),
-            slaResponseMinutes: z.number().int(),
+            slaThresholdMinutes: z.number().int(),
             createdAt: z.date(),
           })
         ),
@@ -89,7 +89,7 @@ export const chatsRouter = router({
             accountantUsernames: true,
             assignedAccountantId: true,
             slaEnabled: true,
-            slaResponseMinutes: true,
+            slaThresholdMinutes: true,
             createdAt: true,
           },
           orderBy: {
@@ -111,7 +111,7 @@ export const chatsRouter = router({
             accountantUsernames: string[];
             assignedAccountantId: string | null;
             slaEnabled: boolean;
-            slaResponseMinutes: number;
+            slaThresholdMinutes: number;
             createdAt: Date;
           }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })
         ),
@@ -142,7 +142,7 @@ export const chatsRouter = router({
         accountantUsernames: z.array(z.string()),
         assignedAccountantId: z.string().uuid().nullable(),
         slaEnabled: z.boolean(),
-        slaResponseMinutes: z.number().int(),
+        slaThresholdMinutes: z.number().int(),
         managerTelegramIds: z.array(z.string()),
         notifyInChatOnBreach: z.boolean(),
         createdAt: z.date(),
@@ -160,7 +160,7 @@ export const chatsRouter = router({
           accountantUsernames: true,
           assignedAccountantId: true,
           slaEnabled: true,
-          slaResponseMinutes: true,
+          slaThresholdMinutes: true,
           managerTelegramIds: true,
           notifyInChatOnBreach: true,
           createdAt: true,
@@ -204,7 +204,7 @@ export const chatsRouter = router({
           accountantUsernames: z.array(z.string()),
           assignedAccountantId: z.string().uuid().nullable(),
           slaEnabled: z.boolean(),
-          slaResponseMinutes: z.number().int(),
+          slaThresholdMinutes: z.number().int(),
           createdAt: z.date(),
         }),
         messages: z.array(
@@ -260,7 +260,7 @@ export const chatsRouter = router({
           accountantUsernames: chat.accountantUsernames,
           assignedAccountantId: chat.assignedAccountantId,
           slaEnabled: chat.slaEnabled,
-          slaResponseMinutes: chat.slaResponseMinutes,
+          slaThresholdMinutes: chat.slaThresholdMinutes,
           createdAt: chat.createdAt,
         },
         messages: chat.messages
@@ -279,7 +279,7 @@ export const chatsRouter = router({
    * @param id - Chat ID
    * @param assignedAccountantId - Assign chat to accountant (null to unassign)
    * @param slaEnabled - Enable/disable SLA monitoring
-   * @param slaResponseMinutes - SLA response time threshold (15-480 minutes)
+   * @param slaThresholdMinutes - SLA response time threshold (15-480 minutes)
    * @returns Updated chat details
    * @throws NOT_FOUND if chat doesn't exist
    * @authorization Admins and managers only
@@ -290,7 +290,7 @@ export const chatsRouter = router({
         id: z.number(),
         assignedAccountantId: z.string().uuid().nullable().optional(),
         slaEnabled: z.boolean().optional(),
-        slaResponseMinutes: z.number().int().min(1).max(480).optional(),
+        slaThresholdMinutes: z.number().int().min(1).max(480).optional(),
         accountantUsernames: z
           .array(
             z
@@ -313,7 +313,7 @@ export const chatsRouter = router({
           id: z.number(),
           assignedAccountantId: z.string().uuid().nullable(),
           slaEnabled: z.boolean(),
-          slaResponseMinutes: z.number().int(),
+          slaThresholdMinutes: z.number().int(),
           notifyInChatOnBreach: z.boolean(),
           updatedAt: z.date(),
         }),
@@ -363,8 +363,8 @@ export const chatsRouter = router({
       if (input.slaEnabled !== undefined) {
         data.slaEnabled = input.slaEnabled;
       }
-      if (input.slaResponseMinutes !== undefined) {
-        data.slaResponseMinutes = input.slaResponseMinutes;
+      if (input.slaThresholdMinutes !== undefined) {
+        data.slaThresholdMinutes = input.slaThresholdMinutes;
       }
       if (input.notifyInChatOnBreach !== undefined) {
         data.notifyInChatOnBreach = input.notifyInChatOnBreach;
@@ -400,7 +400,7 @@ export const chatsRouter = router({
           id: true,
           assignedAccountantId: true,
           slaEnabled: true,
-          slaResponseMinutes: true,
+          slaThresholdMinutes: true,
           notifyInChatOnBreach: true,
           updatedAt: true,
         },
@@ -566,7 +566,7 @@ export const chatsRouter = router({
         accountantUsername: z.string().nullable(),
         assignedAccountantId: z.string().uuid().nullable(),
         slaEnabled: z.boolean(),
-        slaResponseMinutes: z.number().int(),
+        slaThresholdMinutes: z.number().int(),
         createdAt: z.date(),
         updatedAt: z.date(),
       })
@@ -605,7 +605,7 @@ export const chatsRouter = router({
           monitoringEnabled: true,
           is24x7Mode: false,
           managerTelegramIds: [],
-          notifyInChatOnBreach: true, // gh-17: Explicitly set to ensure group notifications work
+          notifyInChatOnBreach: false, // Security: disabled by default to prevent leaking alerts to client chats
         },
         select: {
           id: true,
@@ -614,7 +614,7 @@ export const chatsRouter = router({
           accountantUsername: true,
           assignedAccountantId: true,
           slaEnabled: true,
-          slaResponseMinutes: true,
+          slaThresholdMinutes: true,
           createdAt: true,
           updatedAt: true,
         },

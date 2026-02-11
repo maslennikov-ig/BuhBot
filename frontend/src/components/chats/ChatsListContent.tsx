@@ -53,7 +53,7 @@ type Chat = {
   accountantUsername: string | null;
   assignedAccountantId: string | null;
   slaEnabled: boolean;
-  slaResponseMinutes: number;
+  slaThresholdMinutes: number;
   createdAt: string;
 };
 
@@ -326,8 +326,8 @@ export function ChatsListContent() {
                     />
                     <SortableHeader
                       label="Порог"
-                      sortDirection={getSortIcon('slaResponseMinutes')}
-                      onClick={() => requestSort('slaResponseMinutes')}
+                      sortDirection={getSortIcon('slaThresholdMinutes')}
+                      onClick={() => requestSort('slaThresholdMinutes')}
                     />
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                       Действия
@@ -407,7 +407,7 @@ export function ChatsListContent() {
                           <div className="flex items-center gap-1.5 text-sm">
                             <Clock className="h-4 w-4 text-[var(--buh-warning)]" />
                             <span className="text-[var(--buh-foreground)]">
-                              {chat.slaResponseMinutes} мин
+                              {chat.slaThresholdMinutes} мин
                             </span>
                           </div>
                         </td>

@@ -93,11 +93,9 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      if (!chat.slaEnabled || !chat.monitoringEnabled) {
-        logger.debug('SLA or monitoring disabled for chat', {
+      if (!chat.monitoringEnabled) {
+        logger.debug('Monitoring disabled for chat, skipping all processing', {
           chatId,
-          slaEnabled: chat.slaEnabled,
-          monitoringEnabled: chat.monitoringEnabled,
           service: 'message-handler',
         });
         return;
@@ -180,7 +178,18 @@ export function registerMessageHandler(): void {
         }
       }
 
-      // 5. If accountant, pass to response handler (don't process as client message)
+      // 5. Check if SLA is enabled AFTER logging message (messages are always logged)
+      if (!chat.slaEnabled) {
+        logger.debug('SLA disabled for chat, message logged but skipping classification', {
+          chatId,
+          messageId,
+          slaEnabled: chat.slaEnabled,
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // 6. If accountant, pass to response handler (don't process as client message)
       if (isAccountant) {
         logger.debug('Accountant message detected, skipping classification', {
           chatId,

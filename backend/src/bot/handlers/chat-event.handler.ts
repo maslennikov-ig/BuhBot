@@ -166,28 +166,57 @@ export function registerChatEventHandler(): void {
       const oldChat = await prisma.chat.findUnique({ where: { id: BigInt(oldChatId) } });
 
       if (oldChat) {
-        await prisma.chat.create({
-          data: {
-            ...oldChat,
+        await prisma.chat.upsert({
+          where: { id: BigInt(newChatId) },
+          create: {
             id: BigInt(newChatId),
             chatType: 'supergroup',
-            createdAt: new Date(), // reset created
+            title: oldChat.title,
+            slaEnabled: oldChat.slaEnabled,
+            slaThresholdMinutes: oldChat.slaThresholdMinutes,
+            slaResponseMinutes: oldChat.slaResponseMinutes,
+            monitoringEnabled: oldChat.monitoringEnabled,
+            is24x7Mode: oldChat.is24x7Mode,
+            managerTelegramIds: oldChat.managerTelegramIds,
+            notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
+            accountantUsername: oldChat.accountantUsername,
+            accountantUsernames: oldChat.accountantUsernames,
+            assignedAccountantId: oldChat.assignedAccountantId,
+            inviteLink: oldChat.inviteLink,
+          },
+          update: {
+            title: oldChat.title,
+            slaEnabled: oldChat.slaEnabled,
+            slaThresholdMinutes: oldChat.slaThresholdMinutes,
+            slaResponseMinutes: oldChat.slaResponseMinutes,
+            monitoringEnabled: oldChat.monitoringEnabled,
+            is24x7Mode: oldChat.is24x7Mode,
+            managerTelegramIds: oldChat.managerTelegramIds,
+            notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
           },
         });
         // Disable old chat
         await prisma.chat.update({
           where: { id: BigInt(oldChatId) },
-          data: { monitoringEnabled: false, slaEnabled: false },
+          data: {
+            monitoringEnabled: false,
+            slaEnabled: false,
+            title: oldChat.title ? `[MIGRATED] ${oldChat.title}` : '[MIGRATED]',
+          },
         });
       } else {
         // Just register as new
-        await prisma.chat.create({
-          data: {
+        await prisma.chat.upsert({
+          where: { id: BigInt(newChatId) },
+          create: {
             id: BigInt(newChatId),
             chatType: 'supergroup',
-            title: 'Migrated Group', // We might not know the title here easily without fetching
+            title: 'Migrated Group',
             slaEnabled: false,
             monitoringEnabled: true,
+          },
+          update: {
+            chatType: 'supergroup',
           },
         });
       }

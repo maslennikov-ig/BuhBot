@@ -69,7 +69,7 @@ type ChatInfoCardProps = {
     accountantUsername: string | null;
     assignedAccountantId: string | null;
     slaEnabled: boolean;
-    slaResponseMinutes: number;
+    slaThresholdMinutes: number;
     createdAt: string;
     updatedAt?: string;
   };
@@ -139,7 +139,7 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
             <span className="text-xs uppercase tracking-wide">Порог SLA</span>
           </div>
           <p className="font-medium text-[var(--buh-foreground)]">
-            {chat.slaResponseMinutes} минут
+            {chat.slaThresholdMinutes} минут
             {chat.slaEnabled ? (
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--buh-success)]/10 px-2 py-0.5 text-xs text-[var(--buh-success)]">
                 Активен
@@ -275,10 +275,10 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                 managerTelegramIds={chat.managerTelegramIds ?? []}
                 initialData={{
                   slaEnabled: chat.slaEnabled,
-                  slaResponseMinutes: chat.slaResponseMinutes,
+                  slaThresholdMinutes: chat.slaThresholdMinutes,
                   assignedAccountantId: chat.assignedAccountantId,
                   accountantUsernames: chat.accountantUsernames ?? [],
-                  notifyInChatOnBreach: chat.notifyInChatOnBreach ?? true,
+                  notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
                 }}
               />
 

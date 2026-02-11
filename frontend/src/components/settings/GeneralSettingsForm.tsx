@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bot, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bot, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/layout/GlassCard';
@@ -51,6 +51,19 @@ export function GeneralSettingsForm() {
 
   return (
     <div className="space-y-6">
+      {settings?.globalManagerIds && settings.globalManagerIds.length === 0 && (
+        <div className="mb-6 rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium text-[var(--buh-warning)]">
+              Менеджеры для SLA уведомлений не настроены
+            </p>
+            <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
+              При нарушении SLA уведомления не будут доставлены. Добавьте Telegram ID менеджеров в настройках чатов или глобальных настройках.
+            </p>
+          </div>
+        </div>
+      )}
       <GlassCard variant="default" padding="lg" className="buh-hover-lift">
         <div className="flex items-center gap-3 mb-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">

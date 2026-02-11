@@ -41,7 +41,7 @@ type ChatSettingsFormProps = {
   managerTelegramIds: string[];
   initialData?: {
     slaEnabled: boolean;
-    slaResponseMinutes: number;
+    slaThresholdMinutes: number;
     assignedAccountantId: string | null;
     accountantUsernames?: string[];
     notifyInChatOnBreach?: boolean;
@@ -56,7 +56,7 @@ type ChatSettingsFormProps = {
 
 const chatSettingsSchema = z.object({
   slaEnabled: z.boolean(),
-  slaResponseMinutes: z.number().min(1, 'Минимум 1 минута').max(480, 'Максимум 480 минут'),
+  slaThresholdMinutes: z.number().min(1, 'Минимум 1 минута').max(480, 'Максимум 480 минут'),
   // Allow null, valid UUID, or empty string (transformed to null)
   assignedAccountantId: z
     .union([z.string().uuid(), z.null(), z.literal('')])
@@ -73,10 +73,10 @@ type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
 
 const DEFAULT_VALUES: ChatSettingsFormData = {
   slaEnabled: true,
-  slaResponseMinutes: 60,
+  slaThresholdMinutes: 60,
   assignedAccountantId: null,
   accountantUsernames: [],
-  notifyInChatOnBreach: true,
+  notifyInChatOnBreach: false,
 };
 
 // ============================================
@@ -146,7 +146,7 @@ export function ChatSettingsForm({
     updateChat.mutate({
       id: chatId,
       slaEnabled: data.slaEnabled,
-      slaResponseMinutes: data.slaResponseMinutes,
+      slaThresholdMinutes: data.slaThresholdMinutes,
       assignedAccountantId: data.assignedAccountantId,
       accountantUsernames: data.accountantUsernames ?? [],
     });
@@ -243,6 +243,9 @@ export function ChatSettingsForm({
                   </FormLabel>
                   <FormDescription className="text-[var(--buh-foreground-subtle)]">
                     Отправлять предупреждение о нарушении SLA прямо в групповой чат
+                    <span className="block mt-1 text-[var(--buh-warning)] font-medium">
+                      Только для тестовых чатов. Клиенты увидят внутренние данные SLA.
+                    </span>
                   </FormDescription>
                 </div>
                 <FormControl>
@@ -275,7 +278,7 @@ export function ChatSettingsForm({
           {/* SLA Response Time */}
           <FormField
             control={form.control}
-            name="slaResponseMinutes"
+            name="slaThresholdMinutes"
             render={({ field }) => (
               <FormItem
                 className={cn(

@@ -113,7 +113,14 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       return alert;
     });
 
-    // 5. Send breach notification to group chat (if enabled)
+    /**
+     * @test-only
+     * SECURITY WARNING: This sends SLA breach details into the CLIENT-FACING chat.
+     * Disabled by default (notifyInChatOnBreach=false) to prevent leaking internal
+     * operational alerts to clients. Only enable for test/demo chats, NEVER for production.
+     * Production alerts go to managers via private messages (step 7 below).
+     */
+    // 5. Send breach notification to group chat (if enabled — TEST ONLY)
     if (request.chat?.notifyInChatOnBreach) {
       try {
         const chatNotificationMessage = formatBreachChatNotification({

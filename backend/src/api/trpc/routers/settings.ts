@@ -665,7 +665,7 @@ export const settingsRouter = router({
         where: {},
         data: {
           slaThresholdMinutes: input.slaThreshold,
-          slaResponseMinutes: input.slaThreshold,
+          slaResponseMinutes: input.slaThreshold, // Legacy field kept in sync until full deprecation
         },
       });
 

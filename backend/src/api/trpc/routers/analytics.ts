@@ -70,7 +70,7 @@ export const analyticsRouter = router({
           status: true,
           chat: {
             select: {
-              slaResponseMinutes: true,
+              slaThresholdMinutes: true,
             },
           },
         },
@@ -100,7 +100,7 @@ export const analyticsRouter = router({
           responseTimes.push(request.responseTimeMinutes);
 
           // Check if within SLA threshold
-          if (request.responseTimeMinutes <= request.chat.slaResponseMinutes) {
+          if (request.responseTimeMinutes <= request.chat.slaThresholdMinutes) {
             answeredWithinSLA++;
           } else {
             breachedSLA++;
@@ -281,7 +281,7 @@ export const analyticsRouter = router({
               responseTimeMinutes: true,
               chat: {
                 select: {
-                  slaResponseMinutes: true,
+                  slaThresholdMinutes: true,
                 },
               },
             },
@@ -307,7 +307,7 @@ export const analyticsRouter = router({
           requests.forEach((request) => {
             if (request.responseTimeMinutes !== null) {
               responseTimes.push(request.responseTimeMinutes);
-              if (request.responseTimeMinutes <= request.chat.slaResponseMinutes) {
+              if (request.responseTimeMinutes <= request.chat.slaThresholdMinutes) {
                 answeredWithinSLA++;
               }
             }
@@ -936,7 +936,7 @@ export const analyticsRouter = router({
               chat: {
                 select: {
                   title: true,
-                  slaResponseMinutes: true,
+                  slaThresholdMinutes: true,
                 },
               },
               assignedUser: {
@@ -971,7 +971,7 @@ export const analyticsRouter = router({
             received_at: r.receivedAt.toISOString(),
             response_at: r.responseAt?.toISOString() ?? '',
             response_time_minutes: r.responseTimeMinutes ?? '',
-            sla_threshold_minutes: r.chat?.slaResponseMinutes ?? '',
+            sla_threshold_minutes: r.chat?.slaThresholdMinutes ?? '',
             sla_breached: r.slaBreached ? 'Yes' : 'No',
             status: r.status,
           }));
@@ -1070,7 +1070,7 @@ export const analyticsRouter = router({
               chat: {
                 select: {
                   title: true,
-                  slaResponseMinutes: true,
+                  slaThresholdMinutes: true,
                 },
               },
               assignedUser: {
@@ -1108,7 +1108,7 @@ export const analyticsRouter = router({
           ];
 
           data = violationRequests.map((r) => {
-            const slaThreshold = r.chat?.slaResponseMinutes ?? 60;
+            const slaThreshold = r.chat?.slaThresholdMinutes ?? 60;
             const overtime =
               r.responseTimeMinutes !== null ? r.responseTimeMinutes - slaThreshold : 0;
             const latestAlert = r.slaAlerts[0];

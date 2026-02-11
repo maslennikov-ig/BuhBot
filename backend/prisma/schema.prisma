@@ -208,7 +208,7 @@ model Chat {
   accountantUsername   String?  @map("accountant_username") // LEGACY - single accountant
   accountantUsernames  String[] @default([]) @map("accountant_usernames") // NEW - multiple accountants
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
-  slaEnabled           Boolean  @default(true) @map("sla_enabled")
+  slaEnabled           Boolean  @default(false) @map("sla_enabled") // Disabled by default; enabled manually via admin UI
   slaResponseMinutes   Int      @default(60) @map("sla_response_minutes")
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

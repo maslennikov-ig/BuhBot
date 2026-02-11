@@ -22,7 +22,7 @@ services:
     container_name: buhbot-bot-backend
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     env_file:
       - ../backend/.env
     environment:
@@ -65,7 +65,7 @@ services:
     container_name: buhbot-frontend
     restart: unless-stopped
     ports:
-      - '3001:3000'
+      - '127.0.0.1:3001:3000'
     env_file:
       - ../frontend/.env.local
     environment:
@@ -132,9 +132,9 @@ services:
     container_name: buhbot-monitoring-stack
     restart: unless-stopped
     ports:
-      - '9090:9090' # Prometheus
-      - '3002:3000' # Grafana (mapped to 3002 on host to avoid conflict)
-      - '3003:3001' # Uptime Kuma (mapped to 3003 on host)
+      - '127.0.0.1:9090:9090' # Prometheus
+      - '127.0.0.1:3002:3000' # Grafana (mapped to 3002 on host to avoid conflict)
+      - '127.0.0.1:3003:3001' # Uptime Kuma (mapped to 3003 on host)
     volumes:
       - prometheus-data:/prometheus
       - grafana-data:/var/lib/grafana

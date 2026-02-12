@@ -8,6 +8,8 @@ Releases are created by the **Release Please** GitHub Action. No manual version 
 2. **Release PR:** The action opens or updates a release PR that updates `CHANGELOG.md` and version(s) in `package.json` (and `.release-please-manifest.json`).
 3. **Publish release:** Merging that release PR creates the git tag (e.g. `v0.9.20`) and the GitHub release.
 
+**Important:** Release Please only *creates or updates* the release PR. It does **not** merge it. The tag and GitHub release are created only when that PR is merged (e.g. by a maintainer or by enabling [GitHub Auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request) on the release PR).
+
 ## Commit format
 
 All commits on `main` must follow [Commit Conventions](../COMMIT_CONVENTIONS.md) so Release Please can parse them correctly. Use `feat:` for minor bumps, `fix:` for patch bumps, and `BREAKING CHANGE:` or `type!` for major bumps.
@@ -35,6 +37,11 @@ The [.claude/scripts/release.sh](../../.claude/scripts/release.sh) script and `/
 
   If the checkbox is grayed out, the repository's organization is overriding it: an org admin must enable it in **Organization** → **Settings** → **Actions** → **General** first.  
   See [GitHub Docs: Preventing GitHub Actions from creating or approving pull requests](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#preventing-github-actions-from-creating-or-approving-pull-requests).
+
+- **Release PR was created but no release appeared** (e.g. PR #30 open, no tag/release)  
+  Release Please does not merge the release PR. You must merge it (squash or merge) to create the tag and GitHub release. Options:
+  1. **Manual:** Open the release PR on GitHub and use "Squash and merge" (or "Merge pull request") once you're satisfied with the changelog.
+  2. **Auto-merge:** On the release PR, enable [Auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request) so it merges when branch protection requirements (e.g. CI) pass.
 
 ## VDS deployment requirement
 

@@ -5,6 +5,22 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.11.2...buhbot-v0.12.0) (2026-02-12)
+
+
+### Features
+
+* validate accountant [@username](https://github.com/username) against DB + fix slaEnabled default ([f384ee8](https://github.com/maslennikov-ig/BuhBot/commit/f384ee8b506e170c12e36fb6bef8ba68f1de65ab))
+
+
+### Bug Fixes
+
+* address code review findings — logger, SLA compliance accuracy ([98bb4e9](https://github.com/maslennikov-ig/BuhBot/commit/98bb4e9342fa0e5664b718a422c4bdefa645b3be))
+* implement remaining code review recommendations (buh-6ku, buh-d6f, buh-hsv) ([9101ba9](https://github.com/maslennikov-ig/BuhBot/commit/9101ba9bd0667dae79619f9eb0d2b5668c171ad9))
+* improve SLA validation safety + add defensive notifyInChatOnBreach fallback + tests ([a06622d](https://github.com/maslennikov-ig/BuhBot/commit/a06622dc33b1599ecf15ec6dcc1b0e9328176949))
+* resolve 3 chat settings and admin panel bugs ([#37](https://github.com/maslennikov-ig/BuhBot/issues/37), [#38](https://github.com/maslennikov-ig/BuhBot/issues/38), [#39](https://github.com/maslennikov-ig/BuhBot/issues/39)) ([26d5975](https://github.com/maslennikov-ig/BuhBot/commit/26d5975ab986266b1dc025e29a60e41f026f9f88))
+* resolve 4 GitHub issues — alert 500, SLA stats, UI/UX, blank pages ([2562085](https://github.com/maslennikov-ig/BuhBot/commit/2562085d50407194cd52650fc5b53cf72281b805))
+
 ## [0.11.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.11.1...buhbot-v0.11.2) (2026-02-11)
 
 

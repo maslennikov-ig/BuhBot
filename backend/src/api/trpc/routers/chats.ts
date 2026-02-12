@@ -318,6 +318,7 @@ export const chatsRouter = router({
           notifyInChatOnBreach: z.boolean(),
           updatedAt: z.date(),
         }),
+        warnings: z.array(z.string()).default([]),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -412,6 +413,28 @@ export const chatsRouter = router({
 
       data.accountantUsernames = finalUsernames;
 
+      // Validate usernames against registered users (non-blocking)
+      const warnings: string[] = [];
+      if (finalUsernames.length > 0) {
+        const knownUsers = await ctx.prisma.user.findMany({
+          where: {
+            telegramUsername: { in: finalUsernames, mode: 'insensitive' },
+          },
+          select: { telegramUsername: true },
+        });
+        const knownSet = new Set(
+          knownUsers
+            .map((u) => u.telegramUsername?.toLowerCase())
+            .filter(Boolean)
+        );
+        const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
+        if (unverified.length > 0) {
+          warnings.push(
+            `Следующие @username не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. Убедитесь, что они корректны.`
+          );
+        }
+      }
+
       // Update chat
       const updatedChat = await ctx.prisma.chat.update({
         where: { id: input.id },
@@ -429,6 +452,7 @@ export const chatsRouter = router({
       return {
         success: true,
         chat: { ...updatedChat, id: safeNumberFromBigInt(updatedChat.id) },
+        warnings,
       };
     }),
 

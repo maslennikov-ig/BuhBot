@@ -74,7 +74,7 @@ type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
 // ============================================
 
 const DEFAULT_VALUES: ChatSettingsFormData = {
-  slaEnabled: true,
+  slaEnabled: false,
   slaThresholdMinutes: DEFAULT_SLA_THRESHOLD_MINUTES,
   assignedAccountantId: null,
   accountantUsernames: [],
@@ -104,19 +104,25 @@ export function ChatSettingsForm({
 }: ChatSettingsFormProps) {
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  const [saveWarnings, setSaveWarnings] = React.useState<string[]>([]);
 
   const utils = trpc.useUtils();
 
   const updateChat = trpc.chats.update.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setSaveSuccess(true);
       setSaveError(null);
+      setSaveWarnings(data.warnings ?? []);
       // Invalidate queries to refetch fresh data
       utils.chats.getById.invalidate({ id: chatId });
       utils.chats.list.invalidate();
       onSuccess?.();
       // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
+      // Clear warnings after 10 seconds
+      if (data.warnings?.length) {
+        setTimeout(() => setSaveWarnings([]), 10000);
+      }
     },
     onError: (error) => {
       setSaveError(error.message);
@@ -360,6 +366,14 @@ export function ChatSettingsForm({
           {saveSuccess && (
             <div className="rounded-lg border border-[var(--buh-success)] bg-[var(--buh-success)]/10 p-3 text-sm text-[var(--buh-success)] buh-animate-fade-in-up">
               Настройки успешно сохранены
+            </div>
+          )}
+
+          {saveWarnings.length > 0 && (
+            <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-3 text-sm text-[var(--buh-warning)] buh-animate-fade-in-up">
+              {saveWarnings.map((w, i) => (
+                <p key={i}>{w}</p>
+              ))}
             </div>
           )}
 

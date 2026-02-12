@@ -359,7 +359,8 @@ export const chatsRouter = router({
 
       // Warn if SLA is active but no managers configured (monitoring)
       if (
-        (input.slaEnabled === true || (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
+        (input.slaEnabled === true ||
+          (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
         existingChat.slaEnabled
       ) {
         const chatManagers = existingChat.managerTelegramIds || [];
@@ -423,9 +424,7 @@ export const chatsRouter = router({
           select: { telegramUsername: true },
         });
         const knownSet = new Set(
-          knownUsers
-            .map((u) => u.telegramUsername?.toLowerCase())
-            .filter(Boolean)
+          knownUsers.map((u) => u.telegramUsername?.toLowerCase()).filter(Boolean)
         );
         const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
         if (unverified.length > 0) {

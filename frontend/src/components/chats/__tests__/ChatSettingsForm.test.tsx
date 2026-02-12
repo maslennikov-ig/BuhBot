@@ -178,16 +178,10 @@ describe('ChatSettingsForm', () => {
       createMockMutation();
 
       render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={[]}
-          initialData={DEFAULT_INITIAL_DATA}
-        />
+        <ChatSettingsForm chatId={123} managerTelegramIds={[]} initialData={DEFAULT_INITIAL_DATA} />
       );
 
-      expect(
-        screen.queryByText('Менеджеры для уведомлений не настроены')
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
     });
 
     it('should NOT show warning when SLA enabled and managers configured', () => {
@@ -201,9 +195,7 @@ describe('ChatSettingsForm', () => {
         />
       );
 
-      expect(
-        screen.queryByText('Менеджеры для уведомлений не настроены')
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
     });
   });
 
@@ -418,11 +410,7 @@ describe('ChatSettingsForm', () => {
       const { triggerSuccess } = createMockMutation();
 
       render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={['12345']}
-          onSuccess={onSuccess}
-        />
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} onSuccess={onSuccess} />
       );
 
       await triggerSuccess({ warnings: [] });

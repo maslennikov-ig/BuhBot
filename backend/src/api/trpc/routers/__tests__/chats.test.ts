@@ -621,7 +621,9 @@ describe('chats.update', () => {
       data.slaThresholdMinutes = input.slaThresholdMinutes;
     }
     if ((input as { notifyInChatOnBreach?: boolean }).notifyInChatOnBreach !== undefined) {
-      data.notifyInChatOnBreach = (input as { notifyInChatOnBreach?: boolean }).notifyInChatOnBreach;
+      data.notifyInChatOnBreach = (
+        input as { notifyInChatOnBreach?: boolean }
+      ).notifyInChatOnBreach;
     }
 
     await mockPrisma.chat.update({
@@ -680,7 +682,9 @@ describe('chats.update', () => {
 
     const data: Record<string, unknown> = {};
     if ((input as { assignedAccountantId?: string | null }).assignedAccountantId !== undefined) {
-      data.assignedAccountantId = (input as { assignedAccountantId?: string | null }).assignedAccountantId;
+      data.assignedAccountantId = (
+        input as { assignedAccountantId?: string | null }
+      ).assignedAccountantId;
     }
     if ((input as { slaEnabled?: boolean }).slaEnabled !== undefined) {
       data.slaEnabled = (input as { slaEnabled?: boolean }).slaEnabled;
@@ -689,7 +693,9 @@ describe('chats.update', () => {
       data.slaThresholdMinutes = input.slaThresholdMinutes;
     }
     if ((input as { notifyInChatOnBreach?: boolean }).notifyInChatOnBreach !== undefined) {
-      data.notifyInChatOnBreach = (input as { notifyInChatOnBreach?: boolean }).notifyInChatOnBreach;
+      data.notifyInChatOnBreach = (
+        input as { notifyInChatOnBreach?: boolean }
+      ).notifyInChatOnBreach;
     }
 
     await mockPrisma.chat.update({

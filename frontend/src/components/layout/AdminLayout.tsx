@@ -544,7 +544,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
 
         {/* Main content */}
         <main className="flex-1 p-4 lg:p-6">
-          <div className="mx-auto max-w-7xl buh-stagger">{children}</div>
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
 
         {/* Footer */}

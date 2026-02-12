@@ -295,6 +295,7 @@ export default function ViolationsPage() {
                   <YAxis
                     tick={{ fill: 'var(--buh-foreground-muted)', fontSize: 12 }}
                     tickLine={{ stroke: 'var(--buh-border)' }}
+                    allowDecimals={false}
                   />
                   <ChartTooltip
                     content={<ChartTooltipContent />}

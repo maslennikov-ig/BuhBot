@@ -228,16 +228,19 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
             <Input
               id="holiday-date"
               type="date"
+              lang="ru"
               value={newHolidayDate}
               onChange={(e) => setNewHolidayDate(e.target.value)}
               disabled={isAnyLoading}
               required
+              placeholder="дд.мм.гггг"
               className={cn(
-                'w-40',
+                'w-44',
                 'bg-[var(--buh-surface)] border-[var(--buh-border)]',
                 'focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]'
               )}
             />
+            <span className="text-xs text-[var(--buh-foreground-subtle)]">дд.мм.гггг</span>
           </div>
           <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
             <Label htmlFor="holiday-name" className="text-[var(--buh-foreground)]">

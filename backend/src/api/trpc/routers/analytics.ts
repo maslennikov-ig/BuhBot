@@ -67,6 +67,7 @@ export const analyticsRouter = router({
         select: {
           id: true,
           responseTimeMinutes: true,
+          slaBreached: true,
           status: true,
           chat: {
             select: {
@@ -105,6 +106,9 @@ export const analyticsRouter = router({
           } else {
             breachedSLA++;
           }
+        } else if (request.slaBreached) {
+          // Unanswered requests that breached SLA count as breached
+          breachedSLA++;
         }
       });
 

@@ -302,7 +302,7 @@ export function LogsTable({ errors, viewMode, className, onRefresh }: LogsTableP
                 onClick={() => requestSort('status')}
                 className="px-6 py-3"
               />
-              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+              <th className="min-w-[120px] whitespace-nowrap px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                 Действия
               </th>
             </tr>

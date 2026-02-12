@@ -217,7 +217,7 @@ function transformAlertToOutput(alert: AlertWithRelations): z.infer<typeof Alert
           chatId: String(alert.request.chatId),
           chatTitle: alert.request.chat?.title ?? null,
           clientUsername: alert.request.clientUsername,
-          messagePreview: alert.request.messageText.substring(0, 200),
+          messagePreview: (alert.request.messageText ?? '').substring(0, 200),
           accountantName: alert.request.assignedUser?.fullName ?? null,
         }
       : undefined,
@@ -317,12 +317,25 @@ export const alertRouter = router({
       }
 
       try {
-        // Cancel pending escalations
-        await cancelEscalation(input.alertId);
+        // Cancel pending escalations (non-blocking — don't fail resolve if queue is down)
+        try {
+          await cancelEscalation(input.alertId);
+        } catch (escalationError) {
+          // Log but don't block resolution
+          console.warn(
+            `Failed to cancel escalation for alert ${input.alertId}:`,
+            escalationError instanceof Error ? escalationError.message : escalationError
+          );
+        }
 
-        // Resolve the alert
+        // Resolve the alert — verify user exists to avoid FK violation
         const userId = input.resolvedBy ?? ctx.user.id;
-        await resolveAlertService(input.alertId, input.action, userId);
+        const userExists = await ctx.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+
+        await resolveAlertService(input.alertId, input.action, userExists ? userId : undefined);
 
         // Update resolution notes if provided
         if (input.resolutionNotes) {

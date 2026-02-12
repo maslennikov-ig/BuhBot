@@ -265,8 +265,8 @@ export function DashboardContent() {
     if (!data) return emptyAlertsData;
 
     // Estimate severity counts from active alerts and recent requests
-    const totalAlerts = data.activeAlertsCount ?? 0;
     const breachedRequests = data.recentRequests?.filter((r) => r.breached) ?? [];
+    const totalAlerts = Math.max(data.activeAlertsCount ?? 0, breachedRequests.length);
 
     // Critical = breached requests, Warning = active non-breached, Info = rest
     const criticalCount = Math.min(breachedRequests.length, totalAlerts);
@@ -304,17 +304,12 @@ export function DashboardContent() {
       });
     }
 
-    // Use mock alerts if no real alerts available
-    if (recentAlerts.length === 0) {
-      return emptyAlertsData;
-    }
-
     return {
       totalCount: totalAlerts,
       criticalCount,
       warningCount,
       infoCount,
-      recentAlerts: recentAlerts.length > 0 ? recentAlerts : emptyAlertsData.recentAlerts,
+      recentAlerts,
     };
   }, [data]);
 

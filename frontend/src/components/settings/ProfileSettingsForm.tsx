@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { trpc } from '@/lib/trpc';
+import { isDevMode } from '@/lib/config';
 import { TelegramLoginButton, TelegramUser } from '../telegram/TelegramLoginButton';
 import { TelegramAccountCard } from '../telegram/TelegramAccountCard';
 
@@ -210,7 +211,11 @@ export function ProfileSettingsForm() {
               </p>
             </div>
 
-            {botName ? (
+            {isDevMode ? (
+              <div className="text-sm text-[var(--buh-foreground-muted)] italic">
+                Авторизация через Telegram недоступна в режиме разработки
+              </div>
+            ) : botName ? (
               <div className="flex justify-center md:justify-end">
                 <TelegramLoginButton
                   botName={botName}

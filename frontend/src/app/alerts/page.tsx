@@ -421,7 +421,7 @@ export default function AlertsPage() {
                       sortDirection={getSortIcon('accountantName')}
                       onClick={() => requestSort('accountantName')}
                     />
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                    <th className="min-w-[120px] whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                       Действия
                     </th>
                   </tr>

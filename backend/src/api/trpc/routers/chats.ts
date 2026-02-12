@@ -333,7 +333,7 @@ export const chatsRouter = router({
       }
 
       // Validate: Cannot enable SLA without managers configured
-      if (input.slaEnabled === true) {
+      if (input.slaEnabled === true && existingChat.slaEnabled === false) {
         // Check for chat-level managers (if provided in input, use that; otherwise use existing)
         const chatManagers = existingChat.managerTelegramIds || [];
 

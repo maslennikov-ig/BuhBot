@@ -47,6 +47,9 @@ RUN npm ci --legacy-peer-deps
 # Copy frontend source code and configuration files
 COPY frontend/. .
 
+# Copy root package.json for version reference (managed by Release Please)
+COPY package.json ../package.json
+
 # Build arguments for environment variables (required at build time)
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY

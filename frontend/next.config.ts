@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next';
-import packageJson from './package.json' with { type: 'json' };
+import packageJson from '../package.json' with { type: 'json' };
 
 // Backend URL from environment or default
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';

@@ -324,7 +324,8 @@ export const alertRouter = router({
         } catch (escalationError) {
           logger.warn('Failed to cancel escalation for alert', {
             alertId: input.alertId,
-            error: escalationError instanceof Error ? escalationError.message : String(escalationError),
+            error:
+              escalationError instanceof Error ? escalationError.message : String(escalationError),
             service: 'alert',
           });
         }

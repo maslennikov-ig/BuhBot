@@ -254,7 +254,9 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
                 <CalendarWidget
                   mode="single"
                   selected={newHolidayDate ? new Date(newHolidayDate) : undefined}
-                  onSelect={(date) => setNewHolidayDate(date ? date.toISOString().split('T')[0] : '')}
+                  onSelect={(date) =>
+                    setNewHolidayDate(date ? date.toISOString().split('T')[0] : '')
+                  }
                   locale={ru}
                   initialFocus
                 />

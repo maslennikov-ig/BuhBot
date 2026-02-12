@@ -31,6 +31,7 @@ import {
 import { cancelEscalation } from '../../../services/alerts/escalation.service.js';
 import { formatAccountantNotification } from '../../../services/alerts/format.service.js';
 import { bot } from '../../../bot/bot.js';
+import logger from '../../../utils/logger.js';
 
 // ============================================================================
 // SHARED SCHEMAS
@@ -321,11 +322,11 @@ export const alertRouter = router({
         try {
           await cancelEscalation(input.alertId);
         } catch (escalationError) {
-          // Log but don't block resolution
-          console.warn(
-            `Failed to cancel escalation for alert ${input.alertId}:`,
-            escalationError instanceof Error ? escalationError.message : escalationError
-          );
+          logger.warn('Failed to cancel escalation for alert', {
+            alertId: input.alertId,
+            error: escalationError instanceof Error ? escalationError.message : String(escalationError),
+            service: 'alert',
+          });
         }
 
         // Resolve the alert — verify user exists to avoid FK violation
@@ -334,6 +335,14 @@ export const alertRouter = router({
           where: { id: userId },
           select: { id: true },
         });
+
+        if (!userExists) {
+          logger.warn('Authenticated user not found in DB during alert resolve', {
+            userId,
+            alertId: input.alertId,
+            service: 'alert',
+          });
+        }
 
         await resolveAlertService(input.alertId, input.action, userExists ? userId : undefined);
 

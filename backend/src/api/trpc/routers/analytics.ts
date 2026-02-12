@@ -92,13 +92,16 @@ export const analyticsRouter = router({
       }
 
       // Calculate SLA compliance
+      // Pending requests (unanswered, not yet breached) are excluded from compliance denominator
       let answeredWithinSLA = 0;
       let breachedSLA = 0;
+      let classifiedRequests = 0;
       const responseTimes: number[] = [];
 
       requests.forEach((request) => {
         if (request.responseTimeMinutes !== null) {
           responseTimes.push(request.responseTimeMinutes);
+          classifiedRequests++;
 
           // Check if within SLA threshold
           if (request.responseTimeMinutes <= request.chat.slaThresholdMinutes) {
@@ -109,12 +112,14 @@ export const analyticsRouter = router({
         } else if (request.slaBreached) {
           // Unanswered requests that breached SLA count as breached
           breachedSLA++;
+          classifiedRequests++;
         }
+        // Pending requests (no response, no breach) excluded from compliance calculation
       });
 
-      // Calculate statistics
+      // Calculate statistics — use classifiedRequests as denominator to avoid dilution by pending
       const compliancePercentage =
-        totalRequests > 0 ? (answeredWithinSLA / totalRequests) * 100 : 0;
+        classifiedRequests > 0 ? (answeredWithinSLA / classifiedRequests) * 100 : 0;
 
       const averageResponseMinutes =
         responseTimes.length > 0

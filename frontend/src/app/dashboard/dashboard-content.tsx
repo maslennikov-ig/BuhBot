@@ -264,7 +264,8 @@ export function DashboardContent() {
   const alertsData = React.useMemo(() => {
     if (!data) return emptyAlertsData;
 
-    // Estimate severity counts from active alerts and recent requests
+    // activeAlertsCount = unresolved SLA alerts; breachedRequests = breached client requests
+    // These are different entities — use Math.max so the widget never shows 0 when breaches exist
     const breachedRequests = data.recentRequests?.filter((r) => r.breached) ?? [];
     const totalAlerts = Math.max(data.activeAlertsCount ?? 0, breachedRequests.length);
 

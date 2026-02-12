@@ -15,8 +15,12 @@ import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarWidget } from '@/components/ui/calendar';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 /**
  * Holiday data structure from API
@@ -225,22 +229,37 @@ export function HolidayCalendar({ className }: HolidayCalendarProps) {
             <Label htmlFor="holiday-date" className="text-[var(--buh-foreground)]">
               Дата
             </Label>
-            <Input
-              id="holiday-date"
-              type="date"
-              lang="ru"
-              value={newHolidayDate}
-              onChange={(e) => setNewHolidayDate(e.target.value)}
-              disabled={isAnyLoading}
-              required
-              placeholder="дд.мм.гггг"
-              className={cn(
-                'w-44',
-                'bg-[var(--buh-surface)] border-[var(--buh-border)]',
-                'focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]'
-              )}
-            />
-            <span className="text-xs text-[var(--buh-foreground-subtle)]">дд.мм.гггг</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="holiday-date"
+                  type="button"
+                  variant="outline"
+                  disabled={isAnyLoading}
+                  className={cn(
+                    'w-44 justify-start text-left font-normal',
+                    'bg-[var(--buh-surface)] border-[var(--buh-border)]',
+                    'hover:bg-[var(--buh-surface-overlay)]',
+                    'focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]',
+                    !newHolidayDate && 'text-[var(--buh-foreground-muted)]'
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {newHolidayDate
+                    ? format(new Date(newHolidayDate), 'dd.MM.yyyy', { locale: ru })
+                    : 'Выберите дату'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarWidget
+                  mode="single"
+                  selected={newHolidayDate ? new Date(newHolidayDate) : undefined}
+                  onSelect={(date) => setNewHolidayDate(date ? date.toISOString().split('T')[0] : '')}
+                  locale={ru}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
             <Label htmlFor="holiday-name" className="text-[var(--buh-foreground)]">

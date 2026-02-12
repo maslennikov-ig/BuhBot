@@ -11,6 +11,8 @@
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { supabase } from '../../../lib/supabase.js';
+import { isDevMode } from '../../../config/env.js';
+import logger from '../../../utils/logger.js';
 
 /**
  * User role schema (matches Prisma UserRole enum)
@@ -75,8 +77,34 @@ export const authRouter = router({
       });
 
       if (!dbUser) {
-        // This should never happen (user was validated in context)
-        // But handle gracefully for type safety
+        // In DEV_MODE, auto-create dev user if not found (e.g. seed not run)
+        if (isDevMode) {
+          logger.warn('DEV_MODE: Auto-creating dev user (seed not run)', {
+            userId: user.id,
+            service: 'auth',
+          });
+          const created = await ctx.prisma.user.create({
+            data: {
+              id: user.id,
+              email: user.email,
+              fullName: user.fullName ?? 'DEV Admin',
+              role: 'admin',
+              isOnboardingComplete: true,
+            },
+            include: { telegramAccount: true },
+          });
+          return {
+            id: created.id,
+            email: created.email,
+            fullName: created.fullName,
+            role: asUserRole(created.role),
+            isOnboardingComplete: created.isOnboardingComplete,
+            createdAt: created.createdAt,
+            telegramId: created.telegramId?.toString() ?? null,
+            telegramUsername: created.telegramUsername,
+            telegramAccount: null,
+          };
+        }
         throw new Error('User not found in database');
       }
 

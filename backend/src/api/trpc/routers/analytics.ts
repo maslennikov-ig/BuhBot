@@ -456,11 +456,10 @@ export const analyticsRouter = router({
         },
       });
 
-      // Get active alerts (pending or sent)
+      // Get active (unresolved) alerts — aligned with alert.getActiveAlertCount
       const activeAlerts = await ctx.prisma.slaAlert.count({
         where: {
-          deliveryStatus: { in: ['pending', 'sent'] },
-          acknowledgedAt: null,
+          resolvedAction: null,
         },
       });
 

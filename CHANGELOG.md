@@ -5,6 +5,14 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.11.1...buhbot-v0.11.2) (2026-02-11)
+
+
+### Bug Fixes
+
+* **sla:** fix analytics wrong field + align slaEnabled schema default ([26623ba](https://github.com/maslennikov-ig/BuhBot/commit/26623bae26f536842afce5d436314fae4cb8c150))
+* **sla:** resolve 4 SLA bugs — message drop, notification leak, migration duplicate, wrong field ([8cf2a82](https://github.com/maslennikov-ig/BuhBot/commit/8cf2a8252be029794dfad7d3bfc516fa6aab7d7f))
+
 ## [0.11.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.11.0...buhbot-v0.11.1) (2026-02-11)
 
 

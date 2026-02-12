@@ -18,6 +18,7 @@ import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
+import logger from '../../../utils/logger.js';
 import { randomBytes } from 'crypto';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
@@ -351,6 +352,25 @@ export const chatsRouter = router({
             code: 'BAD_REQUEST',
             message:
               'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
+          });
+        }
+      }
+
+      // Warn if SLA is active but no managers configured (monitoring)
+      if (
+        (input.slaEnabled === true || (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
+        existingChat.slaEnabled
+      ) {
+        const chatManagers = existingChat.managerTelegramIds || [];
+        const globalSettings = await ctx.prisma.globalSettings.findUnique({
+          where: { id: 'default' },
+          select: { globalManagerIds: true },
+        });
+        const globalManagers = globalSettings?.globalManagerIds || [];
+        if (chatManagers.length === 0 && globalManagers.length === 0) {
+          logger.warn('Chat has SLA enabled but no managers configured for notifications', {
+            chatId: input.id,
+            slaEnabled: true,
           });
         }
       }

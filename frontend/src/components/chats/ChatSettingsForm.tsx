@@ -151,7 +151,7 @@ export function ChatSettingsForm({
       slaThresholdMinutes: data.slaThresholdMinutes,
       assignedAccountantId: data.assignedAccountantId,
       accountantUsernames: data.accountantUsernames ?? [],
-      notifyInChatOnBreach: data.notifyInChatOnBreach,
+      notifyInChatOnBreach: data.notifyInChatOnBreach ?? false,
     });
   };
 

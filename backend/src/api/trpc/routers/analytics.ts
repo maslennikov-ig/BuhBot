@@ -559,7 +559,7 @@ export const analyticsRouter = router({
         clientUsername: r.clientUsername,
         messagePreview:
           r.messageText.length > 100 ? r.messageText.slice(0, 100) + '...' : r.messageText,
-        status: r.status as 'pending' | 'in_progress' | 'answered' | 'escalated',
+        status: r.status as 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed',
         receivedAt: r.receivedAt,
         responseMinutes: r.responseTimeMinutes,
         breached: r.slaBreached,
@@ -573,48 +573,59 @@ export const analyticsRouter = router({
         },
       });
 
-      const accountantStats = await Promise.all(
-        accountants.map(async (acc) => {
-          const requests = await ctx.prisma.clientRequest.findMany({
-            where: {
-              assignedTo: acc.id,
-              classification: 'REQUEST',
-              receivedAt: { gte: weekStart },
-            },
-            select: {
-              responseTimeMinutes: true,
-              slaBreached: true,
-            },
-          });
+      // Batch: single query for all accountant requests (replaces N+1 per accountant)
+      const accountantIds = accountants.map((a) => a.id);
+      const allAccountantRequests = await ctx.prisma.clientRequest.findMany({
+        where: {
+          assignedTo: { in: accountantIds },
+          classification: 'REQUEST',
+          receivedAt: { gte: weekStart },
+        },
+        select: {
+          assignedTo: true,
+          responseTimeMinutes: true,
+          slaBreached: true,
+        },
+      });
 
-          const totalRequests = requests.length;
-          // Only count classified requests (answered or breached) for compliance
-          const classified = requests.filter(
-            (r) => r.responseTimeMinutes !== null || r.slaBreached
-          );
-          const classifiedTotal = classified.length;
-          const violations = classified.filter((r) => r.slaBreached).length;
-          const compliant = classifiedTotal - violations;
-          const compliancePercent = classifiedTotal > 0 ? (compliant / classifiedTotal) * 100 : 100;
+      // Group by accountant in JS
+      const requestsByAccountant = new Map<string, typeof allAccountantRequests>();
+      for (const req of allAccountantRequests) {
+        if (!req.assignedTo) continue;
+        const list = requestsByAccountant.get(req.assignedTo) ?? [];
+        list.push(req);
+        requestsByAccountant.set(req.assignedTo, list);
+      }
 
-          const responseTimes = requests
-            .filter((r) => r.responseTimeMinutes !== null)
-            .map((r) => r.responseTimeMinutes as number);
-          const avgResponseMinutes =
-            responseTimes.length > 0
-              ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-              : 0;
+      const accountantStats = accountants.map((acc) => {
+        const requests = requestsByAccountant.get(acc.id) ?? [];
+        const totalRequests = requests.length;
+        // Only count classified requests (answered or breached) for compliance
+        const classified = requests.filter(
+          (r) => r.responseTimeMinutes !== null || r.slaBreached
+        );
+        const classifiedTotal = classified.length;
+        const violations = classified.filter((r) => r.slaBreached).length;
+        const compliant = classifiedTotal - violations;
+        const compliancePercent = classifiedTotal > 0 ? (compliant / classifiedTotal) * 100 : 100;
 
-          return {
-            id: acc.id,
-            name: acc.fullName,
-            totalRequests,
-            violations,
-            compliancePercent: Math.round(compliancePercent * 100) / 100,
-            avgResponseMinutes: Math.round(avgResponseMinutes * 100) / 100,
-          };
-        })
-      );
+        const responseTimes = requests
+          .filter((r) => r.responseTimeMinutes !== null)
+          .map((r) => r.responseTimeMinutes as number);
+        const avgResponseMinutes =
+          responseTimes.length > 0
+            ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+            : 0;
+
+        return {
+          id: acc.id,
+          name: acc.fullName,
+          totalRequests,
+          violations,
+          compliancePercent: Math.round(compliancePercent * 100) / 100,
+          avgResponseMinutes: Math.round(avgResponseMinutes * 100) / 100,
+        };
+      });
 
       // Top 5 accountants by compliance (only those with requests)
       const topAccountants = accountantStats
@@ -642,7 +653,31 @@ export const analyticsRouter = router({
           avgResponseMinutes: a.avgResponseMinutes,
         }));
 
-      // Calculate 7-day response time chart data
+      // Batch: 2 queries for 7-day chart data (replaces 14 sequential queries)
+      const chartResponses = await ctx.prisma.clientRequest.findMany({
+        where: {
+          classification: 'REQUEST',
+          receivedAt: { gte: weekStart },
+          responseTimeMinutes: { not: null },
+        },
+        select: {
+          receivedAt: true,
+          responseTimeMinutes: true,
+        },
+      });
+
+      const chartBreaches = await ctx.prisma.clientRequest.findMany({
+        where: {
+          slaBreached: true,
+          classification: 'REQUEST',
+          receivedAt: { gte: weekStart },
+        },
+        select: {
+          receivedAt: true,
+        },
+      });
+
+      // Group by day in JS
       const dayLabels = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
       const responseTimeChartData: Array<{
         date: Date;
@@ -650,6 +685,7 @@ export const analyticsRouter = router({
         avgResponseMinutes: number;
         requestCount: number;
       }> = [];
+      const violationsLast7Days: number[] = [];
 
       for (let i = 6; i >= 0; i--) {
         const dayStart = new Date(now);
@@ -659,18 +695,11 @@ export const analyticsRouter = router({
         const dayEnd = new Date(dayStart);
         dayEnd.setHours(23, 59, 59, 999);
 
-        const dayRequests = await ctx.prisma.clientRequest.findMany({
-          where: {
-            classification: 'REQUEST',
-            receivedAt: { gte: dayStart, lte: dayEnd },
-            responseTimeMinutes: { not: null },
-          },
-          select: {
-            responseTimeMinutes: true,
-          },
-        });
-
-        const responseTimes = dayRequests.map((r) => r.responseTimeMinutes as number);
+        // Filter pre-fetched data for this day
+        const dayResponses = chartResponses.filter(
+          (r) => r.receivedAt >= dayStart && r.receivedAt <= dayEnd
+        );
+        const responseTimes = dayResponses.map((r) => r.responseTimeMinutes as number);
         const avgTime =
           responseTimes.length > 0
             ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
@@ -680,29 +709,14 @@ export const analyticsRouter = router({
           date: dayStart,
           dayLabel: dayLabels[dayStart.getDay()] ?? '',
           avgResponseMinutes: Math.round(avgTime * 100) / 100,
-          requestCount: dayRequests.length,
-        });
-      }
-
-      // Calculate violations for each of the last 7 days
-      const violationsLast7Days: number[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const dayStart = new Date(now);
-        dayStart.setDate(dayStart.getDate() - i);
-        dayStart.setHours(0, 0, 0, 0);
-
-        const dayEnd = new Date(dayStart);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        const dayViolations = await ctx.prisma.clientRequest.count({
-          where: {
-            slaBreached: true,
-            classification: 'REQUEST',
-            receivedAt: { gte: dayStart, lte: dayEnd },
-          },
+          requestCount: dayResponses.length,
         });
 
-        violationsLast7Days.push(dayViolations);
+        // Filter pre-fetched breaches for this day
+        const dayViolations = chartBreaches.filter(
+          (r) => r.receivedAt >= dayStart && r.receivedAt <= dayEnd
+        );
+        violationsLast7Days.push(dayViolations.length);
       }
 
       return {

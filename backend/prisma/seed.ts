@@ -264,7 +264,6 @@ async function seedChats(): Promise<void> {
         chatType: 'supergroup' as ChatType,
         title: chat.title,
         assignedAccountantId: accountant?.id,
-        accountantUsername: accountant?.fullName.split(' ')[0]?.toLowerCase(),
         slaEnabled: true,
         slaThresholdMinutes: chat.slaMinutes,
         monitoringEnabled: true,

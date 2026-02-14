@@ -177,7 +177,6 @@ export function registerChatEventHandler(): void {
             is24x7Mode: oldChat.is24x7Mode,
             managerTelegramIds: oldChat.managerTelegramIds,
             notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
-            accountantUsername: oldChat.accountantUsername,
             accountantUsernames: oldChat.accountantUsernames,
             assignedAccountantId: oldChat.assignedAccountantId,
             inviteLink: oldChat.inviteLink,

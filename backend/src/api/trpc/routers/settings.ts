@@ -23,6 +23,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { validateBotToken } from '../../../services/telegram/validation.js';
+import { invalidateSettingsCache } from '../../../config/config.service.js';
 
 // ============================================================================
 // INPUT SCHEMAS
@@ -354,6 +355,9 @@ export const settingsRouter = router({
         update: updateData,
       });
 
+      // Invalidate cached settings so all services pick up changes immediately
+      invalidateSettingsCache();
+
       return {
         defaultTimezone: settings.defaultTimezone,
         defaultWorkingDays: settings.defaultWorkingDays,
@@ -659,6 +663,9 @@ export const settingsRouter = router({
           defaultSlaThreshold: input.slaThreshold,
         },
       });
+
+      // Invalidate cached settings
+      invalidateSettingsCache();
 
       // 2. Update ALL existing chats (gh-16)
       const result = await ctx.prisma.chat.updateMany({

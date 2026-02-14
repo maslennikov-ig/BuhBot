@@ -87,7 +87,6 @@ export const chatsRouter = router({
             id: true,
             chatType: true,
             title: true,
-            accountantUsername: true,
             accountantUsernames: true,
             assignedAccountantId: true,
             slaEnabled: true,
@@ -109,13 +108,16 @@ export const chatsRouter = router({
             id: bigint;
             chatType: 'private' | 'group' | 'supergroup';
             title: string | null;
-            accountantUsername: string | null;
             accountantUsernames: string[];
             assignedAccountantId: string | null;
             slaEnabled: boolean;
             slaThresholdMinutes: number;
             createdAt: Date;
-          }) => ({ ...chat, id: safeNumberFromBigInt(chat.id) })
+          }) => ({
+            ...chat,
+            id: safeNumberFromBigInt(chat.id),
+            accountantUsername: chat.accountantUsernames[0] ?? null,
+          })
         ),
         total,
       };
@@ -159,7 +161,6 @@ export const chatsRouter = router({
           id: true,
           chatType: true,
           title: true,
-          accountantUsername: true,
           accountantUsernames: true,
           accountantTelegramIds: true,
           assignedAccountantId: true,
@@ -182,6 +183,7 @@ export const chatsRouter = router({
       return {
         ...chat,
         id: safeNumberFromBigInt(chat.id),
+        accountantUsername: chat.accountantUsernames[0] ?? null,
         accountantTelegramIds: chat.accountantTelegramIds.map((id) => safeNumberFromBigInt(id)),
       };
     }),
@@ -264,7 +266,7 @@ export const chatsRouter = router({
           id: safeNumberFromBigInt(chat.id),
           chatType: chat.chatType,
           title: chat.title,
-          accountantUsername: chat.accountantUsername,
+          accountantUsername: chat.accountantUsernames[0] ?? null,
           accountantUsernames: chat.accountantUsernames,
           assignedAccountantId: chat.assignedAccountantId,
           slaEnabled: chat.slaEnabled,
@@ -626,7 +628,7 @@ export const chatsRouter = router({
    * @param telegramChatId - Telegram chat ID as string
    * @param chatType - Type of chat (private, group, supergroup)
    * @param title - Chat title (optional)
-   * @param accountantUsername - Accountant username (optional)
+   * @param accountantUsername - Accountant username (optional, added to accountantUsernames array)
    * @returns Created or updated chat details
    * @authorization Admins and managers only
    */
@@ -663,14 +665,20 @@ export const chatsRouter = router({
       });
       const defaultThreshold = globalSettings?.defaultSlaThreshold ?? 60;
 
+      // Build accountantUsernames array from the provided username
+      const accountantUsernames: string[] = input.accountantUsername
+        ? [input.accountantUsername]
+        : [];
+
       // Upsert: create if not exists, update if exists
       const chat = await ctx.prisma.chat.upsert({
         where: { id: chatId },
         update: {
-          // Update title and accountantUsername if provided
+          // Update title if provided
           ...(input.title !== undefined && { title: input.title }),
+          // Add accountant to usernames array if provided
           ...(input.accountantUsername !== undefined && {
-            accountantUsername: input.accountantUsername,
+            accountantUsernames: accountantUsernames,
           }),
           chatType: input.chatType,
         },
@@ -678,7 +686,7 @@ export const chatsRouter = router({
           id: chatId,
           chatType: input.chatType,
           title: input.title ?? null,
-          accountantUsername: input.accountantUsername ?? null,
+          accountantUsernames,
           // Defaults from Prisma schema
           slaEnabled: true,
           slaThresholdMinutes: defaultThreshold,
@@ -691,7 +699,7 @@ export const chatsRouter = router({
           id: true,
           chatType: true,
           title: true,
-          accountantUsername: true,
+          accountantUsernames: true,
           assignedAccountantId: true,
           slaEnabled: true,
           slaThresholdMinutes: true,
@@ -700,7 +708,11 @@ export const chatsRouter = router({
         },
       });
 
-      return { ...chat, id: safeNumberFromBigInt(chat.id) };
+      return {
+        ...chat,
+        id: safeNumberFromBigInt(chat.id),
+        accountantUsername: chat.accountantUsernames[0] ?? null,
+      };
     }),
 
   /**

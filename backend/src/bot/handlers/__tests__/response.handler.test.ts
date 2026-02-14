@@ -1,11 +1,11 @@
 /**
  * Unit Tests for isAccountantForChat function
  *
- * Tests all 4 check levels for accountant validation:
- * - Check 0: Username in accountantUsernames array (highest priority)
- * - Check 1: Username matches accountantUsername field (legacy)
- * - Check 2: Username matches assignedAccountant.telegramUsername
- * - Check 3: Telegram ID matches assignedAccountant.telegramId
+ * Tests all check levels for accountant validation:
+ * - Check 0: Telegram ID in accountantTelegramIds array (secure, immutable)
+ * - Check 1: Telegram ID matches assignedAccountant.telegramId
+ * - Check 2: Username in accountantUsernames array (fallback)
+ * - Check 3: Username matches assignedAccountant.telegramUsername (fallback)
  *
  * @module bot/handlers/__tests__/response.handler.test
  */
@@ -58,7 +58,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: ['accountant1', 'accountant2', 'accountant3'],
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_1',
         assignedAccountant: null,
       });
@@ -77,7 +76,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: ['accountant1', '@accountant2'],
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_2',
         assignedAccountant: null,
       });
@@ -96,7 +94,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: ['AccountantOne', 'ACCOUNTANTTWO'],
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_3',
         assignedAccountant: null,
       });
@@ -115,7 +112,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: ['@AccountantOne'],
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_4',
         assignedAccountant: null,
       });
@@ -134,7 +130,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: ['accountant1', 'accountant2'],
-        accountantUsername: null,
         assignedAccountantId: null,
         assignedAccountant: null,
       });
@@ -149,7 +144,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: [],
-        accountantUsername: null,
         assignedAccountantId: null,
         assignedAccountant: null,
       });
@@ -164,7 +158,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: null,
         assignedAccountant: null,
       });
@@ -176,97 +169,11 @@ describe('isAccountantForChat', () => {
     });
   });
 
-  describe('Check 1 - Legacy accountantUsername field match', () => {
-    it('should match when username equals accountantUsername', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
-        id: BigInt(123),
-        accountantUsernames: null,
-        accountantUsername: 'legacy_accountant',
-        assignedAccountantId: 'accountant_uuid_5',
-        assignedAccountant: null,
-      });
-
-      const result = await isAccountantForChat(BigInt(123), 'legacy_accountant', 456);
-
-      expect(result.isAccountant).toBe(true);
-      expect(result.accountantId).toBe('accountant_uuid_5');
-    });
-
-    it('should match case-insensitively', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
-        id: BigInt(123),
-        accountantUsernames: null,
-        accountantUsername: 'LegacyAccountant',
-        assignedAccountantId: 'accountant_uuid_6',
-        assignedAccountant: null,
-      });
-
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'legacyaccountant', // lowercase
-        456
-      );
-
-      expect(result.isAccountant).toBe(true);
-      expect(result.accountantId).toBe('accountant_uuid_6');
-    });
-
-    it('should normalize @ prefix in both username and accountantUsername', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
-        id: BigInt(123),
-        accountantUsernames: null,
-        accountantUsername: '@legacy_accountant',
-        assignedAccountantId: 'accountant_uuid_7',
-        assignedAccountant: null,
-      });
-
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'legacy_accountant', // No @ prefix
-        456
-      );
-
-      expect(result.isAccountant).toBe(true);
-      expect(result.accountantId).toBe('accountant_uuid_7');
-    });
-
-    it('should not match when username is different', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
-        id: BigInt(123),
-        accountantUsernames: null,
-        accountantUsername: 'legacy_accountant',
-        assignedAccountantId: null,
-        assignedAccountant: null,
-      });
-
-      const result = await isAccountantForChat(BigInt(123), 'different_user', 456);
-
-      expect(result.isAccountant).toBe(false);
-      expect(result.accountantId).toBeNull();
-    });
-
-    it('should skip check when accountantUsername is null', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
-        id: BigInt(123),
-        accountantUsernames: null,
-        accountantUsername: null,
-        assignedAccountantId: null,
-        assignedAccountant: null,
-      });
-
-      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
-
-      expect(result.isAccountant).toBe(false);
-      expect(result.accountantId).toBeNull();
-    });
-  });
-
-  describe('Check 2 - assignedAccountant.telegramUsername match', () => {
+  describe('Check 3 - assignedAccountant.telegramUsername match', () => {
     it('should match when username equals assignedAccountant.telegramUsername', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_8',
         assignedAccountant: {
           id: 'accountant_uuid_8',
@@ -285,7 +192,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_9',
         assignedAccountant: {
           id: 'accountant_uuid_9',
@@ -308,7 +214,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_10',
         assignedAccountant: {
           id: 'accountant_uuid_10',
@@ -331,7 +236,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_11',
         assignedAccountant: {
           id: 'accountant_uuid_11',
@@ -350,7 +254,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: null,
         assignedAccountant: null,
       });
@@ -365,7 +268,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_12',
         assignedAccountant: {
           id: 'accountant_uuid_12',
@@ -381,12 +283,11 @@ describe('isAccountantForChat', () => {
     });
   });
 
-  describe('Check 3 - assignedAccountant.telegramId match', () => {
+  describe('Check 1 - assignedAccountant.telegramId match', () => {
     it('should match when telegramUserId equals assignedAccountant.telegramId', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_13',
         assignedAccountant: {
           id: 'accountant_uuid_13',
@@ -409,7 +310,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_14',
         assignedAccountant: {
           id: 'accountant_uuid_14',
@@ -432,7 +332,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_15',
         assignedAccountant: {
           id: 'accountant_uuid_15',
@@ -455,7 +354,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_16',
         assignedAccountant: {
           id: 'accountant_uuid_16',
@@ -492,7 +390,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: null,
         assignedAccountant: null,
       });
@@ -512,7 +409,6 @@ describe('isAccountantForChat', () => {
         id: BigInt(123),
         accountantTelegramIds: [BigInt(456)],
         accountantUsernames: ['accountant1'],
-        accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_1',
         assignedAccountant: null,
       });
@@ -537,7 +433,6 @@ describe('isAccountantForChat', () => {
         id: BigInt(123),
         accountantTelegramIds: [BigInt(999)], // Different ID
         accountantUsernames: ['accountant1'],
-        accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_2',
         assignedAccountant: {
           id: 'accountant_uuid_priority_2',
@@ -566,7 +461,6 @@ describe('isAccountantForChat', () => {
         id: BigInt(123),
         accountantTelegramIds: [BigInt(999)],
         accountantUsernames: ['accountant1'],
-        accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_3',
         assignedAccountant: {
           id: 'accountant_uuid_priority_3',
@@ -590,12 +484,11 @@ describe('isAccountantForChat', () => {
       );
     });
 
-    it('should fall through to Check 3 (legacy username) when all prior checks fail', async () => {
+    it('should fall through to Check 3 (assignedAccountant.telegramUsername) when all prior checks fail', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantTelegramIds: [],
         accountantUsernames: ['accountant1'],
-        accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_4',
         assignedAccountant: {
           id: 'accountant_uuid_priority_4',
@@ -606,15 +499,15 @@ describe('isAccountantForChat', () => {
 
       const result = await isAccountantForChat(
         BigInt(123),
-        'accountant2', // Matches legacy accountantUsername
+        'accountant3', // Matches assignedAccountant.telegramUsername
         456
       );
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_priority_4');
-      // Should match via Check 3 (legacy fallback)
+      // Should match via Check 3 (assignedAccountant.telegramUsername fallback)
       expect(mockLogger.info).toHaveBeenCalledWith(
-        'Accountant matched by legacy accountantUsername field (Check 3, deprecated)',
+        'Accountant matched by assignedAccountant.telegramUsername (Check 3, fallback)',
         expect.any(Object)
       );
     });
@@ -623,7 +516,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: null,
         assignedAccountant: null,
       });
@@ -681,7 +573,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: ['accountant1'],
-        accountantUsername: 'legacy_accountant',
         assignedAccountantId: 'accountant_uuid_debug',
         assignedAccountant: {
           id: 'accountant_uuid_debug',
@@ -697,7 +588,6 @@ describe('isAccountantForChat', () => {
         expect.objectContaining({
           chatId: '123',
           accountantUsernames: ['accountant1'],
-          chatAccountantUsername: 'legacy_accountant',
           assignedAccountantId: 'accountant_uuid_debug',
           assignedAccountantTelegramUsername: 'assigned_accountant',
           assignedAccountantTelegramId: '789',
@@ -716,7 +606,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
         accountantUsernames: null,
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_bigint',
         assignedAccountant: {
           id: 'accountant_uuid_bigint',
@@ -737,7 +626,6 @@ describe('isAccountantForChat', () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: largeChatId,
         accountantUsernames: ['accountant1'],
-        accountantUsername: null,
         assignedAccountantId: 'accountant_uuid_bigchat',
         assignedAccountant: null,
       });

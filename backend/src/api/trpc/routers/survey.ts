@@ -401,7 +401,7 @@ export const surveyRouter = router({
             select: {
               id: true,
               title: true,
-              accountantUsername: true,
+              accountantUsernames: true,
               assignedAccountant: {
                 select: {
                   fullName: true,
@@ -420,7 +420,8 @@ export const surveyRouter = router({
         surveyId: d.surveyId,
         chatId: d.chatId.toString(),
         chatTitle: d.chat?.title ?? null,
-        accountantUsername: d.chat?.accountantUsername ?? null,
+        accountantUsername:
+          d.chat?.assignedAccountant?.fullName ?? d.chat?.accountantUsernames?.[0] ?? null,
         accountantName: d.chat?.assignedAccountant?.fullName ?? null,
         status: d.status,
         deliveredAt: d.deliveredAt,

@@ -17,6 +17,10 @@
 
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
+import {
+  getEscalationConfig as getCachedEscalationConfig,
+  getManagerIds as getCachedManagerIds,
+} from '../../config/config.service.js';
 import { scheduleEscalation, cancelEscalation as cancelEscalationJob } from '../../queues/setup.js';
 import { getAlertById, updateEscalationLevel } from './alert.service.js';
 
@@ -31,47 +35,15 @@ export interface EscalationConfig {
 }
 
 /**
- * Default escalation configuration
- */
-const DEFAULT_ESCALATION_CONFIG: EscalationConfig = {
-  maxEscalations: 5,
-  escalationIntervalMin: 30,
-};
-
-/**
- * Get escalation configuration from global settings
- *
- * @returns Escalation configuration
+ * Get escalation configuration via cached ConfigService (gh-74)
  */
 async function getEscalationConfig(): Promise<EscalationConfig> {
-  try {
-    const globalSettings = await prisma.globalSettings.findUnique({
-      where: { id: 'default' },
-    });
-
-    if (!globalSettings) {
-      return DEFAULT_ESCALATION_CONFIG;
-    }
-
-    return {
-      maxEscalations: globalSettings.maxEscalations ?? DEFAULT_ESCALATION_CONFIG.maxEscalations,
-      escalationIntervalMin:
-        globalSettings.escalationIntervalMin ?? DEFAULT_ESCALATION_CONFIG.escalationIntervalMin,
-    };
-  } catch (error) {
-    logger.error('Failed to get escalation config, using defaults', {
-      error: error instanceof Error ? error.message : String(error),
-      service: 'escalation',
-    });
-    return DEFAULT_ESCALATION_CONFIG;
-  }
+  return getCachedEscalationConfig();
 }
 
 /**
- * Get manager IDs for escalation
- *
- * @param chatId - Telegram chat ID as bigint
- * @returns Array of manager Telegram user IDs
+ * Get manager IDs for escalation (gh-74)
+ * Precedence: Chat.managerTelegramIds > GlobalSettings.globalManagerIds > []
  */
 async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
   try {
@@ -81,17 +53,7 @@ async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
       select: { managerTelegramIds: true },
     });
 
-    if (chat?.managerTelegramIds && chat.managerTelegramIds.length > 0) {
-      return chat.managerTelegramIds;
-    }
-
-    // Fall back to global managers
-    const globalSettings = await prisma.globalSettings.findUnique({
-      where: { id: 'default' },
-      select: { globalManagerIds: true },
-    });
-
-    return globalSettings?.globalManagerIds ?? [];
+    return getCachedManagerIds(chat?.managerTelegramIds);
   } catch (error) {
     logger.error('Failed to get manager IDs', {
       chatId: String(chatId),

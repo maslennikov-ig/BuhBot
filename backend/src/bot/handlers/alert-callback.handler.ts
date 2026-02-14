@@ -100,9 +100,8 @@ export function registerAlertCallbackHandler(): void {
       }
 
       // Get accountant to notify - check multiple sources in priority order:
-      // 1. assignedAccountant relation (new primary method)
+      // 1. assignedAccountant relation (primary method)
       // 2. accountantUsernames array (multiple accountants)
-      // 3. accountantUsername (legacy single field)
       let accountantUsername: string | null = null;
 
       if (request.chat.assignedAccountant?.telegramUsername) {
@@ -114,12 +113,6 @@ export function registerAlertCallbackHandler(): void {
       } else if (request.chat.accountantUsernames && request.chat.accountantUsernames.length > 0) {
         accountantUsername = request.chat.accountantUsernames[0] ?? null;
         logger.debug('Using accountantUsernames[0]', {
-          accountantUsername,
-          service: 'alert-callback',
-        });
-      } else if (request.chat.accountantUsername) {
-        accountantUsername = request.chat.accountantUsername;
-        logger.debug('Using legacy accountantUsername', {
           accountantUsername,
           service: 'alert-callback',
         });

@@ -1,0 +1,241 @@
+/**
+ * Unified Configuration Service (gh-74)
+ *
+ * Provides cached, type-safe access to GlobalSettings with a TTL.
+ * Eliminates repeated DB queries across 20+ call sites.
+ *
+ * Precedence hierarchy:
+ *   Chat-level settings > GlobalSettings (DB) > Environment > Hardcoded defaults
+ *
+ * @module config/config.service
+ */
+
+import { prisma } from '../lib/prisma.js';
+import logger from '../utils/logger.js';
+
+/** Cached GlobalSettings type (matches Prisma model) */
+export interface CachedGlobalSettings {
+  // Working Hours
+  defaultTimezone: string;
+  defaultWorkingDays: number[];
+  defaultStartTime: string;
+  defaultEndTime: string;
+
+  // SLA
+  defaultSlaThreshold: number;
+  maxEscalations: number;
+  escalationIntervalMin: number;
+
+  // Manager Alerts
+  globalManagerIds: string[];
+  leadNotificationIds: string[];
+
+  // AI Classification
+  aiConfidenceThreshold: number;
+  messagePreviewLength: number;
+  openrouterApiKey: string | null;
+  openrouterModel: string;
+
+  // Data Retention
+  dataRetentionYears: number;
+
+  // Survey
+  surveyValidityDays: number;
+  surveyReminderDay: number;
+  lowRatingThreshold: number;
+  surveyQuarterDay: number;
+
+  // Bot
+  botToken: string | null;
+  botUsername: string | null;
+  botId: bigint | null;
+}
+
+/** Hardcoded defaults matching Prisma schema defaults */
+const DEFAULTS: CachedGlobalSettings = {
+  defaultTimezone: 'Europe/Moscow',
+  defaultWorkingDays: [1, 2, 3, 4, 5],
+  defaultStartTime: '09:00',
+  defaultEndTime: '18:00',
+  defaultSlaThreshold: 60,
+  maxEscalations: 5,
+  escalationIntervalMin: 30,
+  globalManagerIds: [],
+  leadNotificationIds: [],
+  aiConfidenceThreshold: 0.7,
+  messagePreviewLength: 500,
+  openrouterApiKey: null,
+  openrouterModel: 'openai/gpt-oss-120b',
+  dataRetentionYears: 3,
+  surveyValidityDays: 7,
+  surveyReminderDay: 2,
+  lowRatingThreshold: 3,
+  surveyQuarterDay: 1,
+  botToken: null,
+  botUsername: null,
+  botId: null,
+};
+
+/** Cache TTL in milliseconds (5 minutes) */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+let cachedSettings: CachedGlobalSettings | null = null;
+let cacheTimestamp = 0;
+
+/**
+ * Get GlobalSettings with caching.
+ * Fetches from DB at most once per CACHE_TTL_MS.
+ * Returns hardcoded defaults if DB is unreachable.
+ */
+export async function getGlobalSettings(): Promise<CachedGlobalSettings> {
+  const now = Date.now();
+
+  if (cachedSettings && now - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedSettings;
+  }
+
+  try {
+    const settings = await prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+    });
+
+    if (!settings) {
+      logger.warn('GlobalSettings row not found, using defaults', {
+        service: 'config-service',
+      });
+      cachedSettings = { ...DEFAULTS };
+    } else {
+      cachedSettings = {
+        defaultTimezone: settings.defaultTimezone,
+        defaultWorkingDays: settings.defaultWorkingDays,
+        defaultStartTime: settings.defaultStartTime,
+        defaultEndTime: settings.defaultEndTime,
+        defaultSlaThreshold: settings.defaultSlaThreshold,
+        maxEscalations: settings.maxEscalations,
+        escalationIntervalMin: settings.escalationIntervalMin,
+        globalManagerIds: settings.globalManagerIds,
+        leadNotificationIds: settings.leadNotificationIds,
+        aiConfidenceThreshold: settings.aiConfidenceThreshold,
+        messagePreviewLength: settings.messagePreviewLength,
+        openrouterApiKey: settings.openrouterApiKey,
+        openrouterModel: settings.openrouterModel,
+        dataRetentionYears: settings.dataRetentionYears,
+        surveyValidityDays: settings.surveyValidityDays,
+        surveyReminderDay: settings.surveyReminderDay,
+        lowRatingThreshold: settings.lowRatingThreshold,
+        surveyQuarterDay: settings.surveyQuarterDay,
+        botToken: settings.botToken,
+        botUsername: settings.botUsername,
+        botId: settings.botId,
+      };
+    }
+
+    cacheTimestamp = now;
+    return cachedSettings;
+  } catch (error) {
+    logger.error('Failed to fetch GlobalSettings, using cache or defaults', {
+      error: error instanceof Error ? error.message : String(error),
+      hasCachedSettings: cachedSettings !== null,
+      service: 'config-service',
+    });
+
+    // Return stale cache or defaults
+    return cachedSettings ?? { ...DEFAULTS };
+  }
+}
+
+/**
+ * Invalidate the settings cache.
+ * Call this after updating GlobalSettings via admin UI.
+ */
+export function invalidateSettingsCache(): void {
+  cachedSettings = null;
+  cacheTimestamp = 0;
+  logger.debug('GlobalSettings cache invalidated', {
+    service: 'config-service',
+  });
+}
+
+// --- Convenience getters for common config patterns ---
+
+/**
+ * Get SLA threshold for a chat.
+ * Precedence: Chat.slaThresholdMinutes > GlobalSettings.defaultSlaThreshold > 60
+ */
+export async function getSlaThreshold(chatSlaThreshold?: number | null): Promise<number> {
+  if (chatSlaThreshold != null && chatSlaThreshold > 0) {
+    return chatSlaThreshold;
+  }
+  const settings = await getGlobalSettings();
+  return settings.defaultSlaThreshold;
+}
+
+/**
+ * Get manager Telegram IDs for notifications.
+ * Precedence: Chat.managerTelegramIds > GlobalSettings.globalManagerIds > []
+ */
+export async function getManagerIds(chatManagerIds?: string[] | null): Promise<string[]> {
+  if (chatManagerIds && chatManagerIds.length > 0) {
+    return chatManagerIds;
+  }
+  const settings = await getGlobalSettings();
+  return settings.globalManagerIds;
+}
+
+/**
+ * Get escalation configuration.
+ */
+export async function getEscalationConfig(): Promise<{
+  maxEscalations: number;
+  escalationIntervalMin: number;
+}> {
+  const settings = await getGlobalSettings();
+  return {
+    maxEscalations: settings.maxEscalations,
+    escalationIntervalMin: settings.escalationIntervalMin,
+  };
+}
+
+/**
+ * Get AI classification configuration.
+ */
+export async function getClassifierConfig(): Promise<{
+  openrouterApiKey: string | null;
+  openrouterModel: string;
+  aiConfidenceThreshold: number;
+}> {
+  const settings = await getGlobalSettings();
+  return {
+    openrouterApiKey: settings.openrouterApiKey,
+    openrouterModel: settings.openrouterModel,
+    aiConfidenceThreshold: settings.aiConfidenceThreshold,
+  };
+}
+
+/**
+ * Get survey configuration.
+ */
+export async function getSurveyConfig(): Promise<{
+  surveyValidityDays: number;
+  surveyReminderDay: number;
+  lowRatingThreshold: number;
+  surveyQuarterDay: number;
+}> {
+  const settings = await getGlobalSettings();
+  return {
+    surveyValidityDays: settings.surveyValidityDays,
+    surveyReminderDay: settings.surveyReminderDay,
+    lowRatingThreshold: settings.lowRatingThreshold,
+    surveyQuarterDay: settings.surveyQuarterDay,
+  };
+}
+
+export default {
+  getGlobalSettings,
+  invalidateSettingsCache,
+  getSlaThreshold,
+  getManagerIds,
+  getEscalationConfig,
+  getClassifierConfig,
+  getSurveyConfig,
+};

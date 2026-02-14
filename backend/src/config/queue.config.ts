@@ -42,6 +42,10 @@ const queueConfigSchema = z.object({
   surveyReminderDelayDays: z.coerce.number().int().min(1).default(2),
   surveyManagerNotifyDelayDays: z.coerce.number().int().min(1).default(5),
 
+  // SLA reconciliation
+  slaReconciliationSchedule: z.string().default('*/5 * * * *'),
+  slaReconciliationAttempts: z.coerce.number().int().min(1).default(1),
+
   // Data retention
   dataRetentionAttempts: z.coerce.number().int().min(1).default(2),
   dataRetentionBackoffDelay: z.coerce.number().int().min(100).default(5000),
@@ -75,6 +79,9 @@ export const queueConfig: QueueConfig = queueConfigSchema.parse({
   surveyAttempts: process.env['QUEUE_SURVEY_ATTEMPTS'],
   surveyReminderDelayDays: process.env['QUEUE_SURVEY_REMINDER_DELAY_DAYS'],
   surveyManagerNotifyDelayDays: process.env['QUEUE_SURVEY_MANAGER_NOTIFY_DELAY_DAYS'],
+
+  slaReconciliationSchedule: process.env['QUEUE_SLA_RECONCILIATION_SCHEDULE'],
+  slaReconciliationAttempts: process.env['QUEUE_SLA_RECONCILIATION_ATTEMPTS'],
 
   dataRetentionAttempts: process.env['QUEUE_DATA_RETENTION_ATTEMPTS'],
   dataRetentionBackoffDelay: process.env['QUEUE_DATA_RETENTION_BACKOFF_DELAY'],

@@ -19,7 +19,7 @@ import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 /**
  * Request status schema (matches Prisma RequestStatus enum)
  */
-const RequestStatusSchema = z.enum(['pending', 'in_progress', 'answered', 'escalated']);
+const RequestStatusSchema = z.enum(['pending', 'in_progress', 'waiting_client', 'transferred', 'answered', 'escalated', 'closed']);
 
 /**
  * Alert type schema (matches Prisma AlertType enum)

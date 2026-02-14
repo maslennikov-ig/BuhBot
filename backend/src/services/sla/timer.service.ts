@@ -29,7 +29,7 @@ export interface SlaStatus {
   /** Request ID */
   requestId: string;
   /** Current SLA status */
-  status: 'pending' | 'in_progress' | 'answered' | 'escalated';
+  status: 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
   /** Whether SLA has been breached */
   breached: boolean;
   /** Elapsed working minutes since request received */

@@ -18,6 +18,10 @@ import './queues/sla-timer.worker.js';
 import './queues/alert.worker.js';
 import './queues/survey.worker.js';
 import { closeQueues } from './queues/setup.js';
+import {
+  startSlaReconciliationWorker,
+  scheduleSlaReconciliationJob,
+} from './jobs/sla-reconciliation.job.js';
 
 /**
  * BuhBot Backend Server
@@ -213,6 +217,17 @@ const startServer = async (port: number) => {
       service: 'startup',
     });
     // Don't fail startup - continue even if recovery fails
+  }
+
+  // Start SLA reconciliation worker and schedule periodic recovery (gh-67)
+  try {
+    startSlaReconciliationWorker();
+    await scheduleSlaReconciliationJob();
+  } catch (error) {
+    logger.error('Failed to start SLA reconciliation job', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'startup',
+    });
   }
 
   // Setup Telegram bot (Webhook or Polling)

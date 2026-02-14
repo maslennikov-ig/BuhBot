@@ -507,62 +507,98 @@ describe('isAccountantForChat', () => {
       expect(result.accountantId).toBeNull();
     });
 
-    it('should prioritize Check 0 (accountantUsernames array) over Check 1 (legacy)', async () => {
+    it('should prioritize Check 0 (accountantTelegramIds) over username checks', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
+        accountantTelegramIds: [BigInt(456)],
         accountantUsernames: ['accountant1'],
-        accountantUsername: 'accountant2', // Different from array
+        accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_1',
         assignedAccountant: null,
       });
 
       const result = await isAccountantForChat(
         BigInt(123),
-        'accountant1', // Matches array
-        456
+        'accountant1',
+        456 // Matches accountantTelegramIds
       );
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_priority_1');
-      // Should match via Check 0 first
+      // Should match via Check 0 (ID-based) first
       expect(mockLogger.info).toHaveBeenCalledWith(
-        'Accountant matched by accountantUsernames array (Check 0)',
+        'Accountant matched by accountantTelegramIds array (Check 0)',
         expect.any(Object)
       );
     });
 
-    it('should fall through to Check 1 when Check 0 does not match', async () => {
+    it('should fall through to Check 1 (assignedAccountant.telegramId) when Check 0 does not match', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
+        accountantTelegramIds: [BigInt(999)], // Different ID
         accountantUsernames: ['accountant1'],
         accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_2',
-        assignedAccountant: null,
+        assignedAccountant: {
+          id: 'accountant_uuid_priority_2',
+          telegramUsername: 'accountant3',
+          telegramId: BigInt(456), // Matches sender
+        },
       });
 
       const result = await isAccountantForChat(
         BigInt(123),
-        'accountant2', // Does not match array, but matches legacy field
-        456
+        'different_user',
+        456 // Matches assignedAccountant.telegramId
       );
 
       expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_priority_2');
       // Should match via Check 1
       expect(mockLogger.info).toHaveBeenCalledWith(
-        'Accountant matched by legacy accountantUsername field (Check 1)',
+        'Accountant matched by assignedAccountant.telegramId (Check 1)',
         expect.any(Object)
       );
     });
 
-    it('should fall through to Check 2 when Check 0 and Check 1 do not match', async () => {
+    it('should fall through to Check 2 (accountantUsernames) when ID checks fail', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
+        accountantTelegramIds: [BigInt(999)],
         accountantUsernames: ['accountant1'],
         accountantUsername: 'accountant2',
         assignedAccountantId: 'accountant_uuid_priority_3',
         assignedAccountant: {
           id: 'accountant_uuid_priority_3',
+          telegramUsername: 'accountant3',
+          telegramId: BigInt(789), // Different from sender
+        },
+      });
+
+      const result = await isAccountantForChat(
+        BigInt(123),
+        'accountant1', // Matches accountantUsernames array
+        456
+      );
+
+      expect(result.isAccountant).toBe(true);
+      expect(result.accountantId).toBe('accountant_uuid_priority_3');
+      // Should match via Check 2 (username fallback)
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Accountant matched by accountantUsernames array (Check 2, fallback)',
+        expect.any(Object)
+      );
+    });
+
+    it('should fall through to Check 3 (legacy username) when all prior checks fail', async () => {
+      mockPrisma.chat.findUnique.mockResolvedValue({
+        id: BigInt(123),
+        accountantTelegramIds: [],
+        accountantUsernames: ['accountant1'],
+        accountantUsername: 'accountant2',
+        assignedAccountantId: 'accountant_uuid_priority_4',
+        assignedAccountant: {
+          id: 'accountant_uuid_priority_4',
           telegramUsername: 'accountant3',
           telegramId: BigInt(789),
         },
@@ -570,43 +606,15 @@ describe('isAccountantForChat', () => {
 
       const result = await isAccountantForChat(
         BigInt(123),
-        'accountant3', // Matches assignedAccountant.telegramUsername
+        'accountant2', // Matches legacy accountantUsername
         456
       );
 
       expect(result.isAccountant).toBe(true);
-      expect(result.accountantId).toBe('accountant_uuid_priority_3');
-      // Should match via Check 2
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Accountant matched by assignedAccountant.telegramUsername (Check 2)',
-        expect.any(Object)
-      );
-    });
-
-    it('should fall through to Check 3 when all username checks fail', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
-        id: BigInt(123),
-        accountantUsernames: ['accountant1'],
-        accountantUsername: 'accountant2',
-        assignedAccountantId: 'accountant_uuid_priority_4',
-        assignedAccountant: {
-          id: 'accountant_uuid_priority_4',
-          telegramUsername: 'accountant3',
-          telegramId: BigInt(456), // Matches telegramUserId
-        },
-      });
-
-      const result = await isAccountantForChat(
-        BigInt(123),
-        'different_user', // Does not match any username checks
-        456 // But matches Telegram ID
-      );
-
-      expect(result.isAccountant).toBe(true);
       expect(result.accountantId).toBe('accountant_uuid_priority_4');
-      // Should match via Check 3
+      // Should match via Check 3 (legacy fallback)
       expect(mockLogger.info).toHaveBeenCalledWith(
-        'Accountant matched by assignedAccountant.telegramId (Check 3)',
+        'Accountant matched by legacy accountantUsername field (Check 3, deprecated)',
         expect.any(Object)
       );
     });

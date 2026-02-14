@@ -27,6 +27,9 @@ import {
   Trash2,
   Settings,
   RotateCcw,
+  PauseCircle,
+  ArrowRightLeft,
+  Ban,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -43,7 +46,7 @@ type RequestDetailsContentProps = {
   requestId: string;
 };
 
-type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
+type RequestStatus = 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
 type Classification = 'REQUEST' | 'SPAM' | 'GRATITUDE' | 'CLARIFICATION';
 type AlertType = 'warning' | 'breach';
 
@@ -53,8 +56,11 @@ const STATUS_CONFIG: Record<
 > = {
   pending: { label: 'Ожидает ответа', color: 'var(--buh-warning)', icon: Clock },
   in_progress: { label: 'В работе', color: 'var(--buh-accent)', icon: AlertCircle },
+  waiting_client: { label: 'Ждём клиента', color: 'var(--buh-warning)', icon: PauseCircle },
+  transferred: { label: 'Передано', color: 'var(--buh-info)', icon: ArrowRightLeft },
   answered: { label: 'Отвечено', color: 'var(--buh-success)', icon: CheckCircle2 },
   escalated: { label: 'Эскалация', color: 'var(--buh-danger)', icon: XCircle },
+  closed: { label: 'Закрыто', color: 'var(--buh-foreground-muted)', icon: Ban },
 };
 
 const CLASSIFICATION_CONFIG: Record<Classification, { label: string; color: string }> = {

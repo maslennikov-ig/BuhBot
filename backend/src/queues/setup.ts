@@ -69,6 +69,15 @@ export interface LowRatingAlertJobData {
 }
 
 /**
+ * SLA reconciliation job data
+ * Used for periodic recovery of lost SLA timers
+ */
+export interface SlaReconciliationJobData {
+  /** How the job was triggered */
+  triggeredBy: 'scheduler' | 'manual' | 'startup';
+}
+
+/**
  * Data retention job data
  * Used for scheduled cleanup of old data
  */
@@ -102,6 +111,7 @@ export const defaultJobOptions = {
  */
 export const QUEUE_NAMES = {
   SLA_TIMERS: 'sla-timers',
+  SLA_RECONCILIATION: 'sla-reconciliation',
   ALERTS: 'alerts',
   DATA_RETENTION: 'data-retention',
   SURVEYS: 'surveys',
@@ -175,6 +185,24 @@ export const alertQueue = new Queue<AlertJobData>(QUEUE_NAMES.ALERTS, {
  * );
  * ```
  */
+/**
+ * SLA Reconciliation Queue
+ *
+ * Periodic recovery of lost SLA timers.
+ * Runs every 5 minutes to find pending requests without active BullMQ jobs.
+ */
+export const slaReconciliationQueue = new Queue<SlaReconciliationJobData>(
+  QUEUE_NAMES.SLA_RECONCILIATION,
+  {
+    connection: redis,
+    defaultJobOptions: {
+      ...defaultJobOptions,
+      attempts: queueConfig.slaReconciliationAttempts,
+      removeOnComplete: 10,
+    },
+  }
+);
+
 export const dataRetentionQueue = new Queue<DataRetentionJobData>(QUEUE_NAMES.DATA_RETENTION, {
   connection: redis,
   defaultJobOptions: {
@@ -203,6 +231,13 @@ export const slaTimerEvents = new QueueEvents(QUEUE_NAMES.SLA_TIMERS, {
  * Queue events for monitoring alert jobs
  */
 export const alertEvents = new QueueEvents(QUEUE_NAMES.ALERTS, {
+  connection: redis,
+});
+
+/**
+ * Queue events for monitoring SLA reconciliation jobs
+ */
+export const slaReconciliationEvents = new QueueEvents(QUEUE_NAMES.SLA_RECONCILIATION, {
   connection: redis,
 });
 
@@ -255,6 +290,22 @@ function setupEventHandlers(): void {
     });
   });
 
+  // SLA reconciliation events
+  slaReconciliationEvents.on('completed', ({ jobId }) => {
+    logger.debug('SLA reconciliation job completed', {
+      jobId,
+      queue: QUEUE_NAMES.SLA_RECONCILIATION,
+    });
+  });
+
+  slaReconciliationEvents.on('failed', ({ jobId, failedReason }) => {
+    logger.error('SLA reconciliation job failed', {
+      jobId,
+      queue: QUEUE_NAMES.SLA_RECONCILIATION,
+      reason: failedReason,
+    });
+  });
+
   // Data retention events
   dataRetentionEvents.on('completed', ({ jobId }) => {
     logger.info('Data retention job completed', {
@@ -282,17 +333,25 @@ function setupEventHandlers(): void {
  */
 export async function updateQueueMetrics(): Promise<void> {
   try {
-    const [slaTimerCount, alertCount, dataRetentionCount] = await Promise.all([
-      slaTimerQueue.getJobCounts('waiting', 'delayed', 'active'),
-      alertQueue.getJobCounts('waiting', 'delayed', 'active'),
-      dataRetentionQueue.getJobCounts('waiting', 'delayed', 'active'),
-    ]);
+    const [slaTimerCount, slaReconciliationCount, alertCount, dataRetentionCount] =
+      await Promise.all([
+        slaTimerQueue.getJobCounts('waiting', 'delayed', 'active'),
+        slaReconciliationQueue.getJobCounts('waiting', 'delayed', 'active'),
+        alertQueue.getJobCounts('waiting', 'delayed', 'active'),
+        dataRetentionQueue.getJobCounts('waiting', 'delayed', 'active'),
+      ]);
 
     redisQueueLength.set(
       { queue_name: QUEUE_NAMES.SLA_TIMERS },
       (slaTimerCount['waiting'] ?? 0) +
         (slaTimerCount['delayed'] ?? 0) +
         (slaTimerCount['active'] ?? 0)
+    );
+    redisQueueLength.set(
+      { queue_name: QUEUE_NAMES.SLA_RECONCILIATION },
+      (slaReconciliationCount['waiting'] ?? 0) +
+        (slaReconciliationCount['delayed'] ?? 0) +
+        (slaReconciliationCount['active'] ?? 0)
     );
     redisQueueLength.set(
       { queue_name: QUEUE_NAMES.ALERTS },
@@ -348,6 +407,7 @@ export async function setupQueues(): Promise<void> {
   try {
     await Promise.all([
       slaTimerQueue.getJobCounts(),
+      slaReconciliationQueue.getJobCounts(),
       alertQueue.getJobCounts(),
       dataRetentionQueue.getJobCounts(),
     ]);
@@ -391,11 +451,21 @@ export async function closeQueues(
     }
 
     // Close queue event listeners
-    await Promise.all([slaTimerEvents.close(), alertEvents.close(), dataRetentionEvents.close()]);
+    await Promise.all([
+      slaTimerEvents.close(),
+      slaReconciliationEvents.close(),
+      alertEvents.close(),
+      dataRetentionEvents.close(),
+    ]);
     logger.debug('Queue event listeners closed');
 
     // Close queues
-    await Promise.all([slaTimerQueue.close(), alertQueue.close(), dataRetentionQueue.close()]);
+    await Promise.all([
+      slaTimerQueue.close(),
+      slaReconciliationQueue.close(),
+      alertQueue.close(),
+      dataRetentionQueue.close(),
+    ]);
 
     // Close survey queue (separate module)
     await closeSurveyQueue();

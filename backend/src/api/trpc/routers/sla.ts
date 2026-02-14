@@ -37,7 +37,7 @@ import {
 /**
  * Request status schema (matches Prisma RequestStatus enum)
  */
-const RequestStatusSchema = z.enum(['pending', 'in_progress', 'answered', 'escalated']);
+const RequestStatusSchema = z.enum(['pending', 'in_progress', 'waiting_client', 'transferred', 'answered', 'escalated', 'closed']);
 
 /**
  * Message classification schema (matches Prisma MessageClassification enum)

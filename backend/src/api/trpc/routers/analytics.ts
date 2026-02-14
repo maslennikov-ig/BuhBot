@@ -392,7 +392,7 @@ export const analyticsRouter = router({
             chatTitle: z.string().nullable(),
             clientUsername: z.string().nullable(),
             messagePreview: z.string(),
-            status: z.enum(['pending', 'in_progress', 'answered', 'escalated']),
+            status: z.enum(['pending', 'in_progress', 'waiting_client', 'transferred', 'answered', 'escalated', 'closed']),
             receivedAt: z.date(),
             responseMinutes: z.number().nullable(),
             breached: z.boolean(),

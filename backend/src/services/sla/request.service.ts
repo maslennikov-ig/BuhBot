@@ -18,7 +18,35 @@ import logger from '../../utils/logger.js';
 
 // Re-export Prisma types for consumers
 export type ClientRequest = Awaited<ReturnType<typeof prisma.clientRequest.findUnique>>;
-type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
+type RequestStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'waiting_client'
+  | 'transferred'
+  | 'answered'
+  | 'escalated'
+  | 'closed';
+
+/**
+ * Valid state transitions for request status (gh-69)
+ * Key = current status, Value = allowed next statuses
+ */
+const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
+  pending: ['in_progress', 'escalated', 'answered', 'closed'],
+  in_progress: ['waiting_client', 'transferred', 'answered', 'closed'],
+  waiting_client: ['in_progress', 'answered', 'closed'],
+  transferred: ['in_progress', 'answered', 'closed'],
+  answered: ['closed'],
+  escalated: ['in_progress', 'answered', 'closed'],
+  closed: [],
+};
+
+/**
+ * Check if a state transition is valid
+ */
+export function isValidTransition(from: RequestStatus, to: RequestStatus): boolean {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
 
 /**
  * Data required to mark a request as responded
@@ -191,7 +219,7 @@ export async function markRequestAsAnswered(
 export async function getActiveRequests(chatId?: string): Promise<ClientRequest[]> {
   try {
     const where: Record<string, unknown> = {
-      status: { in: ['pending', 'in_progress', 'escalated'] },
+      status: { in: ['pending', 'in_progress', 'waiting_client', 'transferred', 'escalated'] },
     };
 
     if (chatId) {
@@ -237,7 +265,7 @@ export async function getPendingRequestsForChat(chatId: string): Promise<ClientR
     return await prisma.clientRequest.findMany({
       where: {
         chatId: BigInt(chatId),
-        status: { in: ['pending', 'in_progress', 'escalated'] },
+        status: { in: ['pending', 'in_progress', 'waiting_client', 'transferred', 'escalated'] },
       },
       orderBy: { receivedAt: 'asc' },
     });
@@ -325,7 +353,7 @@ export async function findLatestPendingRequest(chatId: string): Promise<ClientRe
     return await prisma.clientRequest.findFirst({
       where: {
         chatId: BigInt(chatId),
-        status: { in: ['pending', 'in_progress', 'escalated'] },
+        status: { in: ['pending', 'in_progress', 'waiting_client', 'transferred', 'escalated'] },
       },
       orderBy: { receivedAt: 'desc' },
       include: {
@@ -350,4 +378,5 @@ export default {
   getPendingRequestsForChat,
   getRequestByMessage,
   findLatestPendingRequest,
+  isValidTransition,
 };

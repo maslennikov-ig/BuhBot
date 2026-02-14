@@ -16,7 +16,7 @@ export default function RequestsPage() {
   const requests = React.useMemo(() => {
     if (!data) return [];
     return data.requests.map((req) => {
-      const status = req.status as 'pending' | 'in_progress' | 'answered' | 'escalated';
+      const status = req.status as 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
 
       return {
         id: req.id,

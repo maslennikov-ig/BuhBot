@@ -38,8 +38,11 @@ enum ChatType {
 enum RequestStatus {
   pending
   in_progress
+  waiting_client
+  transferred
   answered
   escalated
+  closed
 
   @@schema("public")
 }
@@ -205,8 +208,9 @@ model Chat {
   chatType             ChatType @map("chat_type")
   title                String?
   inviteLink           String?  @map("invite_link") // Telegram invite link for "Open chat" button
-  accountantUsername   String?  @map("accountant_username") // LEGACY - single accountant
-  accountantUsernames  String[] @default([]) @map("accountant_usernames") // NEW - multiple accountants
+  accountantUsername    String?  @map("accountant_username") // LEGACY - single accountant
+  accountantUsernames  String[] @default([]) @map("accountant_usernames") // Usernames (fallback)
+  accountantTelegramIds BigInt[] @default([]) @map("accountant_telegram_ids") @db.BigInt // Secure: immutable IDs (gh-68)
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
   slaEnabled           Boolean  @default(false) @map("sla_enabled") // Disabled by default; enabled manually via admin UI
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -265,9 +269,15 @@ model ClientRequest {
   respondedBy       String? @map("responded_by") @db.Uuid // Who responded
   responseMessageId BigInt? @map("response_message_id") @db.BigInt // Telegram message ID of response
 
+  // Deduplication (gh-66)
+  contentHash      String?        @map("content_hash") @db.VarChar(64) // SHA-256 of normalized text
+  relatedRequestId String?        @map("related_request_id") @db.Uuid // Link to original request if duplicate
+
   // Relations
   chat              Chat               @relation(fields: [chatId], references: [id])
   assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
+  relatedRequest    ClientRequest?     @relation("DuplicateOf", fields: [relatedRequestId], references: [id])
+  duplicates        ClientRequest[]    @relation("DuplicateOf")
   slaAlerts         SlaAlert[]
   feedbackResponses FeedbackResponse[]
   responseMessages  ChatMessage[]      @relation("ResponseMessage")
@@ -279,6 +289,7 @@ model ClientRequest {
   @@index([classification])
   @@index([slaBreached])
   @@index([slaTimerStartedAt])
+  @@index([chatId, contentHash, receivedAt]) // Dedup lookup (gh-66)
   @@map("client_requests")
   @@schema("public")
 }

@@ -142,6 +142,7 @@ export const chatsRouter = router({
         title: z.string().nullable(),
         accountantUsername: z.string().nullable(),
         accountantUsernames: z.array(z.string()),
+        accountantTelegramIds: z.array(z.number()),
         assignedAccountantId: z.string().uuid().nullable(),
         slaEnabled: z.boolean(),
         slaThresholdMinutes: z.number().int(),
@@ -160,6 +161,7 @@ export const chatsRouter = router({
           title: true,
           accountantUsername: true,
           accountantUsernames: true,
+          accountantTelegramIds: true,
           assignedAccountantId: true,
           slaEnabled: true,
           slaThresholdMinutes: true,
@@ -177,7 +179,11 @@ export const chatsRouter = router({
         });
       }
 
-      return { ...chat, id: safeNumberFromBigInt(chat.id) };
+      return {
+        ...chat,
+        id: safeNumberFromBigInt(chat.id),
+        accountantTelegramIds: chat.accountantTelegramIds.map((id) => safeNumberFromBigInt(id)),
+      };
     }),
 
   /**
@@ -424,14 +430,16 @@ export const chatsRouter = router({
 
       data.accountantUsernames = finalUsernames;
 
-      // Validate usernames against registered users (non-blocking)
+      // Validate usernames and auto-populate Telegram IDs (gh-68)
       const warnings: string[] = [];
+      const telegramIds: bigint[] = [];
+
       if (finalUsernames.length > 0) {
         const knownUsers = await ctx.prisma.user.findMany({
           where: {
             telegramUsername: { in: finalUsernames, mode: 'insensitive' },
           },
-          select: { telegramUsername: true },
+          select: { telegramUsername: true, telegramId: true },
         });
         const knownSet = new Set(
           knownUsers.map((u) => u.telegramUsername?.toLowerCase()).filter(Boolean)
@@ -442,7 +450,27 @@ export const chatsRouter = router({
             `Следующие @username не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. Убедитесь, что они корректны.`
           );
         }
+
+        // Collect Telegram IDs from known users (gh-68)
+        for (const user of knownUsers) {
+          if (user.telegramId) {
+            telegramIds.push(user.telegramId);
+          }
+        }
       }
+
+      // Also add assigned accountant's Telegram ID if available
+      if (input.assignedAccountantId) {
+        const assignedUser = await ctx.prisma.user.findUnique({
+          where: { id: input.assignedAccountantId },
+          select: { telegramId: true },
+        });
+        if (assignedUser?.telegramId && !telegramIds.includes(assignedUser.telegramId)) {
+          telegramIds.push(assignedUser.telegramId);
+        }
+      }
+
+      data.accountantTelegramIds = telegramIds;
 
       // Update chat
       const updatedChat = await ctx.prisma.chat.update({

@@ -14,6 +14,7 @@
  * @module bot/handlers/message.handler
  */
 
+import { createHash } from 'node:crypto';
 import { message } from 'telegraf/filters';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
@@ -34,6 +35,18 @@ const TelegramMessageSchema = z.object({
   firstName: z.string().max(255).optional().nullable(),
   lastName: z.string().max(255).optional().nullable(),
 });
+
+/** Time window for deduplication: 5 minutes (gh-66) */
+const DEDUP_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Create a SHA-256 hash of normalized message text for deduplication.
+ * Normalization: lowercase, trim, collapse whitespace.
+ */
+function hashMessageContent(text: string): string {
+  const normalized = text.toLowerCase().trim().replace(/\s+/g, ' ');
+  return createHash('sha256').update(normalized).digest('hex');
+}
 
 /**
  * Register the message handler for SLA monitoring
@@ -241,7 +254,33 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 8. Create ClientRequest record (only for REQUEST/CLARIFICATION)
+      // 8. Deduplication check (gh-66)
+      const contentHash = hashMessageContent(text);
+      const dedupCutoff = new Date(Date.now() - DEDUP_WINDOW_MS);
+
+      const existingRequest = await prisma.clientRequest.findFirst({
+        where: {
+          chatId: BigInt(chatId),
+          contentHash,
+          receivedAt: { gte: dedupCutoff },
+          status: { in: ['pending', 'in_progress'] },
+        },
+        select: { id: true },
+        orderBy: { receivedAt: 'desc' },
+      });
+
+      if (existingRequest) {
+        logger.info('Duplicate request detected, skipping', {
+          chatId,
+          messageId,
+          existingRequestId: existingRequest.id,
+          contentHash: contentHash.substring(0, 12),
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // 9. Create ClientRequest record (only for REQUEST/CLARIFICATION)
       const request = await prisma.clientRequest.create({
         data: {
           chatId: BigInt(chatId),
@@ -251,6 +290,7 @@ export function registerMessageHandler(): void {
           classification: classification.classification,
           classificationScore: classification.confidence,
           classificationModel: classification.model,
+          contentHash,
           // Set status based on classification
           // REQUEST: pending (needs response)
           // CLARIFICATION: answered (no SLA tracking for follow-ups)
@@ -267,7 +307,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 9. Start SLA timer for REQUEST messages only
+      // 10. Start SLA timer for REQUEST messages only
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 

@@ -56,7 +56,7 @@ const emptyRequestsData: Array<{
   chatName: string;
   clientName: string;
   message: string;
-  status: 'pending' | 'in_progress' | 'answered' | 'escalated';
+  status: 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
   time: string;
   slaRemaining?: string;
 }> = [];
@@ -107,9 +107,9 @@ function calculateSlaRemaining(
  * Uses actual Prisma RequestStatus values for consistency
  */
 function mapRequestStatus(
-  status: 'pending' | 'in_progress' | 'answered' | 'escalated',
+  status: 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed',
   breached: boolean
-): 'pending' | 'in_progress' | 'answered' | 'escalated' {
+): 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed' {
   if (breached && status === 'pending') {
     return 'escalated';
   }

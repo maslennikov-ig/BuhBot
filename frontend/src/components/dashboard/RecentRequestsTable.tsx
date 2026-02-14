@@ -10,6 +10,9 @@ import {
   Clock,
   XCircle,
   ExternalLink,
+  PauseCircle,
+  ArrowRightLeft,
+  Ban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +20,7 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================
 
-type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
+type RequestStatus = 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
 
 type Request = {
   id: string;
@@ -57,11 +60,29 @@ const statusConfig = {
     color: 'var(--buh-success)',
     bgColor: 'var(--buh-success-muted)',
   },
+  waiting_client: {
+    label: 'Ждём клиента',
+    icon: PauseCircle,
+    color: 'var(--buh-warning)',
+    bgColor: 'var(--buh-warning-muted)',
+  },
+  transferred: {
+    label: 'Передано',
+    icon: ArrowRightLeft,
+    color: 'var(--buh-info)',
+    bgColor: 'var(--buh-info-muted)',
+  },
   escalated: {
     label: 'Эскалация',
     icon: XCircle,
     color: 'var(--buh-error)',
     bgColor: 'var(--buh-error-muted)',
+  },
+  closed: {
+    label: 'Закрыто',
+    icon: Ban,
+    color: 'var(--buh-foreground-muted)',
+    bgColor: 'var(--buh-card-bg)',
   },
 };
 

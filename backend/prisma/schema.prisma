@@ -85,6 +85,16 @@ enum AlertDeliveryStatus {
   @@schema("public")
 }
 
+// Client tier for differentiated SLA treatment (gh-76)
+enum ClientTier {
+  basic // 120 min default SLA
+  standard // 60 min default SLA (default)
+  vip // 30 min default SLA
+  premium // 15 min default SLA
+
+  @@schema("public")
+}
+
 // Resolution action that closed the alert
 enum AlertAction {
   mark_resolved // Manager marked as resolved manually
@@ -212,6 +222,7 @@ model Chat {
   accountantUsernames  String[] @default([]) @map("accountant_usernames") // Usernames (fallback)
   accountantTelegramIds BigInt[] @default([]) @map("accountant_telegram_ids") @db.BigInt // Secure: immutable IDs (gh-68)
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
+  clientTier           ClientTier @default(standard) @map("client_tier") // VIP tier for differentiated SLA (gh-76)
   slaEnabled           Boolean  @default(false) @map("sla_enabled") // Disabled by default; enabled manually via admin UI
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

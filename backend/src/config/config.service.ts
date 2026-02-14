@@ -158,13 +158,38 @@ export function invalidateSettingsCache(): void {
 
 // --- Convenience getters for common config patterns ---
 
+/** Default SLA thresholds per client tier (gh-76) */
+const TIER_THRESHOLDS: Record<string, number> = {
+  basic: 120,
+  standard: 60,
+  vip: 30,
+  premium: 15,
+};
+
+/**
+ * Get default SLA threshold for a client tier (gh-76).
+ * Returns tier-specific default or global default.
+ */
+export function getTierDefaultThreshold(tier?: string | null): number {
+  if (tier && tier in TIER_THRESHOLDS) {
+    return TIER_THRESHOLDS[tier]!;
+  }
+  return 60; // standard default
+}
+
 /**
  * Get SLA threshold for a chat.
- * Precedence: Chat.slaThresholdMinutes > GlobalSettings.defaultSlaThreshold > 60
+ * Precedence: Chat.slaThresholdMinutes > Tier default > GlobalSettings.defaultSlaThreshold > 60
  */
-export async function getSlaThreshold(chatSlaThreshold?: number | null): Promise<number> {
+export async function getSlaThreshold(
+  chatSlaThreshold?: number | null,
+  clientTier?: string | null
+): Promise<number> {
   if (chatSlaThreshold != null && chatSlaThreshold > 0) {
     return chatSlaThreshold;
+  }
+  if (clientTier && clientTier in TIER_THRESHOLDS) {
+    return TIER_THRESHOLDS[clientTier]!;
   }
   const settings = await getGlobalSettings();
   return settings.defaultSlaThreshold;
@@ -233,6 +258,7 @@ export async function getSurveyConfig(): Promise<{
 export default {
   getGlobalSettings,
   invalidateSettingsCache,
+  getTierDefaultThreshold,
   getSlaThreshold,
   getManagerIds,
   getEscalationConfig,

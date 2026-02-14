@@ -108,17 +108,47 @@ export async function getRequestById(requestId: string): Promise<ClientRequest |
  */
 export async function updateRequestStatus(
   requestId: string,
-  status: RequestStatus
+  status: RequestStatus,
+  changedBy?: string,
+  reason?: string
 ): Promise<ClientRequest | null> {
   try {
+    // Get current status for audit trail
+    const current = await prisma.clientRequest.findUnique({
+      where: { id: requestId },
+      select: { status: true },
+    });
+
     const updated = await prisma.clientRequest.update({
       where: { id: requestId },
       data: { status },
     });
 
+    // Record status change in audit trail (gh-70)
+    if (current) {
+      await prisma.requestHistory.create({
+        data: {
+          requestId,
+          field: 'status',
+          oldValue: current.status,
+          newValue: status,
+          changedBy: changedBy ?? 'system',
+          reason: reason ?? null,
+        },
+      }).catch((err) => {
+        logger.warn('Failed to record status change in history', {
+          requestId,
+          error: err instanceof Error ? err.message : String(err),
+          service: 'request-service',
+        });
+      });
+    }
+
     logger.info('Request status updated', {
       requestId,
-      status,
+      oldStatus: current?.status,
+      newStatus: status,
+      changedBy: changedBy ?? 'system',
       service: 'request-service',
     });
 
@@ -165,6 +195,12 @@ export async function markRequestAsAnswered(
   try {
     const responseAt = data.responseAt ?? new Date();
 
+    // Get current status for audit trail
+    const current = await prisma.clientRequest.findUnique({
+      where: { id: requestId },
+      select: { status: true },
+    });
+
     const updated = await prisma.clientRequest.update({
       where: { id: requestId },
       data: {
@@ -176,6 +212,26 @@ export async function markRequestAsAnswered(
         slaWorkingMinutes: data.responseTimeMinutes ?? null,
       },
     });
+
+    // Record in audit trail (gh-70)
+    if (current) {
+      await prisma.requestHistory.create({
+        data: {
+          requestId,
+          field: 'status',
+          oldValue: current.status,
+          newValue: 'answered',
+          changedBy: data.respondedBy ?? 'accountant',
+          reason: 'Accountant responded',
+        },
+      }).catch((err) => {
+        logger.warn('Failed to record answer in history', {
+          requestId,
+          error: err instanceof Error ? err.message : String(err),
+          service: 'request-service',
+        });
+      });
+    }
 
     logger.info('Request marked as answered', {
       requestId,

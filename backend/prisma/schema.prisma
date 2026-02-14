@@ -281,6 +281,7 @@ model ClientRequest {
   slaAlerts         SlaAlert[]
   feedbackResponses FeedbackResponse[]
   responseMessages  ChatMessage[]      @relation("ResponseMessage")
+  history           RequestHistory[]
 
   @@index([chatId])
   @@index([assignedTo])
@@ -291,6 +292,26 @@ model ClientRequest {
   @@index([slaTimerStartedAt])
   @@index([chatId, contentHash, receivedAt]) // Dedup lookup (gh-66)
   @@map("client_requests")
+  @@schema("public")
+}
+
+/// Audit trail for request status and field changes (gh-70)
+model RequestHistory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId String   @map("request_id") @db.Uuid
+  field     String   // Which field changed (e.g. "status", "assignedTo")
+  oldValue  String?  @map("old_value")
+  newValue  String?  @map("new_value")
+  changedBy String?  @map("changed_by") // Username or system identifier
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+  reason    String?  // Optional explanation
+
+  // Relations
+  request ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([changedAt])
+  @@map("request_history")
   @@schema("public")
 }
 

@@ -480,4 +480,35 @@ export const requestsRouter = router({
         success: true,
       };
     }),
+
+  /**
+   * Get request history (audit trail) (gh-70)
+   */
+  getHistory: authedProcedure
+    .input(
+      z.object({
+        requestId: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+    )
+    .output(
+      z.array(
+        z.object({
+          id: z.string().uuid(),
+          field: z.string(),
+          oldValue: z.string().nullable(),
+          newValue: z.string().nullable(),
+          changedBy: z.string().nullable(),
+          changedAt: z.date(),
+          reason: z.string().nullable(),
+        })
+      )
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.requestHistory.findMany({
+        where: { requestId: input.requestId },
+        orderBy: { changedAt: 'desc' },
+        take: input.limit,
+      });
+    }),
 });

@@ -69,10 +69,7 @@ let reconciliationWorker: Worker<SlaReconciliationJobData, RecoveryResult> | nul
 /**
  * Start the SLA reconciliation worker
  */
-export function startSlaReconciliationWorker(): Worker<
-  SlaReconciliationJobData,
-  RecoveryResult
-> {
+export function startSlaReconciliationWorker(): Worker<SlaReconciliationJobData, RecoveryResult> {
   if (reconciliationWorker) {
     logger.warn('SLA reconciliation worker already running', { service: SERVICE_NAME });
     return reconciliationWorker;

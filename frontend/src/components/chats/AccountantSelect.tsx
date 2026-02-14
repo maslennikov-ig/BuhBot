@@ -226,7 +226,11 @@ export function AccountantSelect({
           </div>
 
           {/* Options List */}
-          <ul id="accountant-select-listbox" role="listbox" className="max-h-60 overflow-y-auto py-1 buh-scrollbar">
+          <ul
+            id="accountant-select-listbox"
+            role="listbox"
+            className="max-h-60 overflow-y-auto py-1 buh-scrollbar"
+          >
             {/* Unassign Option */}
             <li
               role="option"

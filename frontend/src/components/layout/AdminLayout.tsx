@@ -449,7 +449,9 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = React.useState(isDevMode);
-  const [userEmail, setUserEmail] = React.useState<string | null>(isDevMode ? devMockUser.email : null);
+  const [userEmail, setUserEmail] = React.useState<string | null>(
+    isDevMode ? devMockUser.email : null
+  );
 
   // Fetch active alerts count for badge
   // staleTime prevents badge flicker on navigation by keeping cached data (gh-54)

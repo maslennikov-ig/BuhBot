@@ -27,14 +27,12 @@ export async function initTracing(): Promise<void> {
 
   try {
     const { NodeSDK } = await import('@opentelemetry/sdk-node');
-    const { getNodeAutoInstrumentations } = await import(
-      '@opentelemetry/auto-instrumentations-node'
-    );
+    const { getNodeAutoInstrumentations } =
+      await import('@opentelemetry/auto-instrumentations-node');
     const { OTLPTraceExporter } = await import('@opentelemetry/exporter-trace-otlp-http');
     const { resourceFromAttributes } = await import('@opentelemetry/resources');
-    const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } = await import(
-      '@opentelemetry/semantic-conventions'
-    );
+    const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } =
+      await import('@opentelemetry/semantic-conventions');
 
     const endpoint = process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] ?? 'http://localhost:4318';
 

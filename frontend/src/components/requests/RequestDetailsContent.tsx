@@ -46,7 +46,14 @@ type RequestDetailsContentProps = {
   requestId: string;
 };
 
-type RequestStatus = 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
+type RequestStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'waiting_client'
+  | 'transferred'
+  | 'answered'
+  | 'escalated'
+  | 'closed';
 type Classification = 'REQUEST' | 'SPAM' | 'GRATITUDE' | 'CLARIFICATION';
 type AlertType = 'warning' | 'breach';
 

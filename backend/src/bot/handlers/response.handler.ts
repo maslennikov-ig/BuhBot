@@ -180,12 +180,15 @@ export async function isAccountantForChat(
       });
 
       if (normalizedAccountantUsername === normalizedSenderUsername) {
-        logger.info('Accountant matched by assignedAccountant.telegramUsername (Check 3, fallback)', {
-          chatId: chatId.toString(),
-          username,
-          matchedCheck: 'assignedAccountant_telegramUsername',
-          service: 'response-handler',
-        });
+        logger.info(
+          'Accountant matched by assignedAccountant.telegramUsername (Check 3, fallback)',
+          {
+            chatId: chatId.toString(),
+            username,
+            matchedCheck: 'assignedAccountant_telegramUsername',
+            service: 'response-handler',
+          }
+        );
         return {
           isAccountant: true,
           accountantId: chat.assignedAccountantId,

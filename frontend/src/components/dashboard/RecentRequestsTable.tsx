@@ -20,7 +20,14 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================
 
-type RequestStatus = 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed';
+type RequestStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'waiting_client'
+  | 'transferred'
+  | 'answered'
+  | 'escalated'
+  | 'closed';
 
 type Request = {
   id: string;

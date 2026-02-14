@@ -427,9 +427,7 @@ export const alertRouter = router({
 
       // Get accountant's Telegram username from chat sources
       const accountantUsername =
-        accountant.telegramUsername ??
-        alert.request.chat.accountantUsernames?.[0] ??
-        null;
+        accountant.telegramUsername ?? alert.request.chat.accountantUsernames?.[0] ?? null;
       if (!accountantUsername) {
         throw new TRPCError({
           code: 'BAD_REQUEST',

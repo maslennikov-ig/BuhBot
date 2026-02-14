@@ -126,22 +126,24 @@ export async function updateRequestStatus(
 
     // Record status change in audit trail (gh-70)
     if (current) {
-      await prisma.requestHistory.create({
-        data: {
-          requestId,
-          field: 'status',
-          oldValue: current.status,
-          newValue: status,
-          changedBy: changedBy ?? 'system',
-          reason: reason ?? null,
-        },
-      }).catch((err) => {
-        logger.warn('Failed to record status change in history', {
-          requestId,
-          error: err instanceof Error ? err.message : String(err),
-          service: 'request-service',
+      await prisma.requestHistory
+        .create({
+          data: {
+            requestId,
+            field: 'status',
+            oldValue: current.status,
+            newValue: status,
+            changedBy: changedBy ?? 'system',
+            reason: reason ?? null,
+          },
+        })
+        .catch((err) => {
+          logger.warn('Failed to record status change in history', {
+            requestId,
+            error: err instanceof Error ? err.message : String(err),
+            service: 'request-service',
+          });
         });
-      });
     }
 
     logger.info('Request status updated', {
@@ -215,22 +217,24 @@ export async function markRequestAsAnswered(
 
     // Record in audit trail (gh-70)
     if (current) {
-      await prisma.requestHistory.create({
-        data: {
-          requestId,
-          field: 'status',
-          oldValue: current.status,
-          newValue: 'answered',
-          changedBy: data.respondedBy ?? 'accountant',
-          reason: 'Accountant responded',
-        },
-      }).catch((err) => {
-        logger.warn('Failed to record answer in history', {
-          requestId,
-          error: err instanceof Error ? err.message : String(err),
-          service: 'request-service',
+      await prisma.requestHistory
+        .create({
+          data: {
+            requestId,
+            field: 'status',
+            oldValue: current.status,
+            newValue: 'answered',
+            changedBy: data.respondedBy ?? 'accountant',
+            reason: 'Accountant responded',
+          },
+        })
+        .catch((err) => {
+          logger.warn('Failed to record answer in history', {
+            requestId,
+            error: err instanceof Error ? err.message : String(err),
+            service: 'request-service',
+          });
         });
-      });
     }
 
     logger.info('Request marked as answered', {

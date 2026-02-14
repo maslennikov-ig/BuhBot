@@ -392,7 +392,15 @@ export const analyticsRouter = router({
             chatTitle: z.string().nullable(),
             clientUsername: z.string().nullable(),
             messagePreview: z.string(),
-            status: z.enum(['pending', 'in_progress', 'waiting_client', 'transferred', 'answered', 'escalated', 'closed']),
+            status: z.enum([
+              'pending',
+              'in_progress',
+              'waiting_client',
+              'transferred',
+              'answered',
+              'escalated',
+              'closed',
+            ]),
             receivedAt: z.date(),
             responseMinutes: z.number().nullable(),
             breached: z.boolean(),
@@ -495,9 +503,7 @@ export const analyticsRouter = router({
       const currentClassifiedTotal = currentClassified.length;
       const currentCompliant = currentClassified.filter((r) => !r.slaBreached).length;
       const currentCompliancePercent =
-        currentClassifiedTotal > 0
-          ? (currentCompliant / currentClassifiedTotal) * 100
-          : 100;
+        currentClassifiedTotal > 0 ? (currentCompliant / currentClassifiedTotal) * 100 : 100;
 
       // Calculate current week avg response time
       const currentResponseTimes = currentWeekRequests
@@ -559,7 +565,14 @@ export const analyticsRouter = router({
         clientUsername: r.clientUsername,
         messagePreview:
           r.messageText.length > 100 ? r.messageText.slice(0, 100) + '...' : r.messageText,
-        status: r.status as 'pending' | 'in_progress' | 'waiting_client' | 'transferred' | 'answered' | 'escalated' | 'closed',
+        status: r.status as
+          | 'pending'
+          | 'in_progress'
+          | 'waiting_client'
+          | 'transferred'
+          | 'answered'
+          | 'escalated'
+          | 'closed',
         receivedAt: r.receivedAt,
         responseMinutes: r.responseTimeMinutes,
         breached: r.slaBreached,
@@ -601,9 +614,7 @@ export const analyticsRouter = router({
         const requests = requestsByAccountant.get(acc.id) ?? [];
         const totalRequests = requests.length;
         // Only count classified requests (answered or breached) for compliance
-        const classified = requests.filter(
-          (r) => r.responseTimeMinutes !== null || r.slaBreached
-        );
+        const classified = requests.filter((r) => r.responseTimeMinutes !== null || r.slaBreached);
         const classifiedTotal = classified.length;
         const violations = classified.filter((r) => r.slaBreached).length;
         const compliant = classifiedTotal - violations;

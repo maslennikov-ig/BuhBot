@@ -14,7 +14,7 @@
  * @module bot/handlers/message.handler
  */
 
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { message } from 'telegraf/filters';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
@@ -280,7 +280,44 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 9. Create ClientRequest record (only for REQUEST/CLARIFICATION)
+      // 9. Thread detection via reply_to_message (gh-75)
+      let threadId: string | null = null;
+      let parentMessageId: bigint | null = null;
+      const replyToMessage = ctx.message.reply_to_message;
+
+      if (replyToMessage) {
+        parentMessageId = BigInt(replyToMessage.message_id);
+
+        // Find parent request by message ID in same chat
+        const parentRequest = await prisma.clientRequest.findFirst({
+          where: {
+            chatId: BigInt(chatId),
+            messageId: parentMessageId,
+          },
+          select: { threadId: true, id: true },
+        });
+
+        if (parentRequest) {
+          if (parentRequest.threadId) {
+            // Join existing thread
+            threadId = parentRequest.threadId;
+          } else {
+            // Start new thread from parent - update parent too
+            threadId = randomUUID();
+            await prisma.clientRequest.update({
+              where: { id: parentRequest.id },
+              data: { threadId },
+            });
+          }
+        }
+      }
+
+      // If not part of any thread, create a standalone thread
+      if (!threadId) {
+        threadId = randomUUID();
+      }
+
+      // 10. Create ClientRequest record (only for REQUEST/CLARIFICATION)
       const request = await prisma.clientRequest.create({
         data: {
           chatId: BigInt(chatId),
@@ -291,6 +328,8 @@ export function registerMessageHandler(): void {
           classificationScore: classification.confidence,
           classificationModel: classification.model,
           contentHash,
+          threadId,
+          parentMessageId,
           // Set status based on classification
           // REQUEST: pending (needs response)
           // CLARIFICATION: answered (no SLA tracking for follow-ups)
@@ -307,7 +346,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 10. Start SLA timer for REQUEST messages only
+      // 11. Start SLA timer for REQUEST messages only
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 

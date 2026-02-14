@@ -81,6 +81,7 @@ export const requestsRouter = router({
             responseTimeMinutes: z.number().int().nullable(),
             status: RequestStatusSchema,
             classification: MessageClassificationSchema,
+            threadId: z.string().uuid().nullable(),
             createdAt: z.date(),
             chat: z.object({
               title: z.string().nullable(),
@@ -145,6 +146,7 @@ export const requestsRouter = router({
             responseTimeMinutes: true,
             status: true,
             classification: true,
+            threadId: true,
             createdAt: true,
             chat: {
               select: {
@@ -388,6 +390,7 @@ export const requestsRouter = router({
       // Verify request exists before updating
       const existingRequest = await ctx.prisma.clientRequest.findUnique({
         where: { id: input.id },
+        select: { classification: true, messageText: true },
       });
 
       if (!existingRequest) {
@@ -395,6 +398,25 @@ export const requestsRouter = router({
           code: 'NOT_FOUND',
           message: `Request with ID ${input.id} not found`,
         });
+      }
+
+      // Only record correction if classification actually changed
+      if (existingRequest.classification !== input.classification) {
+        // Record correction for feedback loop (gh-73)
+        await ctx.prisma.classificationCorrection
+          .create({
+            data: {
+              requestId: input.id,
+              messageText: existingRequest.messageText,
+              originalClass: existingRequest.classification,
+              correctedClass: input.classification,
+              correctedBy: ctx.user.id,
+            },
+          })
+          .catch((err: unknown) => {
+            // Non-blocking: don't fail the update if correction recording fails
+            console.error('Failed to record classification correction:', err);
+          });
       }
 
       // Update classification
@@ -510,5 +532,113 @@ export const requestsRouter = router({
         orderBy: { changedAt: 'desc' },
         take: input.limit,
       });
+    }),
+
+  /**
+   * Get all requests in a conversation thread (gh-75)
+   *
+   * @param threadId - Thread UUID
+   * @returns Ordered list of requests in the thread
+   * @authorization All authenticated users (read-only)
+   */
+  getThread: authedProcedure
+    .input(
+      z.object({
+        threadId: z.string().uuid(),
+      })
+    )
+    .output(
+      z.array(
+        z.object({
+          id: z.string().uuid(),
+          messageText: z.string(),
+          clientUsername: z.string().nullable(),
+          receivedAt: z.date(),
+          status: RequestStatusSchema,
+          parentMessageId: z.number().nullable(),
+        })
+      )
+    )
+    .query(async ({ ctx, input }) => {
+      const requests = await ctx.prisma.clientRequest.findMany({
+        where: { threadId: input.threadId },
+        orderBy: { receivedAt: 'asc' },
+        select: {
+          id: true,
+          messageText: true,
+          clientUsername: true,
+          receivedAt: true,
+          status: true,
+          parentMessageId: true,
+        },
+      });
+
+      return requests.map((r) => ({
+        ...r,
+        parentMessageId: r.parentMessageId ? Number(r.parentMessageId) : null,
+      }));
+    }),
+
+  /**
+   * Get classification correction statistics for feedback loop (gh-73)
+   *
+   * @param startDate - Filter corrections from date (inclusive)
+   * @param endDate - Filter corrections to date (inclusive)
+   * @returns Total corrections count and breakdown by original -> corrected class
+   * @authorization Admins and managers only
+   */
+  getClassificationStats: managerProcedure
+    .input(
+      z.object({
+        startDate: z.coerce.date().optional(),
+        endDate: z.coerce.date().optional(),
+      })
+    )
+    .output(
+      z.object({
+        totalCorrections: z.number().int(),
+        correctionsByType: z.array(
+          z.object({
+            originalClass: z.string(),
+            correctedClass: z.string(),
+            count: z.number().int(),
+          })
+        ),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, Record<string, Date>> = {};
+      if (input.startDate || input.endDate) {
+        where['correctedAt'] = {};
+        if (input.startDate) where['correctedAt']['gte'] = input.startDate;
+        if (input.endDate) where['correctedAt']['lte'] = input.endDate;
+      }
+
+      const corrections = await ctx.prisma.classificationCorrection.findMany({
+        where,
+        select: {
+          originalClass: true,
+          correctedClass: true,
+        },
+      });
+
+      // Group by original -> corrected
+      const grouped = new Map<string, number>();
+      for (const c of corrections) {
+        const key = `${c.originalClass}\u2192${c.correctedClass}`;
+        grouped.set(key, (grouped.get(key) ?? 0) + 1);
+      }
+
+      const correctionsByType = Array.from(grouped.entries())
+        .map(([key, count]) => {
+          const [originalClass, correctedClass] = key.split('\u2192');
+          return { originalClass: originalClass!, correctedClass: correctedClass!, count };
+        })
+        .sort((a, b) => b.count - a.count);
+
+      return {
+        totalCorrections: corrections.length,
+        correctionsByType,
+      };
     }),
 });

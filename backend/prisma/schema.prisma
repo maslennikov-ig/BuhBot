@@ -154,6 +154,7 @@ model User {
   createdInvitations ChatInvitation[] @relation("InvitationCreator")
   telegramAccount    TelegramAccount?
   assignedErrors     ErrorLog[]       @relation("ErrorLogAssignee")
+  classificationCorrections ClassificationCorrection[]
 
   @@index([email])
   @@index([role])
@@ -272,6 +273,10 @@ model ClientRequest {
   contentHash      String?        @map("content_hash") @db.VarChar(64) // SHA-256 of normalized text
   relatedRequestId String?        @map("related_request_id") @db.Uuid // Link to original request if duplicate
 
+  // Thread tracking (gh-75)
+  threadId         String?        @map("thread_id") @db.Uuid  // Groups related requests into conversation
+  parentMessageId  BigInt?        @map("parent_message_id") @db.BigInt  // reply_to_message_id from Telegram
+
   // Relations
   chat              Chat               @relation(fields: [chatId], references: [id])
   assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
@@ -281,6 +286,7 @@ model ClientRequest {
   feedbackResponses FeedbackResponse[]
   responseMessages  ChatMessage[]      @relation("ResponseMessage")
   history           RequestHistory[]
+  classificationCorrections ClassificationCorrection[]
 
   @@index([chatId])
   @@index([assignedTo])
@@ -290,6 +296,7 @@ model ClientRequest {
   @@index([slaBreached])
   @@index([slaTimerStartedAt])
   @@index([chatId, contentHash, receivedAt]) // Dedup lookup (gh-66)
+  @@index([threadId]) // Thread lookup (gh-75)
   @@map("client_requests")
   @@schema("public")
 }
@@ -311,6 +318,27 @@ model RequestHistory {
   @@index([requestId])
   @@index([changedAt])
   @@map("request_history")
+  @@schema("public")
+}
+
+/// Classification correction records for feedback loop (gh-73)
+/// Tracks when managers manually change message classification
+model ClassificationCorrection {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId         String                @map("request_id") @db.Uuid
+  messageText       String                @map("message_text")
+  originalClass     MessageClassification @map("original_class")
+  correctedClass    MessageClassification @map("corrected_class")
+  correctedBy       String                @map("corrected_by") @db.Uuid
+  correctedAt       DateTime              @default(now()) @map("corrected_at") @db.Timestamptz(6)
+
+  // Relations
+  request ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  corrector User        @relation(fields: [correctedBy], references: [id])
+
+  @@index([originalClass, correctedClass])
+  @@index([correctedAt])
+  @@map("classification_corrections")
   @@schema("public")
 }
 

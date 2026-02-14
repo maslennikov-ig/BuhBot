@@ -5,6 +5,29 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.12.0...buhbot-v0.13.0) (2026-02-14)
+
+
+### Features
+
+* add classifier feedback loop and thread tracking (gh-73, gh-75) ([eddab36](https://github.com/maslennikov-ig/BuhBot/commit/eddab36daa2221336288ced21fb8a087d3a9d2be))
+* add OpenTelemetry distributed tracing foundation (gh-77) ([85f2b2e](https://github.com/maslennikov-ig/BuhBot/commit/85f2b2eb2cdfc5df85359c2464269c381cf20561))
+* add VIP client tier with tier-based SLA thresholds (gh-76) ([b201b9b](https://github.com/maslennikov-ig/BuhBot/commit/b201b9b6fcf61c0fffcbe137d0a9023d2e6295a6))
+* implement critical backend features (gh-66, gh-67, gh-68, gh-69) ([1ae7afd](https://github.com/maslennikov-ig/BuhBot/commit/1ae7afd35832290e6feea658d4aed2d8ba2ff591))
+* remove legacy accountantUsername field and add ConfigService (gh-72, gh-74) ([3e21e1a](https://github.com/maslennikov-ig/BuhBot/commit/3e21e1a7f9e6e4c22d4c45db48b0899a9a2a35f5))
+* **sla:** add request history audit trail (gh-70) ([e15ec30](https://github.com/maslennikov-ig/BuhBot/commit/e15ec30f1c8177194b99ac4a79cdc3e3cccd1d48))
+
+
+### Bug Fixes
+
+* resolve 16 GitHub issues — data bugs, security, UX, a11y ([eef61d6](https://github.com/maslennikov-ig/BuhBot/commit/eef61d6c6ee1ee8fe2ee40ec7bdec31671c9a825))
+* update pnpm-lock.yaml and fix Prettier formatting (buh-bbt) ([529e7bf](https://github.com/maslennikov-ig/BuhBot/commit/529e7bf1eee8a0fa69e39611ccf97fe3427344b9))
+
+
+### Performance Improvements
+
+* **analytics:** optimize getDashboard N+1 queries (gh-71) ([4f1eb71](https://github.com/maslennikov-ig/BuhBot/commit/4f1eb71d8e9faca2c6bc86f9ef0256527b0134c3))
+
 ## [0.12.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.11.2...buhbot-v0.12.0) (2026-02-12)
 
 

@@ -24,6 +24,7 @@ import { classifyMessage } from '../../services/classifier/index.js';
 import { startSlaTimer } from '../../services/sla/timer.service.js';
 import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
+import { getTracer } from '../../lib/tracing.js';
 
 /**
  * Zod schema for validating incoming Telegram message data
@@ -232,7 +233,15 @@ export function registerMessageHandler(): void {
       }
 
       // 6. Classify message using AI/keyword classifier
+      const tracer = getTracer('message-handler');
+      const classifySpan = tracer.startSpan('classify_message', {
+        attributes: { 'chat.id': chatId, 'message.id': messageId },
+      });
       const classification = await classifyMessage(prisma, text);
+      classifySpan.setAttribute('classification.result', classification.classification);
+      classifySpan.setAttribute('classification.confidence', classification.confidence);
+      classifySpan.setAttribute('classification.model', classification.model);
+      classifySpan.end();
 
       logger.info('Message classified', {
         chatId,
@@ -350,7 +359,15 @@ export function registerMessageHandler(): void {
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 
+        const slaSpan = tracer.startSpan('start_sla_timer', {
+          attributes: {
+            'request.id': request.id,
+            'chat.id': chatId,
+            'sla.threshold_minutes': thresholdMinutes,
+          },
+        });
         await startSlaTimer(request.id, String(chatId), thresholdMinutes);
+        slaSpan.end();
 
         logger.info('SLA timer started for request', {
           requestId: request.id,

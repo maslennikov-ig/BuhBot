@@ -1,3 +1,7 @@
+// OpenTelemetry must be initialized before any other imports (gh-77)
+import { initTracing, shutdownTracing } from './lib/tracing.js';
+await initTracing();
+
 import express from 'express';
 import cors from 'cors';
 import * as trpcExpress from '@trpc/server/adapters/express';
@@ -353,6 +357,9 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
     logger.info('Disconnecting from database...');
     await disconnectPrisma();
     logger.info('Database disconnected');
+
+    // Flush and shutdown OpenTelemetry tracing (gh-77)
+    await shutdownTracing();
 
     // Clear the force exit timer since we're done
     clearTimeout(forceExitTimer);

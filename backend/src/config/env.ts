@@ -129,6 +129,13 @@ const envSchema = z.object({
     .transform((val) => val === 'true')
     .default('false'),
 
+  // OpenTelemetry Distributed Tracing (gh-77)
+  OTEL_TRACING_ENABLED: z
+    .string()
+    .transform((val) => val === 'true')
+    .default('false'),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+
   // Sentry (optional error tracking)
   SENTRY_DSN: z.string().url().optional(),
 

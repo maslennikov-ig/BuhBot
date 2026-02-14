@@ -56,7 +56,7 @@ const emptyRequestsData: Array<{
   chatName: string;
   clientName: string;
   message: string;
-  status: 'pending' | 'in_progress' | 'resolved' | 'violated';
+  status: 'pending' | 'in_progress' | 'answered' | 'escalated';
   time: string;
   slaRemaining?: string;
 }> = [];
@@ -104,27 +104,16 @@ function calculateSlaRemaining(
 
 /**
  * Map backend status to widget status
+ * Uses actual Prisma RequestStatus values for consistency
  */
 function mapRequestStatus(
   status: 'pending' | 'in_progress' | 'answered' | 'escalated',
   breached: boolean
-): 'pending' | 'in_progress' | 'resolved' | 'violated' {
-  if (breached) {
-    return 'violated';
+): 'pending' | 'in_progress' | 'answered' | 'escalated' {
+  if (breached && status === 'pending') {
+    return 'escalated';
   }
-
-  switch (status) {
-    case 'pending':
-      return 'pending';
-    case 'in_progress':
-      return 'in_progress';
-    case 'answered':
-      return 'resolved';
-    case 'escalated':
-      return 'violated';
-    default:
-      return 'pending';
-  }
+  return status;
 }
 
 /**
@@ -264,18 +253,21 @@ export function DashboardContent() {
   const alertsData = React.useMemo(() => {
     if (!data) return emptyAlertsData;
 
-    // activeAlertsCount = unresolved SLA alerts; breachedRequests = breached client requests
-    // These are different entities — use Math.max so the widget never shows 0 when breaches exist
-    const breachedRequests = data.recentRequests?.filter((r) => r.breached) ?? [];
-    const totalAlerts = Math.max(data.activeAlertsCount ?? 0, breachedRequests.length);
+    // Use only activeAlertsCount from SlaAlert table for consistency with Alerts page.
+    // Previously this fabricated alerts from breachedRequests via Math.max, causing
+    // dashboard to show alerts that don't exist on the Alerts page (gh-48).
+    const totalAlerts = data.activeAlertsCount ?? 0;
 
-    // Critical = breached requests, Warning = active non-breached, Info = rest
-    const criticalCount = Math.min(breachedRequests.length, totalAlerts);
-    const remainingAlerts = Math.max(0, totalAlerts - criticalCount);
+    if (totalAlerts === 0) return emptyAlertsData;
+
+    // Approximate severity breakdown from total count
+    const criticalCount = Math.ceil(totalAlerts * 0.4);
+    const remainingAlerts = totalAlerts - criticalCount;
     const warningCount = Math.ceil(remainingAlerts * 0.6);
     const infoCount = remainingAlerts - warningCount;
 
-    // Generate recent alerts from breached requests
+    // Show breached requests as recent alert items (informational only)
+    const breachedRequests = data.recentRequests?.filter((r) => r.breached) ?? [];
     const recentAlerts: Array<{
       id: string;
       title: string;
@@ -287,23 +279,6 @@ export function DashboardContent() {
       severity: 'critical' as const,
       time: formatRelativeTime(r.receivedAt),
     }));
-
-    // Fill with warning alerts if needed
-    if (recentAlerts.length < 3 && totalAlerts > criticalCount) {
-      const pendingRequests =
-        data.recentRequests?.filter(
-          (r) => !r.breached && (r.status === 'pending' || r.status === 'in_progress')
-        ) ?? [];
-
-      pendingRequests.slice(0, 3 - recentAlerts.length).forEach((r) => {
-        recentAlerts.push({
-          id: r.id,
-          title: `Ожидание ответа: ${r.chatTitle ?? 'Неизвестный чат'}`,
-          severity: 'warning' as const,
-          time: formatRelativeTime(r.receivedAt),
-        });
-      });
-    }
 
     return {
       totalCount: totalAlerts,

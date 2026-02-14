@@ -126,7 +126,7 @@ export function ChatsListContent() {
 
   const { data, isLoading, error } = trpc.chats.list.useQuery(queryParams);
 
-  const chats = (data?.chats ?? []) as Chat[];
+  const chats = React.useMemo(() => (data?.chats ?? []) as Chat[], [data?.chats]);
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
@@ -135,7 +135,7 @@ export function ChatsListContent() {
     () =>
       chats.map((chat) => ({
         ...chat,
-        accountantDisplayName: chat.accountantUsername || chat.assignedAccountantId || '', // Empty string for unassigned
+        accountantDisplayName: chat.accountantUsername || chat.assignedAccountantId || '',
         slaStatus: chat.slaEnabled ? 'enabled' : 'disabled',
       })),
     [chats]

@@ -488,10 +488,16 @@ export const analyticsRouter = router({
       });
 
       // Calculate current week SLA compliance
-      const currentTotal = currentWeekRequests.length;
-      const currentCompliant = currentWeekRequests.filter((r) => !r.slaBreached).length;
+      // Only count classified requests (answered or breached), matching slaCompliance query logic
+      const currentClassified = currentWeekRequests.filter(
+        (r) => r.responseTimeMinutes !== null || r.slaBreached
+      );
+      const currentClassifiedTotal = currentClassified.length;
+      const currentCompliant = currentClassified.filter((r) => !r.slaBreached).length;
       const currentCompliancePercent =
-        currentTotal > 0 ? (currentCompliant / currentTotal) * 100 : 100;
+        currentClassifiedTotal > 0
+          ? (currentCompliant / currentClassifiedTotal) * 100
+          : 100;
 
       // Calculate current week avg response time
       const currentResponseTimes = currentWeekRequests
@@ -502,10 +508,14 @@ export const analyticsRouter = router({
           ? currentResponseTimes.reduce((a, b) => a + b, 0) / currentResponseTimes.length
           : 0;
 
-      // Calculate previous week SLA compliance
-      const prevTotal = prevWeekRequests.length;
-      const prevCompliant = prevWeekRequests.filter((r) => !r.slaBreached).length;
-      const prevCompliancePercent = prevTotal > 0 ? (prevCompliant / prevTotal) * 100 : 100;
+      // Calculate previous week SLA compliance (same classified-only logic)
+      const prevClassified = prevWeekRequests.filter(
+        (r) => r.responseTimeMinutes !== null || r.slaBreached
+      );
+      const prevClassifiedTotal = prevClassified.length;
+      const prevCompliant = prevClassified.filter((r) => !r.slaBreached).length;
+      const prevCompliancePercent =
+        prevClassifiedTotal > 0 ? (prevCompliant / prevClassifiedTotal) * 100 : 100;
 
       // Calculate previous week avg response time
       const prevResponseTimes = prevWeekRequests
@@ -577,10 +587,15 @@ export const analyticsRouter = router({
             },
           });
 
-          const total = requests.length;
-          const violations = requests.filter((r) => r.slaBreached).length;
-          const compliant = total - violations;
-          const compliancePercent = total > 0 ? (compliant / total) * 100 : 100;
+          const totalRequests = requests.length;
+          // Only count classified requests (answered or breached) for compliance
+          const classified = requests.filter(
+            (r) => r.responseTimeMinutes !== null || r.slaBreached
+          );
+          const classifiedTotal = classified.length;
+          const violations = classified.filter((r) => r.slaBreached).length;
+          const compliant = classifiedTotal - violations;
+          const compliancePercent = classifiedTotal > 0 ? (compliant / classifiedTotal) * 100 : 100;
 
           const responseTimes = requests
             .filter((r) => r.responseTimeMinutes !== null)
@@ -593,7 +608,7 @@ export const analyticsRouter = router({
           return {
             id: acc.id,
             name: acc.fullName,
-            totalRequests: total,
+            totalRequests,
             violations,
             compliancePercent: Math.round(compliancePercent * 100) / 100,
             avgResponseMinutes: Math.round(avgResponseMinutes * 100) / 100,

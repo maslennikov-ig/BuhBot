@@ -38,14 +38,19 @@ export function ThemeLogo({ size = 'md', className = '', priority = false }: The
     resolvedTheme === 'dark' ? '/images/logo/logo-small-dark.png' : '/images/logo/logo-small.png';
 
   return (
-    <Image
-      src={logoSrc}
-      alt="BuhBot"
-      width={width}
-      height={height}
-      className={`${sizeClass} w-auto object-contain ${className}`}
-      priority={priority}
-      unoptimized
-    />
+    <div
+      className={`relative ${sizeClass} ${className}`}
+      style={{ width, aspectRatio: `${width} / ${height}` }}
+    >
+      <Image
+        src={logoSrc}
+        alt="BuhBot"
+        fill
+        className="object-contain"
+        sizes={`${width}px`}
+        priority={priority}
+        unoptimized
+      />
+    </div>
   );
 }

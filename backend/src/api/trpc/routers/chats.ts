@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import logger from '../../../utils/logger.js';
+import { isProduction } from '../../../config/env.js';
 import { randomBytes } from 'crypto';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
@@ -389,6 +390,15 @@ export const chatsRouter = router({
         data.slaThresholdMinutes = input.slaThresholdMinutes;
       }
       if (input.notifyInChatOnBreach !== undefined) {
+        // Security: Block enabling in-chat breach notifications in production
+        // This setting leaks internal SLA data (breach time, accountant info) to client-facing chats
+        if (input.notifyInChatOnBreach === true && isProduction()) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message:
+              'Уведомления о нарушениях SLA в чат запрещены в production-режиме. Эта функция предназначена только для тестирования.',
+          });
+        }
         data.notifyInChatOnBreach = input.notifyInChatOnBreach;
       }
 

@@ -148,6 +148,7 @@ export function AccountantSelect({
           isOpen && 'border-[var(--buh-accent)] ring-2 ring-[var(--buh-accent-glow)]'
         )}
         aria-expanded={isOpen}
+        aria-controls="accountant-select-listbox"
         aria-haspopup="listbox"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -225,7 +226,7 @@ export function AccountantSelect({
           </div>
 
           {/* Options List */}
-          <ul role="listbox" className="max-h-60 overflow-y-auto py-1 buh-scrollbar">
+          <ul id="accountant-select-listbox" role="listbox" className="max-h-60 overflow-y-auto py-1 buh-scrollbar">
             {/* Unassign Option */}
             <li
               role="option"

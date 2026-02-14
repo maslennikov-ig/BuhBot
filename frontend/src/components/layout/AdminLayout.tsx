@@ -448,13 +448,15 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = React.useState(false);
-  const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [isAuthorized, setIsAuthorized] = React.useState(isDevMode);
+  const [userEmail, setUserEmail] = React.useState<string | null>(isDevMode ? devMockUser.email : null);
 
   // Fetch active alerts count for badge
+  // staleTime prevents badge flicker on navigation by keeping cached data (gh-54)
   const { data: alertCountData } = trpc.alert.getActiveAlertCount.useQuery(undefined, {
     enabled: isAuthorized,
     refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 25000, // Keep data fresh between refetch intervals
   });
 
   // Check authentication

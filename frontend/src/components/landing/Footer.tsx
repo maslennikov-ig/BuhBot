@@ -19,7 +19,7 @@ export function Footer() {
           {/* Left: Branding + Copyright */}
           <div className="flex items-center gap-4">
             <ThemeLogo size="sm" />
-            <span className="text-[var(--buh-foreground-subtle)]">© 2025 AIDevTeam</span>
+            <span className="text-[var(--buh-foreground-subtle)]">&copy; {new Date().getFullYear()} BuhBot</span>
           </div>
 
           {/* Center: Navigation */}

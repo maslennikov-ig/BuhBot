@@ -79,18 +79,34 @@ export function registerMessageHandler(): void {
     });
 
     try {
-      // 1. Get chat configuration from database
-      const chat = await prisma.chat.findUnique({
+      // 1. Get chat configuration from database (auto-register if missing)
+      let chat = await prisma.chat.findUnique({
         where: { id: BigInt(chatId) },
       });
 
-      // Skip if chat not registered or monitoring disabled
+      // Auto-register chat if not found (gh-55: ensures chats appear in admin panel)
       if (!chat) {
-        logger.debug('Chat not registered, skipping SLA monitoring', {
+        const chatType = ctx.chat.type as 'group' | 'supergroup';
+        const title = 'title' in ctx.chat ? (ctx.chat.title as string) : null;
+
+        logger.info('Auto-registering unregistered chat', {
           chatId,
+          title,
+          chatType,
           service: 'message-handler',
         });
-        return;
+
+        chat = await prisma.chat.upsert({
+          where: { id: BigInt(chatId) },
+          create: {
+            id: BigInt(chatId),
+            chatType,
+            title,
+            slaEnabled: false, // Disabled by default; admin enables manually
+            monitoringEnabled: true,
+          },
+          update: { title }, // Update title if race condition
+        });
       }
 
       if (!chat.monitoringEnabled) {

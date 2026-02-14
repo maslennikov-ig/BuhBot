@@ -8,7 +8,7 @@
  * @module api/trpc/routers/alerts
  */
 
-import { router, authedProcedure, managerProcedure } from '../trpc.js';
+import { router, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 
@@ -29,9 +29,9 @@ export const alertsRouter = router({
    *
    * @param limit - Maximum number of alerts (default: 20, max: 50)
    * @returns Array of unacknowledged alerts with request context
-   * @authorization All authenticated users (read-only)
+   * @authorization Admins and managers only (contains PII - client message text)
    */
-  listUnacknowledged: authedProcedure
+  listUnacknowledged: managerProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).default(20),

@@ -31,7 +31,7 @@ import { trpc } from '@/lib/trpc';
 // TYPES
 // ============================================
 
-type RequestStatus = 'pending' | 'in_progress' | 'resolved' | 'violated';
+type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
 
 type Request = {
   id: string;
@@ -69,14 +69,14 @@ const statusConfig = {
     color: 'var(--buh-info)',
     bgColor: 'var(--buh-info-muted)',
   },
-  resolved: {
-    label: 'Решено',
+  answered: {
+    label: 'Отвечено',
     icon: CheckCircle2,
     color: 'var(--buh-success)',
     bgColor: 'var(--buh-success-muted)',
   },
-  violated: {
-    label: 'Нарушение',
+  escalated: {
+    label: 'Эскалация',
     icon: XCircle,
     color: 'var(--buh-error)',
     bgColor: 'var(--buh-error-muted)',
@@ -115,13 +115,7 @@ type ActionMenuProps = {
 function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
-  // Map UI status to API status
-  const apiStatus =
-    currentStatus === 'resolved'
-      ? 'answered'
-      : currentStatus === 'violated'
-        ? 'escalated'
-        : currentStatus;
+  const apiStatus = currentStatus;
 
   const updateMutation = trpc.requests.update.useMutation({
     onSuccess: () => {
@@ -396,7 +390,7 @@ export function RequestsTable({ requests, className, onRefresh }: RequestsTableP
                       <span
                         className={cn(
                           'text-xs',
-                          request.status === 'violated'
+                          request.status === 'escalated'
                             ? 'text-[var(--buh-error)]'
                             : 'text-[var(--buh-foreground-subtle)]'
                         )}

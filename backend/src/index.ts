@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import packageJson from '../package.json' with { type: 'json' };
 import logger from './utils/logger.js';
@@ -27,6 +28,16 @@ import { closeQueues } from './queues/setup.js';
  */
 
 const app = express();
+
+// CORS middleware - restrict API access to known origins
+app.use(
+  cors({
+    origin: isProduction()
+      ? ['https://buhbot.aidevteam.ru']
+      : ['http://localhost:3001', 'http://localhost:3000'],
+    credentials: true,
+  })
+);
 
 // Middleware
 // IMPORTANT: Webhook path must NOT go through express.json() as Telegraf needs raw body
@@ -61,8 +72,23 @@ registerHandlers();
 // Health check endpoint with database and Redis checks
 app.get('/health', healthHandler);
 
-// Metrics endpoint for Prometheus
-app.get('/metrics', metricsHandler);
+// Metrics endpoint for Prometheus (restricted to internal/Docker network)
+app.get('/metrics', (req, res) => {
+  const ip = req.ip || req.socket.remoteAddress || '';
+  const isInternal =
+    ip === '127.0.0.1' ||
+    ip === '::1' ||
+    ip === '::ffff:127.0.0.1' ||
+    ip.startsWith('172.') ||
+    ip.startsWith('::ffff:172.') ||
+    ip.startsWith('10.') ||
+    ip.startsWith('::ffff:10.');
+  if (!isInternal) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+  void metricsHandler(req, res);
+});
 
 // Ready check endpoint (for Kubernetes readiness probes)
 // Simplified check - use /health for detailed status

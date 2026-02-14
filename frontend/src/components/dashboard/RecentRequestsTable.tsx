@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================
 
-type RequestStatus = 'pending' | 'in_progress' | 'resolved' | 'violated';
+type RequestStatus = 'pending' | 'in_progress' | 'answered' | 'escalated';
 
 type Request = {
   id: string;
@@ -51,14 +51,14 @@ const statusConfig = {
     color: 'var(--buh-info)',
     bgColor: 'var(--buh-info-muted)',
   },
-  resolved: {
-    label: 'Решено',
+  answered: {
+    label: 'Отвечено',
     icon: CheckCircle2,
     color: 'var(--buh-success)',
     bgColor: 'var(--buh-success-muted)',
   },
-  violated: {
-    label: 'Нарушение',
+  escalated: {
+    label: 'Эскалация',
     icon: XCircle,
     color: 'var(--buh-error)',
     bgColor: 'var(--buh-error-muted)',
@@ -189,7 +189,7 @@ export function RecentRequestsTable({ requests, className }: RecentRequestsTable
                       <span
                         className={cn(
                           'text-xs',
-                          request.status === 'violated'
+                          request.status === 'escalated'
                             ? 'text-[var(--buh-error)]'
                             : 'text-[var(--buh-foreground-subtle)]'
                         )}

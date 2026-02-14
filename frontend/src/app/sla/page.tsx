@@ -84,11 +84,15 @@ export default function SlaPage() {
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'compliant' | 'breached'>('all');
   const [page, setPage] = React.useState(0);
 
-  // Date range (last 7 days by default)
-  const [dateRange] = React.useState(() => ({
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    endDate: new Date(),
-  }));
+  // Date range (last 7 days by default, with zeroed hours for consistent day boundaries)
+  const [dateRange] = React.useState(() => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+    return { startDate, endDate };
+  });
 
   // Fetch SLA compliance stats
   const statsQuery = trpc.analytics.slaCompliance.useQuery({

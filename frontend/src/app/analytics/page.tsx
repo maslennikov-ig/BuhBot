@@ -449,7 +449,7 @@ export default function AnalyticsPage() {
               {/* Export Button */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--buh-foreground)] opacity-0">
-                  Action
+                  Действие
                 </label>
                 <Button
                   variant="outline"

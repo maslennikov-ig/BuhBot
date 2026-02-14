@@ -66,11 +66,12 @@ function useAnimatedCounter(target: number, duration: number = 1500) {
 // NPS SCORE DISPLAY COMPONENT
 // ============================================
 
-function NPSScoreDisplay({ score }: { score: number }) {
-  const animatedScore = useAnimatedCounter(score);
+function NPSScoreDisplay({ score, hasData }: { score: number; hasData: boolean }) {
+  const animatedScore = useAnimatedCounter(hasData ? score : 0);
 
   // Determine color based on NPS score
   const getScoreColor = (value: number) => {
+    if (!hasData) return 'var(--buh-foreground-subtle)';
     if (value < 0) return 'var(--buh-error)';
     if (value < 50) return 'var(--buh-warning)';
     return 'var(--buh-success)';
@@ -80,6 +81,7 @@ function NPSScoreDisplay({ score }: { score: number }) {
 
   // Determine category label
   const getCategory = (value: number) => {
+    if (!hasData) return 'Нет данных';
     if (value < 0) return 'Критический';
     if (value < 30) return 'Удовлетворительный';
     if (value < 70) return 'Хороший';
@@ -93,14 +95,16 @@ function NPSScoreDisplay({ score }: { score: number }) {
           className="text-6xl font-bold tracking-tight transition-colors duration-300"
           style={{ color: scoreColor }}
         >
-          {animatedScore > 0 ? '+' : ''}
-          {animatedScore}
+          {hasData ? (animatedScore > 0 ? '+' : '') : '—'}
+          {hasData ? animatedScore : ''}
         </span>
         {/* Glow effect */}
-        <div
-          className="absolute -inset-4 rounded-full opacity-20 blur-2xl"
-          style={{ background: scoreColor }}
-        />
+        {hasData && (
+          <div
+            className="absolute -inset-4 rounded-full opacity-20 blur-2xl"
+            style={{ background: scoreColor }}
+          />
+        )}
       </div>
       <span className="mt-2 text-sm font-medium text-[var(--buh-foreground-muted)]">NPS Score</span>
       <span
@@ -193,8 +197,9 @@ function TrendChart({ data }: { data: TrendDataPoint[] }) {
 
   const maxNps = Math.max(...data.map((d) => Math.abs(d.npsScore)), 100);
 
-  // Calculate trend direction
+  // Calculate trend direction (only show trend if there's actual data)
   const lastTwo = data.slice(-2);
+  const allZero = data.every((d) => d.npsScore === 0 && d.responseCount === 0);
   const isImproving = lastTwo.length === 2 && lastTwo[1].npsScore > lastTwo[0].npsScore;
 
   return (
@@ -203,21 +208,27 @@ function TrendChart({ data }: { data: TrendDataPoint[] }) {
         <span className="text-xs font-medium text-[var(--buh-foreground-muted)]">
           Тренд NPS по кварталам
         </span>
-        <div className="flex items-center gap-1">
-          {isImproving ? (
-            <TrendingUp className="h-4 w-4 text-[var(--buh-success)]" />
-          ) : (
-            <TrendingDown className="h-4 w-4 text-[var(--buh-error)]" />
-          )}
-          <span
-            className={cn(
-              'text-xs font-semibold',
-              isImproving ? 'text-[var(--buh-success)]' : 'text-[var(--buh-error)]'
-            )}
-          >
-            {isImproving ? 'Рост' : 'Снижение'}
+        {allZero ? (
+          <span className="text-xs font-medium text-[var(--buh-foreground-subtle)]">
+            Нет данных
           </span>
-        </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            {isImproving ? (
+              <TrendingUp className="h-4 w-4 text-[var(--buh-success)]" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-[var(--buh-error)]" />
+            )}
+            <span
+              className={cn(
+                'text-xs font-semibold',
+                isImproving ? 'text-[var(--buh-success)]' : 'text-[var(--buh-error)]'
+              )}
+            >
+              {isImproving ? 'Рост' : 'Снижение'}
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex items-end gap-2">
         {data.map((point, index) => {
@@ -314,7 +325,7 @@ export function NPSWidget({
         <div className="flex flex-col gap-6">
           {/* NPS Score */}
           <div className="flex justify-center py-4">
-            <NPSScoreDisplay score={npsScore} />
+            <NPSScoreDisplay score={npsScore} hasData={totalResponses > 0} />
           </div>
 
           {/* Quick Stats */}

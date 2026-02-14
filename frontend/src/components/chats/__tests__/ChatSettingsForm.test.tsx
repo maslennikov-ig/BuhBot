@@ -7,7 +7,7 @@
  * @module components/chats/__tests__/ChatSettingsForm.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChatSettingsForm } from '../ChatSettingsForm';
@@ -29,7 +29,15 @@ vi.mock('@/lib/trpc', () => ({
 }));
 
 vi.mock('@/components/chats/AccountantSelect', () => ({
-  AccountantSelect: ({ value, onChange, placeholder }: any) => (
+  AccountantSelect: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: string | null;
+    onChange: (v: string | null) => void;
+    placeholder?: string;
+  }) => (
     <select
       data-testid="accountant-select"
       value={value ?? ''}
@@ -44,7 +52,13 @@ vi.mock('@/components/chats/AccountantSelect', () => ({
 }));
 
 vi.mock('@/components/chats/AccountantUsernamesInput', () => ({
-  AccountantUsernamesInput: ({ value, onChange }: any) => (
+  AccountantUsernamesInput: ({
+    value,
+    onChange,
+  }: {
+    value: string[] | undefined;
+    onChange: (v: string[]) => void;
+  }) => (
     <input
       data-testid="accountant-usernames-input"
       value={(value ?? []).join(', ')}
@@ -55,7 +69,9 @@ vi.mock('@/components/chats/AccountantUsernamesInput', () => ({
 }));
 
 vi.mock('@/components/layout/GlassCard', () => ({
-  GlassCard: ({ children, className }: any) => <div className={className}>{children}</div>,
+  GlassCard: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
 }));
 
 // ============================================
@@ -75,26 +91,34 @@ function createMockMutation(options: MockMutationOptions = {}) {
     },
   };
 
-  let storedCallbacks: { onSuccess?: (data: any) => void; onError?: (error: any) => void } = {};
+  let storedCallbacks: {
+    onSuccess?: (data: { warnings?: string[] }) => void;
+    onError?: (error: { message: string }) => void;
+  } = {};
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock returns partial shape
   vi.mocked(trpc.useUtils).mockReturnValue(mockUtils as any);
-  vi.mocked(trpc.chats.update.useMutation).mockImplementation((callbacks: any) => {
-    storedCallbacks = callbacks || {};
-    return {
-      mutate: mockMutate,
-      isPending: options.isPending ?? false,
-    } as any;
-  });
+  vi.mocked(trpc.chats.update.useMutation).mockImplementation(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- callbacks shape varies in tests
+    (callbacks: any) => {
+      storedCallbacks = callbacks || {};
+      return {
+        mutate: mockMutate,
+        isPending: options.isPending ?? false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial mock
+      } as any;
+    }
+  );
 
   return {
     mockMutate,
     mockUtils,
-    triggerSuccess: async (data: any) => {
+    triggerSuccess: async (data: { warnings?: string[] }) => {
       await act(async () => {
         storedCallbacks.onSuccess?.(data);
       });
     },
-    triggerError: async (error: any) => {
+    triggerError: async (error: { message: string }) => {
       await act(async () => {
         storedCallbacks.onError?.(error);
       });

@@ -46,6 +46,16 @@ services:
       retries: 5
     restart: unless-stopped
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: buhbot-jaeger-local
+    ports:
+      - '16686:16686' # Jaeger UI
+      - '4318:4318'   # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    restart: unless-stopped
+
 volumes:
   postgres-local-data:
   redis-local-data:

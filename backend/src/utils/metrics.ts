@@ -261,6 +261,30 @@ export const feedbackNpsGauge = new Gauge({
 });
 
 // ============================================================================
+// DASHBOARD CACHE METRICS
+// ============================================================================
+
+/**
+ * Counter: Dashboard cache hits
+ * Incremented when getDashboard returns data from Redis cache
+ */
+export const dashboardCacheHitsTotal = new Counter({
+  name: 'buhbot_dashboard_cache_hits_total',
+  help: 'Total number of dashboard cache hits',
+  registers: [register],
+});
+
+/**
+ * Counter: Dashboard cache misses
+ * Incremented when getDashboard must query the database
+ */
+export const dashboardCacheMissesTotal = new Counter({
+  name: 'buhbot_dashboard_cache_misses_total',
+  help: 'Total number of dashboard cache misses',
+  registers: [register],
+});
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 

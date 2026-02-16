@@ -39,6 +39,8 @@ export default function RequestsPage() {
         responseTimeMinutes: req.responseTimeMinutes,
         responseMessage: req.responseMessage?.messageText ?? null,
         responseUsername: req.responseMessage?.username ?? null,
+        threadId: req.threadId ?? null,
+        clientTier: req.chat.clientTier ?? null,
       };
     });
   }, [data]);

@@ -51,6 +51,15 @@ export {
   hashMessage,
 } from './cache.service.js';
 
+// Feedback processor
+export { FeedbackProcessor } from './feedback.processor.js';
+export type {
+  FeedbackAnalysis,
+  KeywordSuggestion,
+  MisclassificationPattern,
+  MisclassificationRate,
+} from './feedback.processor.js';
+
 // Main classifier service
 export {
   ClassifierService,

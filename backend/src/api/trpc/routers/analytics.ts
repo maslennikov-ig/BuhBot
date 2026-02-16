@@ -12,6 +12,33 @@
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { redis } from '../../../lib/redis.js';
+import logger from '../../../utils/logger.js';
+import { dashboardCacheHitsTotal, dashboardCacheMissesTotal } from '../../../utils/metrics.js';
+
+// ============================================================================
+// DASHBOARD CACHE CONFIGURATION
+// ============================================================================
+
+const DASHBOARD_CACHE_KEY = 'dashboard:data';
+const DASHBOARD_CACHE_TTL = 300; // 5 minutes in seconds
+
+/**
+ * Invalidate the dashboard cache.
+ * Call this when data that affects the dashboard changes
+ * (e.g., new request created, SLA breach detected, alert resolved).
+ */
+export async function invalidateDashboardCache(): Promise<void> {
+  try {
+    await redis.del(DASHBOARD_CACHE_KEY);
+    logger.debug('Dashboard cache invalidated', { service: 'analytics' });
+  } catch (error) {
+    logger.error('Failed to invalidate dashboard cache', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'analytics',
+    });
+  }
+}
 
 /**
  * Analytics router for reports and dashboards
@@ -434,6 +461,87 @@ export const analyticsRouter = router({
       })
     )
     .query(async ({ ctx }) => {
+      // --- Cache check ---
+      try {
+        const cached = await redis.get(DASHBOARD_CACHE_KEY);
+        if (cached) {
+          dashboardCacheHitsTotal.inc();
+          const parsed = JSON.parse(cached) as Record<string, unknown>;
+
+          // Reconstruct Date objects from ISO strings to satisfy z.date() output schema
+          const recentRequests = (parsed['recentRequests'] as Record<string, unknown>[]).map(
+            (r) => ({
+              ...r,
+              receivedAt: new Date(r['receivedAt'] as string),
+            })
+          );
+          const responseTimeChartData = (
+            parsed['responseTimeChartData'] as Record<string, unknown>[]
+          ).map((d) => ({
+            ...d,
+            date: new Date(d['date'] as string),
+          }));
+
+          return {
+            ...parsed,
+            recentRequests,
+            responseTimeChartData,
+          } as {
+            slaCompliancePercent: number;
+            avgResponseTimeMinutes: number;
+            totalViolationsToday: number;
+            totalViolationsWeek: number;
+            activeAlertsCount: number;
+            slaComplianceTrend: number;
+            responseTimeTrend: number;
+            recentRequests: {
+              id: string;
+              chatTitle: string | null;
+              clientUsername: string | null;
+              messagePreview: string;
+              status:
+                | 'pending'
+                | 'in_progress'
+                | 'waiting_client'
+                | 'transferred'
+                | 'answered'
+                | 'escalated'
+                | 'closed';
+              receivedAt: Date;
+              responseMinutes: number | null;
+              breached: boolean;
+            }[];
+            topAccountants: {
+              id: string;
+              name: string;
+              avgResponseMinutes: number;
+              compliancePercent: number;
+            }[];
+            attentionNeeded: {
+              id: string;
+              name: string;
+              violationsCount: number;
+              avgResponseMinutes: number;
+            }[];
+            responseTimeChartData: {
+              date: Date;
+              dayLabel: string;
+              avgResponseMinutes: number;
+              requestCount: number;
+            }[];
+            violationsLast7Days: number[];
+          };
+        }
+      } catch (error) {
+        // Cache read failure is non-fatal; fall through to DB queries
+        logger.warn('Dashboard cache read failed, falling through to DB', {
+          error: error instanceof Error ? error.message : String(error),
+          service: 'analytics',
+        });
+      }
+
+      dashboardCacheMissesTotal.inc();
+
       // Calculate date ranges (using UTC, adjust for timezone display on client)
       const now = new Date();
       const todayStart = new Date(now);
@@ -730,7 +838,7 @@ export const analyticsRouter = router({
         violationsLast7Days.push(dayViolations.length);
       }
 
-      return {
+      const result = {
         slaCompliancePercent: Math.round(currentCompliancePercent * 100) / 100,
         avgResponseTimeMinutes: Math.round(currentAvgResponseTime * 100) / 100,
         totalViolationsToday: todayViolations,
@@ -744,6 +852,18 @@ export const analyticsRouter = router({
         responseTimeChartData,
         violationsLast7Days,
       };
+
+      // --- Cache write (non-blocking, fire-and-forget) ---
+      redis
+        .setex(DASHBOARD_CACHE_KEY, DASHBOARD_CACHE_TTL, JSON.stringify(result))
+        .catch((error: unknown) => {
+          logger.warn('Dashboard cache write failed', {
+            error: error instanceof Error ? error.message : String(error),
+            service: 'analytics',
+          });
+        });
+
+      return result;
     }),
 
   /**

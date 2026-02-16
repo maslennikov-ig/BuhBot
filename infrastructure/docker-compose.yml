@@ -28,11 +28,15 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - OTEL_TRACING_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     depends_on:
       redis:
         condition: service_healthy
       monitoring-stack:
         condition: service_started
+      jaeger:
+        condition: service_healthy
     volumes:
       - ../backend/logs:/app/logs
     networks:
@@ -154,6 +158,41 @@ services:
       - 'com.buhbot.description=Prometheus + Grafana + Uptime Kuma'
 
   # ==========================================================================
+  # Jaeger Service (gh-77)
+  # ==========================================================================
+  # Distributed tracing collector and UI
+  # Port 16686: Jaeger UI (internal, proxied via nginx at /jaeger)
+  # Port 4318: OTLP HTTP receiver (internal)
+  # Enable with OTEL_TRACING_ENABLED=true in backend env
+  # ==========================================================================
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: buhbot-jaeger
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:16686:16686'
+      - '127.0.0.1:4318:4318'
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: 'false'
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
+    volumes:
+      - jaeger-data:/badger
+    networks:
+      - buhbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:16686/ || exit 1']
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    labels:
+      - 'com.buhbot.service=jaeger'
+      - 'com.buhbot.description=Distributed tracing collector and UI'
+
+  # ==========================================================================
   # Nginx Service
   # ==========================================================================
   # Reverse proxy with HTTPS termination
@@ -245,3 +284,10 @@ volumes:
     labels:
       - 'com.buhbot.volume=certbot-data'
       - "com.buhbot.description=Let's Encrypt SSL certificates"
+
+  jaeger-data:
+    driver: local
+    name: buhbot-jaeger-data
+    labels:
+      - 'com.buhbot.volume=jaeger-data'
+      - 'com.buhbot.description=Jaeger traces storage (Badger)'

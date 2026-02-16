@@ -37,6 +37,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
 import { trpc } from '@/lib/trpc';
+import { ThreadTimeline } from '@/components/requests/ThreadTimeline';
 
 // ============================================
 // TYPES
@@ -169,6 +170,7 @@ type RequestInfoCardProps = {
     responseTimeMinutes: number | null;
     status: RequestStatus;
     classification: Classification;
+    threadId: string | null;
     createdAt: string | Date;
   };
 };
@@ -670,9 +672,16 @@ export function RequestDetailsContent({ requestId }: RequestDetailsContentProps)
           <RequestInfoCard request={request} />
         </section>
 
+        {/* Thread Timeline - only if part of a thread */}
+        {request.threadId && (
+          <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
+            <ThreadTimeline threadId={request.threadId} currentRequestId={requestId} />
+          </section>
+        )}
+
         {/* Response Section - only if answered */}
         {data.responseMessage && (
-          <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
+          <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <ResponseSection
               responseMessage={data.responseMessage}
               responseAt={request.responseAt}
@@ -682,7 +691,7 @@ export function RequestDetailsContent({ requestId }: RequestDetailsContentProps)
         )}
 
         {/* Actions Section */}
-        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
           <ActionsCard
             requestId={requestId}
             currentStatus={request.status}

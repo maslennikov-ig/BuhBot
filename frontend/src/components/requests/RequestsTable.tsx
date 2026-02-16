@@ -15,6 +15,8 @@ import {
   PauseCircle,
   ArrowRightLeft,
   Ban,
+  MessageSquareMore,
+  Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTableSort } from '@/hooks/useTableSort';
@@ -28,6 +30,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { trpc } from '@/lib/trpc';
 
 // ============================================
@@ -54,6 +62,8 @@ type Request = {
   responseTimeMinutes?: number | null; // response time in minutes
   responseMessage?: string | null; // accountant's response text
   responseUsername?: string | null; // accountant's username
+  threadId?: string | null; // conversation thread ID
+  clientTier?: string | null; // client tier (gh-76)
 };
 
 type RequestsTableProps = {
@@ -364,9 +374,24 @@ export function RequestsTable({ requests, className, onRefresh }: RequestsTableP
               >
                 {/* Chat name */}
                 <td className="whitespace-nowrap px-6 py-4">
-                  <span className="font-medium text-[var(--buh-foreground)]">
-                    {request.chatName}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-[var(--buh-foreground)]">
+                      {request.chatName}
+                    </span>
+                    {(request.clientTier === 'vip' || request.clientTier === 'premium') && (
+                      <span
+                        className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-semibold"
+                        style={{
+                          color: request.clientTier === 'premium' ? '#b45309' : '#7c3aed',
+                          backgroundColor: request.clientTier === 'premium' ? '#fef3c7' : '#ede9fe',
+                        }}
+                        title={request.clientTier === 'premium' ? 'Premium клиент' : 'VIP клиент'}
+                      >
+                        <Crown className="h-3 w-3" />
+                        {request.clientTier === 'premium' ? 'P' : 'V'}
+                      </span>
+                    )}
+                  </div>
                 </td>
 
                 {/* Client name */}
@@ -378,9 +403,28 @@ export function RequestsTable({ requests, className, onRefresh }: RequestsTableP
 
                 {/* Message (truncated) */}
                 <td className="max-w-[200px] px-6 py-4">
-                  <span className="block truncate text-sm text-[var(--buh-foreground-muted)]">
-                    {request.message}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {request.threadId && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link
+                              href={`/requests/${request.id}`}
+                              className="flex-shrink-0 text-[var(--buh-info)] hover:text-[var(--buh-accent)] transition-colors duration-200"
+                            >
+                              <MessageSquareMore className="h-4 w-4" />
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Часть цепочки обращений</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    <span className="block truncate text-sm text-[var(--buh-foreground-muted)]">
+                      {request.message}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Status */}

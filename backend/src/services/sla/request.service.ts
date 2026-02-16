@@ -13,7 +13,7 @@
  * @module services/sla/request.service
  */
 
-import { prisma } from '../../lib/prisma.js';
+import { prisma, withAuditContext } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 
 // Re-export Prisma types for consumers
@@ -113,38 +113,34 @@ export async function updateRequestStatus(
   reason?: string
 ): Promise<ClientRequest | null> {
   try {
-    // Get current status for audit trail
+    // Get current status for state transition validation
     const current = await prisma.clientRequest.findUnique({
       where: { id: requestId },
       select: { status: true },
     });
 
-    const updated = await prisma.clientRequest.update({
-      where: { id: requestId },
-      data: { status },
-    });
-
-    // Record status change in audit trail (gh-70)
-    if (current) {
-      await prisma.requestHistory
-        .create({
-          data: {
-            requestId,
-            field: 'status',
-            oldValue: current.status,
-            newValue: status,
-            changedBy: changedBy ?? 'system',
-            reason: reason ?? null,
-          },
-        })
-        .catch((err) => {
-          logger.warn('Failed to record status change in history', {
-            requestId,
-            error: err instanceof Error ? err.message : String(err),
-            service: 'request-service',
-          });
-        });
+    // Validate state transition (gh-69)
+    if (current && !isValidTransition(current.status as RequestStatus, status)) {
+      logger.warn('Invalid state transition attempted', {
+        requestId,
+        from: current.status,
+        to: status,
+        service: 'request-service',
+      });
+      throw new Error(
+        `Invalid state transition from '${current.status}' to '${status}'`
+      );
     }
+
+    // Audit trail is handled automatically by Prisma extension (gh-70)
+    const updated = await withAuditContext(
+      { changedBy: changedBy ?? 'system', reason },
+      () =>
+        prisma.clientRequest.update({
+          where: { id: requestId },
+          data: { status },
+        })
+    );
 
     logger.info('Request status updated', {
       requestId,
@@ -197,45 +193,40 @@ export async function markRequestAsAnswered(
   try {
     const responseAt = data.responseAt ?? new Date();
 
-    // Get current status for audit trail
+    // Get current status for state transition validation
     const current = await prisma.clientRequest.findUnique({
       where: { id: requestId },
       select: { status: true },
     });
 
-    const updated = await prisma.clientRequest.update({
-      where: { id: requestId },
-      data: {
-        status: 'answered',
-        responseAt,
-        respondedBy: data.respondedBy,
-        responseMessageId: data.responseMessageId,
-        responseTimeMinutes: data.responseTimeMinutes ?? null,
-        slaWorkingMinutes: data.responseTimeMinutes ?? null,
-      },
-    });
+    // Validate state transition (gh-69)
+    if (current && !isValidTransition(current.status as RequestStatus, 'answered')) {
+      logger.warn('Invalid state transition to answered', {
+        requestId,
+        from: current.status,
+        service: 'request-service',
+      });
+      throw new Error(
+        `Invalid state transition from '${current.status}' to 'answered'`
+      );
+    }
 
-    // Record in audit trail (gh-70)
-    if (current) {
-      await prisma.requestHistory
-        .create({
+    // Audit trail is handled automatically by Prisma extension (gh-70)
+    const updated = await withAuditContext(
+      { changedBy: data.respondedBy ?? 'accountant', reason: 'Accountant responded' },
+      () =>
+        prisma.clientRequest.update({
+          where: { id: requestId },
           data: {
-            requestId,
-            field: 'status',
-            oldValue: current.status,
-            newValue: 'answered',
-            changedBy: data.respondedBy ?? 'accountant',
-            reason: 'Accountant responded',
+            status: 'answered',
+            responseAt,
+            respondedBy: data.respondedBy,
+            responseMessageId: data.responseMessageId,
+            responseTimeMinutes: data.responseTimeMinutes ?? null,
+            slaWorkingMinutes: data.responseTimeMinutes ?? null,
           },
         })
-        .catch((err) => {
-          logger.warn('Failed to record answer in history', {
-            requestId,
-            error: err instanceof Error ? err.message : String(err),
-            service: 'request-service',
-          });
-        });
-    }
+    );
 
     logger.info('Request marked as answered', {
       requestId,
@@ -286,12 +277,32 @@ export async function getActiveRequests(chatId?: string): Promise<ClientRequest[
       where['chatId'] = BigInt(chatId);
     }
 
-    return await prisma.clientRequest.findMany({
+    // VIP priority: sort by client tier (premium > vip > standard > basic), then by receivedAt (gh-76)
+    const requests = await prisma.clientRequest.findMany({
       where,
       orderBy: { receivedAt: 'asc' },
       include: {
         chat: true,
       },
+    });
+
+    // Sort with VIP priority: premium first, then vip, then standard, then basic (gh-76)
+    const tierPriority: Record<string, number> = {
+      premium: 0,
+      vip: 1,
+      standard: 2,
+      basic: 3,
+    };
+
+    return requests.sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const chatA = (a as any)?.chat?.clientTier as string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const chatB = (b as any)?.chat?.clientTier as string | undefined;
+      const aTier = tierPriority[chatA ?? 'standard'] ?? 2;
+      const bTier = tierPriority[chatB ?? 'standard'] ?? 2;
+      if (aTier !== bTier) return aTier - bTier;
+      return 0; // keep original receivedAt order within same tier
     });
   } catch (error) {
     logger.error('Failed to get active requests', {

@@ -4,6 +4,10 @@
  * Provides a single PrismaClient instance for the application.
  * Prevents multiple client instances and connection pool exhaustion.
  *
+ * Includes automatic audit trail for ClientRequest field changes (gh-70).
+ * Tracked fields: status, assignedTo, classification, classificationScore,
+ * slaBreached, respondedBy. Changes are logged to the RequestHistory table.
+ *
  * Connection Configuration:
  * - Database: PostgreSQL 15+ (Supabase Cloud)
  * - Connection pooling: via Supabase Supavisor (PgBouncer)
@@ -21,12 +25,56 @@
 // Ensure env is loaded first; use validated env for connection (includes test defaults)
 import env from '../config/env.js';
 
-import { PrismaClient } from '@prisma/client';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import logger from '../utils/logger.js';
 
 const { Pool } = pg;
+
+/**
+ * Fields on ClientRequest that are tracked in the audit trail (gh-70).
+ * Any update to these fields will automatically create a RequestHistory entry.
+ */
+const TRACKED_FIELDS = [
+  'status',
+  'assignedTo',
+  'classification',
+  'classificationScore',
+  'slaBreached',
+  'respondedBy',
+] as const;
+
+// ---------------------------------------------------------------------------
+// Audit context: allows callers to pass changedBy / reason to the extension
+// ---------------------------------------------------------------------------
+
+interface AuditContext {
+  changedBy?: string | undefined;
+  reason?: string | undefined;
+}
+
+const auditContextStorage = new AsyncLocalStorage<AuditContext>();
+
+/**
+ * Run a callback with audit context attached.
+ *
+ * Any `clientRequest.update` executed inside the callback will use the
+ * provided `changedBy` and `reason` in the generated RequestHistory entries.
+ *
+ * @example
+ * ```typescript
+ * import { withAuditContext } from './lib/prisma.js';
+ *
+ * await withAuditContext({ changedBy: userId, reason: 'Manager override' }, async () => {
+ *   await prisma.clientRequest.update({ where: { id }, data: { status: 'closed' } });
+ * });
+ * ```
+ */
+export function withAuditContext<T>(ctx: AuditContext, fn: () => T): T {
+  return auditContextStorage.run(ctx, fn);
+}
 
 /**
  * Global augmentation for PrismaClient caching in development
@@ -93,15 +141,160 @@ function createPool(): pg.Pool {
 }
 
 /**
- * Create Prisma client with PostgreSQL adapter
+ * Convert a field value to a string for audit trail storage.
+ * Handles null, undefined, boolean, number, bigint, and string values.
+ */
+function valueToString(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'bigint') return value.toString();
+  return String(value);
+}
+
+/**
+ * Create Prisma client extension for automatic audit trail on ClientRequest (gh-70).
+ *
+ * Intercepts `clientRequest.update` to:
+ * 1. Fetch the current record before the update
+ * 2. Execute the update
+ * 3. Diff tracked fields and create RequestHistory entries for each change
+ *
+ * Audit logging is non-blocking: failures are caught and logged,
+ * never preventing the original update from succeeding.
+ */
+function withAuditTrail(baseClient: PrismaClient): PrismaClient {
+  const extended = baseClient.$extends({
+    query: {
+      clientRequest: {
+        async update({ args, query }) {
+          // Capture the record ID from the where clause
+          const whereId = (args.where as { id?: string })?.id;
+
+          // If no ID in where clause, skip audit (composite where not supported)
+          if (!whereId) {
+            return query(args);
+          }
+
+          // Fetch current values BEFORE the update
+          let oldRecord: Record<string, unknown> | null = null;
+          try {
+            oldRecord = (await baseClient.clientRequest.findUnique({
+              where: { id: whereId },
+              select: {
+                status: true,
+                assignedTo: true,
+                classification: true,
+                classificationScore: true,
+                slaBreached: true,
+                respondedBy: true,
+              },
+            })) as Record<string, unknown> | null;
+          } catch (err) {
+            logger.warn('Audit trail: failed to fetch old record', {
+              requestId: whereId,
+              error: err instanceof Error ? err.message : String(err),
+              service: 'audit-trail',
+            });
+          }
+
+          // Execute the actual update
+          const result = await query(args);
+
+          // Diff tracked fields and create history entries (non-blocking)
+          if (oldRecord) {
+            try {
+              const updateData = args.data as Record<string, unknown> | undefined;
+              if (!updateData) return result;
+
+              const historyEntries: Prisma.RequestHistoryCreateManyInput[] = [];
+
+              for (const field of TRACKED_FIELDS) {
+                // Skip fields not present in the update data
+                if (!(field in updateData)) continue;
+
+                const oldVal = valueToString(oldRecord[field]);
+                const newVal = valueToString(updateData[field]);
+
+                // Only record actual changes
+                if (oldVal === newVal) continue;
+
+                historyEntries.push({
+                  requestId: whereId,
+                  field,
+                  oldValue: oldVal,
+                  newValue: newVal,
+                  changedBy: extractChangedBy(updateData),
+                  reason: extractReason() ?? null,
+                });
+              }
+
+              if (historyEntries.length > 0) {
+                await baseClient.requestHistory
+                  .createMany({ data: historyEntries })
+                  .catch((err: unknown) => {
+                    logger.warn('Audit trail: failed to write history entries', {
+                      requestId: whereId,
+                      fields: historyEntries.map((e) => e.field),
+                      error: err instanceof Error ? err.message : String(err),
+                      service: 'audit-trail',
+                    });
+                  });
+              }
+            } catch (err) {
+              logger.warn('Audit trail: unexpected error during diff', {
+                requestId: whereId,
+                error: err instanceof Error ? err.message : String(err),
+                service: 'audit-trail',
+              });
+            }
+          }
+
+          return result;
+        },
+      },
+    },
+  });
+
+  // Cast back to PrismaClient for type compatibility with the rest of the codebase.
+  // This is safe because query extensions only add hooks; they do not alter the public API.
+  return extended as unknown as PrismaClient;
+}
+
+/**
+ * Extract the changedBy identifier from audit context and update data.
+ *
+ * Priority:
+ * 1. Explicit `changedBy` from AuditContext (via withAuditContext)
+ * 2. `respondedBy` from the update data
+ * 3. `assignedTo` from the update data
+ * 4. Fallback to 'system'
+ */
+function extractChangedBy(data: Record<string, unknown>): string {
+  const ctx = auditContextStorage.getStore();
+  if (ctx?.changedBy) return ctx.changedBy;
+  if (typeof data['respondedBy'] === 'string') return data['respondedBy'];
+  if (typeof data['assignedTo'] === 'string') return data['assignedTo'];
+  return 'system';
+}
+
+/**
+ * Extract the reason from audit context, if set.
+ */
+function extractReason(): string | undefined {
+  return auditContextStorage.getStore()?.reason;
+}
+
+/**
+ * Create Prisma client with PostgreSQL adapter and audit trail extension
  */
 function createPrismaClient(pool: pg.Pool): PrismaClient {
   const adapter = new PrismaPg(pool);
 
-  return new PrismaClient({
+  const baseClient = new PrismaClient({
     adapter,
     log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
+
+  return withAuditTrail(baseClient);
 }
 
 // Create or reuse pool and client

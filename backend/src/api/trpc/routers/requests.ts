@@ -6,6 +6,7 @@
  * - getById: Get single request with related alerts
  * - update: Update request status or assignment
  * - updateClassification: Update request classification (REQUEST, SPAM, GRATITUDE, CLARIFICATION)
+ * - getClassificationFeedback: Analyze correction patterns for classifier improvement (gh-73)
  *
  * @module api/trpc/routers/requests
  */
@@ -15,6 +16,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
+import { FeedbackProcessor } from '../../../services/classifier/feedback.processor.js';
 
 /**
  * Request status schema (matches Prisma RequestStatus enum)
@@ -93,6 +95,7 @@ export const requestsRouter = router({
             createdAt: z.date(),
             chat: z.object({
               title: z.string().nullable(),
+              clientTier: z.string().nullable(),
             }),
             responseMessage: z
               .object({
@@ -159,6 +162,7 @@ export const requestsRouter = router({
             chat: {
               select: {
                 title: true,
+                clientTier: true,
               },
             },
             responseMessages: {
@@ -216,6 +220,7 @@ export const requestsRouter = router({
           responseTimeMinutes: z.number().int().nullable(),
           status: RequestStatusSchema,
           classification: MessageClassificationSchema,
+          threadId: z.string().uuid().nullable(),
           createdAt: z.date(),
           updatedAt: z.date(),
         }),
@@ -296,6 +301,7 @@ export const requestsRouter = router({
           responseTimeMinutes: request.responseTimeMinutes,
           status: request.status,
           classification: request.classification,
+          threadId: request.threadId,
           createdAt: request.createdAt,
           updatedAt: request.updatedAt,
         },
@@ -648,5 +654,60 @@ export const requestsRouter = router({
         totalCorrections: corrections.length,
         correctionsByType,
       };
+    }),
+
+  /**
+   * Get classifier feedback analysis with pattern detection and keyword suggestions (gh-73)
+   *
+   * Analyzes classification corrections to identify misclassification patterns,
+   * generate keyword suggestions for the keyword classifier, and calculate
+   * accuracy metrics.
+   *
+   * @param daysSince - Number of days to analyze (default: 30, max: 365)
+   * @returns Feedback analysis with patterns, suggestions, and accuracy
+   * @authorization Admins and managers only
+   */
+  getClassificationFeedback: managerProcedure
+    .input(
+      z
+        .object({
+          daysSince: z.number().int().min(1).max(365).default(30),
+        })
+        .default({})
+    )
+    .output(
+      z.object({
+        totalCorrections: z.number().int(),
+        topMisclassifications: z.array(
+          z.object({
+            from: z.string(),
+            to: z.string(),
+            count: z.number().int(),
+            examples: z.array(z.string()),
+          })
+        ),
+        suggestedKeywords: z.array(
+          z.object({
+            category: z.string(),
+            keyword: z.string(),
+            confidence: z.number(),
+            occurrences: z.number().int(),
+          })
+        ),
+        classificationAccuracy: z.number(),
+        misclassificationRates: z.array(
+          z.object({
+            category: z.string(),
+            totalMisclassified: z.number().int(),
+            mostCommonCorrection: z.string().nullable(),
+            rate: z.number(),
+          })
+        ),
+        analyzedDays: z.number().int(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const processor = new FeedbackProcessor(ctx.prisma);
+      return processor.analyzePatterns(input.daysSince);
     }),
 });

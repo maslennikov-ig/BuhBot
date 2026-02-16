@@ -5,6 +5,19 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.13.0...buhbot-v0.14.0) (2026-02-16)
+
+
+### Features
+
+* **frontend:** add AI Classification and Data Retention settings tabs ([0724394](https://github.com/maslennikov-ig/BuhBot/commit/07243946884e330c1192b32b79f370418a53949a))
+* implement reopened issues gh-69 through gh-77 ([f4df844](https://github.com/maslennikov-ig/BuhBot/commit/f4df8447295058fd52a7d1504b54e347bb1b5c7d))
+
+
+### Bug Fixes
+
+* address code review findings for gh-69..gh-77 ([8e82009](https://github.com/maslennikov-ig/BuhBot/commit/8e820090808dc1651549d4854202bb8a527d2be5))
+
 ## [0.13.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.12.0...buhbot-v0.13.0) (2026-02-14)
 
 

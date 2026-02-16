@@ -350,6 +350,18 @@ graceful_stop() {
     log_success "Graceful shutdown completed"
 }
 
+fix_volume_permissions() {
+    log_info "Ensuring Docker volume permissions..."
+
+    # Jaeger v1.54 runs as uid 10001 and needs write access to /badger
+    docker volume create buhbot-jaeger-data 2>/dev/null || true
+    docker run --rm \
+        -v buhbot-jaeger-data:/badger \
+        alpine chown -R 10001:10001 /badger
+
+    log_success "Volume permissions set"
+}
+
 deploy_services() {
     log_info "Deploying services..."
 
@@ -525,6 +537,9 @@ main() {
 
     # Tag images with deployment markers
     tag_images "$COMMIT_SHA"
+
+    # Fix volume permissions (Jaeger uid:10001 needs /badger writable)
+    fix_volume_permissions
 
     # Graceful stop of current services
     graceful_stop

@@ -364,6 +364,23 @@ pull_images() {
     log_success "Images pulled successfully"
 }
 
+fix_volume_permissions() {
+    log_info "Ensuring Docker volume permissions..."
+
+    if [ "$DRY_RUN" = true ]; then
+        log_dry_run "Would fix volume permissions"
+        return 0
+    fi
+
+    # Jaeger runs as uid 10001 and needs write access to /badger
+    docker volume create buhbot-jaeger-data 2>/dev/null || true
+    docker run --rm \
+        -v buhbot-jaeger-data:/badger \
+        alpine chown -R 10001:10001 /badger
+
+    log_success "Volume permissions set"
+}
+
 deploy_services() {
     log_info "Deploying services..."
 
@@ -627,6 +644,9 @@ main() {
 
     # Pull images
     pull_images
+
+    # Fix volume permissions (Jaeger uid:10001 needs /badger writable)
+    fix_volume_permissions
 
     # Deploy services
     if ! deploy_services; then

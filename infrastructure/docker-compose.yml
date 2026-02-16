@@ -168,6 +168,7 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:1.54
     container_name: buhbot-jaeger
+    user: '10001:10001'
     restart: unless-stopped
     ports:
       - '127.0.0.1:16686:16686'

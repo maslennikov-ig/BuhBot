@@ -294,13 +294,16 @@ export async function getActiveRequests(chatId?: string): Promise<ClientRequest[
       basic: 3,
     };
 
+    // Type-safe accessor for chat.clientTier from included relation
+    type RequestWithChat = (typeof requests)[number];
+    const getTier = (req: RequestWithChat): string => {
+      const chat = req.chat as { clientTier?: string | null } | null | undefined;
+      return chat?.clientTier?.toLowerCase() ?? 'standard';
+    };
+
     return requests.sort((a, b) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const chatA = (a as any)?.chat?.clientTier as string | undefined;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const chatB = (b as any)?.chat?.clientTier as string | undefined;
-      const aTier = tierPriority[chatA ?? 'standard'] ?? 2;
-      const bTier = tierPriority[chatB ?? 'standard'] ?? 2;
+      const aTier = tierPriority[getTier(a)] ?? 2;
+      const bTier = tierPriority[getTier(b)] ?? 2;
       if (aTier !== bTier) return aTier - bTier;
       return 0; // keep original receivedAt order within same tier
     });

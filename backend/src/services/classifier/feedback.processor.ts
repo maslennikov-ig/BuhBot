@@ -448,6 +448,16 @@ export class FeedbackProcessor {
 
     const suggestions: KeywordSuggestion[] = [];
 
+    // Pre-compute global word frequency ONCE (avoids O(categories × corrections) re-iteration)
+    const globalWordFrequency = new Map<string, number>();
+    for (const correction of corrections) {
+      const words = this.extractWords(correction.messageText);
+      const uniqueWords = new Set(words);
+      for (const word of uniqueWords) {
+        globalWordFrequency.set(word, (globalWordFrequency.get(word) ?? 0) + 1);
+      }
+    }
+
     // For each corrected-to category, find common distinctive words
     for (const [category, texts] of textsByCorrectClass) {
       if (texts.length < MIN_PATTERN_THRESHOLD) {
@@ -464,16 +474,6 @@ export class FeedbackProcessor {
 
         for (const word of uniqueWords) {
           wordFrequency.set(word, (wordFrequency.get(word) ?? 0) + 1);
-        }
-      }
-
-      // Count word frequency across ALL categories (for distinctiveness)
-      const globalWordFrequency = new Map<string, number>();
-      for (const correction of corrections) {
-        const words = this.extractWords(correction.messageText);
-        const uniqueWords = new Set(words);
-        for (const word of uniqueWords) {
-          globalWordFrequency.set(word, (globalWordFrequency.get(word) ?? 0) + 1);
         }
       }
 

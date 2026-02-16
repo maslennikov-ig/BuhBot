@@ -17,6 +17,7 @@ import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 import { FeedbackProcessor } from '../../../services/classifier/feedback.processor.js';
+import logger from '../../../utils/logger.js';
 
 /**
  * Request status schema (matches Prisma RequestStatus enum)
@@ -429,7 +430,11 @@ export const requestsRouter = router({
           })
           .catch((err: unknown) => {
             // Non-blocking: don't fail the update if correction recording fails
-            console.error('Failed to record classification correction:', err);
+            logger.error('Failed to record classification correction', {
+              error: err instanceof Error ? err.message : String(err),
+              requestId: input.id,
+              service: 'requests-router',
+            });
           });
       }
 

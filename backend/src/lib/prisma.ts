@@ -174,7 +174,15 @@ function withAuditTrail(baseClient: PrismaClient): PrismaClient {
             return query(args);
           }
 
-          // Fetch current values BEFORE the update
+          // Fetch current values BEFORE the update.
+          // Note: There is a theoretical TOCTOU race between this read and the update below.
+          // If another concurrent request modifies the same record between findUnique and query(args),
+          // the diff may record an incorrect old value. This is acceptable because:
+          // 1. The audit trail is best-effort (non-blocking, errors caught)
+          // 2. The main update integrity is unaffected
+          // 3. Concurrent updates to the same ClientRequest are rare in this application
+          // 4. Prisma $extends query hooks cannot wrap query(args) in a separate transaction
+          // For perfect accuracy, consider database triggers instead.
           let oldRecord: Record<string, unknown> | null = null;
           try {
             oldRecord = (await baseClient.clientRequest.findUnique({

@@ -116,7 +116,7 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 // ============================================
 
 export function ThreadTimeline({ threadId, currentRequestId, className }: ThreadTimelineProps) {
-  const { data: threadRequests, isLoading } = trpc.requests.getThread.useQuery({ threadId });
+  const { data: threadRequests, isLoading, error } = trpc.requests.getThread.useQuery({ threadId });
 
   if (isLoading) {
     return (
@@ -129,6 +129,24 @@ export function ThreadTimeline({ threadId, currentRequestId, className }: Thread
         </div>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--buh-accent)]" />
+        </div>
+      </GlassCard>
+    );
+  }
+
+  if (error) {
+    return (
+      <GlassCard variant="default" padding="lg" className={cn('buh-hover-lift', className)}>
+        <div className="flex items-center gap-3 mb-4">
+          <MessageSquareMore className="h-5 w-5 text-[var(--buh-info)]" />
+          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
+            Цепочка обращений
+          </h3>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-sm text-[var(--buh-foreground-muted)]">
+            Не удалось загрузить цепочку обращений
+          </p>
         </div>
       </GlassCard>
     );

@@ -5,6 +5,15 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.0...buhbot-v0.14.1) (2026-02-16)
+
+
+### Bug Fixes
+
+* **infra:** fix jaeger volume permissions in deploy scripts ([c7b7599](https://github.com/maslennikov-ig/BuhBot/commit/c7b7599e73f59c5d7b6ec030fc2a8751bfaef1e9))
+* resolve ci failures and fix lint-staged monorepo config ([ab81d34](https://github.com/maslennikov-ig/BuhBot/commit/ab81d341ffb2ddcd04afba28677bc883041f4e04))
+* sync backend package-lock.json and format lintstagedrc ([06dbd13](https://github.com/maslennikov-ig/BuhBot/commit/06dbd13e88fe40c360ec6c9921f6c20873add006))
+
 ## [0.14.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.13.0...buhbot-v0.14.0) (2026-02-16)
 
 

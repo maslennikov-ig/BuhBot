@@ -8,6 +8,8 @@ import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { HolidayCalendar } from '@/components/settings/HolidayCalendar';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
 import { ProfileSettingsForm } from '@/components/settings/ProfileSettingsForm';
+import { ClassificationSettingsForm } from '@/components/settings/ClassificationSettingsForm';
+import { DataRetentionSettingsForm } from '@/components/settings/DataRetentionSettingsForm';
 import { HelpButton } from '@/components/ui/HelpButton';
 
 export default function SettingsPage() {
@@ -29,6 +31,8 @@ export default function SettingsPage() {
             <TabsTrigger value="general">Основные и бот</TabsTrigger>
             <TabsTrigger value="schedule">Расписание и SLA</TabsTrigger>
             <TabsTrigger value="notifications">Уведомления</TabsTrigger>
+            <TabsTrigger value="ai">AI Классификация</TabsTrigger>
+            <TabsTrigger value="retention">Хранение данных</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-4">
@@ -46,6 +50,14 @@ export default function SettingsPage() {
 
           <TabsContent value="notifications" className="space-y-4">
             <NotificationSettingsForm />
+          </TabsContent>
+
+          <TabsContent value="ai" className="space-y-4">
+            <ClassificationSettingsForm />
+          </TabsContent>
+
+          <TabsContent value="retention" className="space-y-4">
+            <DataRetentionSettingsForm />
           </TabsContent>
         </Tabs>
       </div>

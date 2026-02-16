@@ -488,8 +488,7 @@ export class FeedbackProcessor {
         const specificityRatio = categoryCount / globalCount; // How specific to this category
 
         // Confidence = weighted average of frequency and specificity
-        const confidence =
-          Math.round((categoryRatio * 0.4 + specificityRatio * 0.6) * 100) / 100;
+        const confidence = Math.round((categoryRatio * 0.4 + specificityRatio * 0.6) * 100) / 100;
 
         if (confidence >= 0.3) {
           suggestions.push({

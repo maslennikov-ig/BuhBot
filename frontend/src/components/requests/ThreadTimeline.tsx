@@ -15,14 +15,7 @@ import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { MessageSquareMore, Clock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  PauseCircle,
-  ArrowRightLeft,
-  Ban,
-} from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, PauseCircle, ArrowRightLeft, Ban } from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -123,9 +116,7 @@ export function ThreadTimeline({ threadId, currentRequestId, className }: Thread
       <GlassCard variant="default" padding="lg" className={cn('buh-hover-lift', className)}>
         <div className="flex items-center gap-3 mb-4">
           <MessageSquareMore className="h-5 w-5 text-[var(--buh-info)]" />
-          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
-            Цепочка обращений
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">Цепочка обращений</h3>
         </div>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--buh-accent)]" />
@@ -139,9 +130,7 @@ export function ThreadTimeline({ threadId, currentRequestId, className }: Thread
       <GlassCard variant="default" padding="lg" className={cn('buh-hover-lift', className)}>
         <div className="flex items-center gap-3 mb-4">
           <MessageSquareMore className="h-5 w-5 text-[var(--buh-info)]" />
-          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
-            Цепочка обращений
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">Цепочка обращений</h3>
         </div>
         <div className="text-center py-8">
           <p className="text-sm text-[var(--buh-foreground-muted)]">
@@ -183,11 +172,14 @@ export function ThreadTimeline({ threadId, currentRequestId, className }: Thread
           <MessageSquareMore className="h-5 w-5 text-[var(--buh-info)]" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">
-            Цепочка обращений
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--buh-foreground)]">Цепочка обращений</h3>
           <p className="text-sm text-[var(--buh-foreground-muted)]">
-            {threadRequests.length} {threadRequests.length === 1 ? 'сообщение' : threadRequests.length < 5 ? 'сообщения' : 'сообщений'}
+            {threadRequests.length}{' '}
+            {threadRequests.length === 1
+              ? 'сообщение'
+              : threadRequests.length < 5
+                ? 'сообщения'
+                : 'сообщений'}
           </p>
         </div>
       </div>

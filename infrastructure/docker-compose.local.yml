@@ -51,7 +51,7 @@ services:
     container_name: buhbot-jaeger-local
     ports:
       - '16686:16686' # Jaeger UI
-      - '4318:4318'   # OTLP HTTP receiver
+      - '4318:4318' # OTLP HTTP receiver
     environment:
       COLLECTOR_OTLP_ENABLED: 'true'
     restart: unless-stopped

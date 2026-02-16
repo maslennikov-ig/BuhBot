@@ -30,12 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { trpc } from '@/lib/trpc';
 
 // ============================================
@@ -378,14 +373,20 @@ export function RequestsTable({ requests, className, onRefresh }: RequestsTableP
                     <span className="font-medium text-[var(--buh-foreground)]">
                       {request.chatName}
                     </span>
-                    {(['vip', 'premium'].includes(request.clientTier?.toLowerCase() ?? '')) && (
+                    {['vip', 'premium'].includes(request.clientTier?.toLowerCase() ?? '') && (
                       <span
                         className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-semibold"
                         style={{
-                          color: request.clientTier?.toLowerCase() === 'premium' ? '#b45309' : '#7c3aed',
-                          backgroundColor: request.clientTier?.toLowerCase() === 'premium' ? '#fef3c7' : '#ede9fe',
+                          color:
+                            request.clientTier?.toLowerCase() === 'premium' ? '#b45309' : '#7c3aed',
+                          backgroundColor:
+                            request.clientTier?.toLowerCase() === 'premium' ? '#fef3c7' : '#ede9fe',
                         }}
-                        title={request.clientTier?.toLowerCase() === 'premium' ? 'Premium клиент' : 'VIP клиент'}
+                        title={
+                          request.clientTier?.toLowerCase() === 'premium'
+                            ? 'Premium клиент'
+                            : 'VIP клиент'
+                        }
                       >
                         <Crown className="h-3 w-3" />
                         {request.clientTier?.toLowerCase() === 'premium' ? 'P' : 'V'}

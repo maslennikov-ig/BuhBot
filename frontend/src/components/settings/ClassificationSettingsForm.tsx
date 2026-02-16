@@ -109,8 +109,8 @@ export function ClassificationSettingsForm() {
               className="w-full h-2 bg-[var(--buh-surface-elevated)] rounded-lg appearance-none cursor-pointer accent-[var(--buh-primary)]"
             />
             <p className="text-sm text-[var(--buh-foreground-muted)]">
-              Минимальная уверенность AI для автоматической классификации сообщений. При
-              уверенности ниже этого порога сообщение останется неклассифицированным.
+              Минимальная уверенность AI для автоматической классификации сообщений. При уверенности
+              ниже этого порога сообщение останется неклассифицированным.
             </p>
           </div>
 

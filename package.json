@@ -28,19 +28,6 @@
     "format:check": "prettier --check .",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "backend/src/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "frontend/src/**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
-  },
   "keywords": [
     "telegram-bot",
     "accounting",

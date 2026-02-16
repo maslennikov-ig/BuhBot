@@ -90,9 +90,7 @@ export function DataRetentionSettingsForm() {
             <Label htmlFor="dataRetentionYears">Период хранения данных</Label>
             <Select
               value={form.watch('dataRetentionYears').toString()}
-              onValueChange={(value) =>
-                form.setValue('dataRetentionYears', parseInt(value, 10))
-              }
+              onValueChange={(value) => form.setValue('dataRetentionYears', parseInt(value, 10))}
             >
               <SelectTrigger className="bg-[var(--buh-surface-elevated)]">
                 <SelectValue placeholder="Выберите период" />

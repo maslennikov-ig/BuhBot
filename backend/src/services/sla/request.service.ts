@@ -127,19 +127,15 @@ export async function updateRequestStatus(
         to: status,
         service: 'request-service',
       });
-      throw new Error(
-        `Invalid state transition from '${current.status}' to '${status}'`
-      );
+      throw new Error(`Invalid state transition from '${current.status}' to '${status}'`);
     }
 
     // Audit trail is handled automatically by Prisma extension (gh-70)
-    const updated = await withAuditContext(
-      { changedBy: changedBy ?? 'system', reason },
-      () =>
-        prisma.clientRequest.update({
-          where: { id: requestId },
-          data: { status },
-        })
+    const updated = await withAuditContext({ changedBy: changedBy ?? 'system', reason }, () =>
+      prisma.clientRequest.update({
+        where: { id: requestId },
+        data: { status },
+      })
     );
 
     logger.info('Request status updated', {
@@ -206,9 +202,7 @@ export async function markRequestAsAnswered(
         from: current.status,
         service: 'request-service',
       });
-      throw new Error(
-        `Invalid state transition from '${current.status}' to 'answered'`
-      );
+      throw new Error(`Invalid state transition from '${current.status}' to 'answered'`);
     }
 
     // Audit trail is handled automatically by Prisma extension (gh-70)

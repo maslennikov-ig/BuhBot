@@ -276,7 +276,7 @@ export function registerMessageHandler(): void {
           chatId: BigInt(chatId),
           contentHash,
           receivedAt: { gte: dedupCutoff },
-          status: { in: ['pending', 'in_progress'] },
+          status: { in: ['pending', 'in_progress', 'answered'] },
         },
         select: { id: true },
         orderBy: { receivedAt: 'desc' },

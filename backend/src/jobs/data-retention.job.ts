@@ -58,7 +58,7 @@ export interface DataRetentionResult {
 // ============================================================================
 
 /** Batch size for delete operations */
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = 500; // Conservative limit for transactional deletes (CR P1-4)
 
 /** Default retention period in years if not configured */
 const DEFAULT_RETENTION_YEARS = 3;

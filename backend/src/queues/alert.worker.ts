@@ -146,10 +146,13 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
     // Get or create alert ID
     const alertId = job.data.alertId ?? request.slaAlerts[0]?.id;
 
-    // Idempotency: skip if alert was already delivered (gh-107)
+    // Idempotency: re-fetch alert status to prevent TOCTOU race (gh-107, CR finding #9)
     if (alertId) {
-      const existingAlert = request.slaAlerts[0];
-      if (existingAlert?.deliveryStatus === 'delivered') {
+      const freshAlert = await prisma.slaAlert.findUnique({
+        where: { id: alertId },
+        select: { deliveryStatus: true },
+      });
+      if (freshAlert?.deliveryStatus === 'delivered') {
         logger.info('Alert already delivered, skipping duplicate processing', {
           alertId,
           requestId,

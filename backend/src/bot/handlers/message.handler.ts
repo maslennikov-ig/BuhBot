@@ -325,7 +325,17 @@ export function registerMessageHandler(): void {
                 where: { id: parentRequest.id },
                 select: { threadId: true },
               });
-              threadId = refreshed?.threadId ?? threadId;
+
+              if (!refreshed) {
+                // Parent deleted between checks — start standalone thread (CR finding #7)
+                logger.warn('Parent request deleted during thread creation', {
+                  parentRequestId: parentRequest.id,
+                  service: 'message-handler',
+                });
+                threadId = randomUUID();
+              } else {
+                threadId = refreshed.threadId ?? randomUUID();
+              }
             }
           }
         }

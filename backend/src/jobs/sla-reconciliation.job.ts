@@ -85,8 +85,12 @@ async function processSlaReconciliation(
     return result;
   } finally {
     // Release the distributed lock (gh-109)
-    await redis.del(RECONCILIATION_LOCK_KEY).catch(() => {
-      // Ignore lock release errors
+    await redis.del(RECONCILIATION_LOCK_KEY).catch((lockError: unknown) => {
+      logger.warn('Failed to release reconciliation lock (will auto-expire)', {
+        lockTTL: RECONCILIATION_LOCK_TTL,
+        error: lockError instanceof Error ? lockError.message : String(lockError),
+        service: SERVICE_NAME,
+      });
     });
   }
 }

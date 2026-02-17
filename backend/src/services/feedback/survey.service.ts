@@ -404,54 +404,67 @@ export async function recordResponse(
 
   // Create feedback response and update delivery atomically (gh-101)
   // Re-check delivery status inside transaction to prevent TOCTOU race.
-  // The @unique constraint on deliveryId provides DB-level dedup as last resort.
-  const result = await prisma.$transaction(async (tx) => {
-    // Re-fetch delivery inside transaction to prevent TOCTOU (gh-101)
-    const freshDelivery = await tx.surveyDelivery.findUnique({
-      where: { id: deliveryId },
-      select: { status: true },
-    });
+  // The @unique constraint on deliveryId provides DB-level dedup as last resort (CR finding #10).
+  let result: string;
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      // Re-fetch delivery inside transaction to prevent TOCTOU (gh-101)
+      const freshDelivery = await tx.surveyDelivery.findUnique({
+        where: { id: deliveryId },
+        select: { status: true },
+      });
 
-    if (freshDelivery?.status === 'responded') {
+      if (freshDelivery?.status === 'responded') {
+        throw new Error('Already responded to this survey');
+      }
+
+      const feedback = await tx.feedbackResponse.create({
+        data: {
+          chatId: delivery.chatId,
+          rating,
+          surveyId: delivery.surveyId,
+          deliveryId: delivery.id,
+          clientUsername: clientUsername ?? null,
+        },
+      });
+
+      await tx.surveyDelivery.update({
+        where: { id: deliveryId },
+        data: { status: 'responded' },
+      });
+
+      // Update survey response count
+      await tx.feedbackSurvey.update({
+        where: { id: delivery.surveyId },
+        data: {
+          responseCount: { increment: 1 },
+        },
+      });
+
+      // Recalculate average rating
+      const avgResult = await tx.feedbackResponse.aggregate({
+        where: { surveyId: delivery.surveyId },
+        _avg: { rating: true },
+      });
+
+      await tx.feedbackSurvey.update({
+        where: { id: delivery.surveyId },
+        data: { averageRating: avgResult._avg.rating },
+      });
+
+      return feedback.id;
+    });
+  } catch (error) {
+    // Handle P2002 unique constraint violation on deliveryId as duplicate response (CR finding #10)
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as unknown as { code: string }).code === 'P2002'
+    ) {
       throw new Error('Already responded to this survey');
     }
-
-    const feedback = await tx.feedbackResponse.create({
-      data: {
-        chatId: delivery.chatId,
-        rating,
-        surveyId: delivery.surveyId,
-        deliveryId: delivery.id,
-        clientUsername: clientUsername ?? null,
-      },
-    });
-
-    await tx.surveyDelivery.update({
-      where: { id: deliveryId },
-      data: { status: 'responded' },
-    });
-
-    // Update survey response count
-    await tx.feedbackSurvey.update({
-      where: { id: delivery.surveyId },
-      data: {
-        responseCount: { increment: 1 },
-      },
-    });
-
-    // Recalculate average rating
-    const avgResult = await tx.feedbackResponse.aggregate({
-      where: { surveyId: delivery.surveyId },
-      _avg: { rating: true },
-    });
-
-    await tx.feedbackSurvey.update({
-      where: { id: delivery.surveyId },
-      data: { averageRating: avgResult._avg.rating },
-    });
-
-    return feedback.id;
-  });
+    throw error;
+  }
 
   logger.info('Survey response recorded', {
     deliveryId,

@@ -186,12 +186,13 @@ export async function scheduleNextEscalation(
         escalationIntervalMin
       );
     } catch (scheduleError) {
-      // BullMQ throws if job with same ID already exists (expected dedup)
+      // BullMQ throws if job with same ID already exists (expected dedup, CR finding #12)
       const msg = scheduleError instanceof Error ? scheduleError.message : String(scheduleError);
-      if (msg.includes('already exists') || msg.includes('duplicat')) {
+      if (msg.includes('Job with id') || msg.includes('Missing lock for job')) {
         logger.info('Escalation job already scheduled (dedup)', {
           alertId,
           nextLevel,
+          errorMessage: msg,
           service: 'escalation',
         });
       } else {

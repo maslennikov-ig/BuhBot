@@ -15,6 +15,7 @@
  */
 
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
+import { requireChatAccess } from '../authorization.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
@@ -185,16 +186,7 @@ export const chatsRouter = router({
         });
       }
 
-      // Authorization: observers can only view chats assigned to them
-      if (
-        !['admin', 'manager'].includes(ctx.user.role) &&
-        chat.assignedAccountantId !== ctx.user.id
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Access denied. You can only view chats assigned to you.',
-        });
-      }
+      requireChatAccess(ctx.user, chat);
 
       return {
         ...chat,
@@ -277,16 +269,7 @@ export const chatsRouter = router({
         });
       }
 
-      // Authorization: observers can only view chats assigned to them
-      if (
-        !['admin', 'manager'].includes(ctx.user.role) &&
-        chat.assignedAccountantId !== ctx.user.id
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Access denied. You can only view chats assigned to you.',
-        });
-      }
+      requireChatAccess(ctx.user, chat);
 
       return {
         chat: {

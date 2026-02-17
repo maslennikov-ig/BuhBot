@@ -8,6 +8,7 @@
  */
 
 import { router, authedProcedure } from '../trpc.js';
+import { requireChatAccess } from '../authorization.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
@@ -110,16 +111,7 @@ export const messagesRouter = router({
         });
       }
 
-      // Authorization: observers can only view messages in chats assigned to them
-      if (
-        !['admin', 'manager'].includes(ctx.user.role) &&
-        chat.assignedAccountantId !== ctx.user.id
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Access denied. You can only view messages in chats assigned to you.',
-        });
-      }
+      requireChatAccess(ctx.user, chat);
 
       // Build cursor condition (always fetch older messages for infinite scroll)
       let cursorCondition = {};

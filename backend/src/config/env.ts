@@ -34,7 +34,19 @@ const envSchema = z.object({
   // Database (Supabase PostgreSQL)
   DATABASE_URL: isTestEnv
     ? z.string().url().optional().default('postgresql://localhost:5432/test')
-    : z.string().url().describe('PostgreSQL connection string from Supabase'),
+    : z
+        .string()
+        .url()
+        .refine(
+          (val) =>
+            process.env['NODE_ENV'] !== 'production' ||
+            val.includes('sslmode=require') ||
+            val.includes('sslmode=verify-ca') ||
+            val.includes('sslmode=verify-full') ||
+            val.includes('ssl=true'),
+          { message: 'DATABASE_URL must include sslmode=require (or higher) in production' }
+        )
+        .describe('PostgreSQL connection string from Supabase'),
 
   // Redis (for BullMQ)
   REDIS_HOST: z.string().default('localhost'),
@@ -80,6 +92,8 @@ const envSchema = z.object({
   // OpenRouter AI Classification
   OPENROUTER_API_KEY: z
     .string()
+    .min(1)
+    .startsWith('sk-or-', { message: 'OpenRouter API key must start with sk-or-' })
     .optional()
     .describe('OpenRouter API key for AI message classification'),
   APP_URL: z

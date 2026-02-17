@@ -12,6 +12,7 @@
  */
 
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
+import { requireChatAccess } from '../authorization.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
@@ -295,11 +296,8 @@ export const requestsRouter = router({
           where: { id: request.chatId },
           select: { assignedAccountantId: true },
         });
-        if (chat?.assignedAccountantId !== ctx.user.id) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Access denied. You can only view requests in chats assigned to you.',
-          });
+        if (chat) {
+          requireChatAccess(ctx.user, chat);
         }
       }
 
@@ -560,6 +558,23 @@ export const requestsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
+      // Authorization: observers can only view history for requests in their chats
+      if (!['admin', 'manager'].includes(ctx.user.role)) {
+        const request = await ctx.prisma.clientRequest.findUnique({
+          where: { id: input.requestId },
+          select: { chatId: true },
+        });
+        if (request) {
+          const chat = await ctx.prisma.chat.findUnique({
+            where: { id: request.chatId },
+            select: { assignedAccountantId: true },
+          });
+          if (chat) {
+            requireChatAccess(ctx.user, chat);
+          }
+        }
+      }
+
       return ctx.prisma.requestHistory.findMany({
         where: { requestId: input.requestId },
         orderBy: { changedAt: 'desc' },
@@ -593,6 +608,23 @@ export const requestsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
+      // Authorization: observers can only view threads in their chats
+      if (!['admin', 'manager'].includes(ctx.user.role)) {
+        const firstRequest = await ctx.prisma.clientRequest.findFirst({
+          where: { threadId: input.threadId },
+          select: { chatId: true },
+        });
+        if (firstRequest) {
+          const chat = await ctx.prisma.chat.findUnique({
+            where: { id: firstRequest.chatId },
+            select: { assignedAccountantId: true },
+          });
+          if (chat) {
+            requireChatAccess(ctx.user, chat);
+          }
+        }
+      }
+
       const requests = await ctx.prisma.clientRequest.findMany({
         where: { threadId: input.threadId },
         orderBy: { receivedAt: 'asc' },

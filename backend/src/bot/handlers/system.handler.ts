@@ -3,7 +3,6 @@
  *
  * Handles system commands:
  * - /info - Show bot information and status
- * - /version - Show current version
  *
  * @module bot/handlers/system.handler
  */
@@ -54,18 +53,6 @@ export function registerSystemHandler(): void {
         service: 'system-handler',
       });
       await ctx.reply('Ошибка получения информации.');
-    }
-  });
-
-  // Handle /version command
-  bot.command('version', async (ctx: BotContext) => {
-    try {
-      await ctx.reply(`v${BOT_VERSION}`);
-    } catch (error) {
-      logger.error('Error handling /version', {
-        error: error instanceof Error ? error.message : String(error),
-        service: 'system-handler',
-      });
     }
   });
 

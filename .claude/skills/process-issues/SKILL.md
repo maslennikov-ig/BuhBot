@@ -1,12 +1,12 @@
 ---
 name: process-issues
-description: Process GitHub Issues - fetch open issues, read comments, analyze suggestions, find similar, create Beads tasks, propose fix plan
-version: 1.1.0
+description: 'Process GitHub Issues: fetch, prioritize (scoring matrix), create Beads tasks with dependencies, then auto-fix by priority order'
+version: 2.0.0
 ---
 
 # Process GitHub Issues
 
-Automated workflow for processing GitHub Issues from repository.
+End-to-end workflow: fetch open GitHub Issues → analyze & score → create Beads tasks with dependency graph → auto-execute fixes by priority.
 
 ## CRITICAL REQUIREMENTS
 
@@ -18,13 +18,12 @@ Automated workflow for processing GitHub Issues from repository.
 
 ```bash
 # ALWAYS run this FIRST for each issue:
-bd create --type=<bug|task|feature> --priority=<1-3> --title="<issue_title>" --external-ref="gh-<number>"
-bd update <task_id> --status=in_progress
+bd create --type=<bug|task|feature> --priority=<0-4> --title="<issue_title>" --external-ref="gh-<number>"
 ```
 
 ### 2. READ ISSUE COMMENTS (MANDATORY)
 
-**ALWAYS read comments to issues — they contain valuable insights:**
+**ALWAYS read comments — they contain valuable insights:**
 
 ```bash
 # View issue with all comments
@@ -52,49 +51,25 @@ gh api repos/maslennikov-ig/BuhBot/issues/<number>/comments --jq '.[].body'
 | Conflicting advice    | Analyze trade-offs, choose best approach        |
 | Outdated advice       | Check if still relevant to current codebase     |
 
-**Include in analysis:**
-
-```markdown
-### Comments Analysis
-
-- **Useful suggestions**: <list helpful comments>
-- **Decision**: Adopt / Modify / Reject with reason
-```
-
 ### 3. SEARCH SIMILAR PROBLEMS FIRST (MANDATORY)
 
 **Before fixing ANY issue, search BOTH sources:**
 
-#### 2a. Search in Beads (closed tasks)
+#### 3a. Search in Beads (closed tasks)
 
 ```bash
-# Search by keywords from issue title/body
 bd search "<keyword>" --type=bug --status=closed
 bd search "<keyword>" --type=task --status=closed
-
-# Example searches:
-bd search "silent failure"
-bd search "telegram"
-bd search "SLA"
 ```
 
-**What to look for in Beads:**
-
-- Similar issue patterns in task titles
-- Root cause analysis in task descriptions
-- Fix approach and files changed
-
-#### 2b. Search in GitHub (closed issues)
+#### 3b. Search in GitHub (closed issues)
 
 ```bash
-# Search closed issues
 gh issue list --state closed --search "<keyword>"
-
-# View specific closed issue for context
 gh issue view <number>
 ```
 
-#### 2c. If found similar resolved issue
+#### 3c. If found similar resolved issue
 
 1. **From Beads**: Read task description for root cause and fix approach
 2. **From GitHub**: Read the closing comment — contains solution
@@ -103,7 +78,7 @@ gh issue view <number>
 
 ### 4. CONTEXT7 IS MANDATORY
 
-**ALWAYS query documentation before implementing:**
+**ALWAYS query documentation before implementing any fix involving external libraries:**
 
 ```
 mcp__context7__resolve-library-id → mcp__context7__query-docs
@@ -115,11 +90,16 @@ mcp__context7__resolve-library-id → mcp__context7__query-docs
 - Supabase queries
 - BullMQ job handling
 - Telegraf bot patterns
-- Any external library involved
+- Prisma ORM patterns
+- tRPC router/middleware
+- Any external library involved in the fix
+
+**How to use (2-step):**
+
+1. `mcp__context7__resolve-library-id` with library name (e.g., "telegraf", "prisma")
+2. `mcp__context7__query-docs` with resolved ID and specific topic (e.g., "middleware", "transactions")
 
 ### 5. TASK COMPLEXITY ROUTING
-
-**Route tasks by complexity:**
 
 | Complexity  | Examples                              | Action                   |
 | ----------- | ------------------------------------- | ------------------------ |
@@ -127,43 +107,26 @@ mcp__context7__resolve-library-id → mcp__context7__query-docs
 | **Medium**  | Multi-file fix, migration, API change | **Delegate to subagent** |
 | **Complex** | Architecture change, new feature      | Ask user first           |
 
-**Subagent selection for MEDIUM tasks:**
+**Subagent selection:**
 
-| Domain           | Subagent                             | When                     |
-| ---------------- | ------------------------------------ | ------------------------ |
-| DB/migrations    | `database-architect`                 | Schema changes, RLS      |
-| UI components    | `nextjs-ui-designer`                 | New pages, components    |
-| Backend services | `fullstack-nextjs-specialist`        | APIs, workers            |
-| Types            | `typescript-types-specialist`        | Complex types, generics  |
-| Telegram bot     | `telegraf-bot-middleware-specialist` | Bot handlers, middleware |
-| SLA/monitoring   | `sla-backend-specialist`             | SLA timers, alerts       |
+| Domain            | Subagent                             | When                     |
+| ----------------- | ------------------------------------ | ------------------------ |
+| DB/migrations     | `database-architect`                 | Schema changes, RLS      |
+| UI components     | `nextjs-ui-designer`                 | New pages, components    |
+| Backend services  | `fullstack-nextjs-specialist`        | APIs, workers            |
+| Types             | `typescript-types-specialist`        | Complex types, generics  |
+| Telegram bot      | `telegraf-bot-middleware-specialist` | Bot handlers, middleware |
+| SLA/monitoring    | `sla-backend-specialist`             | SLA timers, alerts       |
+| Bug investigation | `problem-investigator`               | Complex root cause       |
 
-### 6. ISSUE LABELS → PRIORITY MAPPING
-
-| GitHub Label  | Priority | Description                   |
-| ------------- | -------- | ----------------------------- |
-| `bug`         | P1-P2    | Bug fix (severity determines) |
-| `enhancement` | P2-P3    | Feature improvement           |
-| `UX`          | P2       | User experience issue         |
-| `A11Y`        | P3       | Accessibility                 |
-| `feature`     | P3       | New feature request           |
-
-### 7. BUG FIXING PRINCIPLES
+### 6. BUG FIXING PRINCIPLES
 
 > **This is PRODUCTION. Every bug matters.**
-
-**Fix fundamentally, not superficially:**
 
 - Find and fix the ROOT CAUSE, not just symptoms
 - If error happens in function X but cause is in function Y → fix Y
 - Don't add workarounds/hacks that mask the problem
 - Ask: "Why did this happen?" until you reach the actual cause
-
-**Quality over speed:**
-
-- Take time to understand the full context
-- Test the fix mentally: "What else could break?"
-- Check for similar patterns elsewhere in codebase
 - One good fix > multiple quick patches
 
 ---
@@ -176,268 +139,339 @@ Optional arguments:
 
 - `/process-issues --label=bug` — only bug issues
 - `/process-issues --limit=5` — process max 5 issues
-- `/process-issues 123` — process specific issue #123
+- `/process-issues 42 43 44` — process specific issues
+- `/process-issues --dry-run` — analyze and prioritize only, don't fix
 
 ---
 
 ## Workflow
 
-### Step 1: Fetch Open Issues
+### Phase 1: FETCH — Collect Open Issues
 
 ```bash
-# Get all open issues sorted by priority
-gh issue list --state open --json number,title,labels,body,createdAt --limit 50
+# Get all open issues with full metadata
+gh issue list --state open --json number,title,labels,body,createdAt,comments --limit 50
 
 # Or filter by label
-gh issue list --state open --label bug --json number,title,labels,body
+gh issue list --state open --label bug --json number,title,labels,body,comments
 ```
 
-### Step 2: Analyze Each Issue
+### Phase 2: ANALYZE — Deep Analysis of Each Issue
 
 For each open issue:
 
-1. **Read issue details**:
+1. **Read issue details + comments** (MANDATORY):
 
    ```bash
-   gh issue view <number>
-   ```
-
-2. **Read and analyze comments** (MANDATORY):
-
-   ```bash
-   # View issue with all comments
    gh issue view <number> --comments
-
-   # Or get comments via API for parsing
-   gh api repos/maslennikov-ig/BuhBot/issues/<number>/comments
    ```
 
-   **Analyze each comment for:**
-   - Proposed solutions or code fixes
-   - Additional context/reproduction steps
-   - Links to related issues or PRs
-   - Workarounds that hint at root cause
-
-   **Make decision**: Adopt useful suggestions, note rejected ones with reason.
-
-3. **Extract key information**:
+2. **Extract key information**:
    - Issue type (bug/feature/enhancement)
-   - Affected files/components (from description)
+   - Affected files/components
    - Error messages (if bug)
-   - Expected behavior
-   - **Useful suggestions from comments**
+   - Expected vs actual behavior
+   - Useful suggestions from comments
 
-4. **Search for similar resolved issues** (MANDATORY):
+3. **Search for similar resolved issues** (MANDATORY):
 
    ```bash
-   # In Beads
    bd search "<keyword from issue>"
-
-   # In GitHub
    gh issue list --state closed --search "<keyword>"
    ```
 
-### Step 3: Create Analysis Plan
+4. **Identify cross-issue relationships**:
+   - Does fixing issue A require issue B to be fixed first?
+   - Do issues share the same root cause?
+   - Do issues touch the same files (conflict potential)?
 
-For each issue, generate:
+### Phase 3: PRIORITIZE — Score and Rank All Issues
+
+**For each issue, calculate a priority score using the scoring matrix:**
+
+#### Scoring Matrix
+
+**Severity** (how bad is it?):
+
+| Level    | Score | Description                           |
+| -------- | ----- | ------------------------------------- |
+| critical | 10    | App crash, data loss, security breach |
+| high     | 7     | Major feature broken, no workaround   |
+| medium   | 5     | Feature degraded, workaround exists   |
+| low      | 2     | Cosmetic, minor inconvenience         |
+
+**Impact** (how many users affected?):
+
+| Level    | Score | Description              |
+| -------- | ----- | ------------------------ |
+| breaking | 10    | All users blocked        |
+| major    | 7     | Most users affected      |
+| minor    | 3     | Some users, edge case    |
+| none     | 0     | Internal, no user impact |
+
+**Likelihood** (how often does it happen?):
+
+| Level    | Score | Description                    |
+| -------- | ----- | ------------------------------ |
+| certain  | 10    | Every time, 100% reproducible  |
+| likely   | 7     | Most of the time, >50%         |
+| possible | 5     | Sometimes, specific conditions |
+| unlikely | 2     | Rare, hard to reproduce        |
+
+**Total Score** = severity + impact + likelihood (range: 0-30)
+
+**Score → Priority mapping:**
+
+| Score | Priority | Label                       | Action                   |
+| ----- | -------- | --------------------------- | ------------------------ |
+| 25-30 | **P0**   | Critical — Immediate Action | Drop everything, fix now |
+| 19-24 | **P1**   | High — Fix This Sprint      | Prioritize immediately   |
+| 12-18 | **P2**   | Medium — Schedule Soon      | Include in current batch |
+| 5-11  | **P3**   | Low — When Convenient       | Backlog, fix if time     |
+| 0-4   | **P4**   | Minimal — Consider Closing  | May not be worth fixing  |
+
+**GitHub Label → default severity hints:**
+
+| GitHub Label  | Default Severity | Notes                             |
+| ------------- | ---------------- | --------------------------------- |
+| `bug`         | high-critical    | Analyze actual severity from body |
+| `enhancement` | medium           | Adjust by user impact             |
+| `UX`          | medium           | User-facing, usually P2           |
+| `A11Y`        | medium-low       | Accessibility compliance          |
+| `feature`     | low-medium       | New functionality request         |
+
+**Output: Ranked priority table (sorted by score DESC):**
 
 ```markdown
-## Issue #NN: <title>
-
-### Type & Priority
-
-- Type: bug | feature | enhancement | UX
-- Priority: P0 (blocker) | P1 (critical) | P2 (important) | P3 (nice-to-have)
-
-### Comments Analysis
-
-- **Total comments**: N
-- **Useful suggestions**:
-  - @user1: "Suggested fix X" → **Adopt** (valid approach)
-  - @user2: "Try workaround Y" → **Note** (temporary, need proper fix)
-  - @user3: "Related to #MM" → **Investigate** (check linked issue)
-- **Rejected suggestions**:
-  - @user4: "Do Z" → **Reject** (outdated, doesn't match current architecture)
-
-### Similar Issues Found
-
-- Beads: buh-xxx (similar problem with X, fixed by Y)
-- GitHub: #NN (same root cause, fix in commit abc123)
-
-### Root Cause Analysis
-
-<Why this happens>
-
-### Proposed Solution
-
-1. <Step 1>
-2. <Step 2>
-
-### Files to Modify
-
-- `path/to/file1.ts` — description
-- `path/to/file2.tsx` — description
-
-### Subagent Assignment
-
-- Subagent: <name> | Execute directly
-- Complexity: Simple | Medium | Complex
-
-### Context7 Queries Needed
-
-- [ ] Next.js: <topic>
-- [ ] Supabase: <topic>
-- [ ] Telegraf: <topic>
+| Rank | Issue | Title        | Score | Sev | Imp | Lkh | Priority | Beads ID |
+| ---- | ----- | ------------ | ----- | --- | --- | --- | -------- | -------- |
+| 1    | #42   | Bot crashes  | 27    | 10  | 10  | 7   | P0       | buh-xxx  |
+| 2    | #43   | Login broken | 24    | 7   | 10  | 7   | P1       | buh-yyy  |
+| 3    | #44   | Typo in menu | 7     | 2   | 3   | 2   | P3       | buh-zzz  |
 ```
 
-### Step 4: Create Beads Tasks
+### Phase 4: CREATE BEADS — Tasks with Dependency Graph
 
-**For each issue:**
+**4a. Create an Epic for this processing batch:**
 
 ```bash
-# Create task with external reference
-bd create "<issue_title>" -t <bug|task|feature> -p <1-3> \
+bd create --title="Process GitHub Issues Batch $(date +%Y-%m-%d)" --type=epic --priority=2 \
+  --description="Batch processing of open GitHub issues"
+```
+
+Save returned `<epic-id>`.
+
+**4b. Create a Beads task for EACH issue (sorted by priority):**
+
+```bash
+bd create --title="gh-<number>: <issue_title>" \
+  --type=<bug|task|feature> \
+  --priority=<0-4> \
   --external-ref="gh-<number>" \
-  -d "<root_cause_and_solution>"
-
-# Save the task ID for tracking
+  --deps parent:<epic-id> \
+  --description="GitHub Issue: #<number>
+Score: <score> (sev=<s>, imp=<i>, lkh=<l>)
+Root Cause: <analysis>
+Solution: <proposed fix>
+Files: <file list>
+Similar: <buh-xxx / gh-NN if found>
+Executor: <subagent-name | MAIN>"
 ```
 
-**Task description template:**
+**4c. Build dependency graph between tasks:**
 
+Analyze cross-issue dependencies and set them up:
+
+```bash
+# If issue B requires issue A to be fixed first:
+bd dep add <buh-B> <buh-A>
+
+# If issues share same root cause (related, not blocking):
+# Just note in description: "Related: buh-xxx"
+
+# If issues touch same files (sequential execution required):
+bd dep add <buh-later> <buh-earlier>
 ```
-GitHub Issue: #<number>
-Root Cause: <why this happens>
-Solution: <what needs to be done>
-Files: <list of files>
-Similar to: buh-xxx / gh-NN (if found)
-```
 
-### Step 5: Propose Execution Plan
+**Dependency rules (auto-detect):**
 
-Present to user:
+| Condition                                  | Dependency Type   | Command                            |
+| ------------------------------------------ | ----------------- | ---------------------------------- |
+| Issue B's fix needs A's changes            | `blocked-by`      | `bd dep add <B> <A>`               |
+| Issues touch same files                    | `blocked-by`      | `bd dep add <later> <earlier>`     |
+| Issues share root cause but fix separately | `related`         | Note in description only           |
+| Issue found during analysis of another     | `discovered-from` | `--deps discovered-from:<id>`      |
+| DB migration needed before feature         | `blocked-by`      | `bd dep add <feature> <migration>` |
+
+**4d. Present the dependency graph to user:**
 
 ```markdown
-## GitHub Issues Processing Plan
+## Dependency Graph
 
-### Summary
+buh-aaa (#42, P0) ─blocks──→ buh-bbb (#43, P1)
+buh-aaa (#42, P0) ─blocks──→ buh-ccc (#45, P2)
+buh-bbb (#43, P1) ─blocks──→ buh-ddd (#44, P3)
+buh-eee (#46, P2) ── independent ──
 
-| #   | Issue | Type | Priority | Similar Found | Subagent           |
-| --- | ----- | ---- | -------- | ------------- | ------------------ |
-| 1   | #NN   | bug  | P1       | buh-xxx       | database-architect |
-| 2   | #MM   | UX   | P2       | —             | nextjs-ui-designer |
+### Execution Order (topological sort by priority):
 
-### Beads Tasks Created
-
-- buh-aaa: Issue #NN (P1)
-- buh-bbb: Issue #MM (P2)
-
-### Execution Order (by priority)
-
-1. **P0-P1 (Critical)**: #NN, #MM
-2. **P2 (Important)**: #XX
-3. **P3 (Nice-to-have)**: #YY
-
-### Questions for User
-
-- Issue #ZZ: Need clarification on <topic>
-- Issue #WW: Complex change, approve approach?
-
-### Ready to Execute?
-
-- [ ] Approve plan
-- [ ] Modify priorities
-- [ ] Skip certain issues
+1. buh-aaa (#42) — P0, no blockers
+2. buh-eee (#46) — P2, no blockers [PARALLEL with #1]
+3. buh-bbb (#43) — P1, after buh-aaa
+4. buh-ccc (#45) — P2, after buh-aaa [PARALLEL with #3]
+5. buh-ddd (#44) — P3, after buh-bbb
 ```
 
-### Step 6: Execute Fixes (After User Approval)
+### Phase 5: EXECUTE — Auto-Fix by Priority Order
 
-**For each issue in priority order:**
+**Execution follows topological sort: respect dependencies, then sort by priority within unblocked tasks.**
 
-1. **Claim Beads task**:
+**For EACH task in execution order:**
 
-   ```bash
-   bd update <task_id> --status=in_progress
-   ```
+#### 5a. Claim task
 
-2. **Query Context7** (if needed):
+```bash
+bd update <task_id> --status=in_progress
+```
 
-   ```
-   mcp__context7__resolve-library-id → mcp__context7__query-docs
-   ```
+#### 5b. Query Context7 (MANDATORY for any library-related fix)
 
-3. **Delegate or Execute**:
-   - Simple: Execute directly
-   - Medium: Delegate to subagent
-   - Complex: Ask user first
+```
+mcp__context7__resolve-library-id → mcp__context7__query-docs
+```
 
-4. **Verify**:
+#### 5c. Gather full context
 
-   ```bash
-   npm run type-check
-   npm run build
-   ```
+- Read ALL files that will be modified
+- Search for related patterns in codebase
+- Check recent commits in affected files
+- Review library docs via Context7
 
-5. **Close GitHub Issue**:
+#### 5d. Execute fix
 
-   ```bash
-   gh issue close <number> --comment "Fixed in commit <sha>
+| Complexity | Action                                       |
+| ---------- | -------------------------------------------- |
+| Simple     | Execute directly (Edit tool)                 |
+| Medium     | Delegate to appropriate subagent (Task tool) |
+| Complex    | Ask user for approval first, then delegate   |
 
-   **Solution:**
-   <description of fix>
+**Subagent delegation template:**
 
-   Beads task: <task_id>"
-   ```
+```
+Task: Fix GitHub Issue #<number>
+Issue: <title>
+Root Cause: <analysis>
+Solution: <proposed fix>
+Files to modify:
+- <path1>: <what to change>
+- <path2>: <what to change>
+Context7 docs: <relevant docs fetched>
+Similar fix reference: <buh-xxx if applicable>
+Validation: Run `npm run type-check` after changes
+```
 
-6. **Close Beads Task**:
-   ```bash
-   bd close <task_id> --reason="Fixed: <description>"
-   ```
+#### 5e. Verify fix
 
-### Step 7: Summary Report
+```bash
+npm run type-check
+npm run build
+```
+
+- Read ALL modified files to verify correctness
+- If verification fails: re-delegate with error details
+- Accept/reject loop until fix passes
+
+#### 5f. Commit fix
+
+Use `/push patch` with conventional commit message:
+
+```bash
+# Commit message format:
+fix(scope): <description> (gh-<number>)
+# or
+feat(scope): <description> (gh-<number>)
+```
+
+#### 5g. Close issue and task
+
+```bash
+# Close GitHub Issue
+gh issue close <number> --comment "Fixed in commit <sha>
+
+**Solution:**
+<description of fix>
+
+**Root cause:**
+<root cause analysis>
+
+Beads task: <task_id>"
+
+# Close Beads task
+bd close <task_id> --reason="Fixed: <description>"
+```
+
+#### 5h. Move to next task
+
+```bash
+bd ready   # Check what's unblocked now
+```
+
+Proceed to next unblocked task by priority.
+
+### Phase 6: REPORT — Summary
 
 ```markdown
 ## Issues Processing Complete
 
-### Results
+### Priority Score Summary
 
-| Issue | Status   | Beads Task | Commit |
-| ----- | -------- | ---------- | ------ |
-| #NN   | Fixed    | buh-aaa    | abc123 |
-| #MM   | Fixed    | buh-bbb    | def456 |
-| #XX   | Deferred | buh-ccc    | —      |
+| Rank | Issue | Title | Score | Priority | Status | Beads | Commit |
+| ---- | ----- | ----- | ----- | -------- | ------ | ----- | ------ |
+| 1    | #42   | ...   | 27    | P0       | Fixed  | buh-a | abc123 |
+| 2    | #43   | ...   | 24    | P1       | Fixed  | buh-b | def456 |
+| 3    | #44   | ...   | 7     | P3       | Defer  | buh-c | —      |
+
+### Dependencies Resolved
+
+- buh-aaa → buh-bbb: Resolved (both fixed)
+- buh-bbb → buh-ddd: Resolved (both fixed)
 
 ### Deferred Issues (need user input)
 
-- #XX: <reason>
+- #XX: <reason — Complex/needs clarification/P3+ deprioritized>
 
 ### Commits Made
 
-- `abc123`: fix: <description>
-- `def456`: feat: <description>
+- `abc123`: fix(bot): <description> (gh-42)
+- `def456`: fix(auth): <description> (gh-43)
 
 ### Validation
 
 - Type Check: PASS
 - Build: PASS
+- Issues Closed: N/M
+- Beads Tasks Closed: N/M
 ```
 
 ---
 
 ## Issue Categories & Subagents
 
-| Pattern in Issue        | Category      | Subagent                             | Priority |
-| ----------------------- | ------------- | ------------------------------------ | -------- |
-| `silent failure`        | Bug           | Same domain subagent                 | P1       |
-| `not displayed`         | UI Bug        | `nextjs-ui-designer`                 | P2       |
-| `not editable`          | UI Bug        | `nextjs-ui-designer`                 | P2       |
-| `focus`, `scroll`       | UX            | `nextjs-ui-designer`                 | P2       |
-| `keyboard`, `a11y`      | Accessibility | `nextjs-ui-designer`                 | P3       |
-| `telegram`, `bot`       | Bot           | `telegraf-bot-middleware-specialist` | P2       |
-| `SLA`, `timer`, `alert` | SLA           | `sla-backend-specialist`             | P2       |
-| `database`, `migration` | DB            | `database-architect`                 | P2       |
-| `tRPC`, `API`           | Backend       | `fullstack-nextjs-specialist`        | P2       |
-| `type error`            | Types         | `typescript-types-specialist`        | P2       |
+| Pattern in Issue        | Category      | Subagent                             | Default Severity |
+| ----------------------- | ------------- | ------------------------------------ | ---------------- |
+| `crash`, `error 500`    | Bug Critical  | `problem-investigator`               | critical         |
+| `silent failure`        | Bug           | Same domain subagent                 | high             |
+| `not displayed`         | UI Bug        | `nextjs-ui-designer`                 | medium           |
+| `not editable`          | UI Bug        | `nextjs-ui-designer`                 | medium           |
+| `focus`, `scroll`       | UX            | `nextjs-ui-designer`                 | medium           |
+| `keyboard`, `a11y`      | Accessibility | `nextjs-ui-designer`                 | low              |
+| `telegram`, `bot`       | Bot           | `telegraf-bot-middleware-specialist` | high             |
+| `SLA`, `timer`, `alert` | SLA           | `sla-backend-specialist`             | high             |
+| `database`, `migration` | DB            | `database-architect`                 | high             |
+| `tRPC`, `API`           | Backend       | `fullstack-nextjs-specialist`        | medium           |
+| `type error`            | Types         | `typescript-types-specialist`        | medium           |
+| `security`, `auth`      | Security      | `vulnerability-fixer`                | critical         |
+| `performance`, `slow`   | Performance   | `performance-optimizer`              | medium           |
 
 ---
 
@@ -448,13 +482,16 @@ Before marking ANY issue as fixed:
 - [ ] Issue comments read and analyzed
 - [ ] Useful suggestions considered (adopted/rejected with reason)
 - [ ] Similar issues searched (Beads + GitHub)
-- [ ] Beads task exists for this issue
-- [ ] Context7 queried for relevant docs
+- [ ] Priority score calculated (severity + impact + likelihood)
+- [ ] Beads task exists with external-ref
+- [ ] Dependencies set in Beads (blocks/blocked-by)
+- [ ] Context7 queried for relevant library docs
 - [ ] Root cause identified (not just symptom)
 - [ ] Modified files reviewed with Read tool
 - [ ] `npm run type-check` passes
 - [ ] `npm run build` passes (or known pre-existing failures)
-- [ ] GitHub issue closed with comment
+- [ ] Committed with conventional commit (gh-NN reference)
+- [ ] GitHub issue closed with solution comment
 - [ ] Beads task closed with reason
 
 ---
@@ -462,38 +499,34 @@ Before marking ANY issue as fixed:
 ## Quick Commands Reference
 
 ```bash
-# Fetch issues
-gh issue list --state open --json number,title,labels,body
-
-# View specific issue
-gh issue view 123
-
-# View issue with comments (IMPORTANT!)
+# === FETCH ===
+gh issue list --state open --json number,title,labels,body,comments
 gh issue view 123 --comments
-
-# Get comments via API (structured)
-gh api repos/maslennikov-ig/BuhBot/issues/123/comments
-
-# Get comments as JSON for parsing
 gh api repos/maslennikov-ig/BuhBot/issues/123/comments --jq '.[] | {author: .user.login, body: .body}'
 
-# Search closed issues
+# === SEARCH SIMILAR ===
+bd search "keyword"
 gh issue list --state closed --search "keyword"
 
-# Close issue with comment
-gh issue close 123 --comment "Fixed in commit abc123"
+# === CREATE BEADS ===
+bd create --title="gh-123: Issue title" --type=bug --priority=1 --external-ref="gh-123" --deps parent:<epic-id>
+bd dep add <buh-child> <buh-parent>    # child depends on parent
+bd blocked                              # show blocked tasks
 
-# Add comment to issue
+# === EXECUTE ===
+bd update <id> --status=in_progress
+bd ready                                # what's unblocked?
+bd close <id> --reason="Fixed: ..."
+
+# === CLOSE GITHUB ===
+gh issue close 123 --comment "Fixed in commit abc123"
 gh issue comment 123 --body "Analysis: ..."
 
-# Create Beads task
-bd create "Issue title" -t bug -p 1 --external-ref="gh-123"
-
-# Search Beads
-bd search "keyword"
-
-# Close Beads task
-bd close buh-xxx --reason="Fixed"
+# === CONTEXT7 ===
+# Step 1: resolve library ID
+mcp__context7__resolve-library-id (e.g., "telegraf", "prisma", "next.js")
+# Step 2: query docs
+mcp__context7__query-docs (resolved ID + topic)
 ```
 
 ---
@@ -502,3 +535,4 @@ bd close buh-xxx --reason="Fixed"
 
 - CLAUDE.md: Main orchestration rules
 - Beads Guide: `.claude/docs/beads-quickstart.md`
+- Priority Scoring: `.claude/skills/calculate-priority-score/SKILL.md`

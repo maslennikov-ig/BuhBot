@@ -26,7 +26,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - LOGGING_LEVEL=warn
+      - LOG_LEVEL=warn
       # IPv4 first: fixes Node 20 "Happy Eyeballs" hanging on broken VDS IPv6
       - NODE_OPTIONS=--max-old-space-size=1536 --dns-result-order=ipv4first
     deploy:
@@ -95,7 +95,7 @@ services:
   # Read-only filesystem for security
   # ==========================================================================
   redis:
-    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy noeviction
     deploy:
       resources:
         limits:

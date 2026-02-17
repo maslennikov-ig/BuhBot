@@ -147,11 +147,13 @@ export async function scheduleNextEscalation(
       return;
     }
 
-    // Check if request is already answered
-    if (request.status === 'answered') {
-      logger.info('Request already answered, skipping escalation', {
+    // Check if request is in a terminal state (gh-125)
+    const TERMINAL_STATES = ['answered', 'closed'];
+    if (TERMINAL_STATES.includes(request.status)) {
+      logger.info('Request in terminal state, skipping escalation', {
         alertId,
         requestId: request.id,
+        status: request.status,
         service: 'escalation',
       });
       return;
@@ -172,16 +174,30 @@ export async function scheduleNextEscalation(
     const nextLevel = currentLevel + 1;
     const nextEscalationAt = new Date(Date.now() + escalationIntervalMin * 60 * 1000);
 
-    // Schedule escalation job
-    await scheduleEscalation(
-      {
-        requestId: alert.requestId,
-        alertType: 'breach', // Escalations are always breach-level
-        managerIds,
-        escalationLevel: nextLevel,
-      },
-      escalationIntervalMin
-    );
+    // Schedule escalation job with deduplication via deterministic jobId (gh-100)
+    try {
+      await scheduleEscalation(
+        {
+          requestId: alert.requestId,
+          alertType: 'breach', // Escalations are always breach-level
+          managerIds,
+          escalationLevel: nextLevel,
+        },
+        escalationIntervalMin
+      );
+    } catch (scheduleError) {
+      // BullMQ throws if job with same ID already exists (expected dedup)
+      const msg = scheduleError instanceof Error ? scheduleError.message : String(scheduleError);
+      if (msg.includes('already exists') || msg.includes('duplicat')) {
+        logger.info('Escalation job already scheduled (dedup)', {
+          alertId,
+          nextLevel,
+          service: 'escalation',
+        });
+      } else {
+        throw scheduleError;
+      }
+    }
 
     // Update alert with next escalation time
     await updateEscalationLevel(alertId, currentLevel, nextEscalationAt);

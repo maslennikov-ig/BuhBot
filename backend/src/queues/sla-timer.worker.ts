@@ -60,9 +60,10 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       return;
     }
 
-    // 2. Check if request is still pending (not answered)
-    if (request.status === 'answered') {
-      logger.info('Request already answered, SLA check skipped', {
+    // 2. Check if request is in a terminal state (gh-125)
+    const TERMINAL_STATES = ['answered', 'closed'];
+    if (TERMINAL_STATES.includes(request.status)) {
+      logger.info('Request in terminal state, SLA check skipped', {
         requestId,
         jobId: job.id,
         status: request.status,

@@ -19,6 +19,56 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 
 // ============================================================================
+// FAQ CACHE (gh-124)
+// ============================================================================
+
+/** Cached FAQ items with TTL to avoid DB query on every classification */
+interface CachedFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  keywords: string[];
+  usageCount: number;
+}
+
+let faqCache: CachedFaqItem[] | null = null;
+let faqCacheExpiry = 0;
+const FAQ_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedFaqItems(): Promise<CachedFaqItem[]> {
+  const now = Date.now();
+  if (faqCache && now < faqCacheExpiry) {
+    return faqCache;
+  }
+
+  const items = await prisma.faqItem.findMany({
+    select: {
+      id: true,
+      question: true,
+      answer: true,
+      keywords: true,
+      usageCount: true,
+    },
+  });
+
+  faqCache = items;
+  faqCacheExpiry = now + FAQ_CACHE_TTL_MS;
+
+  logger.debug('FAQ cache refreshed', {
+    itemCount: items.length,
+    service: 'faq-matcher',
+  });
+
+  return items;
+}
+
+/** Invalidate FAQ cache (call after FAQ CRUD operations) */
+export function invalidateFaqCache(): void {
+  faqCache = null;
+  faqCacheExpiry = 0;
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -62,16 +112,8 @@ export interface FAQMatch {
  */
 export async function findMatchingFAQ(messageText: string): Promise<FAQMatch | null> {
   try {
-    // 1. Get all FAQ items (no isActive field in schema, all items are active)
-    const faqItems = await prisma.faqItem.findMany({
-      select: {
-        id: true,
-        question: true,
-        answer: true,
-        keywords: true,
-        usageCount: true,
-      },
-    });
+    // 1. Get all FAQ items from cache (gh-124)
+    const faqItems = await getCachedFaqItems();
 
     if (faqItems.length === 0) {
       logger.debug('No FAQ items found in database', {
@@ -240,4 +282,5 @@ function calculateMatchScore(messageWords: string[], keywords: string[]): number
 export default {
   findMatchingFAQ,
   incrementUsageCount,
+  invalidateFaqCache,
 };

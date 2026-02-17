@@ -291,101 +291,108 @@ export const analyticsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
-      // Fetch all accountants
-      const accountants = await ctx.prisma.user.findMany({
+      // Single batch query for all requests in date range (gh-113: eliminates N+1)
+      const requests = await ctx.prisma.clientRequest.findMany({
+        where: {
+          assignedTo: { not: null },
+          receivedAt: {
+            gte: input.startDate,
+            lte: input.endDate,
+          },
+          classification: 'REQUEST',
+        },
         select: {
           id: true,
-          fullName: true,
+          assignedTo: true,
+          responseTimeMinutes: true,
+          chat: {
+            select: {
+              slaThresholdMinutes: true,
+            },
+          },
         },
       });
 
-      // Fetch requests for each accountant
-      const performance = await Promise.all(
-        accountants.map(async (accountant) => {
-          // Get requests assigned to this accountant
-          const requests = await ctx.prisma.clientRequest.findMany({
-            where: {
-              assignedTo: accountant.id,
-              receivedAt: {
-                gte: input.startDate,
-                lte: input.endDate,
-              },
-              classification: 'REQUEST', // Only count actual requests, not SPAM/GRATITUDE/CLARIFICATION
-            },
-            select: {
-              id: true,
-              responseTimeMinutes: true,
-              chat: {
-                select: {
-                  slaThresholdMinutes: true,
-                },
-              },
-            },
-          });
+      // Single batch query for all feedback responses
+      const allRequestIds = requests.map((r) => r.id);
+      const feedbackResponses = await ctx.prisma.feedbackResponse.findMany({
+        where: {
+          requestId: { in: allRequestIds },
+        },
+        select: {
+          requestId: true,
+          rating: true,
+        },
+      });
 
-          const totalRequests = requests.length;
+      // Build feedback lookup map
+      const feedbackByRequest = new Map<string, number[]>();
+      for (const fb of feedbackResponses) {
+        if (fb.requestId) {
+          const ratings = feedbackByRequest.get(fb.requestId) ?? [];
+          ratings.push(fb.rating);
+          feedbackByRequest.set(fb.requestId, ratings);
+        }
+      }
 
-          if (totalRequests === 0) {
-            return {
-              accountantId: accountant.id,
-              accountantName: accountant.fullName,
-              totalRequests: 0,
-              answeredWithinSLA: 0,
-              averageResponseMinutes: 0,
-              averageFeedbackRating: null,
-            };
+      // Fetch accountant names in one query
+      const accountantIds = [...new Set(requests.map((r) => r.assignedTo!))];
+      const accountants = await ctx.prisma.user.findMany({
+        where: { id: { in: accountantIds } },
+        select: { id: true, fullName: true },
+      });
+      const accountantMap = new Map<string, string>(accountants.map((a) => [a.id, a.fullName]));
+
+      // Group requests by accountant and compute metrics
+      const groupedByAccountant = new Map<
+        string,
+        { responseTimes: number[]; answeredWithinSLA: number; total: number; requestIds: string[] }
+      >();
+
+      for (const req of requests) {
+        if (!req.assignedTo) continue;
+        let group = groupedByAccountant.get(req.assignedTo);
+        if (!group) {
+          group = { responseTimes: [], answeredWithinSLA: 0, total: 0, requestIds: [] };
+          groupedByAccountant.set(req.assignedTo, group);
+        }
+        group.total++;
+        group.requestIds.push(req.id);
+        if (req.responseTimeMinutes !== null) {
+          group.responseTimes.push(req.responseTimeMinutes);
+          if (req.responseTimeMinutes <= req.chat.slaThresholdMinutes) {
+            group.answeredWithinSLA++;
           }
+        }
+      }
 
-          // Calculate SLA compliance
-          let answeredWithinSLA = 0;
-          const responseTimes: number[] = [];
+      // Build results
+      const performance = [...groupedByAccountant.entries()].map(([accountantId, group]) => {
+        const avgResponseMinutes =
+          group.responseTimes.length > 0
+            ? group.responseTimes.reduce((a, b) => a + b, 0) / group.responseTimes.length
+            : 0;
 
-          requests.forEach((request) => {
-            if (request.responseTimeMinutes !== null) {
-              responseTimes.push(request.responseTimeMinutes);
-              if (request.responseTimeMinutes <= request.chat.slaThresholdMinutes) {
-                answeredWithinSLA++;
-              }
-            }
-          });
+        // Collect ratings from pre-fetched feedback
+        const ratings: number[] = [];
+        for (const reqId of group.requestIds) {
+          const reqRatings = feedbackByRequest.get(reqId);
+          if (reqRatings) ratings.push(...reqRatings);
+        }
+        const avgRating =
+          ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
 
-          const averageResponseMinutes =
-            responseTimes.length > 0
-              ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-              : 0;
+        return {
+          accountantId,
+          accountantName: accountantMap.get(accountantId) ?? 'Unknown',
+          totalRequests: group.total,
+          answeredWithinSLA: group.answeredWithinSLA,
+          averageResponseMinutes: Math.round(avgResponseMinutes * 100) / 100,
+          averageFeedbackRating: avgRating !== null ? Math.round(avgRating * 100) / 100 : null,
+        };
+      });
 
-          // Get feedback ratings for this accountant's chats
-          const requestIds = requests.map((r) => r.id);
-          const feedbackResponses = await ctx.prisma.feedbackResponse.findMany({
-            where: {
-              requestId: {
-                in: requestIds,
-              },
-            },
-            select: {
-              rating: true,
-            },
-          });
-
-          const averageFeedbackRating =
-            feedbackResponses.length > 0
-              ? feedbackResponses.reduce((sum, f) => sum + f.rating, 0) / feedbackResponses.length
-              : null;
-
-          return {
-            accountantId: accountant.id,
-            accountantName: accountant.fullName,
-            totalRequests,
-            answeredWithinSLA,
-            averageResponseMinutes: Math.round(averageResponseMinutes * 100) / 100,
-            averageFeedbackRating:
-              averageFeedbackRating !== null ? Math.round(averageFeedbackRating * 100) / 100 : null,
-          };
-        })
-      );
-
-      // Filter out accountants with no requests
-      return performance.filter((p: { totalRequests: number }) => p.totalRequests > 0);
+      return performance;
     }),
 
   /**
@@ -855,7 +862,11 @@ export const analyticsRouter = router({
 
       // --- Cache write (non-blocking, fire-and-forget) ---
       redis
-        .setex(DASHBOARD_CACHE_KEY, DASHBOARD_CACHE_TTL, JSON.stringify(result))
+        .setex(
+          DASHBOARD_CACHE_KEY,
+          DASHBOARD_CACHE_TTL,
+          JSON.stringify(result, (_, v) => (typeof v === 'bigint' ? v.toString() : v))
+        )
         .catch((error: unknown) => {
           logger.warn('Dashboard cache write failed', {
             error: error instanceof Error ? error.message : String(error),
@@ -1311,7 +1322,7 @@ export const analyticsRouter = router({
       // Generate content based on format
       let content: string;
       if (input.format === 'json') {
-        content = JSON.stringify(data, null, 2);
+        content = JSON.stringify(data, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2);
       } else {
         // CSV format
         const csvRows = [headers.join(',')];

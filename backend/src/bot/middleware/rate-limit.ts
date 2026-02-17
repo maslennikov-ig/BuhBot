@@ -89,16 +89,19 @@ export function rateLimitMiddleware(options?: RateLimitOptions): Middleware<Cont
 
     try {
       // Execute Redis commands in a pipeline for efficiency
+      // Order: remove old → add current → count → expire
+      // Adding BEFORE counting prevents race condition where concurrent
+      // pipelines both see count=max-1 and both pass through (gh-117)
       const pipeline = redis.pipeline();
 
       // Remove old entries outside the current window
       pipeline.zremrangebyscore(key, '-inf', windowStart);
 
-      // Count remaining entries in the window
-      pipeline.zcard(key);
-
-      // Add current request timestamp
+      // Add current request timestamp BEFORE counting
       pipeline.zadd(key, now, `${now}-${Math.random()}`);
+
+      // Count entries in the window (includes current request)
+      pipeline.zcard(key);
 
       // Set expiry to clean up after window passes
       pipeline.expire(key, Math.ceil(config.windowMs / 1000) + 1);
@@ -107,29 +110,29 @@ export function rateLimitMiddleware(options?: RateLimitOptions): Middleware<Cont
 
       // Check if pipeline executed successfully
       if (!results) {
-        logger.warn('Rate limit pipeline returned null, allowing request', {
+        logger.warn('Rate limit pipeline returned null, denying request', {
           userId,
           service: 'rate-limiter',
         });
-        return next();
+        return;
       }
 
-      // Get count from second command (zcard)
-      const countResult = results[1];
+      // Get count from third command (zcard) — index 2 after reorder
+      const countResult = results[2];
       if (!countResult || countResult[0]) {
-        // Error in zcard command, allow request but log
-        logger.warn('Rate limit zcard error, allowing request', {
+        // Error in zcard command, fail-closed for safety (gh-97)
+        logger.warn('Rate limit zcard error, denying request', {
           userId,
           error: countResult?.[0],
           service: 'rate-limiter',
         });
-        return next();
+        return;
       }
 
       const currentCount = countResult[1] as number;
 
-      // Check if rate limit exceeded
-      if (currentCount >= config.maxRequests) {
+      // Check if rate limit exceeded (count includes current request)
+      if (currentCount > config.maxRequests) {
         logger.warn('Rate limit exceeded', {
           userId,
           username: ctx.from?.username,
@@ -160,16 +163,21 @@ export function rateLimitMiddleware(options?: RateLimitOptions): Middleware<Cont
       // Request allowed, continue to next middleware
       return next();
     } catch (error) {
-      // Redis error - log and allow request to prevent blocking users
-      logger.error('Rate limit middleware Redis error', {
+      // Redis error - fail-closed to prevent abuse when Redis is down (gh-97)
+      logger.error('Rate limit middleware Redis error, denying request', {
         userId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         service: 'rate-limiter',
       });
 
-      // Fail open - allow request if Redis is unavailable
-      return next();
+      // Fail closed - deny request if Redis is unavailable
+      try {
+        await ctx.reply(RATE_LIMIT_MESSAGE);
+      } catch {
+        // Ignore reply errors
+      }
+      return;
     }
   };
 }

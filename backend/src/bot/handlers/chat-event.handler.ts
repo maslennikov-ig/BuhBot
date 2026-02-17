@@ -16,6 +16,17 @@ import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 
+/** Max chat title length stored in DB (gh-120) */
+const MAX_TITLE_LENGTH = 255;
+
+/** Sanitize chat title: trim, remove control chars, limit length (gh-120) */
+function sanitizeChatTitle(title: string): string {
+  return title
+    .replace(/\p{C}/gu, '') // strip control/invisible Unicode characters
+    .trim()
+    .slice(0, MAX_TITLE_LENGTH);
+}
+
 /**
  * Register chat event handlers
  */
@@ -30,7 +41,8 @@ export function registerChatEventHandler(): void {
       const chatType = update.chat.type;
       const newStatus = update.new_chat_member.status;
       const oldStatus = update.old_chat_member.status;
-      const title = 'title' in update.chat ? update.chat.title : 'Private Chat';
+      const rawTitle = 'title' in update.chat ? update.chat.title : 'Private Chat';
+      const title = sanitizeChatTitle(rawTitle);
 
       logger.info('Processing my_chat_member update', {
         chatId,
@@ -123,7 +135,7 @@ export function registerChatEventHandler(): void {
   bot.on('new_chat_title', async (ctx) => {
     try {
       const chatId = ctx.chat.id;
-      const newTitle = ctx.message.new_chat_title;
+      const newTitle = sanitizeChatTitle(ctx.message.new_chat_title);
 
       logger.info('Chat title changed', { chatId, newTitle, service: 'chat-event-handler' });
 

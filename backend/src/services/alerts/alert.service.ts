@@ -83,6 +83,27 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
   });
 
   try {
+    // Idempotency: check for existing unresolved alert at same level (gh-99)
+    const existingAlert = await prisma.slaAlert.findFirst({
+      where: {
+        requestId,
+        alertType,
+        escalationLevel,
+        resolvedAction: null,
+      },
+    });
+
+    if (existingAlert) {
+      logger.info('Duplicate alert skipped (already exists)', {
+        existingAlertId: existingAlert.id,
+        requestId,
+        alertType,
+        escalationLevel,
+        service: 'alert',
+      });
+      return existingAlert;
+    }
+
     // Get request with chat and manager info
     const request = await prisma.clientRequest.findUnique({
       where: { id: requestId },

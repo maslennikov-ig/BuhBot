@@ -104,6 +104,20 @@ export function registerSurveyHandler(): void {
         return;
       }
 
+      // Authorization: verify callback comes from the same chat as delivery (gh-98)
+      const callbackChatId = ctx.chat?.id;
+      if (!callbackChatId || BigInt(callbackChatId) !== delivery.chatId) {
+        logger.warn('Survey response from unauthorized chat', {
+          deliveryId,
+          expectedChatId: delivery.chatId.toString(),
+          actualChatId: callbackChatId?.toString(),
+          userId: ctx.from?.id,
+          service: 'survey-handler',
+        });
+        await ctx.answerCbQuery('Unauthorized');
+        return;
+      }
+
       if (delivery.status === 'responded') {
         await ctx.answerCbQuery('Already responded');
         await ctx.editMessageText(ALREADY_RESPONDED_MESSAGE, { parse_mode: 'Markdown' });

@@ -5,6 +5,25 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.1...buhbot-v0.14.2) (2026-02-17)
+
+
+### Bug Fixes
+
+* **backend:** address code review findings for p2 batch ([5a580f4](https://github.com/maslennikov-ig/BuhBot/commit/5a580f4955f884f5bac9f3c302511e9f21cb7867))
+* **backend:** address p2 bugs from github issues batch ([eadac18](https://github.com/maslennikov-ig/BuhBot/commit/eadac189d086f9c994488b518876cc87d23e459e))
+* **backend:** address p2-p3 bugs and schema improvements ([bae6114](https://github.com/maslennikov-ig/BuhBot/commit/bae61144edeb24fa7351cdba6b1e5b73c492caea))
+* **backend:** address remaining 9 p2 bugs from github issues ([1abedce](https://github.com/maslennikov-ig/BuhBot/commit/1abedcef1802549fccf4a598e82e42a1c548d724))
+* **backend:** address remaining p2 bugs from github issues ([0c0ba83](https://github.com/maslennikov-ig/BuhBot/commit/0c0ba838e0e96c52f5c6966f4bd2cb0d708313b0))
+* **backend:** reduce data retention batch size for transaction safety ([9fb5da2](https://github.com/maslennikov-ig/BuhBot/commit/9fb5da26eb8a809efc058abfb2c295520bd3c646))
+* **backend:** remove sslmode from url validation ([3cbbf45](https://github.com/maslennikov-ig/BuhBot/commit/3cbbf45119ae55627835220d0e65fa45f2e16f7b))
+* **backend:** resolve ci failures in format and type-check ([b443db6](https://github.com/maslennikov-ig/BuhBot/commit/b443db66b6eedcace5b127d59482dfc10e55c59c))
+* **ci:** replace rsync with git-based vds sync ([56d71e7](https://github.com/maslennikov-ig/BuhBot/commit/56d71e778b3fc004a0a48c07ceb3d420c374c99a))
+* **security:** address 6 p1 security and stability bugs ([195187f](https://github.com/maslennikov-ig/BuhBot/commit/195187f2719fcf1fe7ae27d08ceb801911350045))
+* **security:** address code review findings for p1 fixes ([b3c1eed](https://github.com/maslennikov-ig/BuhBot/commit/b3c1eed5cfa036ba215ddde9b7cac6da14a2d3c1))
+* **security:** address critical security and data integrity bugs ([a55d148](https://github.com/maslennikov-ig/BuhBot/commit/a55d1481a7405f0f8aff55fc44c5868bcec2faf8))
+* **security:** complete code review recommendations ([28417da](https://github.com/maslennikov-ig/BuhBot/commit/28417da64f99e54e171bae27f8d43c94a5b4e552))
+
 ## [0.14.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.0...buhbot-v0.14.1) (2026-02-16)
 
 

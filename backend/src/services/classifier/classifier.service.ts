@@ -288,12 +288,12 @@ export class ClassifierService {
       finalResult.model === 'keyword-fallback' &&
       finalResult.confidence < this.config.keywordConfidenceThreshold
     ) {
-      // Very low confidence - default to REQUEST (safer to track)
+      // Very low confidence - default to CLARIFICATION (logged but no SLA timer)
       finalResult = {
-        classification: 'REQUEST',
+        classification: 'CLARIFICATION',
         confidence: this.config.keywordConfidenceThreshold,
         model: 'keyword-fallback',
-        reasoning: 'Low confidence classification, defaulting to REQUEST for safety',
+        reasoning: 'Low confidence classification, defaulting to CLARIFICATION for manual review',
       };
     }
 

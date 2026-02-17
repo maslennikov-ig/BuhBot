@@ -78,6 +78,15 @@ const SPAM_PATTERNS: RegExp[] = [
   /^отлично$/i,
   /^прекрасно$/i,
   /^здорово$/i,
+
+  // @mention-only messages (not a question, just tagging someone)
+  /^@\w+(\s+@\w+)*\s*$/,
+
+  // Confirmations with optional thanks
+  /^(приняли|принято|получили|получено)\.?\s*(спасибо)?!?\s*$/i,
+
+  // Waiting/expectation statements (not questions)
+  /^(жду|ждём|ждем)\s/i,
 ];
 
 // GRATITUDE patterns - specific thanks expressions
@@ -92,6 +101,12 @@ const GRATITUDE_PATTERNS: RegExp[] = [
   /замечательно/i, // "Замечательно!"
   /отличная\s+работа/i, // "Отличная работа!"
   /спас[иш]б[оа]\s+за\s+(помощь|работу)/i, // "Спасибо за помощь"
+
+  // "Приняли. Спасибо!" - acceptance + thanks
+  /приняли.*спасибо/i,
+
+  // "Очень ждем. Спасибо!" - waiting + thanks
+  /жд[уёе][мт]?.*спасибо/i,
 ];
 
 // CLARIFICATION patterns - follow-ups, additional context

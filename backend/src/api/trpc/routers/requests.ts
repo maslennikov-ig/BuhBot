@@ -289,6 +289,20 @@ export const requestsRouter = router({
         });
       }
 
+      // Authorization: observers can only view requests in chats assigned to them
+      if (!['admin', 'manager'].includes(ctx.user.role)) {
+        const chat = await ctx.prisma.chat.findUnique({
+          where: { id: request.chatId },
+          select: { assignedAccountantId: true },
+        });
+        if (chat?.assignedAccountantId !== ctx.user.id) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied. You can only view requests in chats assigned to you.',
+          });
+        }
+      }
+
       return {
         request: {
           id: request.id,

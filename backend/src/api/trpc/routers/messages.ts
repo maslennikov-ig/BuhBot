@@ -110,6 +110,17 @@ export const messagesRouter = router({
         });
       }
 
+      // Authorization: observers can only view messages in chats assigned to them
+      if (
+        !['admin', 'manager'].includes(ctx.user.role) &&
+        chat.assignedAccountantId !== ctx.user.id
+      ) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied. You can only view messages in chats assigned to you.',
+        });
+      }
+
       // Build cursor condition (always fetch older messages for infinite scroll)
       let cursorCondition = {};
       if (input.cursor) {

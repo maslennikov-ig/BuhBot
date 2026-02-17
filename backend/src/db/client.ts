@@ -47,16 +47,24 @@ export function validateDatabaseUrl(url: string | undefined): boolean {
     return false;
   }
 
-  // Check for SSL/TLS requirement
-  const hasSSL =
-    url.includes('sslmode=require') ||
-    url.includes('ssl=true') ||
-    url.includes('?sslmode=') ||
-    url.includes('&sslmode=');
+  // Check for SSL/TLS requirement (production only)
+  if (process.env['NODE_ENV'] === 'production') {
+    // Reject weak SSL modes that are vulnerable to MITM
+    if (url.includes('sslmode=allow') || url.includes('sslmode=prefer')) {
+      logger.error('DATABASE_URL uses weak sslmode (allow/prefer) - use require or higher');
+      return false;
+    }
 
-  if (!hasSSL && process.env['NODE_ENV'] === 'production') {
-    logger.error('DATABASE_URL missing sslmode=require - SSL is required in production');
-    return false;
+    const hasStrongSSL =
+      url.includes('sslmode=require') ||
+      url.includes('sslmode=verify-ca') ||
+      url.includes('sslmode=verify-full') ||
+      url.includes('ssl=true');
+
+    if (!hasStrongSSL) {
+      logger.error('DATABASE_URL missing sslmode=require - SSL is required in production');
+      return false;
+    }
   }
 
   // Check for connection pool settings

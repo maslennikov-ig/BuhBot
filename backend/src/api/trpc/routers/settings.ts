@@ -61,7 +61,7 @@ const UpdateGlobalSettingsInput = z.object({
   aiConfidenceThreshold: z.number().min(0).max(1).optional(),
   messagePreviewLength: z.number().min(100).max(1000).optional(),
   openrouterApiKey: z.string().min(1).optional(),
-  openrouterModel: z.string().optional(),
+  openrouterModel: z.string().min(1).optional(),
 
   // Data Retention
   dataRetentionYears: z.number().min(1).max(10).optional(),

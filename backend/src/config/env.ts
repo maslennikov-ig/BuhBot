@@ -39,7 +39,7 @@ const envSchema = z.object({
   // Redis (for BullMQ)
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().transform(Number).pipe(z.number().min(1).max(65535)).default('6379'),
-  REDIS_PASSWORD: z.string().optional(),
+  REDIS_PASSWORD: z.string().min(1).optional(),
   REDIS_DB: z.string().transform(Number).pipe(z.number().min(0).max(15)).default('0'),
 
   // Telegram Bot
@@ -58,6 +58,7 @@ const envSchema = z.object({
     .describe('Secret token for webhook signature validation (min 32 chars)'),
   TELEGRAM_ADMIN_CHAT_ID: z
     .string()
+    .regex(/^-?\d+$/, 'Must be a numeric Telegram chat ID')
     .optional()
     .describe('Telegram chat ID for admin alerts and notifications'),
 

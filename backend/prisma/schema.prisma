@@ -289,7 +289,7 @@ model ClientRequest {
   parentMessageId  BigInt?        @map("parent_message_id") @db.BigInt  // reply_to_message_id from Telegram
 
   // Relations
-  chat              Chat               @relation(fields: [chatId], references: [id])
+  chat              Chat               @relation(fields: [chatId], references: [id], onDelete: Cascade)
   assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
   relatedRequest    ClientRequest?     @relation("DuplicateOf", fields: [relatedRequestId], references: [id])
   duplicates        ClientRequest[]    @relation("DuplicateOf")
@@ -402,8 +402,8 @@ model FeedbackResponse {
   submittedAt    DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
 
   // Relations
-  chat     Chat            @relation(fields: [chatId], references: [id])
-  request  ClientRequest?  @relation(fields: [requestId], references: [id])
+  chat     Chat            @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  request  ClientRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
   survey   FeedbackSurvey? @relation(fields: [surveyId], references: [id])
   delivery SurveyDelivery? @relation(fields: [deliveryId], references: [id])
 
@@ -459,7 +459,7 @@ model SurveyDelivery {
 
   // Relations
   survey   FeedbackSurvey    @relation(fields: [surveyId], references: [id])
-  chat     Chat              @relation(fields: [chatId], references: [id])
+  chat     Chat              @relation(fields: [chatId], references: [id], onDelete: Cascade)
   response FeedbackResponse?
 
   @@unique([surveyId, chatId], name: "unique_survey_chat")
@@ -482,7 +482,7 @@ model WorkingSchedule {
   timezone  String   @default("Europe/Moscow") // IANA timezone (T010)
 
   // Relations
-  chat Chat @relation(fields: [chatId], references: [id])
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@unique([chatId, dayOfWeek], name: "unique_chat_day")
   @@index([chatId])

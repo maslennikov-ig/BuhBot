@@ -26,13 +26,34 @@ import {
 import { queueConfig } from '../config/queue.config.js';
 
 const SERVICE_NAME = 'sla-reconciliation-job';
+const RECONCILIATION_LOCK_KEY = 'lock:sla-reconciliation';
+const RECONCILIATION_LOCK_TTL = 300; // 5 minutes max
 
 /**
  * Process SLA reconciliation job
+ *
+ * Uses Redis distributed lock to prevent concurrent runs (gh-109)
  */
 async function processSlaReconciliation(
   job: Job<SlaReconciliationJobData>
 ): Promise<RecoveryResult> {
+  // Acquire distributed lock to prevent concurrent reconciliation (gh-109)
+  const lockAcquired = await redis.set(
+    RECONCILIATION_LOCK_KEY,
+    job.id ?? 'unknown',
+    'EX',
+    RECONCILIATION_LOCK_TTL,
+    'NX'
+  );
+
+  if (!lockAcquired) {
+    logger.info('SLA reconciliation already running, skipping', {
+      jobId: job.id,
+      service: SERVICE_NAME,
+    });
+    return { totalPending: 0, rescheduled: 0, breached: 0, alreadyActive: 0, failed: 0 };
+  }
+
   const startTime = Date.now();
 
   logger.debug('Starting SLA reconciliation', {
@@ -41,26 +62,33 @@ async function processSlaReconciliation(
     service: SERVICE_NAME,
   });
 
-  const result = await recoverPendingSlaTimers();
+  try {
+    const result = await recoverPendingSlaTimers();
 
-  const durationMs = Date.now() - startTime;
+    const durationMs = Date.now() - startTime;
 
-  if (result.totalPending > 0) {
-    logger.info('SLA reconciliation completed', {
-      ...result,
-      durationMs,
-      jobId: job.id,
-      service: SERVICE_NAME,
-    });
-  } else {
-    logger.debug('SLA reconciliation completed (no pending timers)', {
-      durationMs,
-      jobId: job.id,
-      service: SERVICE_NAME,
+    if (result.totalPending > 0) {
+      logger.info('SLA reconciliation completed', {
+        ...result,
+        durationMs,
+        jobId: job.id,
+        service: SERVICE_NAME,
+      });
+    } else {
+      logger.debug('SLA reconciliation completed (no pending timers)', {
+        durationMs,
+        jobId: job.id,
+        service: SERVICE_NAME,
+      });
+    }
+
+    return result;
+  } finally {
+    // Release the distributed lock (gh-109)
+    await redis.del(RECONCILIATION_LOCK_KEY).catch(() => {
+      // Ignore lock release errors
     });
   }
-
-  return result;
 }
 
 /** Worker instance (created lazily) */

@@ -502,11 +502,24 @@ export const feedbackRouter = router({
 
 /**
  * Escape a string value for CSV
- * Wraps in quotes if contains comma, newline, or quote
+ * Wraps in quotes if contains comma, newline, or quote.
+ * Prefixes formula-triggering characters to prevent CSV injection (gh-114).
  */
 function escapeCSV(value: string): string {
-  if (value.includes(',') || value.includes('\n') || value.includes('"')) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let escaped = value;
+
+  // Prevent CSV injection: prefix formula-triggering characters (gh-114)
+  if (/^[=+\-@\t\r]/.test(escaped)) {
+    escaped = `'${escaped}`;
   }
-  return value;
+
+  if (
+    escaped.includes(',') ||
+    escaped.includes('\n') ||
+    escaped.includes('"') ||
+    escaped !== value
+  ) {
+    return `"${escaped.replace(/"/g, '""')}"`;
+  }
+  return escaped;
 }

@@ -402,8 +402,20 @@ export async function recordResponse(
     throw new Error('Survey is no longer accepting responses');
   }
 
-  // Create feedback response and update delivery in transaction
+  // Create feedback response and update delivery atomically (gh-101)
+  // Re-check delivery status inside transaction to prevent TOCTOU race.
+  // The @unique constraint on deliveryId provides DB-level dedup as last resort.
   const result = await prisma.$transaction(async (tx) => {
+    // Re-fetch delivery inside transaction to prevent TOCTOU (gh-101)
+    const freshDelivery = await tx.surveyDelivery.findUnique({
+      where: { id: deliveryId },
+      select: { status: true },
+    });
+
+    if (freshDelivery?.status === 'responded') {
+      throw new Error('Already responded to this survey');
+    }
+
     const feedback = await tx.feedbackResponse.create({
       data: {
         chatId: delivery.chatId,

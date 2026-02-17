@@ -131,11 +131,13 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
       return;
     }
 
-    // Check if request is already answered
-    if (request.status === 'answered') {
-      logger.info('Request already answered, skipping alert', {
+    // Check if request is in a terminal state (gh-125)
+    const TERMINAL_STATES = ['answered', 'closed'];
+    if (TERMINAL_STATES.includes(request.status)) {
+      logger.info('Request in terminal state, skipping alert', {
         requestId,
         jobId: job.id,
+        status: request.status,
         service: 'alert-worker',
       });
       return;
@@ -143,6 +145,20 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
 
     // Get or create alert ID
     const alertId = job.data.alertId ?? request.slaAlerts[0]?.id;
+
+    // Idempotency: skip if alert was already delivered (gh-107)
+    if (alertId) {
+      const existingAlert = request.slaAlerts[0];
+      if (existingAlert?.deliveryStatus === 'delivered') {
+        logger.info('Alert already delivered, skipping duplicate processing', {
+          alertId,
+          requestId,
+          jobId: job.id,
+          service: 'alert-worker',
+        });
+        return;
+      }
+    }
     const chatId = String(request.chatId);
 
     // Format message if not pre-formatted

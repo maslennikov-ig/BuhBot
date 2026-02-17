@@ -343,172 +343,183 @@ export const chatsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify chat exists before updating
-      const existingChat = await ctx.prisma.chat.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existingChat) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: `Chat with ID ${input.id} not found`,
-        });
-      }
-
-      // Validate: Cannot enable SLA without managers configured
-      if (input.slaEnabled === true && existingChat.slaEnabled === false) {
-        // Check for chat-level managers (if provided in input, use that; otherwise use existing)
-        const chatManagers = existingChat.managerTelegramIds || [];
-
-        // Check for global fallback managers
-        const globalSettings = await ctx.prisma.globalSettings.findUnique({
-          where: { id: 'default' },
-          select: { globalManagerIds: true },
-        });
-        const globalManagers = globalSettings?.globalManagerIds || [];
-
-        const hasManagers = chatManagers.length > 0 || globalManagers.length > 0;
-
-        if (!hasManagers) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message:
-              'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
-          });
-        }
-      }
-
-      // Warn if SLA is active but no managers configured (monitoring)
-      if (
-        (input.slaEnabled === true ||
-          (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
-        existingChat.slaEnabled
-      ) {
-        const chatManagers = existingChat.managerTelegramIds || [];
-        const globalSettings = await ctx.prisma.globalSettings.findUnique({
-          where: { id: 'default' },
-          select: { globalManagerIds: true },
-        });
-        const globalManagers = globalSettings?.globalManagerIds || [];
-        if (chatManagers.length === 0 && globalManagers.length === 0) {
-          logger.warn('Chat has SLA enabled but no managers configured for notifications', {
-            chatId: input.id,
-            slaEnabled: true,
-          });
-        }
-      }
-
-      // Build update data from optional fields
-      const data: Prisma.ChatUncheckedUpdateInput = {};
-      if (input.assignedAccountantId !== undefined) {
-        data.assignedAccountantId = input.assignedAccountantId;
-      }
-      if (input.slaEnabled !== undefined) {
-        data.slaEnabled = input.slaEnabled;
-      }
-      if (input.slaThresholdMinutes !== undefined) {
-        data.slaThresholdMinutes = input.slaThresholdMinutes;
-      }
-      if (input.clientTier !== undefined) {
-        data.clientTier = input.clientTier;
-      }
-      if (input.notifyInChatOnBreach !== undefined) {
-        // Security: Block enabling in-chat breach notifications in production
-        // This setting leaks internal SLA data (breach time, accountant info) to client-facing chats
-        if (input.notifyInChatOnBreach === true && isProduction()) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message:
-              'Уведомления о нарушениях SLA в чат запрещены в production-режиме. Эта функция предназначена только для тестирования.',
-          });
-        }
-        data.notifyInChatOnBreach = input.notifyInChatOnBreach;
-      }
-
-      // Start with input usernames
-      const finalUsernames = [...input.accountantUsernames];
-
-      // AUTO-ADD: If assignedAccountantId is set, add their telegramUsername to list
-      if (input.assignedAccountantId) {
-        const assignedUser = await ctx.prisma.user.findUnique({
-          where: { id: input.assignedAccountantId },
-          select: { telegramUsername: true },
-        });
-
-        if (assignedUser?.telegramUsername) {
-          const normalizedUsername = assignedUser.telegramUsername.replace(/^@/, '').toLowerCase();
-
-          // Add to list if not already present
-          if (!finalUsernames.includes(normalizedUsername)) {
-            finalUsernames.push(normalizedUsername);
-          }
-        }
-      }
-
-      data.accountantUsernames = finalUsernames;
-
-      // Validate usernames and auto-populate Telegram IDs (gh-68)
-      const warnings: string[] = [];
-      const telegramIds: bigint[] = [];
-
-      if (finalUsernames.length > 0) {
-        const knownUsers = await ctx.prisma.user.findMany({
-          where: {
-            telegramUsername: { in: finalUsernames, mode: 'insensitive' },
-          },
-          select: { telegramUsername: true, telegramId: true },
-        });
-        const knownSet = new Set(
-          knownUsers.map((u) => u.telegramUsername?.toLowerCase()).filter(Boolean)
+      // Use interactive transaction with row-level lock to prevent race condition (gh-111)
+      return ctx.prisma.$transaction(async (tx) => {
+        // Acquire row-level lock (SELECT FOR UPDATE prevents concurrent modification)
+        await tx.$queryRawUnsafe(
+          `SELECT id FROM "public"."chats" WHERE "id" = $1 FOR UPDATE`,
+          BigInt(input.id)
         );
-        const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
-        if (unverified.length > 0) {
-          warnings.push(
-            `Следующие @username не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. Убедитесь, что они корректны.`
-          );
+
+        // Now safely read the locked row via Prisma
+        const existingChat = await tx.chat.findUnique({
+          where: { id: input.id },
+        });
+
+        if (!existingChat) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Chat with ID ${input.id} not found`,
+          });
         }
 
-        // Collect Telegram IDs from known users (gh-68)
-        for (const user of knownUsers) {
-          if (user.telegramId) {
-            telegramIds.push(user.telegramId);
+        // Validate: Cannot enable SLA without managers configured
+        if (input.slaEnabled === true && existingChat.slaEnabled === false) {
+          // Check for chat-level managers (if provided in input, use that; otherwise use existing)
+          const chatManagers = existingChat.managerTelegramIds || [];
+
+          // Check for global fallback managers
+          const globalSettings = await tx.globalSettings.findUnique({
+            where: { id: 'default' },
+            select: { globalManagerIds: true },
+          });
+          const globalManagers = globalSettings?.globalManagerIds || [];
+
+          const hasManagers = chatManagers.length > 0 || globalManagers.length > 0;
+
+          if (!hasManagers) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message:
+                'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
+            });
           }
         }
-      }
 
-      // Also add assigned accountant's Telegram ID if available
-      if (input.assignedAccountantId) {
-        const assignedUser = await ctx.prisma.user.findUnique({
-          where: { id: input.assignedAccountantId },
-          select: { telegramId: true },
-        });
-        if (assignedUser?.telegramId && !telegramIds.includes(assignedUser.telegramId)) {
-          telegramIds.push(assignedUser.telegramId);
+        // Warn if SLA is active but no managers configured (monitoring)
+        if (
+          (input.slaEnabled === true ||
+            (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
+          existingChat.slaEnabled
+        ) {
+          const chatManagers = existingChat.managerTelegramIds || [];
+          const globalSettings = await tx.globalSettings.findUnique({
+            where: { id: 'default' },
+            select: { globalManagerIds: true },
+          });
+          const globalManagers = globalSettings?.globalManagerIds || [];
+          if (chatManagers.length === 0 && globalManagers.length === 0) {
+            logger.warn('Chat has SLA enabled but no managers configured for notifications', {
+              chatId: input.id,
+              slaEnabled: true,
+            });
+          }
         }
-      }
 
-      data.accountantTelegramIds = telegramIds;
+        // Build update data from optional fields
+        const data: Prisma.ChatUncheckedUpdateInput = {};
+        if (input.assignedAccountantId !== undefined) {
+          data.assignedAccountantId = input.assignedAccountantId;
+        }
+        if (input.slaEnabled !== undefined) {
+          data.slaEnabled = input.slaEnabled;
+        }
+        if (input.slaThresholdMinutes !== undefined) {
+          data.slaThresholdMinutes = input.slaThresholdMinutes;
+        }
+        if (input.clientTier !== undefined) {
+          data.clientTier = input.clientTier;
+        }
+        if (input.notifyInChatOnBreach !== undefined) {
+          // Security: Block enabling in-chat breach notifications in production
+          // This setting leaks internal SLA data (breach time, accountant info) to client-facing chats
+          if (input.notifyInChatOnBreach === true && isProduction()) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message:
+                'Уведомления о нарушениях SLA в чат запрещены в production-режиме. Эта функция предназначена только для тестирования.',
+            });
+          }
+          data.notifyInChatOnBreach = input.notifyInChatOnBreach;
+        }
 
-      // Update chat
-      const updatedChat = await ctx.prisma.chat.update({
-        where: { id: input.id },
-        data,
-        select: {
-          id: true,
-          assignedAccountantId: true,
-          slaEnabled: true,
-          slaThresholdMinutes: true,
-          clientTier: true,
-          notifyInChatOnBreach: true,
-          updatedAt: true,
-        },
-      });
+        // Start with input usernames
+        const finalUsernames = [...input.accountantUsernames];
 
-      return {
-        success: true,
-        chat: { ...updatedChat, id: safeNumberFromBigInt(updatedChat.id) },
-        warnings,
-      };
+        // AUTO-ADD: If assignedAccountantId is set, add their telegramUsername to list
+        if (input.assignedAccountantId) {
+          const assignedUser = await tx.user.findUnique({
+            where: { id: input.assignedAccountantId },
+            select: { telegramUsername: true },
+          });
+
+          if (assignedUser?.telegramUsername) {
+            const normalizedUsername = assignedUser.telegramUsername
+              .replace(/^@/, '')
+              .toLowerCase();
+
+            // Add to list if not already present
+            if (!finalUsernames.includes(normalizedUsername)) {
+              finalUsernames.push(normalizedUsername);
+            }
+          }
+        }
+
+        data.accountantUsernames = finalUsernames;
+
+        // Validate usernames and auto-populate Telegram IDs (gh-68)
+        const warnings: string[] = [];
+        const telegramIds: bigint[] = [];
+
+        if (finalUsernames.length > 0) {
+          const knownUsers = await tx.user.findMany({
+            where: {
+              telegramUsername: { in: finalUsernames, mode: 'insensitive' },
+            },
+            select: { telegramUsername: true, telegramId: true },
+          });
+          const knownSet = new Set(
+            knownUsers.map((u) => u.telegramUsername?.toLowerCase()).filter(Boolean)
+          );
+          const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
+          if (unverified.length > 0) {
+            warnings.push(
+              `Следующие @username не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. Убедитесь, что они корректны.`
+            );
+          }
+
+          // Collect Telegram IDs from known users (gh-68)
+          for (const user of knownUsers) {
+            if (user.telegramId) {
+              telegramIds.push(user.telegramId);
+            }
+          }
+        }
+
+        // Also add assigned accountant's Telegram ID if available
+        if (input.assignedAccountantId) {
+          const assignedUser = await tx.user.findUnique({
+            where: { id: input.assignedAccountantId },
+            select: { telegramId: true },
+          });
+          if (assignedUser?.telegramId && !telegramIds.includes(assignedUser.telegramId)) {
+            telegramIds.push(assignedUser.telegramId);
+          }
+        }
+
+        data.accountantTelegramIds = telegramIds;
+
+        // Update chat (within same transaction, row is already locked)
+        const updatedChat = await tx.chat.update({
+          where: { id: input.id },
+          data,
+          select: {
+            id: true,
+            assignedAccountantId: true,
+            slaEnabled: true,
+            slaThresholdMinutes: true,
+            clientTier: true,
+            notifyInChatOnBreach: true,
+            updatedAt: true,
+          },
+        });
+
+        return {
+          success: true,
+          chat: { ...updatedChat, id: safeNumberFromBigInt(updatedChat.id) },
+          warnings,
+        };
+      }); // end $transaction (gh-111)
     }),
 
   /**

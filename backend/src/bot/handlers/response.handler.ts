@@ -397,7 +397,33 @@ export function registerResponseHandler(): void {
         });
       }
 
-      // 5. Stop the SLA timer
+      // 5. Atomically claim the request to prevent race condition (gh-116)
+      // Only proceed if the request is still in a non-terminal state
+      const CLAIMABLE_STATES = [
+        'pending',
+        'in_progress',
+        'waiting_client',
+        'transferred',
+        'escalated',
+      ];
+      const claimed = await prisma.clientRequest.updateMany({
+        where: {
+          id: requestToResolve.id,
+          status: { in: CLAIMABLE_STATES },
+        },
+        data: { status: 'answered' },
+      });
+
+      if (claimed.count === 0) {
+        logger.info('Request already resolved by another response, skipping', {
+          chatId,
+          requestId: requestToResolve.id,
+          service: 'response-handler',
+        });
+        return;
+      }
+
+      // 6. Stop the SLA timer (request is now claimed)
       const result = await stopSlaTimer(requestToResolve.id, {
         respondedBy: accountantId,
         responseMessageId: messageId,

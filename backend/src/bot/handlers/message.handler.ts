@@ -311,12 +311,22 @@ export function registerMessageHandler(): void {
             // Join existing thread
             threadId = parentRequest.threadId;
           } else {
-            // Start new thread from parent - update parent too
+            // Start new thread from parent atomically (gh-115)
+            // Use updateMany with threadId IS NULL condition to prevent race
             threadId = randomUUID();
-            await prisma.clientRequest.update({
-              where: { id: parentRequest.id },
+            const updated = await prisma.clientRequest.updateMany({
+              where: { id: parentRequest.id, threadId: null },
               data: { threadId },
             });
+
+            // If another concurrent request already set threadId, use theirs
+            if (updated.count === 0) {
+              const refreshed = await prisma.clientRequest.findUnique({
+                where: { id: parentRequest.id },
+                select: { threadId: true },
+              });
+              threadId = refreshed?.threadId ?? threadId;
+            }
           }
         }
       }

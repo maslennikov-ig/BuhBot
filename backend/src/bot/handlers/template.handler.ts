@@ -85,7 +85,14 @@ async function getActiveTemplates(): Promise<TemplateButtonData[]> {
  * @param id - Template ID
  * @returns Template or null
  */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function getTemplateById(id: string) {
+  // Validate UUID format before querying DB (gh-118)
+  if (!UUID_REGEX.test(id)) {
+    return null;
+  }
+
   return prisma.template.findUnique({
     where: { id },
     select: {

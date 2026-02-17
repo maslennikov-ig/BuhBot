@@ -137,6 +137,10 @@ export class TelegramAlertService {
 
     if (!this.adminChatId) {
       logger.warn('TelegramAlertService: TELEGRAM_ADMIN_CHAT_ID not configured');
+    } else if (!/^-?\d+$/.test(this.adminChatId)) {
+      throw new Error(
+        `TelegramAlertService: invalid adminChatId "${this.adminChatId}" — must be a numeric Telegram chat ID`
+      );
     }
   }
 

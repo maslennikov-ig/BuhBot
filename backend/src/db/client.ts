@@ -55,7 +55,8 @@ export function validateDatabaseUrl(url: string | undefined): boolean {
     url.includes('&sslmode=');
 
   if (!hasSSL && process.env['NODE_ENV'] === 'production') {
-    logger.warn('DATABASE_URL missing sslmode=require - TLS is recommended for production');
+    logger.error('DATABASE_URL missing sslmode=require - SSL is required in production');
+    return false;
   }
 
   // Check for connection pool settings

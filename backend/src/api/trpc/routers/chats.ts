@@ -185,6 +185,17 @@ export const chatsRouter = router({
         });
       }
 
+      // Authorization: observers can only view chats assigned to them
+      if (
+        !['admin', 'manager'].includes(ctx.user.role) &&
+        chat.assignedAccountantId !== ctx.user.id
+      ) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied. You can only view chats assigned to you.',
+        });
+      }
+
       return {
         ...chat,
         id: safeNumberFromBigInt(chat.id),

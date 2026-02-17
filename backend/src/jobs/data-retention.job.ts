@@ -167,26 +167,14 @@ async function deleteOldClientRequests(cutoffDate: Date): Promise<number> {
  * @returns Total number of deleted records
  */
 async function deleteOldSlaAlerts(cutoffDate: Date): Promise<number> {
-  let totalDeleted = 0;
-  let batchDeleted: number;
+  // deleteMany processes all matching records at once (no 'take' support)
+  const result = await prisma.slaAlert.deleteMany({
+    where: {
+      alertSentAt: { lt: cutoffDate },
+    },
+  });
 
-  do {
-    const result = await prisma.slaAlert.deleteMany({
-      where: {
-        alertSentAt: { lt: cutoffDate },
-      },
-      // Note: deleteMany doesn't support 'take', so we rely on the query being efficient
-    });
-
-    batchDeleted = result.count;
-    totalDeleted += batchDeleted;
-
-    // If we deleted less than a reasonable amount, we're done
-    // (deleteMany processes all matching records at once)
-    break;
-  } while (batchDeleted > 0);
-
-  return totalDeleted;
+  return result.count;
 }
 
 /**

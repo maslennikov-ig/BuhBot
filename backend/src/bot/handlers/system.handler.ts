@@ -38,12 +38,7 @@ export function registerSystemHandler(): void {
   // Handle /info command
   bot.command('info', async (ctx: BotContext) => {
     try {
-      const infoMessage = `🤖 *BuhBot Info*\n\n🔹 *Версия:* ${BOT_VERSION}\n🔹 *Среда:* ${env.NODE_ENV}\n🔹 *ID Чата:* 
-${ctx.chat?.id}
-🔹 *Тип чата:* ${ctx.chat?.type}\n🔹 *Ваш ID:* 
-${ctx.from?.id}
-
-Система работает в штатном режиме.`;
+      const infoMessage = `🤖 *BuhBot Info*\n\n🔹 *Версия:* ${BOT_VERSION}\n🔹 *Среда:* ${env.NODE_ENV}\n🔹 *Тип чата:* ${ctx.chat?.type}\n\nСистема работает в штатном режиме.`;
 
       await ctx.reply(infoMessage, { parse_mode: 'Markdown' });
 

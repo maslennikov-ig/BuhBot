@@ -255,6 +255,11 @@ export class FeedbackProcessor {
    * @returns Complete feedback analysis with patterns and suggestions
    */
   async analyzePatterns(daysSince: number = 30): Promise<FeedbackAnalysis> {
+    // Validate bounds (gh-103)
+    if (daysSince < 1 || daysSince > 365) {
+      throw new Error('daysSince must be between 1 and 365');
+    }
+
     const startTime = Date.now();
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysSince);

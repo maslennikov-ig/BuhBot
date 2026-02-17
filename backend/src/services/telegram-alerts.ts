@@ -249,9 +249,12 @@ export class TelegramAlertService {
       }
     }
 
-    // Grafana link
+    // Grafana link — only allow http(s) scheme (gh-106)
     if (details.grafanaUrl) {
-      message += `\n🔗 <a href="${this.escapeHtml(details.grafanaUrl)}">Grafana Dashboard</a>`;
+      const urlLower = details.grafanaUrl.toLowerCase();
+      if (urlLower.startsWith('https://') || urlLower.startsWith('http://')) {
+        message += `\n🔗 <a href="${this.escapeHtml(details.grafanaUrl)}">Grafana Dashboard</a>`;
+      }
     }
 
     return message;

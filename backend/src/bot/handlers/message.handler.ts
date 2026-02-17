@@ -237,11 +237,15 @@ export function registerMessageHandler(): void {
       const classifySpan = tracer.startSpan('classify_message', {
         attributes: { 'chat.id': chatId, 'message.id': messageId },
       });
-      const classification = await classifyMessage(prisma, text);
-      classifySpan.setAttribute('classification.result', classification.classification);
-      classifySpan.setAttribute('classification.confidence', classification.confidence);
-      classifySpan.setAttribute('classification.model', classification.model);
-      classifySpan.end();
+      let classification;
+      try {
+        classification = await classifyMessage(prisma, text);
+        classifySpan.setAttribute('classification.result', classification.classification);
+        classifySpan.setAttribute('classification.confidence', classification.confidence);
+        classifySpan.setAttribute('classification.model', classification.model);
+      } finally {
+        classifySpan.end(); // Always end span, even on error (gh-168)
+      }
 
       logger.info('Message classified', {
         chatId,
@@ -386,8 +390,11 @@ export function registerMessageHandler(): void {
             'sla.threshold_minutes': thresholdMinutes,
           },
         });
-        await startSlaTimer(request.id, String(chatId), thresholdMinutes);
-        slaSpan.end();
+        try {
+          await startSlaTimer(request.id, String(chatId), thresholdMinutes);
+        } finally {
+          slaSpan.end(); // Always end span (gh-168)
+        }
 
         logger.info('SLA timer started for request', {
           requestId: request.id,

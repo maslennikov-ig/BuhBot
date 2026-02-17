@@ -24,6 +24,14 @@ import { botWebhookSignatureFailures } from '../utils/metrics.js';
  */
 const TELEGRAM_SECRET_HEADER = 'x-telegram-bot-api-secret-token';
 
+// Startup check: warn if webhook secret is not configured (gh-155)
+if (!process.env['TELEGRAM_WEBHOOK_SECRET'] && process.env['NODE_ENV'] === 'production') {
+  logger.error(
+    'TELEGRAM_WEBHOOK_SECRET not set in production! ' +
+      'Webhook requests will be rejected until configured.'
+  );
+}
+
 /**
  * Configuration options for the signature validation middleware
  */

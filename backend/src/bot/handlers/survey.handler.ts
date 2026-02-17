@@ -40,6 +40,7 @@ interface AwaitingCommentData {
  * Comments are collected for 10 minutes after rating submission
  */
 const awaitingComment = new Map<string, AwaitingCommentData>();
+const MAX_AWAITING_COMMENTS = 1000; // Prevent unbounded memory growth (gh-151)
 
 /**
  * Register survey callback handlers
@@ -140,8 +141,13 @@ export function registerSurveyHandler(): void {
       await ctx.answerCbQuery(`Thank you! You rated ${rating} stars`);
       await ctx.editMessageText(confirmText, { parse_mode: 'Markdown' });
 
-      // Track that we're awaiting a comment
+      // Track that we're awaiting a comment (gh-151: cap size to prevent memory leak)
       if (chatId) {
+        if (awaitingComment.size >= MAX_AWAITING_COMMENTS) {
+          // Evict oldest entry
+          const oldestKey = awaitingComment.keys().next().value;
+          if (oldestKey) awaitingComment.delete(oldestKey);
+        }
         awaitingComment.set(chatId, { feedbackId, chatId });
 
         // Clear after 10 minutes

@@ -290,7 +290,7 @@ model ClientRequest {
 
   // Relations
   chat              Chat               @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
+  assignedUser      User?              @relation("AssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
   relatedRequest    ClientRequest?     @relation("DuplicateOf", fields: [relatedRequestId], references: [id])
   duplicates        ClientRequest[]    @relation("DuplicateOf")
   slaAlerts         SlaAlert[]
@@ -377,8 +377,8 @@ model SlaAlert {
   resolvedAction AlertAction? @map("resolved_action") // How alert was resolved
 
   // Relations
-  request          ClientRequest @relation(fields: [requestId], references: [id])
-  acknowledgedUser User?         @relation("AcknowledgedBy", fields: [acknowledgedBy], references: [id])
+  request          ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  acknowledgedUser User?         @relation("AcknowledgedBy", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
 
   @@index([requestId])
   @@index([alertType])

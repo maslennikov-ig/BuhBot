@@ -131,22 +131,23 @@ async function deleteOldClientRequests(cutoffDate: Date): Promise<number> {
 
     const idsToDelete = recordsToDelete.map((r: { id: string }) => r.id);
 
-    // Delete SLA alerts first (if not cascaded)
-    await prisma.slaAlert.deleteMany({
-      where: { requestId: { in: idsToDelete } },
-    });
+    // Atomic batch delete: all related records in a single transaction (gh-93)
+    const [, , deleteResult] = await prisma.$transaction([
+      // Delete SLA alerts for these requests
+      prisma.slaAlert.deleteMany({
+        where: { requestId: { in: idsToDelete } },
+      }),
+      // Delete feedback responses for these requests
+      prisma.feedbackResponse.deleteMany({
+        where: { requestId: { in: idsToDelete } },
+      }),
+      // Delete the client requests
+      prisma.clientRequest.deleteMany({
+        where: { id: { in: idsToDelete } },
+      }),
+    ]);
 
-    // Delete feedback responses for these requests
-    await prisma.feedbackResponse.deleteMany({
-      where: { requestId: { in: idsToDelete } },
-    });
-
-    // Delete the client requests
-    const result = await prisma.clientRequest.deleteMany({
-      where: { id: { in: idsToDelete } },
-    });
-
-    batchDeleted = result.count;
+    batchDeleted = deleteResult.count;
     totalDeleted += batchDeleted;
 
     logger.debug('Deleted batch of old client requests', {

@@ -42,6 +42,7 @@ import {
 import { recordResponse, getDeliveryById } from '../../../services/feedback/survey.service.js';
 import { prisma } from '../../../lib/prisma.js';
 import { queueLowRatingAlert } from '../../../queues/setup.js';
+import logger from '../../../utils/logger.js';
 
 /**
  * Feedback router for client satisfaction analytics
@@ -121,10 +122,15 @@ export const feedbackRouter = router({
         });
       }
 
-      if (delivery.status === 'responded') {
+      // Only accept ratings for delivered/reminded surveys (gh-87)
+      // Reject: pending (not yet sent), failed, expired, responded
+      if (!['delivered', 'reminded'].includes(delivery.status)) {
+        const isResponded = delivery.status === 'responded';
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Already responded to this survey',
+          message: isResponded
+            ? 'Already responded to this survey'
+            : 'Survey delivery is not in a rateable state',
         });
       }
 
@@ -152,7 +158,12 @@ export const feedbackRouter = router({
           comment: undefined, // Comment may be added later via addComment
         }).catch((error) => {
           // Log but don't fail the request
-          console.error('Failed to queue low-rating alert:', error);
+          logger.error('Failed to queue low-rating alert', {
+            error: error instanceof Error ? error.message : String(error),
+            feedbackId,
+            deliveryId,
+            service: 'feedback-router',
+          });
         });
       }
 

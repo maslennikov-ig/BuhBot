@@ -13,7 +13,7 @@
 
 import { bot } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
-import { resolveAlert, getAlertById } from '../../services/alerts/alert.service.js';
+import { getAlertById } from '../../services/alerts/alert.service.js';
 import { cancelEscalation } from '../../services/alerts/escalation.service.js';
 import { cancelAllEscalations } from '../../queues/alert.queue.js';
 import {
@@ -25,7 +25,47 @@ import {
   buildResolvedKeyboard,
   buildAccountantNotificationKeyboard,
 } from '../keyboards/alert.keyboard.js';
+import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
+
+/**
+ * Check if a Telegram user is authorized to manage alert actions
+ * for a given chat. Authorized users: managers or accountants.
+ *
+ * @param chatId - Chat ID associated with the alert's request
+ * @param telegramUserId - Telegram user ID of the person clicking the button
+ * @returns true if authorized
+ */
+async function isAuthorizedForAlertAction(
+  chatId: bigint,
+  telegramUserId: number
+): Promise<boolean> {
+  const userIdStr = String(telegramUserId);
+
+  // Check 1: chat-specific managers
+  const chat = await prisma.chat.findUnique({
+    where: { id: chatId },
+    select: { managerTelegramIds: true },
+  });
+
+  if (chat?.managerTelegramIds?.includes(userIdStr)) {
+    return true;
+  }
+
+  // Check 2: global managers
+  const globalSettings = await prisma.globalSettings.findUnique({
+    where: { id: 'default' },
+    select: { globalManagerIds: true },
+  });
+
+  if (globalSettings?.globalManagerIds?.includes(userIdStr)) {
+    return true;
+  }
+
+  // Check 3: accountant for this chat
+  const { isAccountant } = await isAccountantForChat(chatId, undefined, telegramUserId);
+  return isAccountant;
+}
 
 /**
  * Register alert callback handlers
@@ -107,6 +147,19 @@ export function registerAlertCallbackHandler(): void {
           service: 'alert-callback',
         });
         await ctx.answerCbQuery('Данные запроса не найдены');
+        return;
+      }
+
+      // Authorization: verify the user is a manager or accountant (gh-88)
+      const telegramUserId = ctx.from?.id;
+      if (!telegramUserId || !(await isAuthorizedForAlertAction(request.chatId, telegramUserId))) {
+        logger.warn('Unauthorized alert notify attempt', {
+          alertId,
+          userId,
+          chatId: String(request.chatId),
+          service: 'alert-callback',
+        });
+        await ctx.answerCbQuery('Нет прав для этого действия');
         return;
       }
 
@@ -334,29 +387,62 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
-      // Resolve the alert
-      await resolveAlert(alertId, 'mark_resolved', userId);
-
-      // Cancel pending escalations
-      await cancelEscalation(alertId);
-      await cancelAllEscalations(alert.requestId);
-
-      // Get request to update its status
+      // Fetch request with chat data for authorization and status update
       const request = await prisma.clientRequest.findUnique({
         where: { id: alert.requestId },
         include: { chat: true },
       });
 
-      if (request) {
-        // Update request status to answered
-        await prisma.clientRequest.update({
+      // Authorization: verify the user is a manager or accountant (gh-88)
+      const telegramUserId = ctx.from?.id;
+      if (
+        !request ||
+        !telegramUserId ||
+        !(await isAuthorizedForAlertAction(request.chatId, telegramUserId))
+      ) {
+        logger.warn('Unauthorized alert resolve attempt', {
+          alertId,
+          userId,
+          chatId: request ? String(request.chatId) : 'unknown',
+          service: 'alert-callback',
+        });
+        await ctx.answerCbQuery('Нет прав для этого действия');
+        return;
+      }
+
+      // Atomically resolve alert + update request status (gh-92)
+      await prisma.$transaction([
+        prisma.slaAlert.update({
+          where: { id: alertId },
+          data: {
+            resolvedAction: 'mark_resolved',
+            acknowledgedAt: new Date(),
+            acknowledgedBy: userId ?? null,
+            nextEscalationAt: null,
+          },
+        }),
+        prisma.clientRequest.update({
           where: { id: request.id },
           data: {
             status: 'answered',
             responseAt: new Date(),
           },
-        });
+        }),
+      ]);
 
+      // Cancel pending escalations (best-effort, BullMQ operations)
+      try {
+        await cancelEscalation(alertId);
+        await cancelAllEscalations(alert.requestId);
+      } catch (cancelError) {
+        logger.warn('Failed to cancel escalations (non-critical)', {
+          alertId,
+          error: cancelError instanceof Error ? cancelError.message : String(cancelError),
+          service: 'alert-callback',
+        });
+      }
+
+      if (request) {
         // Update the original message to show resolved status
         if (ctx.callbackQuery.message && 'text' in ctx.callbackQuery.message) {
           const originalText = ctx.callbackQuery.message.text;

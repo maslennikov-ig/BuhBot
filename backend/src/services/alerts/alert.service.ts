@@ -171,28 +171,48 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
         service: 'alert',
       });
     } else {
-      // Queue alert for delivery
-      await queueAlert({
-        requestId,
-        alertType,
-        managerIds,
-        escalationLevel,
-      });
+      // Queue alert for delivery, with error recovery (gh-91)
+      try {
+        await queueAlert({
+          requestId,
+          alertType,
+          managerIds,
+          escalationLevel,
+        });
 
-      logger.info('Alert queued for delivery', {
-        alertId: alert.id,
-        managerCount: managerIds.length,
-        service: 'alert',
-      });
+        logger.info('Alert queued for delivery', {
+          alertId: alert.id,
+          managerCount: managerIds.length,
+          service: 'alert',
+        });
+      } catch (queueError) {
+        // Queue failed — mark alert as pending so reconciliation job can retry
+        logger.error('Failed to queue alert, marking as pending for reconciliation', {
+          alertId: alert.id,
+          requestId,
+          error: queueError instanceof Error ? queueError.message : String(queueError),
+          service: 'alert',
+        });
+        // deliveryStatus is already 'pending' from creation, no update needed
+        // The SLA reconciliation job will pick up undelivered alerts
+      }
 
-      // Create in-app notifications for managers
-      await createNotificationsForManagers(
-        managerIds,
-        alert,
-        request.chat?.title ?? 'Неизвестный чат',
-        request.clientUsername,
-        request.messageText
-      );
+      // Create in-app notifications for managers (non-critical, don't fail on error)
+      try {
+        await createNotificationsForManagers(
+          managerIds,
+          alert,
+          request.chat?.title ?? 'Неизвестный чат',
+          request.clientUsername,
+          request.messageText
+        );
+      } catch (notifError) {
+        logger.error('Failed to create in-app notifications', {
+          alertId: alert.id,
+          error: notifError instanceof Error ? notifError.message : String(notifError),
+          service: 'alert',
+        });
+      }
     }
 
     // Schedule next escalation if not at max level

@@ -178,6 +178,14 @@ export class ClassifierService {
    * ```
    */
   async classifyMessage(text: string): Promise<ClassificationResult> {
+    // Input validation: defense-in-depth (gh-89)
+    if (!text || typeof text !== 'string') {
+      throw new Error('Invalid input: text must be a non-empty string');
+    }
+    if (text.length > 10_000) {
+      throw new Error(`Input too large: ${text.length} characters (max 10000)`);
+    }
+
     const startTime = Date.now();
 
     // 1. Check cache first

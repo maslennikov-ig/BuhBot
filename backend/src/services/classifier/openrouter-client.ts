@@ -185,16 +185,19 @@ class OpenRouterClient {
   private client: OpenAI;
   private config: ClassifierConfig;
   private circuitBreaker: ICircuitBreaker;
+  private apiKeyConfigured: boolean;
 
   constructor(config: Partial<ClassifierConfig> = {}, circuitBreaker?: ICircuitBreaker) {
     this.config = { ...DEFAULT_CLASSIFIER_CONFIG, ...config };
     this.circuitBreaker = circuitBreaker ?? createCircuitBreaker(this.config.circuitBreaker);
 
-    // Use API key from config (DB) or fall back to env
+    // Use API key from config (DB) or fall back to env (gh-90)
     const apiKey = this.config.openRouterApiKey ?? process.env['OPENROUTER_API_KEY'];
+    this.apiKeyConfigured = !!apiKey;
+
     if (!apiKey) {
       logger.warn(
-        'OPENROUTER_API_KEY not set (neither in DB nor env), AI classification will fail',
+        'OPENROUTER_API_KEY not set (neither in DB nor env), AI classification disabled',
         {
           service: 'classifier',
         }
@@ -203,7 +206,7 @@ class OpenRouterClient {
 
     this.client = new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
-      apiKey: apiKey ?? '',
+      apiKey: apiKey || 'not-configured',
       defaultHeaders: {
         'HTTP-Referer': process.env['APP_URL'] ?? 'https://buhbot.ru',
         'X-Title': 'BuhBot Message Classifier',
@@ -228,6 +231,11 @@ class OpenRouterClient {
    * ```
    */
   async classify(text: string): Promise<ClassificationResult> {
+    // Fail fast if API key not configured (gh-90)
+    if (!this.apiKeyConfigured) {
+      throw new Error('OPENROUTER_API_KEY not configured — AI classification unavailable');
+    }
+
     // Check circuit breaker first
     if (!this.circuitBreaker.canRequest()) {
       logger.warn('Circuit breaker OPEN, skipping OpenRouter', {

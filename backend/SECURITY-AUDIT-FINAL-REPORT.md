@@ -13,12 +13,12 @@ This report consolidates findings from a comprehensive 5-phase security audit of
 
 ### Overall Assessment
 
-| Severity | Count |
-|----------|-------|
-| **Critical** | 8 |
-| **High** | 16 |
-| **Medium** | 30 |
-| **Low** | 23 |
+| Severity     | Count |
+| ------------ | ----- |
+| **Critical** | 8     |
+| **High**     | 16    |
+| **Medium**   | 30    |
+| **Low**      | 23    |
 
 **Total Issues Found: 77**
 
@@ -38,6 +38,7 @@ The following issues require **immediate action** due to their potential impact 
 ### Code Health Assessment
 
 The codebase demonstrates **good security practices** overall:
+
 - ✅ Strong input validation using Zod schemas
 - ✅ Proper authentication and authorization via tRPC middleware
 - ✅ SQL injection protection via Prisma ORM
@@ -46,6 +47,7 @@ The codebase demonstrates **good security practices** overall:
 - ✅ Circuit breaker pattern for AI classification
 
 However, several areas require attention:
+
 - ⚠️ Race conditions in concurrent operations
 - ⚠️ Incomplete error handling in async queues
 - ⚠️ Missing idempotency protections
@@ -82,11 +84,11 @@ submitRating: publicProcedure
   )
   .mutation(async ({ input }) => {
     const { deliveryId, rating, telegramUsername } = input;
-    
+
     // Verify delivery exists and is valid
     const delivery = await getDeliveryById(deliveryId);
     if (!delivery) { ... }
-    
+
     // ❌ NO CHECK: Does this delivery belong to the requesting user?
     // Anyone with a deliveryId can submit/change ratings for any survey!
 ```
@@ -158,14 +160,14 @@ bot.action(/^notify_(.+)$/, async (ctx) => {
 bot.action(/^notify_(.+)$/, async (ctx) => {
   const alertId = ctx.match[1];
   const userId = ctx.from?.id?.toString();
-  
+
   // Verify user is authorized to manage this alert
   const alert = await prisma.slaAlert.findUnique({ where: { id: alertId } });
   if (!alert) {
     await ctx.answerCbQuery('Alert not found');
     return;
   }
-  
+
   // Check if user is the assigned accountant or chat manager
   const isAuthorized = await checkUserAuthorization(userId, alert.chatId);
   if (!isAuthorized) {
@@ -359,7 +361,7 @@ await prisma.$transaction(async (tx) => {
   // Step 1: Resolve alert
   await tx.slaAlert.update({
     where: { id: alertId },
-    data: { resolvedAction: 'mark_resolved', resolvedAt: new Date(), resolvedBy: userId }
+    data: { resolvedAction: 'mark_resolved', resolvedAt: new Date(), resolvedBy: userId },
   });
 
   // Step 2: Cancel escalations
@@ -368,7 +370,7 @@ await prisma.$transaction(async (tx) => {
   // Step 3: Update request status
   await tx.clientRequest.update({
     where: { id: alert.requestId },
-    data: { status: 'in_progress' }
+    data: { status: 'in_progress' },
   });
 });
 ```
@@ -409,9 +411,9 @@ await prisma.clientRequest.deleteMany({...});
 ```typescript
 // Wrap in transaction
 await prisma.$transaction(async (tx) => {
-  await tx.slaAlert.deleteMany({ where: { requestId: { in: idsToDelete }}});
-  await tx.feedbackResponse.deleteMany({ where: { requestId: { in: idsToDelete }}});
-  await tx.clientRequest.deleteMany({ where: { id: { in: idsToDelete }}});
+  await tx.slaAlert.deleteMany({ where: { requestId: { in: idsToDelete } } });
+  await tx.feedbackResponse.deleteMany({ where: { requestId: { in: idsToDelete } } });
+  await tx.clientRequest.deleteMany({ where: { id: { in: idsToDelete } } });
 });
 ```
 
@@ -541,7 +543,7 @@ When Redis is unavailable, the rate limiter fails open and allows ALL requests t
   const inMemoryKey = `rate_limit:${identifier}`;
   const now = Date.now();
   const record = inMemoryRateLimit.get(inMemoryKey);
-  
+
   if (record && now < record.resetAt) {
     if (record.count >= config.maxRequests) {
       return ctx.reply('Too many requests. Please try again later.');
@@ -550,7 +552,7 @@ When Redis is unavailable, the rate limiter fails open and allows ALL requests t
   } else {
     inMemoryRateLimit.set(inMemoryKey, { count: 1, resetAt: now + config.windowMs });
   }
-  
+
   return next();
 }
 ```
@@ -592,13 +594,13 @@ bot.action(/^survey:rating:([^:]+):(\d)$/, async (ctx) => {
   const deliveryId = ctx.match[1];
   const ratingStr = ctx.match[2];
   const userId = ctx.from?.id?.toString();
-  
+
   // Verify user is the intended recipient
   const delivery = await prisma.surveyDelivery.findUnique({
     where: { id: deliveryId },
     include: { survey: true }
   });
-  
+
   if (!delivery || delivery.recipientId !== userId) {
     await ctx.answerCbQuery('Not authorized to respond to this survey');
     return;
@@ -631,8 +633,8 @@ const existingAlert = await prisma.slaAlert.findFirst({
   where: {
     requestId,
     alertType,
-    escalationLevel
-  }
+    escalationLevel,
+  },
 });
 
 if (existingAlert) {
@@ -641,7 +643,7 @@ if (existingAlert) {
 
 // Or use database unique constraint
 await prisma.slaAlert.create({
-  data: { requestId, alertType, escalationLevel, /* ... */ }
+  data: { requestId, alertType, escalationLevel /* ... */ },
 });
 // Add unique constraint: unique(requestId, alertType, escalationLevel)
 ```
@@ -673,14 +675,14 @@ import { getRedisClient } from '../lib/redis';
 async function scheduleEscalation(alertId: string, delayMs: number) {
   const redis = getRedisClient();
   const lockKey = `escalation:lock:${alertId}`;
-  
+
   // Try to acquire lock
   const acquired = await redis.set(lockKey, '1', 'PX', 30000, 'NX');
   if (!acquired) {
     // Another job is already scheduling
     return;
   }
-  
+
   try {
     // Schedule escalation
     await queueEscalation({ alertId, scheduledFor: new Date(Date.now() + delayMs) });
@@ -718,10 +720,11 @@ Time-of-check to time-of-use vulnerability. Multiple concurrent responses could 
 // Then use upsert or handle constraint violation
 try {
   const feedback = await tx.feedbackResponse.create({
-    data: { deliveryId, rating, /* ... */ }
+    data: { deliveryId, rating /* ... */ },
   });
 } catch (error) {
-  if (error.code === 'P2002') { // Prisma unique constraint violation
+  if (error.code === 'P2002') {
+    // Prisma unique constraint violation
     throw new Error('Already responded to this survey');
   }
   throw error;
@@ -734,40 +737,40 @@ try {
 
 ### Immediate Actions Required (Critical Items)
 
-| Priority | Issue | Location | Fix Complexity |
-|----------|-------|----------|-----------------|
-| P0 | Add ownership check to `submitRating` | feedback.ts:104 | Low |
-| P0 | Add authorization to alert callbacks | alert-callback.handler.ts:52 | Medium |
-| P0 | Add input validation to `classifyMessage()` | classifier.service.ts:153 | Low |
-| P0 | Throw error if API key not configured | openrouter-client.ts:193 | Low |
-| P0 | Add transaction to alert resolution | alert-callback.handler.ts:274 | Medium |
-| P0 | Wrap data retention deletes in transaction | data-retention.job.ts:134 | Low |
+| Priority | Issue                                       | Location                      | Fix Complexity |
+| -------- | ------------------------------------------- | ----------------------------- | -------------- |
+| P0       | Add ownership check to `submitRating`       | feedback.ts:104               | Low            |
+| P0       | Add authorization to alert callbacks        | alert-callback.handler.ts:52  | Medium         |
+| P0       | Add input validation to `classifyMessage()` | classifier.service.ts:153     | Low            |
+| P0       | Throw error if API key not configured       | openrouter-client.ts:193      | Low            |
+| P0       | Add transaction to alert resolution         | alert-callback.handler.ts:274 | Medium         |
+| P0       | Wrap data retention deletes in transaction  | data-retention.job.ts:134     | Low            |
 
 ### Short-term Improvements (High Items)
 
-| Priority | Issue | Location | Fix Complexity |
-|----------|-------|----------|-----------------|
-| P1 | Replace in-memory rate limiting with Redis | messages.ts:15 | Medium |
-| P1 | Validate empty strings for API keys | settings.ts:339 | Low |
-| P1 | Fix fail-open rate limiting | rate-limit.ts:162 | Medium |
-| P1 | Add authorization to survey responses | survey.handler.ts:67 | Medium |
-| P1 | Add unique constraint to prevent duplicate alerts | alert.service.ts:85 | Low |
-| P1 | Add distributed locking for escalations | escalation.service.ts:84 | Medium |
-| P1 | Add unique constraint for survey responses | survey.service.ts:388 | Low |
+| Priority | Issue                                             | Location                 | Fix Complexity |
+| -------- | ------------------------------------------------- | ------------------------ | -------------- |
+| P1       | Replace in-memory rate limiting with Redis        | messages.ts:15           | Medium         |
+| P1       | Validate empty strings for API keys               | settings.ts:339          | Low            |
+| P1       | Fix fail-open rate limiting                       | rate-limit.ts:162        | Medium         |
+| P1       | Add authorization to survey responses             | survey.handler.ts:67     | Medium         |
+| P1       | Add unique constraint to prevent duplicate alerts | alert.service.ts:85      | Low            |
+| P1       | Add distributed locking for escalations           | escalation.service.ts:84 | Medium         |
+| P1       | Add unique constraint for survey responses        | survey.service.ts:388    | Low            |
 
 ### Long-term Improvements (Medium/Low Items)
 
-| Priority | Issue | Location | Fix Complexity |
-|----------|-------|----------|-----------------|
-| P2 | Fix CSV injection in feedback export | feedback.ts:474 | Low |
-| P2 | Add production guard to DEV_MODE | context.ts:42 | Low |
-| P2 | Fix thread creation race condition | message.handler.ts:314 | Medium |
-| P2 | Fix response resolution race condition | response.handler.ts:354 | Medium |
-| P2 | Add N+1 query optimization | analytics.ts:293 | Medium |
-| P2 | Implement FAQ caching | matcher.service.ts:66 | Medium |
-| P3 | Replace Math.random() with crypto | context.ts:112 | Low |
-| P3 | Sanitize chat titles | chat-event.handler.ts:126 | Low |
-| P3 | Fix tracer span cleanup | message.handler.ts:236 | Low |
+| Priority | Issue                                  | Location                  | Fix Complexity |
+| -------- | -------------------------------------- | ------------------------- | -------------- |
+| P2       | Fix CSV injection in feedback export   | feedback.ts:474           | Low            |
+| P2       | Add production guard to DEV_MODE       | context.ts:42             | Low            |
+| P2       | Fix thread creation race condition     | message.handler.ts:314    | Medium         |
+| P2       | Fix response resolution race condition | response.handler.ts:354   | Medium         |
+| P2       | Add N+1 query optimization             | analytics.ts:293          | Medium         |
+| P2       | Implement FAQ caching                  | matcher.service.ts:66     | Medium         |
+| P3       | Replace Math.random() with crypto      | context.ts:112            | Low            |
+| P3       | Sanitize chat titles                   | chat-event.handler.ts:126 | Low            |
+| P3       | Fix tracer span cleanup                | message.handler.ts:236    | Low            |
 
 ---
 
@@ -775,33 +778,33 @@ try {
 
 ### Analysis Coverage
 
-| Phase | Scope | Files Analyzed |
-|-------|-------|----------------|
-| 2a | API Routers | 18 router files |
-| 2b | Bot Handlers | 16 files in backend/src/bot/ |
-| 2c | Services Layer | All services, queue workers, jobs |
-| 3 | Pattern Scan | All TypeScript files in backend/src/ |
-| 4 | Business Logic | 7 key workflows |
+| Phase | Scope          | Files Analyzed                       |
+| ----- | -------------- | ------------------------------------ |
+| 2a    | API Routers    | 18 router files                      |
+| 2b    | Bot Handlers   | 16 files in backend/src/bot/         |
+| 2c    | Services Layer | All services, queue workers, jobs    |
+| 3     | Pattern Scan   | All TypeScript files in backend/src/ |
+| 4     | Business Logic | 7 key workflows                      |
 
 ### Issue Distribution by Category
 
-| Category | Count |
-|----------|-------|
-| Security Vulnerability | 18 |
-| Bug | 35 |
-| Business Logic Error | 12 |
-| Code Quality | 12 |
+| Category               | Count |
+| ---------------------- | ----- |
+| Security Vulnerability | 18    |
+| Bug                    | 35    |
+| Business Logic Error   | 12    |
+| Code Quality           | 12    |
 
 ### Time Spent by Category (Estimated)
 
-| Category | Time |
-|----------|------|
-| API Router Analysis | ~8 hours |
-| Bot Handler Analysis | ~6 hours |
-| Services Analysis | ~12 hours |
-| Pattern Scanning | ~4 hours |
-| Business Logic Analysis | ~8 hours |
-| **Total** | **~38 hours** |
+| Category                | Time          |
+| ----------------------- | ------------- |
+| API Router Analysis     | ~8 hours      |
+| Bot Handler Analysis    | ~6 hours      |
+| Services Analysis       | ~12 hours     |
+| Pattern Scanning        | ~4 hours      |
+| Business Logic Analysis | ~8 hours      |
+| **Total**               | **~38 hours** |
 
 ---
 
@@ -819,5 +822,5 @@ Addressing the Critical and High priority items will significantly improve the s
 
 ---
 
-*Report generated: 2026-02-16*  
-*Full details available in individual phase reports: PHASE2A, PHASE2B, PHASE2C, PHASE3, PHASE4*
+_Report generated: 2026-02-16_  
+_Full details available in individual phase reports: PHASE2A, PHASE2B, PHASE2C, PHASE3, PHASE4_

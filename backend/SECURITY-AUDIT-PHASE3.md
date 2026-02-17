@@ -18,9 +18,10 @@ This phase performed automated pattern-based vulnerability scanning across the e
 
 ### 1. SQL Injection Patterns ✅ SAFE
 
-**Search Pattern:** `(query|execute|raw)\s*\(\s*[\`'\"].*\$\{|query\s*\(\s*.*\+`
+**Search Pattern:** `(query|execute|raw)\s*\(\s*[\`'\"]._\$\{|query\s_\(\s*.*\+`
 
 **Results:**
+
 - Found 2 raw query usages:
   - [`backend/src/lib/prisma.ts:343`](../backend/src/lib/prisma.ts:343) - `await prisma.$queryRaw\`SELECT 1\`` (health check)
   - [`backend/src/api/trpc/routers/auth.ts:362`](../backend/src/api/trpc/routers/auth.ts:362) - Admin count check
@@ -37,6 +38,7 @@ This phase performed automated pattern-based vulnerability scanning across the e
 **Search Pattern:** `exec\s*\(|spawn\s*\(|eval\s*\(|Function\s*\(`
 
 **Results:**
+
 - Found 1 match:
   - [`backend/src/bot/middleware/rate-limit.ts:106`](../backend/src/bot/middleware/rate-limit.ts:106) - `pipeline.exec()` (Redis pipeline execution)
 
@@ -66,12 +68,13 @@ This phase performed automated pattern-based vulnerability scanning across the e
 
 **Results:** Found 2 instances:
 
-| File | Line | Code | Context |
-|------|------|------|---------|
-| [`backend/src/api/trpc/context.ts`](../backend/src/api/trpc/context.ts:112) | 112 | `const reqId = Math.random().toString(36).substring(7);` | Request ID generation |
-| [`backend/src/bot/middleware/rate-limit.ts`](../backend/src/bot/middleware/rate-limit.ts:101) | 101 | `${now}-${Math.random()}` | Rate limit Redis key |
+| File                                                                                          | Line | Code                                                     | Context               |
+| --------------------------------------------------------------------------------------------- | ---- | -------------------------------------------------------- | --------------------- |
+| [`backend/src/api/trpc/context.ts`](../backend/src/api/trpc/context.ts:112)                   | 112  | `const reqId = Math.random().toString(36).substring(7);` | Request ID generation |
+| [`backend/src/bot/middleware/rate-limit.ts`](../backend/src/bot/middleware/rate-limit.ts:101) | 101  | `${now}-${Math.random()}`                                | Rate limit Redis key  |
 
-**Analysis:** 
+**Analysis:**
+
 - Request ID: Used for logging/tracing only, not security-critical
 - Rate limiting: Combined with timestamp, collision risk is minimal
 
@@ -99,10 +102,10 @@ This phase performed automated pattern-based vulnerability scanning across the e
 
 **Results:** Found file operations but all safe:
 
-| File | Line | Usage |
-|------|------|-------|
-| [`backend/src/bot/handlers/system.handler.ts`](../backend/src/bot/handlers/system.handler.ts:25) | 25 | `readFileSync(packageJsonPath, 'utf-8')` - Fixed path |
-| Test files | Multiple | Reading source files for testing |
+| File                                                                                             | Line     | Usage                                                 |
+| ------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------- |
+| [`backend/src/bot/handlers/system.handler.ts`](../backend/src/bot/handlers/system.handler.ts:25) | 25       | `readFileSync(packageJsonPath, 'utf-8')` - Fixed path |
+| Test files                                                                                       | Multiple | Reading source files for testing                      |
 
 **Analysis:** ✅ All file operations use fixed paths, no user input in path construction.
 
@@ -117,10 +120,10 @@ This phase performed automated pattern-based vulnerability scanning across the e
 
 **Results:** Found API calls but all to trusted endpoints:
 
-| File | Line | Usage |
-|------|------|-------|
-| [`backend/src/services/telegram/validation.ts`](../backend/src/services/telegram/validation.ts:17) | 17 | Telegram API (hardcoded bot token) |
-| OpenRouter client | Various | AI classification service (configured URL) |
+| File                                                                                               | Line    | Usage                                      |
+| -------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------ |
+| [`backend/src/services/telegram/validation.ts`](../backend/src/services/telegram/validation.ts:17) | 17      | Telegram API (hardcoded bot token)         |
+| OpenRouter client                                                                                  | Various | AI classification service (configured URL) |
 
 **Analysis:** ✅ No user-controlled URLs in fetch/axios calls. All external calls use trusted, pre-configured endpoints.
 
@@ -148,11 +151,11 @@ This phase performed automated pattern-based vulnerability scanning across the e
 
 **Results:** Found JSON.parse usage but all safe:
 
-| File | Line | Usage |
-|------|------|-------|
-| [`backend/src/api/trpc/routers/analytics.ts`](../backend/src/api/trpc/routers/analytics.ts:469) | 469 | Parsing Redis cache (internal data) |
-| [`backend/src/bot/handlers/system.handler.ts`](../backend/src/bot/handlers/system.handler.ts:25) | 25 | Parsing package.json (static file) |
-| [`backend/src/services/classifier/openrouter-client.ts`](../backend/src/services/classifier/openrouter-client.ts:104) | 104 | Parsing API response |
+| File                                                                                                                  | Line | Usage                               |
+| --------------------------------------------------------------------------------------------------------------------- | ---- | ----------------------------------- |
+| [`backend/src/api/trpc/routers/analytics.ts`](../backend/src/api/trpc/routers/analytics.ts:469)                       | 469  | Parsing Redis cache (internal data) |
+| [`backend/src/bot/handlers/system.handler.ts`](../backend/src/bot/handlers/system.handler.ts:25)                      | 25   | Parsing package.json (static file)  |
+| [`backend/src/services/classifier/openrouter-client.ts`](../backend/src/services/classifier/openrouter-client.ts:104) | 104  | Parsing API response                |
 
 **Analysis:** ✅ No parsing of user-supplied JSON from client requests directly. tRPC handles input validation via Zod schemas.
 
@@ -188,7 +191,8 @@ if (isDev && isSupabase) {
 
 **Issue:** Disables TLS certificate verification in development environments.
 
-**Analysis:** 
+**Analysis:**
+
 - ✅ Guarded by `isDev` check
 - ⚠️ Risk: If environment detection fails, production could have disabled TLS verification
 
@@ -208,7 +212,8 @@ const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'placehol
 
 **Issue:** Fallback to placeholder values if environment variables not set.
 
-**Analysis:** 
+**Analysis:**
+
 - ✅ Placeholder values would cause obvious failures in runtime
 - ⚠️ Risk: Could mask missing configuration in production
 
@@ -219,16 +224,16 @@ const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'placehol
 
 ## Security Best Practices Verified ✅
 
-| Category | Status |
-|----------|--------|
-| Environment-based secrets | ✅ All secrets from env |
-| Input validation (Zod) | ✅ All inputs validated |
-| Rate limiting | ✅ Implemented in middleware |
-| Authentication | ✅ tRPC context with auth |
-| Authorization | ✅ Procedure-level checks |
-| Database ORM | ✅ Prisma (safe queries) |
-| Crypto operations | ✅ Node crypto module |
-| HTTPS/TLS | ✅ Enforced in production |
+| Category                  | Status                       |
+| ------------------------- | ---------------------------- |
+| Environment-based secrets | ✅ All secrets from env      |
+| Input validation (Zod)    | ✅ All inputs validated      |
+| Rate limiting             | ✅ Implemented in middleware |
+| Authentication            | ✅ tRPC context with auth    |
+| Authorization             | ✅ Procedure-level checks    |
+| Database ORM              | ✅ Prisma (safe queries)     |
+| Crypto operations         | ✅ Node crypto module        |
+| HTTPS/TLS                 | ✅ Enforced in production    |
 
 ---
 
@@ -247,8 +252,9 @@ const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'placehol
 ## Conclusion
 
 The codebase demonstrates **excellent security posture** with:
+
 - ✅ No SQL injection vulnerabilities
-- ✅ No command injection vulnerabilities  
+- ✅ No command injection vulnerabilities
 - ✅ No hardcoded secrets
 - ✅ Proper authentication and authorization
 - ✅ Safe use of cryptographic functions
@@ -258,4 +264,4 @@ The codebase demonstrates **excellent security posture** with:
 
 ---
 
-*Phase 3 Complete - Pattern-based vulnerability scan finished.*
+_Phase 3 Complete - Pattern-based vulnerability scan finished._

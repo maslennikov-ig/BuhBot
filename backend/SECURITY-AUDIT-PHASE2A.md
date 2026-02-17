@@ -11,11 +11,11 @@
 This report documents security vulnerabilities, bugs, and business logic issues found in the tRPC API routers. Overall, the codebase demonstrates good security practices with proper authentication, authorization via middleware, and Zod-based input validation. However, several issues were identified that require attention.
 
 | Severity | Count |
-|----------|-------|
-| Critical | 1 |
-| High | 2 |
-| Medium | 5 |
-| Low | 4 |
+| -------- | ----- |
+| Critical | 1     |
+| High     | 2     |
+| Medium   | 5     |
+| Low      | 4     |
 
 ---
 
@@ -28,6 +28,7 @@ This report documents security vulnerabilities, bugs, and business logic issues 
 **Procedure:** `submitRating`
 
 **Problematic Code:**
+
 ```typescript
 submitRating: publicProcedure
   .input(
@@ -39,16 +40,17 @@ submitRating: publicProcedure
   )
   .mutation(async ({ input }) => {
     const { deliveryId, rating, telegramUsername } = input;
-    
+
     // Verify delivery exists and is valid
     const delivery = await getDeliveryById(deliveryId);
     if (!delivery) { ... }
-    
+
     // ❌ NO CHECK: Does this delivery belong to the requesting user?
     // Anyone with a deliveryId can submit/change ratings for any survey!
 ```
 
 **Why It's a Problem:**
+
 - The `submitRating` endpoint is public (no authentication required)
 - It accepts any `deliveryId` without verifying ownership
 - An attacker can submit ratings for any survey delivery by guessing UUIDs
@@ -67,6 +69,7 @@ submitRating: publicProcedure
 **Procedure:** `listByChat`
 
 **Problematic Code:**
+
 ```typescript
 // Simple in-memory rate limiter
 // In production, consider using Redis for distributed rate limiting
@@ -74,6 +77,7 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 ```
 
 **Why It's a Problem:**
+
 - In-memory rate limiting doesn't work in multi-instance deployments
 - Rate limit state is lost on instance restart
 - Comment acknowledges this is "for production consider Redis" but uses it anyway
@@ -92,6 +96,7 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 **Procedure:** `updateGlobalSettings`
 
 **Problematic Code:**
+
 ```typescript
 updateGlobalSettings: adminProcedure
   .input(UpdateGlobalSettingsInput)
@@ -109,6 +114,7 @@ updateGlobalSettings: adminProcedure
 ```
 
 **Why It's a Problem:**
+
 - Passing empty string `""` passes the `.optional()` check and Zod validation
 - Empty string is not `undefined`, so it passes the filter
 - The existing API key gets overwritten with empty string, breaking the classifier
@@ -127,21 +133,22 @@ updateGlobalSettings: adminProcedure
 **Procedure:** `update`
 
 **Problematic Code:**
+
 ```typescript
 .mutation(async ({ ctx, input }) => {
   // Verify chat exists before updating
   const existingChat = await ctx.prisma.chat.findUnique({
     where: { id: input.id },
   });
-  
+
   // ❌ Time-of-check to time-of-use (TOCTOU) race condition
   // Between check and update, another request could modify the chat
-  
+
   // Validate: Cannot enable SLA without managers configured
   if (input.slaEnabled === true && existingChat.slaEnabled === false) {
     // ... validation logic
   }
-  
+
   // Multiple subsequent queries (lines 359-394) before final update
   const updatedChat = await ctx.prisma.chat.update({
     where: { id: input.id },
@@ -150,6 +157,7 @@ updateGlobalSettings: adminProcedure
 ```
 
 **Why It's a Problem:**
+
 - TOCTOU vulnerability between existence check and update
 - Concurrent updates could cause inconsistent state
 - Multiple sequential queries without transaction wrapping
@@ -167,6 +175,7 @@ updateGlobalSettings: adminProcedure
 **Procedure:** `getById`
 
 **Problematic Code:**
+
 ```typescript
 getById: authedProcedure
   .input(z.object({ id: z.number() }))
@@ -179,6 +188,7 @@ getById: authedProcedure
 ```
 
 **Why It's a Problem:**
+
 - All authenticated users can view any chat by ID
 - No role-based filtering (observer, manager, admin)
 - May expose sensitive client information to unauthorized personnel
@@ -196,10 +206,11 @@ getById: authedProcedure
 **Procedure:** `accountantPerformance`
 
 **Problematic Code:**
+
 ```typescript
 .query(async ({ ctx, input }) => {
   const accountants = await ctx.prisma.user.findMany({ ... });
-  
+
   // ❌ N+1 Query: Makes a separate database query for EACH accountant
   const performance = await Promise.all(
     accountants.map(async (accountant) => {
@@ -211,6 +222,7 @@ getById: authedProcedure
 ```
 
 **Why It's a Problem:**
+
 - Performance degrades linearly with user count
 - 100 accountants = 100+ database queries per request
 - Can cause timeouts under load
@@ -228,6 +240,7 @@ getById: authedProcedure
 **Procedure:** `exportCsv`
 
 **Problematic Code:**
+
 ```typescript
 const escapeCSV = (value: string) => {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
@@ -244,6 +257,7 @@ const rows = responses.map((r) => [
 ```
 
 **Why It's a Problem:**
+
 - Attackers can inject spreadsheet formulas via chat titles or usernames
 - Formula injection can execute commands or exfiltrate data (CSV injection)
 - Particularly risky since export is available to managers who may have higher privileges
@@ -257,9 +271,10 @@ const rows = responses.map((r) => [
 ### 8. LOW: DEV_MODE Hardcoded Credentials
 
 **File:** `backend/src/api/trpc/context.ts`  
-**Lines:** 42-52  
+**Lines:** 42-52
 
 **Problematic Code:**
+
 ```typescript
 const DEV_MODE_USER: ContextUser = {
   id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
@@ -270,6 +285,7 @@ const DEV_MODE_USER: ContextUser = {
 ```
 
 **Why It's a Problem:**
+
 - DEV_MODE can accidentally be left enabled in production
 - Hardcoded admin user with known UUID
 - Bypasses all authentication
@@ -287,12 +303,13 @@ const DEV_MODE_USER: ContextUser = {
 **Procedure:** `search`
 
 **Problematic Code:**
+
 ```typescript
 .query(async ({ ctx, input }) => {
   const queryLower = input.query.toLowerCase(); // User input
-  
+
   const allFaqItems = await ctx.prisma.faqItem.findMany({ ... });
-  
+
   // ❌ No length limit on query input
   // Could cause excessive memory usage with very large queries
   const scoredItems = allFaqItems
@@ -305,6 +322,7 @@ const DEV_MODE_USER: ContextUser = {
 ```
 
 **Why It's a Problem:**
+
 - No maximum length validation on search query
 - Could potentially cause DoS via large inputs
 - Loads ALL FAQ items into memory before filtering
@@ -318,9 +336,10 @@ const DEV_MODE_USER: ContextUser = {
 ### 10. LOW: Missing Error Handling in Async Queue Call
 
 **File:** `backend/src/api/trpc/routers/feedback.ts`  
-**Lines:** 144-157  
+**Lines:** 144-157
 
 **Problematic Code:**
+
 ```typescript
 if (shouldTriggerAlert) {
   // Don't await - queue asynchronously to not block the response
@@ -337,6 +356,7 @@ if (shouldTriggerAlert) {
 ```
 
 **Why It's a Problem:**
+
 - Using `console.error` instead of structured logger
 - Silently fails - no retry mechanism
 - Low-rated feedback may not trigger alerts
@@ -350,23 +370,24 @@ if (shouldTriggerAlert) {
 ### 11. LOW: Missing Authorization on Contact Form Consent
 
 **File:** `backend/src/api/trpc/routers/contact.ts`  
-**Lines:** 10-42  
+**Lines:** 10-42
 
 **Problematic Code:**
+
 ```typescript
-submit: publicProcedure
-  .input(
-    z.object({
-      name: z.string(),
-      email: z.string().email(),
-      company: z.string().optional(),
-      message: z.string().optional(),
-      consent: z.boolean(), // ❌ Boolean can be submitted as "false" string or 0
-    })
-  )
+submit: publicProcedure.input(
+  z.object({
+    name: z.string(),
+    email: z.string().email(),
+    company: z.string().optional(),
+    message: z.string().optional(),
+    consent: z.boolean(), // ❌ Boolean can be submitted as "false" string or 0
+  })
+);
 ```
 
 **Why It's a Problem:**
+
 - Boolean validation may accept falsy values incorrectly
 - `consent: false` submissions might still be processed due to type coercion
 - GDPR compliance requires explicit consent
@@ -392,17 +413,17 @@ submit: publicProcedure
 
 ## Recommendations Summary
 
-| Priority | Issue | Fix Complexity |
-|----------|-------|----------------|
-| 1 | Add ownership check to `submitRating` | Low |
-| 2 | Use Redis for rate limiting | Medium |
-| 3 | Validate empty string for API keys | Low |
-| 4 | Wrap mutations in transactions | Medium |
-| 5 | Add authorization to chat queries | Low |
-| 6 | Optimize N+1 queries with batching | Medium |
-| 7 | Add CSV injection prevention | Low |
-| 8 | Add production guard to DEV_MODE | Low |
+| Priority | Issue                                 | Fix Complexity |
+| -------- | ------------------------------------- | -------------- |
+| 1        | Add ownership check to `submitRating` | Low            |
+| 2        | Use Redis for rate limiting           | Medium         |
+| 3        | Validate empty string for API keys    | Low            |
+| 4        | Wrap mutations in transactions        | Medium         |
+| 5        | Add authorization to chat queries     | Low            |
+| 6        | Optimize N+1 queries with batching    | Medium         |
+| 7        | Add CSV injection prevention          | Low            |
+| 8        | Add production guard to DEV_MODE      | Low            |
 
 ---
 
-*Analysis completed: 2026-02-16*
+_Analysis completed: 2026-02-16_

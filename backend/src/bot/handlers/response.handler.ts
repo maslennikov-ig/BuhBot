@@ -18,6 +18,7 @@
  * @module bot/handlers/response.handler
  */
 
+import type { RequestStatus } from '@prisma/client';
 import { message } from 'telegraf/filters';
 import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
@@ -399,7 +400,7 @@ export function registerResponseHandler(): void {
 
       // 5. Atomically claim the request to prevent race condition (gh-116)
       // Only proceed if the request is still in a non-terminal state
-      const CLAIMABLE_STATES = [
+      const CLAIMABLE_STATES: RequestStatus[] = [
         'pending',
         'in_progress',
         'waiting_client',

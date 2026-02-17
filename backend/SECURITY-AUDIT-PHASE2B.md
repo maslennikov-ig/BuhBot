@@ -11,11 +11,11 @@
 This phase analyzes Telegram bot handlers for security vulnerabilities and bugs. **11 issues identified** across 8 categories with varying severity levels.
 
 | Severity | Count |
-|----------|-------|
-| Critical | 1 |
-| High | 2 |
-| Medium | 5 |
-| Low | 3 |
+| -------- | ----- |
+| Critical | 1     |
+| High     | 2     |
+| Medium   | 5     |
+| Low      | 3     |
 
 ---
 
@@ -38,6 +38,7 @@ bot.action(/^notify_(.+)$/, async (ctx) => {
 ```
 
 **Problem:** The callback handlers for `notify_` and `resolve_` actions capture the user ID but **never verify** that the user clicking the button is authorized to perform these actions. Any Telegram user who receives the inline keyboard button can click it and:
+
 - Trigger notifications to accountants
 - Mark alerts as resolved
 
@@ -158,6 +159,7 @@ const result = await stopSlaTimer(requestToResolve.id, {
 **Problem:** The find-then-update pattern is not atomic. Between finding the latest pending request and stopping its SLA timer, another accountant response could resolve the same request.
 
 **Why it's a problem:** Can lead to:
+
 - Double-resolution of SLA timers
 - Incorrect "working minutes" calculations
 - Data inconsistency between ChatMessage and ClientRequest
@@ -199,7 +201,7 @@ await sendTemplate(
   ctx.chat && 'title' in ctx.chat
     ? { title: ctx.chat.title, id: ctx.chat.id }
     : { id: ctx.chat?.id },
-  arg  // Directly passed without validation
+  arg // Directly passed without validation
 );
 ```
 
@@ -220,14 +222,15 @@ await sendTemplate(
 ```typescript
 const infoMessage = `🤖 *BuhBot Info*\n\n🔹 *Версия:* ${BOT_VERSION}
 🔹 *Среда:* ${env.NODE_ENV}
-🔹 *ID Чата:* 
+🔹 *ID Чата:*
 ${ctx.chat?.id}
 🔹 *Тип чата:* ${ctx.chat?.type}
-🔹 *Ваш ID:* 
+🔹 *Ваш ID:*
 ${ctx.from?.id}
 ```
 
 **Problem:** The `/info` command exposes sensitive identifiers to any user who invokes it:
+
 - Chat ID (can be used to identify and target the chat)
 - User ID (can be used to identify and target the user)
 
@@ -260,6 +263,7 @@ bot.on('new_chat_title', async (ctx) => {
 **Problem:** Chat title from Telegram is inserted directly into the database without sanitization.
 
 **Why it's a problem:** While Telegram titles are generally trusted, they could contain:
+
 - Very long strings (performance issue)
 - Special characters
 - Potential XSS if rendered in web UI
@@ -281,6 +285,7 @@ const filename = document.file_name ?? 'Без названия';
 **Problem:** File name from Telegram document is used directly without sanitization.
 
 **Why it's a problem:** Could contain special characters that might cause issues in:
+
 - Log files
 - File system operations
 - Display in UI
@@ -319,40 +324,45 @@ classifySpan.end();
 ## Positive Security Findings
 
 ### Input Validation
+
 - [`invitation.handler.ts:16`](backend/src/bot/handlers/invitation.handler.ts:16): Proper regex validation of invitation tokens before database lookup
 - [`message.handler.ts:33-38`](backend/src/bot/handlers/message.handler.ts:33): Zod schema validates all incoming message data
 - [`survey.handler.ts:77-85`](backend/src/bot/handlers/survey.handler.ts:77): Rating validated to be 1-5
 
 ### Authentication & Authorization
+
 - [`response.handler.ts:46-217`](backend/src/bot/handlers/response.handler.ts:46): Multi-tier accountant verification with secure ID-based checks prioritized over username
 
 ### Data Integrity
+
 - [`invitation.handler.ts:178`](backend/src/bot/handlers/invitation.handler.ts:178): Uses database transaction for invitation processing
 - [`message.handler.ts:267-290`](backend/src/bot/handlers/message.handler.ts:267): Proper deduplication with hash and time window
 
 ### Error Handling
+
 - [`middleware/error.ts`](backend/src/bot/middleware/error.ts): Comprehensive error handling with proper classification and user-friendly messages
 
 ### Rate Limiting
+
 - [`rate-limit.ts`](backend/src/bot/middleware/rate-limit.ts): Redis-based sliding window rate limiting
 
 ---
 
 ## Recommendations Summary
 
-| Priority | Action |
-|----------|--------|
-| P0 | Add authorization check to alert callbacks (Issue 1) |
-| P0 | Add authorization to survey responses (Issue 3) |
-| P1 | Fix fail-open rate limiting (Issue 2) |
-| P1 | Fix thread creation race condition (Issue 4) |
-| P1 | Fix response resolution race condition (Issue 5) |
-| P2 | Fix off-by-one rate limit (Issue 6) |
-| P2 | Add template ID validation (Issue 7) |
-| P2 | Restrict /info command output (Issue 8) |
-| P3 | Sanitize chat titles (Issue 9) |
-| P3 | Sanitize filenames (Issue 10) |
-| P3 | Fix tracer span cleanup (Issue 11) |
+| Priority | Action                                               |
+| -------- | ---------------------------------------------------- |
+| P0       | Add authorization check to alert callbacks (Issue 1) |
+| P0       | Add authorization to survey responses (Issue 3)      |
+| P1       | Fix fail-open rate limiting (Issue 2)                |
+| P1       | Fix thread creation race condition (Issue 4)         |
+| P1       | Fix response resolution race condition (Issue 5)     |
+| P2       | Fix off-by-one rate limit (Issue 6)                  |
+| P2       | Add template ID validation (Issue 7)                 |
+| P2       | Restrict /info command output (Issue 8)              |
+| P3       | Sanitize chat titles (Issue 9)                       |
+| P3       | Sanitize filenames (Issue 10)                        |
+| P3       | Fix tracer span cleanup (Issue 11)                   |
 
 ---
 
@@ -365,4 +375,4 @@ classifySpan.end();
 
 ---
 
-*End of Phase 2b Report*
+_End of Phase 2b Report_

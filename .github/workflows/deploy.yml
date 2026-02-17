@@ -138,20 +138,13 @@ jobs:
 
       - name: Sync repository to VDS
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60" \
-            --exclude 'node_modules' \
-            --exclude '.git' \
-            --exclude 'backend/node_modules' \
-            --exclude 'frontend/node_modules' \
-            --exclude 'frontend/.next' \
-            --exclude '*.log' \
-            --exclude '.env' \
-            --exclude 'backend/.env' \
-            --exclude 'frontend/.env*' \
-            --exclude 'backend/logs' \
-            --exclude 'infrastructure/nginx/ssl' \
-            ./ ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }}:${{ env.VDS_DEPLOY_PATH }}/
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << EOF
+          set -e
+          cd ${{ env.VDS_DEPLOY_PATH }}
+          git fetch origin main
+          git reset --hard origin/main
+          echo "VDS synced to $(git rev-parse --short HEAD)"
+          EOF
 
       - name: Run deployment script on VDS
         id: deploy

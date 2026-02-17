@@ -79,13 +79,14 @@ const SPAM_PATTERNS: RegExp[] = [
   /^прекрасно$/i,
   /^здорово$/i,
 
-  // @mention-only messages (not a question, just tagging someone)
-  /^@\w+(\s+@\w+)*\s*$/,
+  // @mention-only messages — just tagging, not requesting (buh-w6z3)
+  // Telegram usernames: start with letter, 5-32 alphanumeric + underscore
+  /^@[a-zA-Z][a-zA-Z0-9_]*(\s+@[a-zA-Z][a-zA-Z0-9_]*)*\s*$/,
 
-  // Confirmations with optional thanks
+  // Confirmations with optional thanks (buh-w6z3)
   /^(приняли|принято|получили|получено)\.?\s*(спасибо)?!?\s*$/i,
 
-  // Waiting/expectation statements (not questions)
+  // Waiting/expectation statements, not questions (buh-w6z3)
   /^(жду|ждём|ждем)\s/i,
 ];
 
@@ -102,10 +103,10 @@ const GRATITUDE_PATTERNS: RegExp[] = [
   /отличная\s+работа/i, // "Отличная работа!"
   /спас[иш]б[оа]\s+за\s+(помощь|работу)/i, // "Спасибо за помощь"
 
-  // "Приняли. Спасибо!" - acceptance + thanks
+  // "Приняли. Спасибо!" — acceptance + thanks (buh-w6z3)
   /приняли.*спасибо/i,
 
-  // "Очень ждем. Спасибо!" - waiting + thanks
+  // "Очень ждем. Спасибо!" — waiting + thanks (buh-w6z3)
   /жд[уёе][мт]?.*спасибо/i,
 ];
 

@@ -387,3 +387,145 @@ describe('ClassifierService - Metrics Recording (T4)', () => {
     });
   });
 });
+
+describe('ClassifierService - Safety Net Integration (gh-131)', () => {
+  let service: ClassifierService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetClassifierService();
+    service = new ClassifierService(mockPrisma);
+  });
+
+  it('should default to CLARIFICATION when keyword result has confidence < 0.5 (threshold)', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    // Mock cache miss
+    (getCached as any).mockResolvedValue(null);
+
+    // Mock AI failure
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service unavailable'));
+
+    // Mock keyword result with low confidence (below keywordConfidenceThreshold 0.5)
+    const lowConfidenceKeyword: ClassificationResult = {
+      classification: 'REQUEST',
+      confidence: 0.3, // Below default keywordConfidenceThreshold (0.5)
+      model: 'keyword-fallback',
+      reasoning: 'No patterns matched, requires human review',
+    };
+    (classifyByKeywords as any).mockReturnValue(lowConfidenceKeyword);
+
+    // Classify message
+    const result = await service.classifyMessage('test message');
+
+    // Should default to CLARIFICATION with threshold confidence (0.5)
+    expect(result).toMatchObject({
+      classification: 'CLARIFICATION',
+      confidence: 0.5,
+      model: 'keyword-fallback',
+      reasoning: 'Low confidence classification, defaulting to CLARIFICATION for manual review',
+    });
+  });
+
+  it('should NOT default to CLARIFICATION when keyword result has confidence >= 0.5', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    // Mock cache miss
+    (getCached as any).mockResolvedValue(null);
+
+    // Mock AI failure
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service unavailable'));
+
+    // Mock keyword result with acceptable confidence (>= keywordConfidenceThreshold 0.5)
+    const acceptableKeyword: ClassificationResult = {
+      classification: 'SPAM',
+      confidence: 0.7,
+      model: 'keyword-fallback',
+      reasoning: 'Matched SPAM patterns',
+    };
+    (classifyByKeywords as any).mockReturnValue(acceptableKeyword);
+
+    // Classify message
+    const result = await service.classifyMessage('test message');
+
+    // Should keep original keyword result
+    expect(result).toMatchObject({
+      classification: 'SPAM',
+      confidence: 0.7,
+      model: 'keyword-fallback',
+      reasoning: 'Matched SPAM patterns',
+    });
+  });
+
+  it('should apply safety net when keyword classifier returns no-match default (confidence 0.3)', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    // Mock cache miss
+    (getCached as any).mockResolvedValue(null);
+
+    // Mock AI failure
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service unavailable'));
+
+    // Mock keyword result with default no-match confidence (0.3)
+    const noMatchKeyword: ClassificationResult = {
+      classification: 'CLARIFICATION',
+      confidence: 0.3,
+      model: 'keyword-fallback',
+      reasoning: 'No patterns matched, requires human review',
+    };
+    (classifyByKeywords as any).mockReturnValue(noMatchKeyword);
+
+    // Classify message
+    const result = await service.classifyMessage('Random message with no patterns');
+
+    // Should apply safety net and boost confidence to threshold
+    expect(result).toMatchObject({
+      classification: 'CLARIFICATION',
+      confidence: 0.5, // Boosted to keywordConfidenceThreshold
+      model: 'keyword-fallback',
+      reasoning: 'Low confidence classification, defaulting to CLARIFICATION for manual review',
+    });
+  });
+
+  it('should prefer AI low-confidence result over keyword low-confidence when AI is higher', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    // Mock cache miss
+    (getCached as any).mockResolvedValue(null);
+
+    // Mock AI with low confidence (below AI threshold 0.7 but above keyword threshold 0.5)
+    const lowConfidenceAI: ClassificationResult = {
+      classification: 'REQUEST',
+      confidence: 0.55, // Below aiConfidenceThreshold (0.7) but above keywordConfidenceThreshold (0.5)
+      model: 'openrouter',
+      reasoning: 'AI low confidence',
+    };
+    (classifyWithAI as any).mockResolvedValue(lowConfidenceAI);
+
+    // Mock keyword result with very low confidence
+    const veryLowKeyword: ClassificationResult = {
+      classification: 'CLARIFICATION',
+      confidence: 0.3,
+      model: 'keyword-fallback',
+      reasoning: 'No patterns matched',
+    };
+    (classifyByKeywords as any).mockReturnValue(veryLowKeyword);
+
+    // Classify message
+    const result = await service.classifyMessage('test message');
+
+    // Should use AI result (higher confidence than keyword)
+    expect(result.classification).toBe('REQUEST');
+    expect(result.confidence).toBe(0.55);
+    expect(result.model).toBe('openrouter'); // Note: service might wrap this, check actual implementation
+    expect(result.reasoning).toContain('AI (low confidence: 0.55)');
+  });
+});

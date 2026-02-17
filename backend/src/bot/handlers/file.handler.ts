@@ -105,7 +105,9 @@ export function registerFileHandler(): void {
     const chatId = ctx.chat?.id;
     const username = ctx.from?.username;
 
-    const filename = document.file_name ?? 'Без названия';
+    // Sanitize filename: strip control chars, limit length (gh-132)
+    const rawFilename = document.file_name ?? 'Без названия';
+    const filename = rawFilename.replace(/\p{C}/gu, '').trim().slice(0, 255) || 'Без названия';
     const fileSize = document.file_size ?? 0;
     const mimeType = document.mime_type ?? 'unknown';
 

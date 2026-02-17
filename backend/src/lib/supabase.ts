@@ -21,20 +21,20 @@ import { createClient } from '@supabase/supabase-js';
 import { isDevMode } from '../config/env.js';
 import logger from '../utils/logger.js';
 
-// Get Supabase credentials or use placeholders in DEV MODE
-const supabaseUrl = process.env['SUPABASE_URL'] || 'https://placeholder.supabase.co';
-const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'placeholder-key';
+// Validate credentials (gh-130: no placeholder fallback)
+const supabaseUrl = process.env['SUPABASE_URL'];
+const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
 
-// Validate credentials in production mode
-if (!isDevMode) {
-  if (!process.env['SUPABASE_URL']) {
-    throw new Error('Missing required environment variable: SUPABASE_URL');
+if (!supabaseUrl || !supabaseServiceKey) {
+  if (!isDevMode) {
+    throw new Error(
+      'Missing required environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY'
+    );
   }
-  if (!process.env['SUPABASE_SERVICE_ROLE_KEY']) {
-    throw new Error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
-  }
-} else if (!process.env['SUPABASE_URL']) {
-  logger.warn('[Supabase] DEV MODE: Auth bypassed in context.ts, using placeholder credentials');
+  logger.warn(
+    '[Supabase] DEV MODE: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set. ' +
+      'Auth will be bypassed in context.ts. Set these env vars to enable Supabase auth.'
+  );
 }
 
 /**
@@ -44,9 +44,15 @@ if (!isDevMode) {
  * - autoRefreshToken: false (server-side, JWT validated per request)
  * - persistSession: false (server-side, stateless operation)
  */
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+// In dev mode without credentials, create a no-op client that will fail gracefully
+// Auth is bypassed in context.ts anyway (gh-130)
+export const supabase = createClient(
+  supabaseUrl ?? 'http://localhost:54321',
+  supabaseServiceKey ?? 'dev-mode-no-key',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);

@@ -28,8 +28,6 @@ export const POOL_CONFIG = {
   MAX_CONNECTIONS: 10,
   /** Connection timeout in milliseconds */
   CONNECTION_TIMEOUT: 5000,
-  /** Query timeout in milliseconds */
-  QUERY_TIMEOUT: 30000,
   /** Idle timeout in milliseconds */
   IDLE_TIMEOUT: 30000,
 } as const;
@@ -169,13 +167,11 @@ export function createPooledPrismaClient(): PrismaClient {
 export function getPoolStats(): {
   maxConnections: number;
   connectionTimeout: number;
-  queryTimeout: number;
   environment: string;
 } {
   return {
     maxConnections: POOL_CONFIG.MAX_CONNECTIONS,
     connectionTimeout: POOL_CONFIG.CONNECTION_TIMEOUT,
-    queryTimeout: POOL_CONFIG.QUERY_TIMEOUT,
     environment: process.env['NODE_ENV'] || 'development',
   };
 }

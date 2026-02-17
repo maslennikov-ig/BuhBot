@@ -118,11 +118,11 @@ function createPool(): pg.Pool {
     `[prisma] Database connection: using ${urlType} URL in ${isDev ? 'development' : 'production'} mode`
   );
 
-  // For Supabase in dev environments with TLS issues, disable certificate verification
-  // This is safe for development but should be investigated for production
-  if (isDev && isSupabase) {
+  // TLS verification: never disable in production (gh-127)
+  // In development, only disable if explicitly opted in via env var
+  if (isDev && isSupabase && process.env['PRISMA_DEV_DISABLE_TLS'] === 'true') {
     // eslint-disable-next-line no-console
-    console.log('[prisma] Disabling TLS certificate verification for development');
+    console.log('[prisma] WARNING: TLS verification disabled (PRISMA_DEV_DISABLE_TLS=true)');
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
   }
 

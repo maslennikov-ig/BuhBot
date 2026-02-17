@@ -16,6 +16,9 @@ import { queueAlert, scheduleEscalation } from '../../queues/setup.js';
 import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '@prisma/client';
 import { appNotificationService } from '../notification/app-notification.service.js';
 
+/** UUID v4 format validation (gh-121) */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Re-export types for consumers
 export type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus };
 
@@ -73,6 +76,11 @@ const DEFAULT_ESCALATION_CONFIG = {
  */
 export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> {
   const { requestId, alertType, minutesElapsed, escalationLevel = 1 } = params;
+
+  // Validate UUID format (gh-121)
+  if (!UUID_REGEX.test(requestId)) {
+    throw new Error(`Invalid requestId format: ${requestId}`);
+  }
 
   logger.info('Creating SLA alert', {
     requestId,
@@ -235,6 +243,11 @@ export async function resolveAlert(
   action: AlertAction,
   userId?: string
 ): Promise<SlaAlert> {
+  // Validate UUID format (gh-121)
+  if (!UUID_REGEX.test(alertId)) {
+    throw new Error(`Invalid alertId format: ${alertId}`);
+  }
+
   logger.info('Resolving alert', {
     alertId,
     action,
@@ -373,6 +386,11 @@ export async function getActiveAlerts(chatId?: string): Promise<SlaAlert[]> {
  * @returns SlaAlert record with related data or null
  */
 export async function getAlertById(alertId: string): Promise<SlaAlert | null> {
+  // Validate UUID format (gh-121)
+  if (!UUID_REGEX.test(alertId)) {
+    return null;
+  }
+
   try {
     const alert = await prisma.slaAlert.findUnique({
       where: { id: alertId },

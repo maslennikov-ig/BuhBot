@@ -235,7 +235,7 @@ model Chat {
   notifyInChatOnBreach    Boolean  @default(false) @map("notify_in_chat_on_breach") // TEST ONLY: breach notification to group chat (disabled by default to prevent leaking to clients)
 
   // Relations
-  assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id])
+  assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id], onDelete: SetNull)
   clientRequests     ClientRequest[]
   feedbackResponses  FeedbackResponse[]
   workingSchedules   WorkingSchedule[]

@@ -77,6 +77,17 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
+      // Idempotency: skip if alert is already resolved (gh-142)
+      if (alert.resolvedAction !== null) {
+        logger.info('Alert already resolved, skipping notification', {
+          alertId,
+          resolvedAction: alert.resolvedAction,
+          service: 'alert-callback',
+        });
+        await ctx.answerCbQuery('Оповещение уже обработано');
+        return;
+      }
+
       // Get request with chat data including assigned accountant
       const request = await prisma.clientRequest.findUnique({
         where: { id: alert.requestId },

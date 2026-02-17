@@ -46,6 +46,12 @@ export class ClassifierService {
     timestamp: number;
   } | null = null;
   private readonly SETTINGS_CACHE_TTL_MS = 60000; // 1 minute cache for DB settings
+  // Singleflight: prevent thundering herd on cache miss (gh-131)
+  private pendingSettingsFetch: Promise<{
+    apiKey?: string;
+    model?: string;
+    aiConfidenceThreshold?: number;
+  }> | null = null;
 
   /**
    * Create a new classifier service instance
@@ -89,6 +95,27 @@ export class ClassifierService {
       return result;
     }
 
+    // Singleflight: if another request is already fetching, wait for it (gh-131)
+    if (this.pendingSettingsFetch) {
+      return this.pendingSettingsFetch;
+    }
+
+    this.pendingSettingsFetch = this.fetchSettingsFromDb();
+    try {
+      return await this.pendingSettingsFetch;
+    } finally {
+      this.pendingSettingsFetch = null;
+    }
+  }
+
+  /**
+   * Fetch settings from database (extracted for singleflight, gh-131)
+   */
+  private async fetchSettingsFromDb(): Promise<{
+    apiKey?: string;
+    model?: string;
+    aiConfidenceThreshold?: number;
+  }> {
     try {
       const settings = await this.prisma.globalSettings.findUnique({
         where: { id: 'default' },

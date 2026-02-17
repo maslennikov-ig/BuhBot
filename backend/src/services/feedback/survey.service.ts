@@ -84,6 +84,13 @@ export interface ActiveClient {
  * ```
  */
 export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWithStats> {
+  // Validate quarter format: YYYY-QN where N is 1-4 (gh-122)
+  if (!/^\d{4}-Q[1-4]$/.test(input.quarter)) {
+    throw new Error(
+      `Invalid quarter format: ${input.quarter}. Expected format: YYYY-Q1 to YYYY-Q4`
+    );
+  }
+
   const validityDays = input.validityDays ?? 7;
   const expiresAt = new Date(input.scheduledAt);
   expiresAt.setDate(expiresAt.getDate() + validityDays);
@@ -139,17 +146,16 @@ export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWith
  * ```
  */
 export async function getActiveClients(quarter: string): Promise<ActiveClient[]> {
-  // Parse quarter to get date range (format: "YYYY-QN")
-  const parts = quarter.split('-Q');
-  const yearStr = parts[0];
-  const quarterStr = parts[1];
-
-  if (!yearStr || !quarterStr) {
-    throw new Error(`Invalid quarter format: ${quarter}. Expected format: YYYY-QN`);
+  // Validate quarter format (gh-122)
+  if (!/^\d{4}-Q[1-4]$/.test(quarter)) {
+    throw new Error(`Invalid quarter format: ${quarter}. Expected format: YYYY-Q1 to YYYY-Q4`);
   }
 
-  const year = parseInt(yearStr, 10);
-  const quarterNum = parseInt(quarterStr, 10);
+  // Parse quarter to get date range (format: "YYYY-QN")
+  // Regex above guarantees both parts exist
+  const parts = quarter.split('-Q');
+  const year = parseInt(parts[0]!, 10);
+  const quarterNum = parseInt(parts[1]!, 10);
   const startMonth = (quarterNum - 1) * 3;
   const quarterStart = new Date(year, startMonth, 1);
   const quarterEnd = new Date(year, startMonth + 3, 0, 23, 59, 59);
@@ -385,6 +391,11 @@ export async function recordResponse(
   rating: number,
   clientUsername?: string | null
 ): Promise<string> {
+  // Validate rating range (gh-104)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw new Error('Rating must be an integer between 1 and 5');
+  }
+
   const delivery = await prisma.surveyDelivery.findUnique({
     where: { id: deliveryId },
     include: { survey: true },

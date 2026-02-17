@@ -35,14 +35,19 @@ const redisOptions: RedisOptions = {
   db: env.REDIS_DB,
   ...(env.REDIS_PASSWORD ? { password: env.REDIS_PASSWORD } : {}),
 
-  // Retry strategy
+  // Retry strategy with cap to prevent indefinite hangs (gh-137)
   retryStrategy(times: number) {
+    if (times > 20) {
+      logger.error(`Redis: max connection retries (20) exceeded, giving up`);
+      return null; // Stop retrying
+    }
     const delay = Math.min(times * 50, 2000); // Max 2s delay
     logger.warn(`Redis connection retry attempt ${times}, delay: ${delay}ms`);
     return delay;
   },
 
-  // Connection pool settings
+  // BullMQ requires maxRetriesPerRequest: null for blocking commands (BRPOPLPUSH).
+  // Connection-level retries are capped by retryStrategy above (gh-137).
   maxRetriesPerRequest: null,
   enableReadyCheck: true,
 

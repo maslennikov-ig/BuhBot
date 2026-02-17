@@ -32,21 +32,12 @@ const envSchema = z.object({
   PORT: z.string().transform(Number).pipe(z.number().min(1).max(65535)).default('3000'),
 
   // Database (Supabase PostgreSQL)
+  // Note: SSL is enforced programmatically in lib/prisma.ts via pg Pool `ssl` option.
+  // Do NOT require sslmode in the URL — it conflicts with node-postgres ssl config
+  // and causes "self-signed certificate in certificate chain" errors.
   DATABASE_URL: isTestEnv
     ? z.string().url().optional().default('postgresql://localhost:5432/test')
-    : z
-        .string()
-        .url()
-        .refine(
-          (val) =>
-            process.env['NODE_ENV'] !== 'production' ||
-            val.includes('sslmode=require') ||
-            val.includes('sslmode=verify-ca') ||
-            val.includes('sslmode=verify-full') ||
-            val.includes('ssl=true'),
-          { message: 'DATABASE_URL must include sslmode=require (or higher) in production' }
-        )
-        .describe('PostgreSQL connection string from Supabase'),
+    : z.string().url().describe('PostgreSQL connection string from Supabase'),
 
   // Redis (for BullMQ)
   REDIS_HOST: z.string().default('localhost'),

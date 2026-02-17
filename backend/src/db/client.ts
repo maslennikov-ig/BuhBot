@@ -45,22 +45,15 @@ export function validateDatabaseUrl(url: string | undefined): boolean {
     return false;
   }
 
-  // Check for SSL/TLS requirement (production only)
+  // Note: SSL is enforced programmatically in lib/prisma.ts via pg Pool `ssl` option.
+  // Do NOT validate sslmode in URL — it conflicts with node-postgres ssl config
+  // and causes "self-signed certificate in certificate chain" errors.
+  // Reject weak SSL modes if someone explicitly sets them
   if (process.env['NODE_ENV'] === 'production') {
-    // Reject weak SSL modes that are vulnerable to MITM
     if (url.includes('sslmode=allow') || url.includes('sslmode=prefer')) {
-      logger.error('DATABASE_URL uses weak sslmode (allow/prefer) - use require or higher');
-      return false;
-    }
-
-    const hasStrongSSL =
-      url.includes('sslmode=require') ||
-      url.includes('sslmode=verify-ca') ||
-      url.includes('sslmode=verify-full') ||
-      url.includes('ssl=true');
-
-    if (!hasStrongSSL) {
-      logger.error('DATABASE_URL missing sslmode=require - SSL is required in production');
+      logger.error(
+        'DATABASE_URL uses weak sslmode (allow/prefer) - remove it, SSL is enforced in code'
+      );
       return false;
     }
   }
@@ -103,10 +96,8 @@ export function buildPooledDatabaseUrl(baseUrl: string | undefined): string {
     url.searchParams.set('connection_limit', String(POOL_CONFIG.MAX_CONNECTIONS));
   }
 
-  // Ensure sslmode is set for production
-  if (process.env['NODE_ENV'] === 'production' && !url.searchParams.has('sslmode')) {
-    url.searchParams.set('sslmode', 'require');
-  }
+  // Note: SSL is enforced via pg Pool `ssl` option in lib/prisma.ts.
+  // Do NOT set sslmode in URL — it conflicts with node-postgres ssl config.
 
   return url.toString();
 }

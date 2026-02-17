@@ -5,6 +5,14 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.4](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.3...buhbot-v0.14.4) (2026-02-17)
+
+
+### Bug Fixes
+
+* **classifier:** use clarification as default for low confidence ([022285a](https://github.com/maslennikov-ig/BuhBot/commit/022285a81c98a6ae9b4bf315fef02c77435a2385))
+* **message-handler:** include answered status in dedup check ([970ee99](https://github.com/maslennikov-ig/BuhBot/commit/970ee993fe473735f1d70451414ebe564f082d10))
+
 ## [0.14.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.2...buhbot-v0.14.3) (2026-02-17)
 
 

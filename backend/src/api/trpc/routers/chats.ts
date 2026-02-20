@@ -63,6 +63,7 @@ export const chatsRouter = router({
             accountantUsernames: z.array(z.string()),
             assignedAccountantId: z.string().uuid().nullable(),
             slaEnabled: z.boolean(),
+            monitoringEnabled: z.boolean(),
             slaThresholdMinutes: z.number().int(),
             clientTier: z.enum(['basic', 'standard', 'vip', 'premium']),
             createdAt: z.date(),
@@ -81,6 +82,11 @@ export const chatsRouter = router({
         where.slaEnabled = input.slaEnabled;
       }
 
+      // Observer role: restrict to assigned chats only (gh-185)
+      if (ctx.user.role === 'observer') {
+        where.assignedAccountantId = ctx.user.id;
+      }
+
       // Fetch chats with pagination
       const [chats, total] = await Promise.all([
         ctx.prisma.chat.findMany({
@@ -92,6 +98,7 @@ export const chatsRouter = router({
             accountantUsernames: true,
             assignedAccountantId: true,
             slaEnabled: true,
+            monitoringEnabled: true,
             slaThresholdMinutes: true,
             clientTier: true,
             createdAt: true,
@@ -114,6 +121,7 @@ export const chatsRouter = router({
             accountantUsernames: string[];
             assignedAccountantId: string | null;
             slaEnabled: boolean;
+            monitoringEnabled: boolean;
             slaThresholdMinutes: number;
             clientTier: 'basic' | 'standard' | 'vip' | 'premium';
             createdAt: Date;

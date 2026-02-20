@@ -25,6 +25,7 @@ import {
   Settings,
   Loader2,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -53,6 +54,7 @@ type Chat = {
   accountantUsername: string | null;
   assignedAccountantId: string | null;
   slaEnabled: boolean;
+  monitoringEnabled: boolean;
   slaThresholdMinutes: number;
   createdAt: string;
 };
@@ -352,10 +354,21 @@ export function ChatsListContent() {
                             <div>
                               <Link
                                 href={`/chats/${chat.id}`}
-                                className="font-medium text-[var(--buh-foreground)] hover:text-[var(--buh-primary)] transition-colors"
+                                className={cn(
+                                  'font-medium transition-colors',
+                                  !chat.monitoringEnabled
+                                    ? 'text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]'
+                                    : 'text-[var(--buh-foreground)] hover:text-[var(--buh-primary)]'
+                                )}
                               >
                                 {chat.title || `Чат #${chat.id}`}
                               </Link>
+                              {!chat.monitoringEnabled && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--buh-warning)]/10 px-2 py-0.5 text-xs font-medium text-[var(--buh-warning)]">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Неактивен
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>

@@ -16,7 +16,7 @@
  * 3. If match found:
  *    - Reply with answer
  *    - Increment usage count
- *    - Return early (don't call next())
+ *    - Set faqHandled flag and call next() for ChatMessage logging
  * 4. If no match, call next() to pass to other handlers
  *
  * @module bot/handlers/faq
@@ -110,8 +110,10 @@ export function registerFaqHandler(): void {
         service: 'faq-handler',
       });
 
-      // Return early - don't pass to next handlers (no SLA tracking needed)
-      return;
+      // Pass to message handler for ChatMessage logging, but flag as FAQ-handled
+      // to skip SLA classification (gh-185)
+      (ctx.state as Record<string, unknown>)['faqHandled'] = true;
+      return next();
     } catch (error) {
       logger.error('Error in FAQ handler', {
         error: error instanceof Error ? error.message : String(error),

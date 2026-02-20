@@ -164,16 +164,9 @@ export function registerChatEventHandler(): void {
         service: 'chat-event-handler',
       });
 
-      // Update the ID in the database
-      // Prisma doesn't support changing IDs easily. We might need to create new and delete old,
-      // or use raw SQL if we want to preserve history linked to the old ID.
-      // For now, let's just create the new one and maybe flag the old one.
-      // Actually, migration usually brings history.
-
-      // Simple strategy: Create new chat record, move key properties.
-      // Complex strategy: Update FKs.
-
-      // Let's do a simple upsert for the new ID for now to ensure continuity of service.
+      // Migrate chat record and all related FK references from old ID to new supergroup ID (gh-185).
+      // Prisma doesn't support changing primary keys, so we upsert a new Chat,
+      // migrate all child records, then disable the old Chat.
       const oldChat = await prisma.chat.findUnique({ where: { id: BigInt(oldChatId) } });
 
       if (oldChat) {
@@ -190,7 +183,9 @@ export function registerChatEventHandler(): void {
             managerTelegramIds: oldChat.managerTelegramIds,
             notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
             accountantUsernames: oldChat.accountantUsernames,
+            accountantTelegramIds: oldChat.accountantTelegramIds,
             assignedAccountantId: oldChat.assignedAccountantId,
+            clientTier: oldChat.clientTier,
             inviteLink: oldChat.inviteLink,
           },
           update: {
@@ -201,8 +196,75 @@ export function registerChatEventHandler(): void {
             is24x7Mode: oldChat.is24x7Mode,
             managerTelegramIds: oldChat.managerTelegramIds,
             notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
+            accountantUsernames: oldChat.accountantUsernames,
+            accountantTelegramIds: oldChat.accountantTelegramIds,
+            assignedAccountantId: oldChat.assignedAccountantId,
+            clientTier: oldChat.clientTier,
           },
         });
+
+        // Migrate related records from old chat ID to new chat ID (gh-185)
+        try {
+          const oldId = BigInt(oldChatId);
+          const newId = BigInt(newChatId);
+
+          const [
+            movedMessages,
+            movedRequests,
+            movedSchedules,
+            movedFeedback,
+            movedSurveys,
+            movedHolidays,
+          ] = await Promise.all([
+            prisma.chatMessage.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            prisma.clientRequest.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            prisma.workingSchedule.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            prisma.feedbackResponse.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            prisma.surveyDelivery.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            prisma.chatHoliday.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+          ]);
+
+          logger.info('Migrated related records to new supergroup ID', {
+            oldChatId,
+            newChatId,
+            movedMessages: movedMessages.count,
+            movedRequests: movedRequests.count,
+            movedSchedules: movedSchedules.count,
+            movedFeedback: movedFeedback.count,
+            movedSurveys: movedSurveys.count,
+            movedHolidays: movedHolidays.count,
+            service: 'chat-event-handler',
+          });
+        } catch (migrationError) {
+          logger.error('Failed to migrate related records during group→supergroup migration', {
+            oldChatId,
+            newChatId,
+            error:
+              migrationError instanceof Error ? migrationError.message : String(migrationError),
+            stack: migrationError instanceof Error ? migrationError.stack : undefined,
+            service: 'chat-event-handler',
+          });
+          // Continue with disabling the old chat even if migration fails
+        }
+
         // Disable old chat
         await prisma.chat.update({
           where: { id: BigInt(oldChatId) },

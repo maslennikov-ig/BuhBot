@@ -123,14 +123,6 @@ export function registerMessageHandler(): void {
         });
       }
 
-      if (!chat.monitoringEnabled) {
-        logger.debug('Monitoring disabled for chat, skipping all processing', {
-          chatId,
-          service: 'message-handler',
-        });
-        return;
-      }
-
       // 2. Check if sender is accountant FIRST (before logging)
       const { isAccountant, accountantId } = await isAccountantForChat(
         BigInt(chatId),
@@ -156,7 +148,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 4. Log ALL messages to ChatMessage table with CORRECT isAccountant flag
+      // 4. Log ALL messages to ChatMessage table regardless of monitoringEnabled (gh-185)
       try {
         await prisma.chatMessage.upsert({
           where: {
@@ -208,7 +200,27 @@ export function registerMessageHandler(): void {
         }
       }
 
-      // 5. Check if SLA is enabled AFTER logging message (messages are always logged)
+      // 5. Check monitoringEnabled AFTER logging — messages are always persisted,
+      // but SLA classification only runs when monitoring is active (gh-185)
+      if (!chat.monitoringEnabled) {
+        logger.debug('Monitoring disabled for chat, message logged but skipping SLA', {
+          chatId,
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // Skip SLA classification for FAQ-handled messages (gh-185)
+      if ((ctx.state as Record<string, unknown>)['faqHandled']) {
+        logger.debug('FAQ-handled message, skipping SLA classification', {
+          chatId,
+          messageId,
+          service: 'message-handler',
+        });
+        return next();
+      }
+
+      // 7. Check if SLA is enabled AFTER logging message (messages are always logged)
       if (!chat.slaEnabled) {
         logger.debug('SLA disabled for chat, message logged but skipping classification', {
           chatId,
@@ -219,7 +231,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 6. If accountant, pass to response handler (don't process as client message)
+      // 8. If accountant, pass to response handler (don't process as client message)
       if (isAccountant) {
         logger.debug('Accountant message detected, skipping classification', {
           chatId,
@@ -232,7 +244,7 @@ export function registerMessageHandler(): void {
         return next();
       }
 
-      // 6. Classify message using AI/keyword classifier
+      // 9. Classify message using AI/keyword classifier
       const tracer = getTracer('message-handler');
       const classifySpan = tracer.startSpan('classify_message', {
         attributes: { 'chat.id': chatId, 'message.id': messageId },
@@ -256,7 +268,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 7. Only create ClientRequest for REQUEST and CLARIFICATION
+      // 10. Only create ClientRequest for REQUEST and CLARIFICATION
       if (!['REQUEST', 'CLARIFICATION'].includes(classification.classification)) {
         logger.debug('Non-actionable message, not creating ClientRequest', {
           chatId,
@@ -267,7 +279,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 8. Deduplication check (gh-66)
+      // 11. Deduplication check (gh-66)
       const contentHash = hashMessageContent(text);
       const dedupCutoff = new Date(Date.now() - DEDUP_WINDOW_MS);
 
@@ -293,7 +305,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 9. Thread detection via reply_to_message (gh-75)
+      // 12. Thread detection via reply_to_message (gh-75)
       let threadId: string | null = null;
       let parentMessageId: bigint | null = null;
       const replyToMessage = ctx.message.reply_to_message;
@@ -350,7 +362,7 @@ export function registerMessageHandler(): void {
         threadId = randomUUID();
       }
 
-      // 10. Create ClientRequest record (only for REQUEST/CLARIFICATION)
+      // 13. Create ClientRequest record (only for REQUEST/CLARIFICATION)
       const request = await prisma.clientRequest.create({
         data: {
           chatId: BigInt(chatId),
@@ -379,7 +391,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 11. Start SLA timer for REQUEST messages only
+      // 14. Start SLA timer for REQUEST messages only
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 

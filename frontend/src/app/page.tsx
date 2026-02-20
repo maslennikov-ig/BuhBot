@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'BuhBot - Контроль времени ответа бухгалтеров',
     description: 'Автоматическое отслеживание SLA в Telegram-чатах с умными алертами',
-    url: 'https://buhbot.aidevteam.ru',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://buhbot.aidevteam.ru',
     siteName: 'BuhBot',
     locale: 'ru_RU',
     type: 'website',

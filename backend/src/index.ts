@@ -176,6 +176,14 @@ const startServer = async (port: number) => {
     });
   }
 
+  // Warn if FRONTEND_URL is using the built-in default in production
+  if (isProduction() && !process.env['FRONTEND_URL']) {
+    logger.warn('FRONTEND_URL not set — using default. Set it explicitly in production .env', {
+      default: env.FRONTEND_URL,
+      service: 'startup',
+    });
+  }
+
   // Startup validation: warn about chats with SLA enabled but no managers
   try {
     const chatsWithoutManagers = await prisma.chat.findMany({

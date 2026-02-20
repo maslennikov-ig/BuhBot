@@ -223,7 +223,7 @@ jobs:
 
       - name: Run pnpm audit (backend)
         working-directory: ./backend
-        run: pnpm audit --audit-level=high || true
+        run: pnpm audit --audit-level=critical
         continue-on-error: true
 
   # ==========================================================================

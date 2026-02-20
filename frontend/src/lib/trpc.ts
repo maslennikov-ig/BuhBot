@@ -38,6 +38,11 @@ function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
+  // Warn in production — CI should bake NEXT_PUBLIC_API_URL at build time
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[trpc] NEXT_PUBLIC_API_URL not set — SSR requests will fall back to localhost');
+  }
+
   // Default to localhost in development (backend runs on port 3000)
   return 'http://localhost:3000';
 }
@@ -60,7 +65,6 @@ export function createTRPCClient() {
           // DEV MODE: Skip Supabase auth, send dev mode headers
           if (isDevMode) {
             return {
-              'X-Dev-Mode': 'true',
               Authorization: 'Bearer dev-mode-token',
             };
           }

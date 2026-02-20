@@ -5,6 +5,19 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.5](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.4...buhbot-v0.14.5) (2026-02-20)
+
+
+### Bug Fixes
+
+* **backend:** add telegram validation timeout, centralize urls ([c2c00f5](https://github.com/maslennikov-ig/BuhBot/commit/c2c00f54c80c4bd7ac828505ca5896f06842cd3a))
+* **backend:** address code review findings ([35f1c20](https://github.com/maslennikov-ig/BuhBot/commit/35f1c2044be789752a7d47f78374e8db266523c2))
+* **ci:** add missing frontend build args (gh-172, gh-173) ([9c37739](https://github.com/maslennikov-ig/BuhBot/commit/9c3773985a6e24ad08820243951251e458328669))
+* **config:** address remaining code review findings ([3c3ace6](https://github.com/maslennikov-ig/BuhBot/commit/3c3ace60bd5a2a39deb085ce44d6dbb92a63a3f0))
+* **dev-mode:** unify dev mode exports and mock user ids ([5e12f93](https://github.com/maslennikov-ig/BuhBot/commit/5e12f93d958406c2a6e0e563c5ce4383666fda44))
+* **release:** eliminate sigpipe in changelog update functions ([8459f54](https://github.com/maslennikov-ig/BuhBot/commit/8459f5487c2045adcaa256b8f61e39bf52f2c7d8))
+* **release:** support release please tag format in release script ([1b8304f](https://github.com/maslennikov-ig/BuhBot/commit/1b8304f604429af418a4dc06933e71fb5ebd4833))
+
 ## [0.14.4](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.3...buhbot-v0.14.4) (2026-02-17)
 
 
@@ -456,21 +469,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **webhook:** use explicit POST route for Telegraf middleware ([f2081af](https://github.com/maslennikov-ig/BuhBot/commit/f2081af80244867314867e5b1013142531f21ae9))
 
 ## [Unreleased]
-
-## [0.14.5] - 2026-02-20
-
-### Fixed
-- **release**: eliminate sigpipe in changelog update functions (8459f54)
-- **release**: support release please tag format in release script (1b8304f)
-- **config**: address remaining code review findings (3c3ace6)
-- **backend**: address code review findings (35f1c20)
-- **backend**: add telegram validation timeout, centralize urls (c2c00f5)
-- **dev-mode**: unify dev mode exports and mock user ids (5e12f93)
-- **ci**: add missing frontend build args (gh-172, gh-173) (9c37739)
-
-### Other
-- rebuild frontend with new secrets (gh-172) (1f809b4)
-- **beads**: sync task tracker after issues batch (1d20e3a)
 
 ## [0.9.19] - 2026-01-30
 

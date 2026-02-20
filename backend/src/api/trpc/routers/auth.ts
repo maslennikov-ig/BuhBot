@@ -270,6 +270,13 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // DEV_MODE: Supabase invite requires real credentials
+      if (isDevMode) {
+        throw new Error(
+          'Создание пользователей недоступно в DEV_MODE (нет реальных Supabase-ключей)'
+        );
+      }
+
       // Check if user with this email already exists in our database
       const existingUser = await ctx.prisma.user.findUnique({
         where: { email: input.email },

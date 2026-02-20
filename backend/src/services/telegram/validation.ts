@@ -1,3 +1,5 @@
+import logger from '../../utils/logger.js';
+
 interface TelegramMeResponse {
   ok: boolean;
   result: {
@@ -46,7 +48,10 @@ export async function validateBotToken(token: string) {
         error: 'Не удалось подключиться к Telegram. Проверьте сеть.',
       };
     }
-    console.error('Telegram validation error:', error);
+    logger.error('Telegram validation error', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'telegram-validation',
+    });
     return {
       isValid: false,
       error: 'Ошибка сети. Проверьте соединение и попробуйте снова.',

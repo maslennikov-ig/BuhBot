@@ -56,7 +56,8 @@ services:
   # ==========================================================================
   # Next.js admin panel
   # Port 3001: Internal web server (proxied via nginx)
-  # Build args: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+  # Build args: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  #             NEXT_PUBLIC_BOT_NAME, NEXT_PUBLIC_API_URL (SSR-only, browser uses relative path)
   # ==========================================================================
   frontend:
     build:

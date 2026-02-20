@@ -6,7 +6,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 // Check if Supabase is configured
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
-// Development mode - bypass auth when Supabase is not configured
+// Warn once if Supabase env vars are absent in development.
+// This does NOT control auth bypass — use isDevMode from @/lib/config for that.
 const isDevModeLocal = process.env.NODE_ENV === 'development' && !isSupabaseConfigured;
 
 // Mock session for development without Supabase

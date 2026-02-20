@@ -7,7 +7,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
 // Development mode - bypass auth when Supabase is not configured
-export const isDevMode = process.env.NODE_ENV === 'development' && !isSupabaseConfigured;
+const isDevModeLocal = process.env.NODE_ENV === 'development' && !isSupabaseConfigured;
 
 // Mock session for development without Supabase
 // Uses UUID that matches seeded admin user in database
@@ -18,7 +18,7 @@ export const devMockSession: Session = {
   expires_at: Math.floor(Date.now() / 1000) + 3600,
   token_type: 'bearer',
   user: {
-    id: '11111111-1111-1111-1111-111111111111', // Matches seeded admin user
+    id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', // Matches config.ts and backend mock user
     email: 'admin@buhbot.local',
     aud: 'authenticated',
     role: 'authenticated',
@@ -29,7 +29,7 @@ export const devMockSession: Session = {
 };
 
 // In development without Supabase, log a warning
-if (isDevMode) {
+if (isDevModeLocal) {
   console.warn(
     '[Supabase] Running in DEV MODE without Supabase Auth.\n' +
       'Authentication is bypassed. To enable auth, add NEXT_PUBLIC_SUPABASE_ANON_KEY to frontend/.env'

@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, LogOut, Settings, LayoutDashboard, ChevronDown, HelpCircle } from 'lucide-react';
-import { supabase, isDevMode } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { isDevMode } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 
 interface ProfileMenuProps {

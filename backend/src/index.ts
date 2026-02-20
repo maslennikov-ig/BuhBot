@@ -7,7 +7,7 @@ import cors from 'cors';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import packageJson from '../package.json' with { type: 'json' };
 import logger from './utils/logger.js';
-import env, { isProduction, isDevelopment } from './config/env.js';
+import env, { isProduction, isDevelopment, isDevMode } from './config/env.js';
 import { healthHandler } from './api/health.js';
 import { metricsHandler } from './api/metrics.js';
 import { disconnectPrisma, prisma } from './lib/prisma.js';
@@ -41,7 +41,7 @@ const app = express();
 app.use(
   cors({
     origin: isProduction()
-      ? ['https://buhbot.aidevteam.ru']
+      ? [env.FRONTEND_URL]
       : ['http://localhost:3001', 'http://localhost:3000'],
     credentials: true,
   })
@@ -169,6 +169,13 @@ const registerFinalHandlers = () => {
 };
 
 const startServer = async (port: number) => {
+  // DEV_MODE startup warning (gh-179)
+  if (isDevMode) {
+    logger.warn('DEV_MODE IS ACTIVE — authentication is bypassed. Never enable in production!', {
+      service: 'startup',
+    });
+  }
+
   // Startup validation: warn about chats with SLA enabled but no managers
   try {
     const chatsWithoutManagers = await prisma.chat.findMany({

@@ -11,7 +11,7 @@
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { supabase } from '../../../lib/supabase.js';
-import { isDevMode } from '../../../config/env.js';
+import env, { isDevMode } from '../../../config/env.js';
 import logger from '../../../utils/logger.js';
 
 /**
@@ -283,7 +283,7 @@ export const authRouter = router({
       const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
         input.email,
         {
-          redirectTo: `${process.env['FRONTEND_URL'] || 'https://buhbot.aidevteam.ru'}/set-password`,
+          redirectTo: `${env.FRONTEND_URL}/set-password`,
           data: {
             full_name: input.fullName,
             role: input.role,

@@ -2,6 +2,24 @@
 
 User-facing release notes for all versions.
 
+## v0.14.5
+
+_Released on 2026-02-20_
+
+### 🐛 Bug Fixes
+
+- **release**: Eliminate sigpipe in changelog update functions
+- **release**: Support release please tag format in release script
+- **config**: Address remaining code review findings
+- **backend**: Address code review findings
+- **backend**: Add telegram validation timeout, centralize urls
+- **dev-mode**: Unify dev mode exports and mock user ids
+- **CI/CD**: Add missing frontend build args (gh-172, gh-173)
+
+---
+
+_This release was automatically generated from 9 commits._
+
 ## v0.9.19
 
 _Released on 2026-01-30_

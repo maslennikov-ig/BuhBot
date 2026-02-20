@@ -457,6 +457,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.5] - 2026-02-20
+
+### Fixed
+- **release**: eliminate sigpipe in changelog update functions (8459f54)
+- **release**: support release please tag format in release script (1b8304f)
+- **config**: address remaining code review findings (3c3ace6)
+- **backend**: address code review findings (35f1c20)
+- **backend**: add telegram validation timeout, centralize urls (c2c00f5)
+- **dev-mode**: unify dev mode exports and mock user ids (5e12f93)
+- **ci**: add missing frontend build args (gh-172, gh-173) (9c37739)
+
+### Other
+- rebuild frontend with new secrets (gh-172) (1f809b4)
+- **beads**: sync task tracker after issues batch (1d20e3a)
+
 ## [0.9.19] - 2026-01-30
 
 ### Fixed

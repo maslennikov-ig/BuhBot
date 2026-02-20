@@ -452,9 +452,27 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     fi
     log_success "Current version: $CURRENT_VERSION"
 
-    # Get last git tag (across all branches using --all)
-    # Using safe_first instead of head -n 1 to avoid SIGPIPE with pipefail
-    LAST_TAG=$(git tag --sort=-version:refname | safe_first || echo "")
+    # Get last git tag — supports both legacy (v*) and Release Please (buhbot-v*) formats.
+    # Picks the most recent tag by commit date across both formats.
+    LAST_TAG=""
+    local rp_tag=$(git tag -l "buhbot-v*" --sort=-version:refname | safe_first || echo "")
+    local legacy_tag=$(git tag -l "v[0-9]*" --sort=-version:refname | safe_first || echo "")
+
+    if [ -n "$rp_tag" ] && [ -n "$legacy_tag" ]; then
+        # Both formats exist — pick the one pointing to the newer commit
+        local rp_date=$(git log -1 --format=%ct "$rp_tag" 2>/dev/null || echo "0")
+        local legacy_date=$(git log -1 --format=%ct "$legacy_tag" 2>/dev/null || echo "0")
+        if [ "$rp_date" -ge "$legacy_date" ]; then
+            LAST_TAG="$rp_tag"
+        else
+            LAST_TAG="$legacy_tag"
+        fi
+    elif [ -n "$rp_tag" ]; then
+        LAST_TAG="$rp_tag"
+    elif [ -n "$legacy_tag" ]; then
+        LAST_TAG="$legacy_tag"
+    fi
+
     if [ -z "$LAST_TAG" ]; then
         log_warning "No previous git tags found (first release)"
         log_info "Will include all commits from repository start"
@@ -463,8 +481,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
         log_success "Last tag: $LAST_TAG"
         COMMITS_RANGE=$(get_commits_range "$LAST_TAG")
 
-        # Sync package.json version with git tag if needed
-        TAG_VERSION="${LAST_TAG#v}" # Remove 'v' prefix
+        # Extract version from tag (handles both "v0.14.4" and "buhbot-v0.14.4")
+        TAG_VERSION="${LAST_TAG#buhbot-}"  # strip "buhbot-" prefix if present
+        TAG_VERSION="${TAG_VERSION#v}"      # strip "v" prefix
         if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
             log_warning "Version mismatch: package.json ($CURRENT_VERSION) != tag ($TAG_VERSION)"
             log_info "Syncing package.json versions to $TAG_VERSION..."
@@ -929,6 +948,36 @@ update_package_files() {
     echo ""
 }
 
+# === RELEASE PLEASE MANIFEST UPDATE ===
+
+update_release_please_manifest() {
+    local version="$1"
+    local manifest="$PROJECT_ROOT/.release-please-manifest.json"
+
+    if [ ! -f "$manifest" ]; then
+        return 0
+    fi
+
+    log_info "Updating .release-please-manifest.json..."
+
+    create_backup "$manifest"
+    MODIFIED_FILES+=("$manifest")
+
+    # Update the version in the manifest so Release Please stays in sync
+    node -e "
+        const fs = require('fs');
+        const data = JSON.parse(fs.readFileSync('$manifest', 'utf-8'));
+        if ('.' in data) { data['.'] = '$version'; }
+        fs.writeFileSync('$manifest', JSON.stringify(data, null, 2) + '\n');
+    " || {
+        log_error "Failed to update .release-please-manifest.json"
+        exit 1
+    }
+
+    log_success ".release-please-manifest.json updated to $version"
+    echo ""
+}
+
 # === CHANGELOG UPDATE ===
 
 update_changelog() {
@@ -1138,7 +1187,7 @@ Includes commits from ${LAST_TAG:-start} to HEAD
 Co-Authored-By: Claude <noreply@anthropic.com>
 ───────────────────────────────────────────────────────────
 
-🏷️  Git Tag: v$NEW_VERSION
+🏷️  Git Tag: buhbot-v$NEW_VERSION
 🌿 Branch: $BRANCH
 
 ═══════════════════════════════════════════════════════════
@@ -1202,16 +1251,19 @@ Co-Authored-By: Claude <noreply@anthropic.com>" || {
     # Create tag (check if exists first)
     log_info "Creating git tag..."
 
+    # Use Release Please tag format: buhbot-v*
+    local new_tag="buhbot-v$NEW_VERSION"
+
     # Check if tag already exists
-    if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
-        log_error "Tag v$NEW_VERSION already exists!"
+    if git rev-parse "$new_tag" >/dev/null 2>&1; then
+        log_error "Tag $new_tag already exists!"
         echo ""
         log_info "Existing tags:"
-        git tag --sort=-version:refname | safe_head 10
+        git tag -l "buhbot-v*" --sort=-version:refname | safe_head 10
         echo ""
         log_info "Suggested actions:"
-        echo "  1. Delete existing tag: git tag -d v$NEW_VERSION && git push origin :refs/tags/v$NEW_VERSION"
-        echo "  2. Use different version: ./release.sh [patch|minor|major]"
+        echo "  1. Delete tag: git tag -d $new_tag && git push origin :refs/tags/$new_tag"
+        echo "  2. Choose a different version: ./release.sh [patch|minor|major]"
         exit 1
     fi
 
@@ -1219,12 +1271,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>" || {
 
 $(generate_changelog_entry "$NEW_VERSION" "$DATE")"
 
-    git tag -a "v$NEW_VERSION" -m "$tag_message" || {
+    git tag -a "$new_tag" -m "$tag_message" || {
         log_error "Failed to create tag"
         exit 1
     }
-    CREATED_TAG="v$NEW_VERSION"
-    log_success "Tag v$NEW_VERSION created"
+    CREATED_TAG="$new_tag"
+    log_success "Tag $new_tag created"
 
     # Push to remote
     log_info "Pushing to remote..."
@@ -1306,6 +1358,7 @@ main() {
 
     # Execute release
     update_package_files "$NEW_VERSION"
+    update_release_please_manifest "$NEW_VERSION"
     update_changelog "$NEW_VERSION" "$DATE"
     update_release_notes "$NEW_VERSION" "$DATE"
     execute_release
@@ -1316,7 +1369,7 @@ main() {
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo ""
     log_success "Released v$NEW_VERSION"
-    log_success "Tag: v$NEW_VERSION"
+    log_success "Tag: buhbot-v$NEW_VERSION"
     log_success "Branch: $BRANCH"
     echo ""
     log_info "Generated files:"

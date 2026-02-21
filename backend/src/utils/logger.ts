@@ -19,25 +19,28 @@ const NODE_ENV = process.env['NODE_ENV'] || 'development';
  * @see https://github.com/prisma/docs - BigInt serialization
  */
 const bigIntFormat = winston.format((info) => {
-  // Recursively convert BigInt values to strings
-  const convertBigInt = (obj: unknown): unknown => {
-    if (typeof obj === 'bigint') {
-      return obj.toString();
+  const convertBigInt = (value: unknown): unknown => {
+    if (typeof value === 'bigint') {
+      return value.toString();
     }
-    if (Array.isArray(obj)) {
-      return obj.map(convertBigInt);
+    if (Array.isArray(value)) {
+      return value.map(convertBigInt);
     }
-    if (obj !== null && typeof obj === 'object') {
-      const result: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(obj)) {
-        result[key] = convertBigInt(value);
+    if (value !== null && typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      for (const key of Object.keys(obj)) {
+        obj[key] = convertBigInt(obj[key]);
       }
-      return result;
+      return obj;
     }
-    return obj;
+    return value;
   };
 
-  return convertBigInt(info) as winston.Logform.TransformableInfo;
+  // Mutate info in-place — preserves Winston Symbol keys (level, message, splat)
+  for (const key of Object.keys(info)) {
+    info[key] = convertBigInt(info[key]);
+  }
+  return info;
 });
 
 /**

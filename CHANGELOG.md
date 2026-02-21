@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.15.0...buhbot-v0.15.1) (2026-02-21)
+
+
+### Bug Fixes
+
+* **backend:** preserve winston symbol keys in bigint format ([aa78ca4](https://github.com/maslennikov-ig/BuhBot/commit/aa78ca4270443b589d161fc497b8fd7faebe394a))
+
 ## [0.15.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.8...buhbot-v0.15.0) (2026-02-21)
 
 

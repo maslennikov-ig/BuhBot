@@ -470,6 +470,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.6] - 2026-02-21
+
+### Fixed
+- **backend**: add bigint conversions, disable error_logs rls (baf9cb3)
+- **backend**: resolve missing chat messages (gh-185) (56aa3ba)
+
+### Other
+- **main**: release buhbot 0.14.5 (#183) (062ef3b)
+
 ## [0.9.19] - 2026-01-30
 
 ### Fixed

@@ -2,6 +2,19 @@
 
 User-facing release notes for all versions.
 
+## v0.14.6
+
+_Released on 2026-02-21_
+
+### 🐛 Bug Fixes
+
+- **backend**: Add bigint conversions, disable error_logs rls
+- **backend**: Resolve missing chat messages (gh-185)
+
+---
+
+_This release was automatically generated from 3 commits._
+
 ## v0.14.5
 
 _Released on 2026-02-20_

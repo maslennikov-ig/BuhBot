@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.16.0...buhbot-v0.17.0) (2026-02-21)
+
+
+### Features
+
+* **ci:** switch to feature branch + pr workflow (buh-h7d) ([#194](https://github.com/maslennikov-ig/BuhBot/issues/194)) ([958a932](https://github.com/maslennikov-ig/BuhBot/commit/958a93216baa47414b23b57e33bb716709cd5c78))
+
 ## [0.16.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.15.1...buhbot-v0.16.0) (2026-02-21)
 
 

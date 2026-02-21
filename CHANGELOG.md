@@ -485,6 +485,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.8] - 2026-02-21
+
+### Fixed
+- **backend**: harden migration and chat list (gh-185) (8c1ece2)
+
 ## [0.14.6] - 2026-02-21
 
 ### Fixed

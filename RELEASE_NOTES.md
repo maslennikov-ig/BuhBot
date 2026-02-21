@@ -2,6 +2,18 @@
 
 User-facing release notes for all versions.
 
+## v0.14.8
+
+_Released on 2026-02-21_
+
+### 🐛 Bug Fixes
+
+- **backend**: Harden migration and chat list (gh-185)
+
+---
+
+_This release was automatically generated from 1 commits._
+
 ## v0.14.6
 
 _Released on 2026-02-21_

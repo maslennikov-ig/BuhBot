@@ -1,41 +1,45 @@
 ---
-description: Automated release management with version bumping and dual changelog generation
-argument-hint: [patch|minor|major] [-m "message"]
+description: Commit, push feature branch, and create/update PR to main
+argument-hint: [-m "commit message"]
 ---
 
-**Release Please** is the primary release automation: it opens a release PR from `main` that updates CHANGELOG and version; merging that PR creates the tag and GitHub release. This command runs the **legacy** [.claude/scripts/release.sh](.claude/scripts/release.sh) (version bump + CHANGELOG + tag). Use it for optional/local releases or RELEASE_NOTES; for normal product releases, rely on merging the Release Please PR.
+Commit current changes, push to feature branch, and create or update a PR to main.
+Releases are handled automatically by **Release Please** when PRs merge to `main`.
 
-Execute the release automation script with auto-confirmation for Claude Code.
+**Workflow:**
 
-**Features:**
+1. **Check current branch.** If on `main`, create a feature branch:
+   - Run `bd list --status=in_progress` to find active beads issue
+   - Branch name: `feat/<issue-id>` or `fix/<issue-id>` based on issue type (feature/bug)
+   - If no active issue: `feat/<short-description>` derived from the commit message
+   - `git checkout -b <branch-name>`
 
-- Auto-syncs package.json versions with latest git tag (prevents version conflicts)
-- Analyzes commits since last release
-- Auto-detects version bump type from conventional commits
-- **Generates dual changelogs:**
-  - `CHANGELOG.md` - Technical format (Keep a Changelog) for developers
-  - `RELEASE_NOTES.md` - User-facing format with friendly language for marketing
-- Updates all package.json files
-- Creates git tag and pushes to GitHub
-- Full rollback support on errors
-- **Custom commit message** for uncommitted changes via `--message` / `-m` flag
+2. **Stage changes:**
+   - Run `git status` to review changes
+   - Stage relevant files with `git add <files>` — never stage `.env` or credentials
+   - Do NOT use `git add -A` blindly
 
-**Generated RELEASE_NOTES.md format:**
+3. **Commit with conventional message:**
+   - If `-m` argument provided via `$ARGUMENTS`, use it as the commit message
+   - Otherwise, analyze changes and generate a conventional commit message
+   - Follow [docs/COMMIT_CONVENTIONS.md](../../docs/COMMIT_CONVENTIONS.md) strictly
+   - Use the **format-commit-message** skill for message generation
+   - Always append: `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+   - If `git commit` fails (pre-commit hooks), fix issues and retry
 
-- Friendly scope names (auth → Authentication, db → Database)
-- Emojis for visual clarity (✨ Features, 🐛 Fixes, 🔒 Security)
-- Skips technical commits (chore, ci, docs) not relevant to users
-- Ready to copy for announcements, app stores, emails
+4. **Push to remote:**
+   - `git push -u origin <branch-name>`
 
-**Tip:** Use `-m` with a message that follows [docs/COMMIT_CONVENTIONS.md](../../docs/COMMIT_CONVENTIONS.md) so Release Please and changelogs parse correctly. Prefer the **format-commit-message** skill to generate the message:
+5. **Create or update PR:**
+   - Check if PR exists: `gh pr list --head <branch-name> --state open`
+   - If no PR exists: create one with `gh pr create --title "<commit subject>" --body "## Summary\n<changes>\n\n## Beads\n<issue-id>" --base main`
+   - If PR already exists: just push (PR auto-updates with new commits)
+   - Output the PR URL
+
+6. **Run `bd sync`** to ensure beads state is committed.
+
+**Legacy release script** is available for manual/local releases:
 
 ```bash
-/push patch -m "feat(worker): add worker readiness pre-flight system"
+bash .claude/scripts/release.sh [patch|minor|major] --yes
 ```
-
-**Usage:**
-
-# Navigate to project root first
-
-PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
-cd "$PROJECT_ROOT" && bash .claude/scripts/release.sh $ARGUMENTS --yes

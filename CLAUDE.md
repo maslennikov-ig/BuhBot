@@ -54,17 +54,17 @@ Everything else: delegate.
 
 **5. COMMIT STRATEGY**
 
-Run `/push patch` after EACH completed task:
+Run `/push` after EACH completed task (commits to feature branch, creates/updates PR to main):
 
 - Mark task [X] in tasks.md
 - Add artifacts: `→ Artifacts: [file1](path), [file2](path)`
 - Update TodoWrite to completed
-- Then `/push patch`
+- Then `/push` (or `/push -m "feat(scope): description"`)
 - After the command that runs `git commit`, **verify it succeeded** (exit code 0). If it failed, the output contains ESLint/Prettier/commitlint errors—fix those and commit again.
 
 Commit messages MUST follow [docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md) (Conventional Commits + Release Please). Use the **format-commit-message** skill for every commit (including when passing `-m "..."` to `/push`).
 
-**Release automation:** Releases and CHANGELOG are produced by **Release Please** when changes are merged to `main`. Commits must follow the conventions so Release Please can parse them. **`/push patch`** is for committing and pushing feature work (and optionally running the legacy release script); **version bumps and CHANGELOG updates** for the mainline release happen via the Release Please-created PR, not by running `/push` on `main` to create a release commit.
+**Release automation:** Releases and CHANGELOG are produced by **Release Please** when PRs are merged to `main`. Commits must follow the conventions so Release Please can parse them. `/push` commits and pushes to a feature branch, then creates a PR. **Version bumps and CHANGELOG updates** happen via the Release Please-created PR after merge, not manually.
 
 **6. EXECUTION PATTERN**
 
@@ -77,7 +77,7 @@ FOR EACH TASK:
 5. Accept/reject loop (re-delegate if needed)
 6. Update TodoWrite to completed
 7. Mark task [X] in tasks.md + add artifacts
-8. Run /push patch
+8. Run /push
 9. Move to next task
 ```
 
@@ -169,10 +169,11 @@ git commit -m "... (buh-xxx)"  # 4. Commit with issue ID
 # If step 4 fails: read the command output. Pre-commit runs ESLint+Prettier on staged files;
 # commit-msg runs commitlint. Fix the reported issues (code or message), then re-run from step 2.
 bd sync                 # 5. Sync any new changes
-git push                # 6. Push to remote
+git push -u origin HEAD # 6. Push feature branch to remote
+gh pr create || gh pr view  # 7. Create PR to main (or view existing)
 ```
 
-**Work is NOT done until pushed!**
+**Work is NOT done until PR is created!**
 
 **Commit failures:** Always check the **exit code and full output** of `git commit`. On failure, the output shows either lint/format errors (fix code and re-stage) or commitlint errors (fix the message and retry). Retry until `git commit` succeeds, then continue with `bd sync` and `git push`.
 
@@ -206,6 +207,15 @@ git push                # 6. Push to remote
 - Skills: `.claude/skills/{skill-name}/SKILL.md`
 - Temporary: `.tmp/current/` (git ignored)
 - Reports: `docs/reports/{domain}/{YYYY-MM}/`
+
+**Git Workflow**:
+
+- Always work on feature branches, never push directly to main
+- Branch naming: `feat/<issue-id>`, `fix/<issue-id>`, `chore/<description>`
+- Use `/push` to commit, push feature branch, and create PR
+- PRs merge to main via GitHub (squash merge preferred)
+- Release Please creates release PR automatically after merge to main
+- Direct push to main is blocked by branch protection
 
 **Code Standards**:
 

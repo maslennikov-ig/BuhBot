@@ -27,6 +27,7 @@
 import crypto from 'crypto';
 import { prisma } from '../../lib/prisma.js';
 import type { ErrorStatus } from '@prisma/client';
+import { sanitizeMetadata } from './sanitize-metadata.js';
 
 /**
  * Options for capturing an error
@@ -123,6 +124,9 @@ export class ErrorCaptureService {
     try {
       const { level, message, stack, service = 'buhbot-backend', metadata } = options;
 
+      // Sanitize metadata before any database operations
+      const sanitizedMetadata = metadata ? sanitizeMetadata(metadata) : undefined;
+
       // Generate fingerprint
       const fingerprint = this.generateFingerprint(message, stack);
 
@@ -147,8 +151,8 @@ export class ErrorCaptureService {
             // Merge metadata (preserve existing, add new)
             metadata: {
               ...((existingError.metadata as Record<string, any>) || {}),
-              ...(metadata || {}),
-              lastOccurrenceMetadata: metadata,
+              ...(sanitizedMetadata || {}),
+              lastOccurrenceMetadata: sanitizedMetadata,
             },
           },
         });
@@ -167,8 +171,8 @@ export class ErrorCaptureService {
         };
 
         // Only add metadata if present (Prisma requires omission, not undefined)
-        if (metadata) {
-          createData.metadata = metadata;
+        if (sanitizedMetadata) {
+          createData.metadata = sanitizedMetadata;
         }
 
         await prisma.errorLog.create({ data: createData });

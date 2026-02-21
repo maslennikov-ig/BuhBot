@@ -5,6 +5,18 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.15.1...buhbot-v0.16.0) (2026-02-21)
+
+
+### Features
+
+* **backend:** switch classifier to mimo-v2-flash (buh-ti4) ([3daf71a](https://github.com/maslennikov-ig/BuhBot/commit/3daf71a6fa2fe5f32af3cf4a18d7da7f1b78df13))
+
+
+### Bug Fixes
+
+* **backend:** make empty openrouter response retryable (buh-5f4) ([e48bc88](https://github.com/maslennikov-ig/BuhBot/commit/e48bc887c5cebf76f8029c1cd52e8102de77185b))
+
 ## [0.15.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.15.0...buhbot-v0.15.1) (2026-02-21)
 
 

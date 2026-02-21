@@ -65,7 +65,7 @@ const DEFAULTS: CachedGlobalSettings = {
   aiConfidenceThreshold: 0.7,
   messagePreviewLength: 500,
   openrouterApiKey: null,
-  openrouterModel: 'openai/gpt-oss-120b',
+  openrouterModel: 'xiaomi/mimo-v2-flash',
   dataRetentionYears: 3,
   surveyValidityDays: 7,
   surveyReminderDay: 2,

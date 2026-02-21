@@ -54,7 +54,7 @@ export interface ClassifierConfig {
   keywordConfidenceThreshold: number;
   /** Cache TTL in hours (default: 24) */
   cacheTTLHours: number;
-  /** OpenRouter model to use (default: openai/gpt-oss-120b) */
+  /** OpenRouter model to use (default: xiaomi/mimo-v2-flash) */
   openRouterModel: string;
   /** OpenRouter API key (optional, falls back to env OPENROUTER_API_KEY) */
   openRouterApiKey?: string;
@@ -73,7 +73,7 @@ export const DEFAULT_CLASSIFIER_CONFIG: ClassifierConfig = {
   aiConfidenceThreshold: 0.7,
   keywordConfidenceThreshold: 0.5,
   cacheTTLHours: 24,
-  openRouterModel: 'openai/gpt-oss-120b',
+  openRouterModel: 'xiaomi/mimo-v2-flash',
   timeoutMs: 30000,
   maxRetries: 3,
 };

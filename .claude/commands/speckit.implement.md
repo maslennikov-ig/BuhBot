@@ -167,7 +167,7 @@ You **MUST** consider the user input before proceeding (if not empty).
       - Reject? → Re-delegate with corrections and error messages, go to step 4
    7. UPDATE TODO: Mark task `completed` in TodoWrite
    8. UPDATE tasks.md: Mark task `[X]`, add artifacts: `→ Artifacts: [file1](path), [file2](path)`
-   9. COMMIT: Run `/push patch`
+   9. COMMIT: Run `/push` (or `/push -m "feat(scope): description"`)
    10. NEXT TASK: Move to next incomplete task, go to step 1
 
 9. Implementation execution rules:
@@ -180,7 +180,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 10. Progress tracking and error handling:
 
 - Report progress after each completed task
-- **Commit after each task**: Run `/push patch` before moving to next
+- **Commit after each task**: Run `/push` before moving to next
 - Halt execution if any non-parallel task fails
 - For parallel tasks [P], continue with successful tasks, report failed ones
 - Provide clear error messages with context for debugging

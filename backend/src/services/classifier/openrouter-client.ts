@@ -140,6 +140,16 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Custom error for empty API responses — should be retried
+ */
+class EmptyResponseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EmptyResponseError';
+  }
+}
+
+/**
  * Check if an error is a rate limit error
  */
 function isRateLimitError(error: unknown): boolean {
@@ -173,6 +183,9 @@ function isRetryableError(error: unknown): boolean {
     return true;
   }
   if (error instanceof OpenAI.APIConnectionTimeoutError) {
+    return true;
+  }
+  if (error instanceof EmptyResponseError) {
     return true;
   }
   return false;
@@ -260,7 +273,7 @@ class OpenRouterClient {
 
         const content = response.choices[0]?.message?.content;
         if (!content) {
-          throw new Error('Empty response from OpenRouter');
+          throw new EmptyResponseError('Empty response from OpenRouter');
         }
 
         const parsed = parseAIResponse(content);

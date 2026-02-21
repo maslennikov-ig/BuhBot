@@ -170,109 +170,95 @@ export function registerChatEventHandler(): void {
       const oldChat = await prisma.chat.findUnique({ where: { id: BigInt(oldChatId) } });
 
       if (oldChat) {
-        await prisma.chat.upsert({
-          where: { id: BigInt(newChatId) },
-          create: {
-            id: BigInt(newChatId),
-            chatType: 'supergroup',
-            title: oldChat.title,
-            slaEnabled: oldChat.slaEnabled,
-            slaThresholdMinutes: oldChat.slaThresholdMinutes,
-            monitoringEnabled: oldChat.monitoringEnabled,
-            is24x7Mode: oldChat.is24x7Mode,
-            managerTelegramIds: oldChat.managerTelegramIds,
-            notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
-            accountantUsernames: oldChat.accountantUsernames,
-            accountantTelegramIds: oldChat.accountantTelegramIds,
-            assignedAccountantId: oldChat.assignedAccountantId,
-            clientTier: oldChat.clientTier,
-            inviteLink: oldChat.inviteLink,
-          },
-          update: {
-            title: oldChat.title,
-            slaEnabled: oldChat.slaEnabled,
-            slaThresholdMinutes: oldChat.slaThresholdMinutes,
-            monitoringEnabled: oldChat.monitoringEnabled,
-            is24x7Mode: oldChat.is24x7Mode,
-            managerTelegramIds: oldChat.managerTelegramIds,
-            notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
-            accountantUsernames: oldChat.accountantUsernames,
-            accountantTelegramIds: oldChat.accountantTelegramIds,
-            assignedAccountantId: oldChat.assignedAccountantId,
-            clientTier: oldChat.clientTier,
-          },
-        });
+        // Atomic migration: upsert new chat, migrate FK records, disable old chat (gh-185)
+        const oldId = BigInt(oldChatId);
+        const newId = BigInt(newChatId);
 
-        // Migrate related records from old chat ID to new chat ID (gh-185)
-        try {
-          const oldId = BigInt(oldChatId);
-          const newId = BigInt(newChatId);
+        const [
+          ,
+          movedMessages,
+          movedRequests,
+          movedSchedules,
+          movedFeedback,
+          movedSurveys,
+          movedHolidays,
+        ] = await prisma.$transaction([
+          prisma.chat.upsert({
+            where: { id: newId },
+            create: {
+              id: newId,
+              chatType: 'supergroup',
+              title: oldChat.title,
+              slaEnabled: oldChat.slaEnabled,
+              slaThresholdMinutes: oldChat.slaThresholdMinutes,
+              monitoringEnabled: oldChat.monitoringEnabled,
+              is24x7Mode: oldChat.is24x7Mode,
+              managerTelegramIds: oldChat.managerTelegramIds,
+              notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
+              accountantUsernames: oldChat.accountantUsernames,
+              accountantTelegramIds: oldChat.accountantTelegramIds,
+              assignedAccountantId: oldChat.assignedAccountantId,
+              clientTier: oldChat.clientTier,
+              inviteLink: oldChat.inviteLink,
+            },
+            update: {
+              title: oldChat.title,
+              slaEnabled: oldChat.slaEnabled,
+              slaThresholdMinutes: oldChat.slaThresholdMinutes,
+              monitoringEnabled: oldChat.monitoringEnabled,
+              is24x7Mode: oldChat.is24x7Mode,
+              managerTelegramIds: oldChat.managerTelegramIds,
+              notifyInChatOnBreach: oldChat.notifyInChatOnBreach,
+              accountantUsernames: oldChat.accountantUsernames,
+              accountantTelegramIds: oldChat.accountantTelegramIds,
+              assignedAccountantId: oldChat.assignedAccountantId,
+              clientTier: oldChat.clientTier,
+            },
+          }),
+          prisma.chatMessage.updateMany({
+            where: { chatId: oldId },
+            data: { chatId: newId },
+          }),
+          prisma.clientRequest.updateMany({
+            where: { chatId: oldId },
+            data: { chatId: newId },
+          }),
+          prisma.workingSchedule.updateMany({
+            where: { chatId: oldId },
+            data: { chatId: newId },
+          }),
+          prisma.feedbackResponse.updateMany({
+            where: { chatId: oldId },
+            data: { chatId: newId },
+          }),
+          prisma.surveyDelivery.updateMany({
+            where: { chatId: oldId },
+            data: { chatId: newId },
+          }),
+          prisma.chatHoliday.updateMany({
+            where: { chatId: oldId },
+            data: { chatId: newId },
+          }),
+          prisma.chat.update({
+            where: { id: oldId },
+            data: {
+              monitoringEnabled: false,
+              slaEnabled: false,
+              title: oldChat.title ? `[MIGRATED] ${oldChat.title}` : '[MIGRATED]',
+            },
+          }),
+        ]);
 
-          const [
-            movedMessages,
-            movedRequests,
-            movedSchedules,
-            movedFeedback,
-            movedSurveys,
-            movedHolidays,
-          ] = await Promise.all([
-            prisma.chatMessage.updateMany({
-              where: { chatId: oldId },
-              data: { chatId: newId },
-            }),
-            prisma.clientRequest.updateMany({
-              where: { chatId: oldId },
-              data: { chatId: newId },
-            }),
-            prisma.workingSchedule.updateMany({
-              where: { chatId: oldId },
-              data: { chatId: newId },
-            }),
-            prisma.feedbackResponse.updateMany({
-              where: { chatId: oldId },
-              data: { chatId: newId },
-            }),
-            prisma.surveyDelivery.updateMany({
-              where: { chatId: oldId },
-              data: { chatId: newId },
-            }),
-            prisma.chatHoliday.updateMany({
-              where: { chatId: oldId },
-              data: { chatId: newId },
-            }),
-          ]);
-
-          logger.info('Migrated related records to new supergroup ID', {
-            oldChatId,
-            newChatId,
-            movedMessages: movedMessages.count,
-            movedRequests: movedRequests.count,
-            movedSchedules: movedSchedules.count,
-            movedFeedback: movedFeedback.count,
-            movedSurveys: movedSurveys.count,
-            movedHolidays: movedHolidays.count,
-            service: 'chat-event-handler',
-          });
-        } catch (migrationError) {
-          logger.error('Failed to migrate related records during group→supergroup migration', {
-            oldChatId,
-            newChatId,
-            error:
-              migrationError instanceof Error ? migrationError.message : String(migrationError),
-            stack: migrationError instanceof Error ? migrationError.stack : undefined,
-            service: 'chat-event-handler',
-          });
-          // Continue with disabling the old chat even if migration fails
-        }
-
-        // Disable old chat
-        await prisma.chat.update({
-          where: { id: BigInt(oldChatId) },
-          data: {
-            monitoringEnabled: false,
-            slaEnabled: false,
-            title: oldChat.title ? `[MIGRATED] ${oldChat.title}` : '[MIGRATED]',
-          },
+        logger.info('Migrated related records to new supergroup ID', {
+          oldChatId,
+          newChatId,
+          movedMessages: movedMessages.count,
+          movedRequests: movedRequests.count,
+          movedSchedules: movedSchedules.count,
+          movedFeedback: movedFeedback.count,
+          movedSurveys: movedSurveys.count,
+          movedHolidays: movedHolidays.count,
+          service: 'chat-event-handler',
         });
       } else {
         // Just register as new

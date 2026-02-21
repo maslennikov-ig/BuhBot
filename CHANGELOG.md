@@ -5,6 +5,18 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.8...buhbot-v0.15.0) (2026-02-21)
+
+
+### Features
+
+* **backend:** add metadata sanitization for errors (gh-190) ([aa58738](https://github.com/maslennikov-ig/BuhBot/commit/aa587381fc2ceb7776c3784344feebd0f5390e2f))
+
+
+### Bug Fixes
+
+* **backend:** elevate error_logs read auth to manager (gh-190) ([529638d](https://github.com/maslennikov-ig/BuhBot/commit/529638d57c895a50e23dc1158d6d2e1d293efd67))
+
 ## [0.14.8](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.14.7...buhbot-v0.14.8) (2026-02-21)
 
 

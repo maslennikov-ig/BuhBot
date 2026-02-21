@@ -112,7 +112,7 @@ export function registerFaqHandler(): void {
 
       // Pass to message handler for ChatMessage logging, but flag as FAQ-handled
       // to skip SLA classification (gh-185)
-      (ctx.state as Record<string, unknown>)['faqHandled'] = true;
+      ctx.state.faqHandled = true;
       return next();
     } catch (error) {
       logger.error('Error in FAQ handler', {

@@ -89,7 +89,9 @@ export const chatsRouter = router({
       }
 
       // Filter out disabled/migrated chats by default (gh-185)
-      if (!input.includeDisabled) {
+      // Only admins/managers may opt in to see disabled chats
+      const canSeeDisabled = ctx.user.role === 'admin' || ctx.user.role === 'manager';
+      if (!input.includeDisabled || !canSeeDisabled) {
         where.monitoringEnabled = true;
       }
 

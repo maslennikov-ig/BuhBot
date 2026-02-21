@@ -154,36 +154,43 @@ export function registerChatEventHandler(): void {
 
   // Handle Group -> Supergroup Migration
   bot.on('migrate_to_chat_id', async (ctx) => {
-    try {
-      const oldChatId = ctx.chat.id;
-      const newChatId = ctx.message.migrate_to_chat_id;
+    const oldChatId = ctx.chat.id;
+    const newChatId = ctx.message.migrate_to_chat_id;
+    const oldId = BigInt(oldChatId);
+    const newId = BigInt(newChatId);
 
+    try {
       logger.info('Group migrated to supergroup', {
         oldChatId,
         newChatId,
         service: 'chat-event-handler',
       });
 
-      // Migrate chat record and all related FK references from old ID to new supergroup ID (gh-185).
-      // Prisma doesn't support changing primary keys, so we upsert a new Chat,
-      // migrate all child records, then disable the old Chat.
-      const oldChat = await prisma.chat.findUnique({ where: { id: BigInt(oldChatId) } });
+      // Interactive transaction: all reads and writes inside tx to avoid TOCTOU races (buh-9g1)
+      await prisma.$transaction(
+        async (tx) => {
+          const oldChat = await tx.chat.findUnique({ where: { id: oldId } });
 
-      if (oldChat) {
-        // Atomic migration: upsert new chat, migrate FK records, disable old chat (gh-185)
-        const oldId = BigInt(oldChatId);
-        const newId = BigInt(newChatId);
+          if (!oldChat) {
+            // Old chat not found — just register the new supergroup
+            await tx.chat.upsert({
+              where: { id: newId },
+              create: {
+                id: newId,
+                chatType: 'supergroup',
+                title: 'Migrated Group',
+                slaEnabled: false,
+                monitoringEnabled: true,
+              },
+              update: {
+                chatType: 'supergroup',
+              },
+            });
+            return;
+          }
 
-        const [
-          ,
-          movedMessages,
-          movedRequests,
-          movedSchedules,
-          movedFeedback,
-          movedSurveys,
-          movedHolidays,
-        ] = await prisma.$transaction([
-          prisma.chat.upsert({
+          // 1. Upsert new chat with all fields from oldChat, including inviteLink in update (P3-2)
+          await tx.chat.upsert({
             where: { id: newId },
             create: {
               id: newId,
@@ -213,71 +220,141 @@ export function registerChatEventHandler(): void {
               accountantTelegramIds: oldChat.accountantTelegramIds,
               assignedAccountantId: oldChat.assignedAccountantId,
               clientTier: oldChat.clientTier,
+              inviteLink: oldChat.inviteLink,
             },
-          }),
-          prisma.chatMessage.updateMany({
-            where: { chatId: oldId },
-            data: { chatId: newId },
-          }),
-          prisma.clientRequest.updateMany({
-            where: { chatId: oldId },
-            data: { chatId: newId },
-          }),
-          prisma.workingSchedule.updateMany({
-            where: { chatId: oldId },
-            data: { chatId: newId },
-          }),
-          prisma.feedbackResponse.updateMany({
-            where: { chatId: oldId },
-            data: { chatId: newId },
-          }),
-          prisma.surveyDelivery.updateMany({
-            where: { chatId: oldId },
-            data: { chatId: newId },
-          }),
-          prisma.chatHoliday.updateMany({
-            where: { chatId: oldId },
-            data: { chatId: newId },
-          }),
-          prisma.chat.update({
+          });
+
+          // 2. Delete conflicting records in newId before migration to avoid unique constraint violations (P0-2)
+
+          // ChatMessage: @@unique([chatId, messageId])
+          const existingNewMessages = await tx.chatMessage.findMany({
+            where: { chatId: newId },
+            select: { messageId: true },
+          });
+          if (existingNewMessages.length > 0) {
+            await tx.chatMessage.deleteMany({
+              where: {
+                chatId: oldId,
+                messageId: { in: existingNewMessages.map((m) => m.messageId) },
+              },
+            });
+          }
+
+          // WorkingSchedule: @@unique([chatId, dayOfWeek])
+          const existingNewSchedules = await tx.workingSchedule.findMany({
+            where: { chatId: newId },
+            select: { dayOfWeek: true },
+          });
+          if (existingNewSchedules.length > 0) {
+            await tx.workingSchedule.deleteMany({
+              where: {
+                chatId: oldId,
+                dayOfWeek: { in: existingNewSchedules.map((s) => s.dayOfWeek) },
+              },
+            });
+          }
+
+          // SurveyDelivery: @@unique([surveyId, chatId])
+          const existingNewSurveys = await tx.surveyDelivery.findMany({
+            where: { chatId: newId },
+            select: { surveyId: true },
+          });
+          if (existingNewSurveys.length > 0) {
+            await tx.surveyDelivery.deleteMany({
+              where: {
+                chatId: oldId,
+                surveyId: { in: existingNewSurveys.map((s) => s.surveyId) },
+              },
+            });
+          }
+
+          // ChatHoliday: @@unique([chatId, date])
+          const existingNewHolidays = await tx.chatHoliday.findMany({
+            where: { chatId: newId },
+            select: { date: true },
+          });
+          if (existingNewHolidays.length > 0) {
+            await tx.chatHoliday.deleteMany({
+              where: {
+                chatId: oldId,
+                date: { in: existingNewHolidays.map((h) => h.date) },
+              },
+            });
+          }
+
+          // 3. Migrate all child records (independent updateMany calls) + ChatInvitation.createdChatId (P2-3)
+          const [
+            movedMessages,
+            movedRequests,
+            movedSchedules,
+            movedFeedback,
+            movedSurveys,
+            movedHolidays,
+            movedInvitations,
+          ] = await Promise.all([
+            tx.chatMessage.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            tx.clientRequest.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            tx.workingSchedule.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            tx.feedbackResponse.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            tx.surveyDelivery.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            tx.chatHoliday.updateMany({
+              where: { chatId: oldId },
+              data: { chatId: newId },
+            }),
+            tx.chatInvitation.updateMany({
+              where: { createdChatId: oldId },
+              data: { createdChatId: newId },
+            }),
+          ]);
+
+          // 4. Disable old chat
+          await tx.chat.update({
             where: { id: oldId },
             data: {
               monitoringEnabled: false,
               slaEnabled: false,
               title: oldChat.title ? `[MIGRATED] ${oldChat.title}` : '[MIGRATED]',
             },
-          }),
-        ]);
+          });
 
-        logger.info('Migrated related records to new supergroup ID', {
-          oldChatId,
-          newChatId,
-          movedMessages: movedMessages.count,
-          movedRequests: movedRequests.count,
-          movedSchedules: movedSchedules.count,
-          movedFeedback: movedFeedback.count,
-          movedSurveys: movedSurveys.count,
-          movedHolidays: movedHolidays.count,
-          service: 'chat-event-handler',
-        });
-      } else {
-        // Just register as new
-        await prisma.chat.upsert({
-          where: { id: BigInt(newChatId) },
-          create: {
-            id: BigInt(newChatId),
-            chatType: 'supergroup',
-            title: 'Migrated Group',
-            slaEnabled: false,
-            monitoringEnabled: true,
-          },
-          update: {
-            chatType: 'supergroup',
-          },
-        });
-      }
+          logger.info('Migrated related records to new supergroup ID', {
+            oldChatId,
+            newChatId,
+            movedMessages: movedMessages.count,
+            movedRequests: movedRequests.count,
+            movedSchedules: movedSchedules.count,
+            movedFeedback: movedFeedback.count,
+            movedSurveys: movedSurveys.count,
+            movedHolidays: movedHolidays.count,
+            movedInvitations: movedInvitations.count,
+            service: 'chat-event-handler',
+          });
+        },
+        { timeout: 30000 }
+      );
     } catch (error) {
-      logger.error('Error handling migration', { error });
+      logger.error('Error handling migration', {
+        oldChatId,
+        newChatId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        service: 'chat-event-handler',
+      });
     }
   });
 

@@ -207,11 +207,11 @@ export function registerMessageHandler(): void {
           chatId,
           service: 'message-handler',
         });
-        return;
+        return next();
       }
 
       // Skip SLA classification for FAQ-handled messages (gh-185)
-      if ((ctx.state as Record<string, unknown>)['faqHandled']) {
+      if (ctx.state.faqHandled) {
         logger.debug('FAQ-handled message, skipping SLA classification', {
           chatId,
           messageId,

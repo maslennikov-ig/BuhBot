@@ -18,10 +18,19 @@ import env from '../config/env.js';
 import { errorMiddleware, rateLimitMiddleware } from './middleware/index.js';
 
 /**
- * Extended context type for BuhBot
- * Can be extended with custom properties if needed
+ * Typed state carried between middleware via ctx.state
  */
-export type BotContext = Context;
+interface BotState {
+  faqHandled?: boolean;
+}
+
+/**
+ * Extended context type for BuhBot
+ * Narrows ctx.state to BotState for type-safe middleware communication
+ */
+export type BotContext = Context & {
+  state: BotState;
+};
 
 /**
  * Telegram bot token from environment

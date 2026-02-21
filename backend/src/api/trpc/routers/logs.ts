@@ -2,9 +2,9 @@
  * Logs Router - System Error Logs Management
  *
  * Procedures:
- * - list: List error logs with filters and pagination
- * - listGrouped: Group errors by fingerprint (default view)
- * - getById: Get single error + related errors (same fingerprint)
+ * - list: List error logs with filters and pagination (manager/admin)
+ * - listGrouped: Group errors by fingerprint, default view (manager/admin)
+ * - getById: Get single error + related errors, same fingerprint (manager/admin)
  * - updateStatus: Update error status/notes/assignee (admin only)
  * - bulkUpdateStatus: Batch status updates (admin only)
  * - delete: Delete error log (admin only)
@@ -12,7 +12,7 @@
  * @module api/trpc/routers/logs
  */
 
-import { router, authedProcedure, adminProcedure } from '../trpc.js';
+import { router, managerProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
@@ -44,9 +44,9 @@ export const logsRouter = router({
    * @param limit - Number of records per page (default: 50, max: 100)
    * @param cursor - Cursor for pagination (UUID of last record)
    * @returns Array of error logs with nextCursor for pagination
-   * @authorization All authenticated users (read-only)
+   * @authorization Admin and Manager roles (read-only)
    */
-  list: authedProcedure
+  list: managerProcedure
     .input(
       z.object({
         level: ErrorLevelSchema.optional(),
@@ -174,9 +174,9 @@ export const logsRouter = router({
    * @param limit - Number of groups per page (default: 50, max: 100)
    * @param offset - Offset for pagination (default: 0)
    * @returns Array of grouped errors with total count
-   * @authorization All authenticated users (read-only)
+   * @authorization Admin and Manager roles (read-only)
    */
-  listGrouped: authedProcedure
+  listGrouped: managerProcedure
     .input(
       z.object({
         level: ErrorLevelSchema.optional(),
@@ -339,9 +339,9 @@ export const logsRouter = router({
    * @param id - Error log UUID
    * @returns Error details and related errors
    * @throws NOT_FOUND if error doesn't exist
-   * @authorization All authenticated users (read-only)
+   * @authorization Admin and Manager roles (read-only)
    */
-  getById: authedProcedure
+  getById: managerProcedure
     .input(
       z.object({
         id: z.string().uuid(),

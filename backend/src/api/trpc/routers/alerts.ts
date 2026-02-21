@@ -11,6 +11,7 @@
 import { router, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
 /**
  * Alert type schema (matches Prisma AlertType enum)
@@ -85,7 +86,7 @@ export const alertsRouter = router({
         alertType: alert.alertType,
         minutesElapsed: alert.minutesElapsed,
         alertSentAt: alert.alertSentAt,
-        chatId: Number(alert.request.chatId),
+        chatId: safeNumberFromBigInt(alert.request.chatId),
         messageText: alert.request.messageText,
         clientUsername: alert.request.clientUsername,
       }));

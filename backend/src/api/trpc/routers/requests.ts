@@ -114,7 +114,7 @@ export const requestsRouter = router({
       // Build where clause from filters
       const where: Prisma.ClientRequestWhereInput = {};
       if (input.chatId !== undefined) {
-        where.chatId = input.chatId;
+        where.chatId = BigInt(input.chatId);
       }
       if (input.assignedTo !== undefined) {
         where.assignedTo = input.assignedTo;
@@ -640,7 +640,7 @@ export const requestsRouter = router({
 
       return requests.map((r) => ({
         ...r,
-        parentMessageId: r.parentMessageId ? Number(r.parentMessageId) : null,
+        parentMessageId: r.parentMessageId ? safeNumberFromBigInt(r.parentMessageId) : null,
       }));
     }),
 

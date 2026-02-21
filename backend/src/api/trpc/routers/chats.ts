@@ -169,7 +169,7 @@ export const chatsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const chat = await ctx.prisma.chat.findUnique({
-        where: { id: input.id },
+        where: { id: BigInt(input.id) },
         select: {
           id: true,
           chatType: true,
@@ -362,7 +362,7 @@ export const chatsRouter = router({
 
           // Now safely read the locked row via Prisma
           const existingChat = await tx.chat.findUnique({
-            where: { id: input.id },
+            where: { id: BigInt(input.id) },
           });
 
           if (!existingChat) {
@@ -510,7 +510,7 @@ export const chatsRouter = router({
 
           // Update chat (within same transaction, row is already locked)
           const updatedChat = await tx.chat.update({
-            where: { id: input.id },
+            where: { id: BigInt(input.id) },
             data,
             select: {
               id: true,

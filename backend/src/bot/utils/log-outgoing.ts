@@ -27,11 +27,18 @@ export async function replyAndLog(
 ): Promise<Message.TextMessage> {
   const sent = await ctx.reply(text, extra);
 
+  if (!ctx.chat) {
+    logger.warn('replyAndLog called without chat context, skipping log', {
+      service: 'log-outgoing',
+    });
+    return sent;
+  }
+
   try {
     await prisma.chatMessage.createMany({
       data: [
         {
-          chatId: BigInt(ctx.chat!.id),
+          chatId: BigInt(ctx.chat.id),
           messageId: BigInt(sent.message_id),
           telegramUserId: BigInt(sent.from?.id ?? 0),
           username: sent.from?.username ?? 'BuhBot',

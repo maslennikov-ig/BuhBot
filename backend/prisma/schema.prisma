@@ -707,7 +707,9 @@ model ChatMessage {
   caption           String?   @db.Text
   // Bot's own outgoing messages
   isBotOutgoing     Boolean   @default(false) @map("is_bot_outgoing")
-  // Soft-delete for deleted messages
+  // Soft-delete for deleted messages (future: Telegram Bot API does not
+  // send delete events for group messages; column reserved for manual
+  // admin-panel deletion or future Telegram API support)
   deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   // Link to request if this message resolved it

@@ -45,6 +45,15 @@ export function registerEditHandler(): void {
 
       const nextVersion = (latestVersion?.editVersion ?? -1) + 1;
 
+      // Edge case: original message was never logged (bot was down or not in chat yet)
+      if (!latestVersion) {
+        logger.warn('Edited message has no prior version in DB, storing as editVersion 0', {
+          chatId,
+          messageId,
+          service: 'edit-handler',
+        });
+      }
+
       // Append-only: insert new version, never update existing
       await prisma.chatMessage.createMany({
         data: [

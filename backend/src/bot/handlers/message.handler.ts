@@ -149,30 +149,28 @@ export function registerMessageHandler(): void {
       }
 
       // 4. Log ALL messages to ChatMessage table regardless of monitoringEnabled (gh-185)
+      // Append-only: insert with skipDuplicates (ON CONFLICT DO NOTHING)
       try {
-        await prisma.chatMessage.upsert({
-          where: {
-            unique_chat_message: {
+        await prisma.chatMessage.createMany({
+          data: [
+            {
               chatId: BigInt(chatId),
               messageId: BigInt(messageId),
+              telegramUserId: BigInt(ctx.from?.id ?? 0),
+              username: ctx.from?.username ?? null,
+              firstName: ctx.from?.first_name ?? null,
+              lastName: ctx.from?.last_name ?? null,
+              messageText: text,
+              isAccountant: isAccountant,
+              replyToMessageId: ctx.message.reply_to_message?.message_id
+                ? BigInt(ctx.message.reply_to_message.message_id)
+                : null,
+              telegramDate: new Date(ctx.message.date * 1000),
+              editVersion: 0,
+              messageType: 'text',
             },
-          },
-          create: {
-            chatId: BigInt(chatId),
-            messageId: BigInt(messageId),
-            telegramUserId: BigInt(ctx.from?.id ?? 0),
-            username: ctx.from?.username ?? null,
-            firstName: ctx.from?.first_name ?? null,
-            lastName: ctx.from?.last_name ?? null,
-            messageText: text,
-            isAccountant: isAccountant, // Correct flag from accountant check
-            replyToMessageId: ctx.message.reply_to_message?.message_id
-              ? BigInt(ctx.message.reply_to_message.message_id)
-              : null,
-          },
-          update: {
-            isAccountant: isAccountant, // Update if message is being re-processed
-          },
+          ],
+          skipDuplicates: true,
         });
 
         logger.debug('Message logged to ChatMessage', {

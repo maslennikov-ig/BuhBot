@@ -680,34 +680,50 @@ model ChatInvitation {
   @@schema("public")
 }
 
-/// Complete message log for monitored chats
-/// Stores both client and accountant messages
+/// Complete message log for monitored chats (append-only)
+/// Stores both client and accountant messages with version history
 model ChatMessage {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  chatId            BigInt   @map("chat_id") @db.BigInt
-  messageId         BigInt   @map("message_id") @db.BigInt
-  telegramUserId    BigInt   @map("telegram_user_id") @db.BigInt
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chatId            BigInt    @map("chat_id") @db.BigInt
+  messageId         BigInt    @map("message_id") @db.BigInt
+  telegramUserId    BigInt    @map("telegram_user_id") @db.BigInt
   username          String?
-  firstName         String?  @map("first_name")
-  lastName          String?  @map("last_name")
-  messageText       String   @map("message_text")
-  isAccountant      Boolean  @default(false) @map("is_accountant")
-  replyToMessageId  BigInt?  @map("reply_to_message_id") @db.BigInt
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  firstName         String?   @map("first_name")
+  lastName          String?   @map("last_name")
+  messageText       String    @map("message_text")
+  isAccountant      Boolean   @default(false) @map("is_accountant")
+  replyToMessageId  BigInt?   @map("reply_to_message_id") @db.BigInt
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Authoritative timestamp from Telegram (not DB server time)
+  telegramDate      DateTime  @map("telegram_date") @db.Timestamptz(6)
+  // Version tracking: 0 = original, 1+ = edits (append-only)
+  editVersion       Int       @default(0) @map("edit_version")
+  // Message content type
+  messageType       String    @default("text") @map("message_type") @db.VarChar(20)
+  // Media metadata (for non-text messages)
+  mediaFileId       String?   @map("media_file_id") @db.VarChar(255)
+  mediaFileName     String?   @map("media_file_name") @db.VarChar(255)
+  caption           String?   @db.Text
+  // Bot's own outgoing messages
+  isBotOutgoing     Boolean   @default(false) @map("is_bot_outgoing")
+  // Soft-delete for deleted messages
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   // Link to request if this message resolved it
-  resolvedRequestId String?  @map("resolved_request_id") @db.Uuid
+  resolvedRequestId String?   @map("resolved_request_id") @db.Uuid
 
   // Relations
-  chat              Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chat              Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   resolvedRequest   ClientRequest? @relation("ResponseMessage", fields: [resolvedRequestId], references: [id])
 
-  @@unique([chatId, messageId], name: "unique_chat_message")
+  @@unique([chatId, messageId, editVersion], name: "unique_chat_message_version")
   @@index([chatId])
   @@index([createdAt])
   @@index([isAccountant])
-  @@index([chatId, createdAt(sort: Desc)], name: "idx_chat_messages_chat_created")
-  @@index([chatId, isAccountant, createdAt], name: "idx_chat_messages_chat_accountant_created")
+  @@index([chatId, telegramDate(sort: Desc)], name: "idx_chat_messages_chat_telegram_date")
+  @@index([chatId, messageId, editVersion(sort: Desc)], name: "idx_chat_messages_chat_msg_version")
+  @@index([chatId, isAccountant, telegramDate], name: "idx_chat_messages_chat_accountant_tgdate")
   @@map("chat_messages")
   @@schema("public")
 }

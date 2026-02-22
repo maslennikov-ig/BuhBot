@@ -369,7 +369,7 @@ if (!timingSafeEqual(expectedSignature, providedSignature)) {
 |-------------|----------|--------|
 | Security Assessment | [`SECURITY-ASSESSMENT.md`](./reports/security/2026-02-21/SECURITY-ASSESSMENT.md) | ✅ Complete |
 | Full Stack Assessment | [`SECURITY-ASSESSMENT-FULL.md`](./reports/security/2026-02-21/SECURITY-ASSESSMENT-FULL.md) | ✅ Complete |
-| Archived Audit Reports | [`archive/reports/security/2024-11-24/`](./archive/reports/security/2024-11-24/) | ✅ Complete |
+| Archived Audit Reports | [`archive/reports/security/2026-02-16/`](./archive/reports/security/2026-02-16/) | ✅ Complete |
 | Remediation Commit | `b443db66b6eedcace5b127d59482dfc10e55c59c` | ✅ Complete |
 
 ### Phase 0.5: Post-Assessment Updates (February 22, 2026)
@@ -831,7 +831,7 @@ Based on the assessment, BuhBot is currently at **Level 2: Proactive** on the se
 |--------|------|----------|
 | Backend Security Assessment | Feb 21, 2026 | [`SECURITY-ASSESSMENT.md`](./reports/security/2026-02-21/SECURITY-ASSESSMENT.md) |
 | Full Stack Security Assessment | Feb 21, 2026 | [`SECURITY-ASSESSMENT-FULL.md`](./reports/security/2026-02-21/SECURITY-ASSESSMENT-FULL.md) |
-| Original Security Audit | Nov 24, 2024 | [`archive/reports/security/2024-11-24/`](./archive/reports/security/2024-11-24/) |
+| Original Security Audit | Feb 16, 2026 | [`archive/reports/security/2026-02-16/`](./archive/reports/security/2026-02-16/) |
 
 ### 8.2 Key Security Files
 

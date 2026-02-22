@@ -16,26 +16,15 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 import { message } from 'telegraf/filters';
-import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { bot, BotContext } from '../bot.js';
+import { TelegramMessageSchema } from '../utils/telegram-schemas.js';
 import { prisma } from '../../lib/prisma.js';
 import { classifyMessage } from '../../services/classifier/index.js';
 import { startSlaTimer } from '../../services/sla/timer.service.js';
 import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
 import { getTracer } from '../../lib/tracing.js';
-
-/**
- * Zod schema for validating incoming Telegram message data
- * Prevents XSS and validates field lengths before database insertion
- */
-const TelegramMessageSchema = z.object({
-  text: z.string().min(1).max(10000),
-  username: z.string().max(255).optional().nullable(),
-  firstName: z.string().max(255).optional().nullable(),
-  lastName: z.string().max(255).optional().nullable(),
-});
 
 /** Time window for deduplication: 5 minutes (gh-66) */
 const DEDUP_WINDOW_MS = 5 * 60 * 1000;
@@ -208,7 +197,7 @@ export function registerMessageHandler(): void {
         return next();
       }
 
-      // Skip SLA classification for FAQ-handled messages (gh-185)
+      // 6. Skip SLA classification for FAQ-handled messages (gh-185)
       if (ctx.state.faqHandled) {
         logger.debug('FAQ-handled message, skipping SLA classification', {
           chatId,

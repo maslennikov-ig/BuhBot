@@ -232,16 +232,16 @@ export function registerChatEventHandler(): void {
             select: { messageId: true, editVersion: true },
           });
           if (existingNewMessages.length > 0) {
-            // Delete old-chat rows that would conflict with new-chat rows
-            for (const msg of existingNewMessages) {
-              await tx.chatMessage.deleteMany({
-                where: {
-                  chatId: oldId,
-                  messageId: msg.messageId,
-                  editVersion: msg.editVersion,
-                },
-              });
-            }
+            // Delete old-chat rows that would conflict with new-chat rows (single query instead of N+1)
+            await tx.$executeRaw`
+              DELETE FROM "public"."chat_messages"
+              WHERE chat_id = ${oldId}
+              AND (message_id, edit_version) IN (
+                SELECT message_id, edit_version
+                FROM "public"."chat_messages"
+                WHERE chat_id = ${newId}
+              )
+            `;
           }
 
           // WorkingSchedule: @@unique([chatId, dayOfWeek])

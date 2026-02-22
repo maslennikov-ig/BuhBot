@@ -12,9 +12,9 @@
 import { message } from 'telegraf/filters';
 import { bot, BotContext } from '../bot.js';
 import logger from '../../utils/logger.js';
-import { prisma } from '../../lib/prisma.js';
 import { isAccountantForChat } from './response.handler.js';
 import { replyAndLog } from '../utils/log-outgoing.js';
+import { logMediaMessage } from '../utils/log-media-message.js';
 
 /**
  * Format file size for human-readable display
@@ -104,8 +104,13 @@ export function registerFileHandler(): void {
       return;
     }
 
+    // Only process messages from groups and supergroups
+    if (!ctx.chat || !['group', 'supergroup'].includes(ctx.chat.type)) {
+      return;
+    }
+
     const document = ctx.message.document;
-    const chatId = ctx.chat?.id;
+    const chatId = ctx.chat.id;
     const username = ctx.from?.username;
 
     // Sanitize filename: strip control chars, limit length (gh-132)
@@ -125,42 +130,24 @@ export function registerFileHandler(): void {
 
     // Log document to ChatMessage (append-only)
     const isAccountantResult = ctx.from?.username
-      ? await isAccountantForChat(BigInt(chatId!), ctx.from.username, ctx.from?.id ?? 0)
+      ? await isAccountantForChat(BigInt(chatId), ctx.from.username, ctx.from?.id ?? 0)
       : { isAccountant: false };
 
-    try {
-      await prisma.chatMessage.createMany({
-        data: [
-          {
-            chatId: BigInt(chatId!),
-            messageId: BigInt(ctx.message.message_id),
-            telegramUserId: BigInt(ctx.from?.id ?? 0),
-            username: ctx.from?.username ?? null,
-            firstName: ctx.from?.first_name ?? null,
-            lastName: ctx.from?.last_name ?? null,
-            messageText: ctx.message.caption || `[Документ: ${filename}]`,
-            isAccountant: isAccountantResult.isAccountant,
-            telegramDate: new Date(ctx.message.date * 1000),
-            editVersion: 0,
-            messageType: 'document',
-            mediaFileId: document.file_id,
-            mediaFileName: filename,
-            caption: ctx.message.caption ?? null,
-          },
-        ],
-        skipDuplicates: true,
-      });
-    } catch (logError) {
-      logger.warn('Failed to log document to ChatMessage', {
-        chatId,
-        error: logError instanceof Error ? logError.message : String(logError),
-        service: 'file-handler',
-      });
-    }
+    await logMediaMessage({
+      chatId,
+      messageId: ctx.message.message_id,
+      from: ctx.from,
+      date: ctx.message.date,
+      messageType: 'document',
+      mediaFileId: document.file_id,
+      mediaFileName: filename,
+      caption: ctx.message.caption,
+      isAccountant: isAccountantResult.isAccountant,
+    });
 
     try {
       const formattedSize = formatFileSize(fileSize);
-      const timestamp = formatTimestamp(new Date());
+      const timestamp = formatTimestamp(new Date(ctx.message.date * 1000));
       const confirmationMessage = buildConfirmationMessage(filename, formattedSize, timestamp);
 
       await replyAndLog(ctx, confirmationMessage);
@@ -188,8 +175,13 @@ export function registerFileHandler(): void {
       return;
     }
 
+    // Only process messages from groups and supergroups
+    if (!ctx.chat || !['group', 'supergroup'].includes(ctx.chat.type)) {
+      return;
+    }
+
     const photos = ctx.message.photo;
-    const chatId = ctx.chat?.id;
+    const chatId = ctx.chat.id;
     const username = ctx.from?.username;
 
     // Get the largest photo (last in array)
@@ -222,42 +214,24 @@ export function registerFileHandler(): void {
 
     // Log photo to ChatMessage (append-only)
     const isAccountantResult = ctx.from?.username
-      ? await isAccountantForChat(BigInt(chatId!), ctx.from.username, ctx.from?.id ?? 0)
+      ? await isAccountantForChat(BigInt(chatId), ctx.from.username, ctx.from?.id ?? 0)
       : { isAccountant: false };
 
-    try {
-      await prisma.chatMessage.createMany({
-        data: [
-          {
-            chatId: BigInt(chatId!),
-            messageId: BigInt(ctx.message.message_id),
-            telegramUserId: BigInt(ctx.from?.id ?? 0),
-            username: ctx.from?.username ?? null,
-            firstName: ctx.from?.first_name ?? null,
-            lastName: ctx.from?.last_name ?? null,
-            messageText: ctx.message.caption || `[Фото: ${filename}]`,
-            isAccountant: isAccountantResult.isAccountant,
-            telegramDate: new Date(ctx.message.date * 1000),
-            editVersion: 0,
-            messageType: 'photo',
-            mediaFileId: largestPhoto.file_id,
-            mediaFileName: filename,
-            caption: ctx.message.caption ?? null,
-          },
-        ],
-        skipDuplicates: true,
-      });
-    } catch (logError) {
-      logger.warn('Failed to log photo to ChatMessage', {
-        chatId,
-        error: logError instanceof Error ? logError.message : String(logError),
-        service: 'file-handler',
-      });
-    }
+    await logMediaMessage({
+      chatId,
+      messageId: ctx.message.message_id,
+      from: ctx.from,
+      date: ctx.message.date,
+      messageType: 'photo',
+      mediaFileId: largestPhoto.file_id,
+      mediaFileName: filename,
+      caption: ctx.message.caption,
+      isAccountant: isAccountantResult.isAccountant,
+    });
 
     try {
       const formattedSize = formatFileSize(fileSize);
-      const timestamp = formatTimestamp(new Date());
+      const timestamp = formatTimestamp(new Date(ctx.message.date * 1000));
       const confirmationMessage = buildConfirmationMessage(filename, formattedSize, timestamp);
 
       await replyAndLog(ctx, confirmationMessage);

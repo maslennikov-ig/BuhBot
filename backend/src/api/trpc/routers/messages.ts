@@ -151,38 +151,48 @@ export const messagesRouter = router({
 
       requireChatAccess(ctx.user, chat);
 
-      // Resolve cursor to a telegramDate for pagination
+      // Resolve cursor to (telegramDate, id) for compound cursor pagination.
+      // Telegram timestamps have second precision, so multiple messages can share
+      // the same telegram_date. Using a compound (telegram_date, id) cursor with
+      // tuple comparison ensures no messages are lost during pagination.
       let cursorDate: Date | null = null;
+      let cursorId: string | null = null;
       if (input.cursor) {
         const cursorMessage = await ctx.prisma.chatMessage.findUnique({
           where: { id: input.cursor },
-          select: { telegramDate: true },
+          select: { telegramDate: true, id: true },
         });
 
         if (cursorMessage) {
           cursorDate = cursorMessage.telegramDate;
+          cursorId = cursorMessage.id;
         }
       }
 
-      // Build cursor SQL fragment
-      const cursorFragment = cursorDate
-        ? Prisma.sql`AND telegram_date < ${cursorDate}`
-        : Prisma.empty;
+      // Build compound cursor SQL fragment using tuple comparison.
+      // (telegram_date, id) < (cursorDate, cursorId) correctly pages through
+      // messages even when multiple messages share the same telegram_date.
+      const cursorFragment =
+        cursorDate && cursorId
+          ? Prisma.sql`AND (telegram_date, id) < (${cursorDate}, ${cursorId}::uuid)`
+          : Prisma.empty;
 
       // Fetch messages using DISTINCT ON to get only the latest edit_version
-      // per (chat_id, message_id), excluding soft-deleted rows.
+      // per (chat_id, message_id).
       // The subquery picks the highest edit_version per message;
-      // the outer query sorts by telegram_date DESC and applies the LIMIT.
+      // the outer query filters soft-deleted rows (deleted_at IS NULL) AFTER
+      // DISTINCT ON so that soft-delete applies to the latest version of
+      // each message, then applies cursor pagination and LIMIT.
       const rawMessages = await ctx.prisma.$queryRaw<RawChatMessage[]>`
         SELECT * FROM (
           SELECT DISTINCT ON (chat_id, message_id) *
           FROM "public"."chat_messages"
           WHERE chat_id = ${BigInt(input.chatId)}
-            AND deleted_at IS NULL
-            ${cursorFragment}
           ORDER BY chat_id, message_id, edit_version DESC
         ) sub
-        ORDER BY telegram_date DESC
+        WHERE deleted_at IS NULL
+          ${cursorFragment}
+        ORDER BY telegram_date DESC, id DESC
         LIMIT ${input.limit + 1}
       `;
 

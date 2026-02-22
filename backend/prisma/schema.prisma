@@ -712,7 +712,10 @@ model ChatMessage {
   // admin-panel deletion or future Telegram API support)
   deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  // Link to request if this message resolved it
+  // APPEND-ONLY EXCEPTION: resolvedRequestId is the only mutable column.
+  // Updated once by response.handler when accountant resolves a request;
+  // never changed afterwards. This avoids duplicating the relation in
+  // ClientRequest while keeping fast lookups from message → request.
   resolvedRequestId String?   @map("resolved_request_id") @db.Uuid
 
   // Relations
@@ -721,8 +724,6 @@ model ChatMessage {
 
   @@unique([chatId, messageId, editVersion], name: "unique_chat_message_version")
   @@index([chatId])
-  @@index([createdAt])
-  @@index([isAccountant])
   @@index([chatId, telegramDate(sort: Desc)], name: "idx_chat_messages_chat_telegram_date")
   @@index([chatId, messageId, editVersion(sort: Desc)], name: "idx_chat_messages_chat_msg_version")
   @@index([chatId, isAccountant, telegramDate], name: "idx_chat_messages_chat_accountant_tgdate")

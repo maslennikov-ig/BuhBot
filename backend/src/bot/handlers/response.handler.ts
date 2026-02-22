@@ -370,14 +370,15 @@ export function registerResponseHandler(): void {
         });
       }
 
-      // 4. Update the existing ChatMessage with resolvedRequestId
-      // (Message was already logged by message handler with correct isAccountant=true)
+      // 4. APPEND-ONLY EXCEPTION: resolvedRequestId is the only mutable column
+      // in ChatMessage. Written once when accountant resolves a request, never
+      // changed afterwards. Idempotent: re-running with same requestId is safe.
       try {
         await prisma.chatMessage.updateMany({
           where: {
             chatId: BigInt(chatId),
             messageId: BigInt(messageId),
-            editVersion: 0, // Target original version only (append-only model)
+            editVersion: 0, // Target original version only
           },
           data: {
             resolvedRequestId: requestToResolve.id,

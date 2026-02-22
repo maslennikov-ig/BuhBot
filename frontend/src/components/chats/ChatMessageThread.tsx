@@ -9,12 +9,17 @@
  * - Bot outgoing messages aligned right with distinct styling
  * - Infinite scroll with cursor-based pagination
  * - Polling for near-real-time updates
+ *
+ * IMPORTANT: Parent component should render with key={chatId}
+ * to reset scroll position and query cache when switching chats.
+ * Example: <ChatMessageThread key={chatId} chatId={chatId} />
  */
 
 import * as React from 'react';
 import {
   User,
   Bot,
+  Briefcase,
   Clock,
   MessageSquare,
   AlertTriangle,
@@ -79,6 +84,21 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
     });
   };
 
+  // Group messages by date for rendering date dividers
+  const groupedMessages = React.useMemo(() => {
+    const groups: { date: string; messages: typeof messages }[] = [];
+    for (const msg of messages) {
+      const date = formatDate(msg.telegramDate);
+      const lastGroup = groups[groups.length - 1];
+      if (!lastGroup || lastGroup.date !== date) {
+        groups.push({ date, messages: [msg] });
+      } else {
+        lastGroup.messages.push(msg);
+      }
+    }
+    return groups;
+  }, [messages]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -119,9 +139,6 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
     );
   }
 
-  // Group messages by date
-  let currentDate = '';
-
   return (
     <div
       ref={scrollRef}
@@ -134,23 +151,17 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
         </div>
       )}
 
-      {messages.map((message) => {
-        const messageDate = formatDate(message.telegramDate ?? message.createdAt);
-        const showDateDivider = messageDate !== currentDate;
-        // eslint-disable-next-line react-hooks/immutability
-        currentDate = messageDate;
+      {groupedMessages.map((group) => (
+        <React.Fragment key={group.date}>
+          <div className="flex items-center justify-center py-2">
+            <span className="px-3 py-1 text-xs text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-overlay)] rounded-full">
+              {group.date}
+            </span>
+          </div>
 
-        return (
-          <React.Fragment key={message.id}>
-            {showDateDivider && (
-              <div className="flex items-center justify-center py-2">
-                <span className="px-3 py-1 text-xs text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-overlay)] rounded-full">
-                  {messageDate}
-                </span>
-              </div>
-            )}
-
+          {group.messages.map((message) => (
             <div
+              key={message.id}
               className={cn(
                 'flex gap-3 max-w-[85%]',
                 message.isAccountant || message.isBotOutgoing ? 'ml-auto flex-row-reverse' : ''
@@ -170,7 +181,7 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
                 {message.isBotOutgoing ? (
                   <Bot className="h-4 w-4 text-white" />
                 ) : message.isAccountant ? (
-                  <Bot className="h-4 w-4 text-white" />
+                  <Briefcase className="h-4 w-4 text-white" />
                 ) : (
                   <User className="h-4 w-4 text-[var(--buh-foreground-muted)]" />
                 )}
@@ -200,7 +211,7 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
                       : message.firstName || 'Пользователь'}
                   </span>
                   <span className="text-xs text-[var(--buh-foreground-subtle)]">
-                    {formatTime(message.telegramDate ?? message.createdAt)}
+                    {formatTime(message.telegramDate)}
                   </span>
                   {message.editVersion > 0 && (
                     <span className="text-xs text-[var(--buh-foreground-subtle)] italic ml-1 inline-flex items-center gap-0.5">
@@ -236,9 +247,9 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
                 )}
               </div>
             </div>
-          </React.Fragment>
-        );
-      })}
+          ))}
+        </React.Fragment>
+      ))}
     </div>
   );
 }

@@ -469,7 +469,7 @@ RUN npx tsc --project tsconfig.build.json || true
 | L-04 | Supabase anon key exposed to client | Frontend env | Acceptable with RLS |
 | L-05 | Audit continue-on-error in CI | `.github/workflows/ci.yml:227` | Review audit findings |
 | L-06 | Telegram notifications use secrets | `.github/workflows/ci.yml:328` | Properly referenced |
-| L-07 | TypeScript build with `|| true` | `backend/Dockerfile:35` | Caught in CI |
+| L-07 | TypeScript build with `\|\| true` | `backend/Dockerfile:35` | Caught in CI |
 
 ---
 

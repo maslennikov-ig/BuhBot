@@ -12,6 +12,9 @@
 import { message } from 'telegraf/filters';
 import { bot, BotContext } from '../bot.js';
 import logger from '../../utils/logger.js';
+import { prisma } from '../../lib/prisma.js';
+import { isAccountantForChat } from './response.handler.js';
+import { replyAndLog } from '../utils/log-outgoing.js';
 
 /**
  * Format file size for human-readable display
@@ -120,12 +123,47 @@ export function registerFileHandler(): void {
       service: 'file-handler',
     });
 
+    // Log document to ChatMessage (append-only)
+    const isAccountantResult = ctx.from?.username
+      ? await isAccountantForChat(BigInt(chatId!), ctx.from.username, ctx.from?.id ?? 0)
+      : { isAccountant: false };
+
+    try {
+      await prisma.chatMessage.createMany({
+        data: [
+          {
+            chatId: BigInt(chatId!),
+            messageId: BigInt(ctx.message.message_id),
+            telegramUserId: BigInt(ctx.from?.id ?? 0),
+            username: ctx.from?.username ?? null,
+            firstName: ctx.from?.first_name ?? null,
+            lastName: ctx.from?.last_name ?? null,
+            messageText: ctx.message.caption || `[Документ: ${filename}]`,
+            isAccountant: isAccountantResult.isAccountant,
+            telegramDate: new Date(ctx.message.date * 1000),
+            editVersion: 0,
+            messageType: 'document',
+            mediaFileId: document.file_id,
+            mediaFileName: filename,
+            caption: ctx.message.caption ?? null,
+          },
+        ],
+        skipDuplicates: true,
+      });
+    } catch (logError) {
+      logger.warn('Failed to log document to ChatMessage', {
+        chatId,
+        error: logError instanceof Error ? logError.message : String(logError),
+        service: 'file-handler',
+      });
+    }
+
     try {
       const formattedSize = formatFileSize(fileSize);
       const timestamp = formatTimestamp(new Date());
       const confirmationMessage = buildConfirmationMessage(filename, formattedSize, timestamp);
 
-      await ctx.reply(confirmationMessage);
+      await replyAndLog(ctx, confirmationMessage);
 
       logger.debug('File confirmation sent', {
         chatId,
@@ -182,12 +220,47 @@ export function registerFileHandler(): void {
       service: 'file-handler',
     });
 
+    // Log photo to ChatMessage (append-only)
+    const isAccountantResult = ctx.from?.username
+      ? await isAccountantForChat(BigInt(chatId!), ctx.from.username, ctx.from?.id ?? 0)
+      : { isAccountant: false };
+
+    try {
+      await prisma.chatMessage.createMany({
+        data: [
+          {
+            chatId: BigInt(chatId!),
+            messageId: BigInt(ctx.message.message_id),
+            telegramUserId: BigInt(ctx.from?.id ?? 0),
+            username: ctx.from?.username ?? null,
+            firstName: ctx.from?.first_name ?? null,
+            lastName: ctx.from?.last_name ?? null,
+            messageText: ctx.message.caption || `[Фото: ${filename}]`,
+            isAccountant: isAccountantResult.isAccountant,
+            telegramDate: new Date(ctx.message.date * 1000),
+            editVersion: 0,
+            messageType: 'photo',
+            mediaFileId: largestPhoto.file_id,
+            mediaFileName: filename,
+            caption: ctx.message.caption ?? null,
+          },
+        ],
+        skipDuplicates: true,
+      });
+    } catch (logError) {
+      logger.warn('Failed to log photo to ChatMessage', {
+        chatId,
+        error: logError instanceof Error ? logError.message : String(logError),
+        service: 'file-handler',
+      });
+    }
+
     try {
       const formattedSize = formatFileSize(fileSize);
       const timestamp = formatTimestamp(new Date());
       const confirmationMessage = buildConfirmationMessage(filename, formattedSize, timestamp);
 
-      await ctx.reply(confirmationMessage);
+      await replyAndLog(ctx, confirmationMessage);
 
       logger.debug('Photo confirmation sent', {
         chatId,

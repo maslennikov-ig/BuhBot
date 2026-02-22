@@ -6,11 +6,23 @@
  * Shows messages in a chat-like interface with:
  * - Client messages aligned left
  * - Accountant messages aligned right
+ * - Bot outgoing messages aligned right with distinct styling
  * - Infinite scroll with cursor-based pagination
+ * - Polling for near-real-time updates
  */
 
 import * as React from 'react';
-import { User, Bot, Clock, MessageSquare, AlertTriangle, RefreshCw } from 'lucide-react';
+import {
+  User,
+  Bot,
+  Clock,
+  MessageSquare,
+  AlertTriangle,
+  RefreshCw,
+  Paperclip,
+  Pencil,
+  Image,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,6 +40,8 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         retry: 3,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        refetchInterval: 10_000, // Poll every 10 seconds for near-real-time updates
+        refetchIntervalInBackground: false, // Only poll when tab is focused
       }
     );
 
@@ -121,7 +135,7 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
       )}
 
       {messages.map((message) => {
-        const messageDate = formatDate(message.createdAt);
+        const messageDate = formatDate(message.telegramDate ?? message.createdAt);
         const showDateDivider = messageDate !== currentDate;
         // eslint-disable-next-line react-hooks/immutability
         currentDate = messageDate;
@@ -139,19 +153,23 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
             <div
               className={cn(
                 'flex gap-3 max-w-[85%]',
-                message.isAccountant ? 'ml-auto flex-row-reverse' : ''
+                message.isAccountant || message.isBotOutgoing ? 'ml-auto flex-row-reverse' : ''
               )}
             >
               {/* Avatar */}
               <div
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-                  message.isAccountant
-                    ? 'bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]'
-                    : 'bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]'
+                  message.isBotOutgoing
+                    ? 'bg-gradient-to-br from-[var(--buh-foreground-muted)] to-[var(--buh-surface-elevated)] border border-[var(--buh-border)]'
+                    : message.isAccountant
+                      ? 'bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]'
+                      : 'bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]'
                 )}
               >
-                {message.isAccountant ? (
+                {message.isBotOutgoing ? (
+                  <Bot className="h-4 w-4 text-white" />
+                ) : message.isAccountant ? (
                   <Bot className="h-4 w-4 text-white" />
                 ) : (
                   <User className="h-4 w-4 text-[var(--buh-foreground-muted)]" />
@@ -182,14 +200,32 @@ export function ChatMessageThread({ chatId }: ChatMessageThreadProps) {
                       : message.firstName || 'Пользователь'}
                   </span>
                   <span className="text-xs text-[var(--buh-foreground-subtle)]">
-                    {formatTime(message.createdAt)}
+                    {formatTime(message.telegramDate ?? message.createdAt)}
                   </span>
+                  {message.editVersion > 0 && (
+                    <span className="text-xs text-[var(--buh-foreground-subtle)] italic ml-1 inline-flex items-center gap-0.5">
+                      <Pencil className="h-2.5 w-2.5" />
+                      ред.
+                    </span>
+                  )}
                 </div>
 
-                {/* Message text */}
-                <p className="text-sm text-[var(--buh-foreground)] whitespace-pre-wrap break-words">
-                  {message.messageText}
-                </p>
+                {/* Message content */}
+                {message.messageType === 'text' ? (
+                  <p className="text-sm text-[var(--buh-foreground)] whitespace-pre-wrap break-words">
+                    {message.messageText}
+                  </p>
+                ) : message.messageType === 'photo' ? (
+                  <div className="flex items-center gap-2 text-sm text-[var(--buh-foreground)]">
+                    <Image className="h-4 w-4 text-[var(--buh-foreground-muted)]" />
+                    <span className="italic">{message.caption || message.messageText}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-[var(--buh-foreground)]">
+                    <Paperclip className="h-4 w-4 text-[var(--buh-foreground-muted)]" />
+                    <span className="italic">{message.caption || message.messageText}</span>
+                  </div>
+                )}
 
                 {/* Resolution indicator */}
                 {message.resolvedRequestId && (

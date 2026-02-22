@@ -4,6 +4,9 @@
  * Procedures:
  * - listByChat: List messages for a chat with cursor-based pagination
  *
+ * Uses raw SQL with DISTINCT ON to return only the latest edit_version
+ * per (chat_id, message_id) pair, supporting the append-only ChatMessage model.
+ *
  * @module api/trpc/routers/messages
  */
 
@@ -11,7 +14,34 @@ import { router, authedProcedure } from '../trpc.js';
 import { requireChatAccess } from '../authorization.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
+
+/**
+ * Raw row shape returned by the DISTINCT ON query (snake_case DB columns).
+ */
+type RawChatMessage = {
+  id: string;
+  chat_id: bigint;
+  message_id: bigint;
+  telegram_user_id: bigint;
+  username: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  message_text: string;
+  is_accountant: boolean;
+  reply_to_message_id: bigint | null;
+  created_at: Date;
+  telegram_date: Date;
+  edit_version: number;
+  message_type: string;
+  media_file_id: string | null;
+  media_file_name: string | null;
+  caption: string | null;
+  is_bot_outgoing: boolean;
+  deleted_at: Date | null;
+  resolved_request_id: string | null;
+};
 
 // Simple in-memory rate limiter
 // In production, consider using Redis for distributed rate limiting
@@ -60,6 +90,9 @@ export const messagesRouter = router({
   /**
    * List messages for a chat with cursor-based pagination
    *
+   * Returns the latest edit_version of each message (DISTINCT ON),
+   * excludes soft-deleted messages, and paginates by telegramDate.
+   *
    * @param chatId - Chat ID (Telegram chat ID)
    * @param limit - Number of messages to fetch (default: 50, max: 100)
    * @param cursor - Cursor for pagination (message UUID to start after)
@@ -89,6 +122,11 @@ export const messagesRouter = router({
             replyToMessageId: z.number().nullable(),
             resolvedRequestId: z.string().uuid().nullable(),
             createdAt: z.date(),
+            telegramDate: z.date(),
+            editVersion: z.number(),
+            messageType: z.string(),
+            caption: z.string().nullable(),
+            isBotOutgoing: z.boolean(),
           })
         ),
         nextCursor: z.string().uuid().nullable(),
@@ -113,50 +151,44 @@ export const messagesRouter = router({
 
       requireChatAccess(ctx.user, chat);
 
-      // Build cursor condition (always fetch older messages for infinite scroll)
-      let cursorCondition = {};
+      // Resolve cursor to a telegramDate for pagination
+      let cursorDate: Date | null = null;
       if (input.cursor) {
         const cursorMessage = await ctx.prisma.chatMessage.findUnique({
           where: { id: input.cursor },
-          select: { createdAt: true },
+          select: { telegramDate: true },
         });
 
         if (cursorMessage) {
-          cursorCondition = {
-            createdAt: { lt: cursorMessage.createdAt },
-          };
+          cursorDate = cursorMessage.telegramDate;
         }
       }
 
-      // Fetch messages (newest first, then reverse for display)
-      const messages = await ctx.prisma.chatMessage.findMany({
-        where: {
-          chatId: BigInt(input.chatId),
-          ...cursorCondition,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: input.limit + 1, // Fetch one extra to check if there are more
-        select: {
-          id: true,
-          chatId: true,
-          messageId: true,
-          telegramUserId: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          messageText: true,
-          isAccountant: true,
-          replyToMessageId: true,
-          resolvedRequestId: true,
-          createdAt: true,
-        },
-      });
+      // Build cursor SQL fragment
+      const cursorFragment = cursorDate
+        ? Prisma.sql`AND telegram_date < ${cursorDate}`
+        : Prisma.empty;
+
+      // Fetch messages using DISTINCT ON to get only the latest edit_version
+      // per (chat_id, message_id), excluding soft-deleted rows.
+      // The subquery picks the highest edit_version per message;
+      // the outer query sorts by telegram_date DESC and applies the LIMIT.
+      const rawMessages = await ctx.prisma.$queryRaw<RawChatMessage[]>`
+        SELECT * FROM (
+          SELECT DISTINCT ON (chat_id, message_id) *
+          FROM "public"."chat_messages"
+          WHERE chat_id = ${BigInt(input.chatId)}
+            AND deleted_at IS NULL
+            ${cursorFragment}
+          ORDER BY chat_id, message_id, edit_version DESC
+        ) sub
+        ORDER BY telegram_date DESC
+        LIMIT ${input.limit + 1}
+      `;
 
       // Check if there are more messages
-      const hasMore = messages.length > input.limit;
-      const resultMessages = hasMore ? messages.slice(0, -1) : messages;
+      const hasMore = rawMessages.length > input.limit;
+      const resultMessages = hasMore ? rawMessages.slice(0, -1) : rawMessages;
 
       // Get next cursor
       const lastMessage = resultMessages[resultMessages.length - 1];
@@ -164,13 +196,25 @@ export const messagesRouter = router({
 
       return {
         messages: resultMessages.map((msg) => ({
-          ...msg,
-          chatId: safeNumberFromBigInt(msg.chatId),
-          messageId: safeNumberFromBigInt(msg.messageId),
-          telegramUserId: safeNumberFromBigInt(msg.telegramUserId),
-          replyToMessageId: msg.replyToMessageId
-            ? safeNumberFromBigInt(msg.replyToMessageId)
+          id: msg.id,
+          chatId: safeNumberFromBigInt(msg.chat_id),
+          messageId: safeNumberFromBigInt(msg.message_id),
+          telegramUserId: safeNumberFromBigInt(msg.telegram_user_id),
+          username: msg.username,
+          firstName: msg.first_name,
+          lastName: msg.last_name,
+          messageText: msg.message_text,
+          isAccountant: msg.is_accountant,
+          replyToMessageId: msg.reply_to_message_id
+            ? safeNumberFromBigInt(msg.reply_to_message_id)
             : null,
+          resolvedRequestId: msg.resolved_request_id,
+          createdAt: msg.created_at,
+          telegramDate: msg.telegram_date,
+          editVersion: msg.edit_version,
+          messageType: msg.message_type,
+          caption: msg.caption,
+          isBotOutgoing: msg.is_bot_outgoing,
         })),
         nextCursor,
         hasMore,

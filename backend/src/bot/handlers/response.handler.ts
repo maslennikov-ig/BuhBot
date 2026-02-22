@@ -377,6 +377,7 @@ export function registerResponseHandler(): void {
           where: {
             chatId: BigInt(chatId),
             messageId: BigInt(messageId),
+            editVersion: 0, // Target original version only (append-only model)
           },
           data: {
             resolvedRequestId: requestToResolve.id,

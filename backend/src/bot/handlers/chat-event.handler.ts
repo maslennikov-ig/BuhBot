@@ -226,18 +226,22 @@ export function registerChatEventHandler(): void {
 
           // 2. Delete conflicting records in newId before migration to avoid unique constraint violations (P0-2)
 
-          // ChatMessage: @@unique([chatId, messageId])
+          // ChatMessage: @@unique([chatId, messageId, editVersion])
           const existingNewMessages = await tx.chatMessage.findMany({
             where: { chatId: newId },
-            select: { messageId: true },
+            select: { messageId: true, editVersion: true },
           });
           if (existingNewMessages.length > 0) {
-            await tx.chatMessage.deleteMany({
-              where: {
-                chatId: oldId,
-                messageId: { in: existingNewMessages.map((m) => m.messageId) },
-              },
-            });
+            // Delete old-chat rows that would conflict with new-chat rows
+            for (const msg of existingNewMessages) {
+              await tx.chatMessage.deleteMany({
+                where: {
+                  chatId: oldId,
+                  messageId: msg.messageId,
+                  editVersion: msg.editVersion,
+                },
+              });
+            }
           }
 
           // WorkingSchedule: @@unique([chatId, dayOfWeek])

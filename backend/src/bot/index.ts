@@ -37,6 +37,7 @@ import { registerResponseHandler } from './handlers/response.handler.js';
 import { registerAlertCallbackHandler } from './handlers/alert-callback.handler.js';
 import { registerSurveyHandler } from './handlers/survey.handler.js';
 import { registerMenuHandler } from './handlers/menu.handler.js';
+import { registerEditHandler } from './handlers/edit.handler.js';
 import { registerFileHandler } from './handlers/file.handler.js';
 import { registerTemplateHandler } from './handlers/template.handler.js';
 import { registerSystemHandler } from './handlers/system.handler.js';
@@ -56,6 +57,7 @@ import logger from '../utils/logger.js';
  * - Template handler for /template command (BEFORE message handler!)
  * - Message handler for SLA monitoring (client messages)
  * - Response handler for accountant replies (SLA timer stop)
+ * - Edit handler for edited messages (append-only versioning)
  * - Alert callback handler for inline buttons
  * - Survey handler for rating callbacks and comments
  * - File handler for document/photo uploads
@@ -69,9 +71,10 @@ import logger from '../utils/logger.js';
  * 6. Template handler - handles /template command (must be BEFORE generic message handlers)
  * 7. Message handler - classifies and tracks text messages for SLA (groups only)
  * 8. Response handler - detects accountant replies, stops SLA timers
- * 9. Alert callback handler - handles alert inline keyboard buttons
- * 10. Survey handler - handles rating callbacks and comments
- * 11. File handler - auto-confirms document/photo uploads
+ * 9. Edit handler - captures edited messages as new append-only versions
+ * 10. Alert callback handler - handles alert inline keyboard buttons
+ * 11. Survey handler - handles rating callbacks and comments
+ * 12. File handler - auto-confirms document/photo uploads
  */
 export function registerHandlers(): void {
   logger.info('Registering bot handlers...', { service: 'bot' });
@@ -103,6 +106,9 @@ export function registerHandlers(): void {
   // Register response handler for accountant replies (stops SLA timers)
   registerResponseHandler();
 
+  // Register edit handler for edited messages (append-only versioning)
+  registerEditHandler();
+
   // Register alert callback handler for inline keyboard buttons
   registerAlertCallbackHandler();
 
@@ -130,6 +136,7 @@ export { registerResponseHandler };
 export { registerAlertCallbackHandler };
 export { registerSurveyHandler };
 export { registerMenuHandler };
+export { registerEditHandler };
 export { registerFileHandler };
 export { registerTemplateHandler };
 

@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.18.0...buhbot-v0.18.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* address code review findings for append-only store (buh-pm6) ([#200](https://github.com/maslennikov-ig/BuhBot/issues/200)) ([252dbdc](https://github.com/maslennikov-ig/BuhBot/commit/252dbdc6154016eac5d5e154143788f00138e70c))
+
 ## [0.18.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.17.0...buhbot-v0.18.0) (2026-02-22)
 
 

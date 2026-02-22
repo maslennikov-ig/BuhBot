@@ -20,7 +20,7 @@ All agents and contributors MUST follow these rules when writing commit messages
 
 - **Type** (required): Lowercase, one of the allowed types below.
 - **Scope** (optional): Lowercase, no spaces; the area of the codebase affected (e.g. `auth`, `api`, `frontend`).
-- **Subject** (required): Imperative mood, lowercase, no trailing period. Max **72 characters**. Describes what the commit does, not what was done.
+- **Subject** (required): Imperative mood, no trailing period. Max **72 characters**. Describes what the commit does, not what was done. Multiple case formats are allowed (see [Allowed Subject Cases](#allowed-subject-cases)).
 
 ### Allowed Types
 
@@ -31,10 +31,29 @@ All agents and contributors MUST follow these rules when writing commit messages
 | `docs`     | Often omitted or "Other"   | Documentation only                     |
 | `refactor` | Often omitted or "Changed" | Code change, no behavior/API change    |
 | `test`     | Omitted                    | Adding or updating tests               |
+| `build`    | Omitted                    | Build system, dependencies             |
 | `chore`    | Omitted                    | Build, config, deps, tooling           |
 | `style`    | Omitted                    | Formatting, whitespace, no code change |
 | `perf`     | **Changed** (patch)        | Performance improvement                |
 | `ci`       | Omitted                    | CI/config changes                      |
+| `revert`   | Omitted                    | Reverting a previous commit            |
+
+### Allowed Subject Cases
+
+The linter accepts the following case formats for commit subjects:
+
+| Case          | Example              | Notes                                  |
+| ------------- | -------------------- | -------------------------------------- |
+| `lower-case`  | `add feature`        | **Recommended** - consistent style     |
+| `upper-case`  | `ADD FEATURE`        | For emphasis or constants              |
+| `camel-case`  | `addFeature`         | For code references (function names)   |
+| `kebab-case`  | `add-feature`        | For file/branch references             |
+| `pascal-case` | `AddFeature`         | For class/component references         |
+| `sentence-case`| `Add feature`       | Natural sentence format                |
+| `snake-case`  | `add_feature`        | For variable/function references       |
+| `start-case`  | `Add Feature`        | Title format                           |
+
+> **Note:** While multiple cases are permitted by the linter, `lower-case` is strongly recommended for consistency and readability across the project.
 
 **Reserved:** Do **not** use `chore(release):` for normal commits. Release Please creates `chore(release): vX.Y.Z` for release commits; that pattern is reserved for automation.
 
@@ -59,7 +78,7 @@ These rules ensure Release Please (and similar tools) parse commits correctly an
 
 | Rule                              | Requirement                                                                                                                                                                                  |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Subject format**                | Imperative mood, lowercase, no period at end, ≤ 72 chars.                                                                                                                                    |
+| **Subject format**                | Imperative mood, no period at end, ≤ 72 chars. Lowercase recommended; other cases allowed when appropriate (e.g., code references).                                                          |
 | **One logical change per commit** | Prefer one fix/feature per commit. Avoid "fix: resolve 6 bugs" when you can split; each commit becomes one changelog line.                                                                   |
 | **No meta commits in changelog**  | Avoid commits that only say "bd sync", "update docs", or "chore: update project files" if they add no user-facing meaning. Use descriptive messages or accept they may appear under "Other". |
 | **Reserve chore(release)**        | Only Release Please (or the release script) should create `chore(release): vX.Y.Z`. Never use `chore(release):` for other changes.                                                           |
@@ -74,13 +93,21 @@ docs: add Privacy Mode configuration guide (gh-8)
 refactor(queues): centralize BullMQ configuration in queue.config.ts
 ```
 
+**Valid Case Variations** (lowercase recommended, but these are accepted):
+
+```
+feat(api): addFeature support              # camel-case - for function names
+fix(ui): Fix Button component               # pascal-case - for React components
+docs(readme): UPDATE-API-DOCS               # upper-case - for emphasis
+refactor: add-new-utilities-helper          # kebab-case - for file references
+```
+
 ### Bad Examples
 
 ```
 chore(release): bump version to 0.9.20     # Reserved for Release Please
 fix: stuff                                 # Too vague
 feat: add 1 skill(s), update docs           # Vague; poor changelog line
-Fix(frontend): Fix button                  # Not lowercase; not imperative
 feat: Add new feature.                     # Period at end; not imperative
 ```
 
@@ -95,7 +122,7 @@ This project uses [Keep a Changelog](https://keepachangelog.com/). Commit types 
 - **Fixed** ← `fix`
 - **Removed** ← breaking removals
 - **Security** ← security-related `fix` or `feat`
-- **Other** ← `docs`, `chore`, `style`, `test`, `ci` (or as configured by the release tool)
+- **Other** ← `docs`, `chore`, `style`, `test`, `ci`, `build`, `revert` (or as configured by the release tool)
 
 Release Please (or the release script) uses these mappings when generating `CHANGELOG.md` and release notes.
 

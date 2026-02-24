@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.18.1...buhbot-v0.19.0) (2026-02-24)
+
+
+### Features
+
+* **bot:** add diagnose command and privacy mode warnings (buh-4el) ([#202](https://github.com/maslennikov-ig/BuhBot/issues/202)) ([1cd087a](https://github.com/maslennikov-ig/BuhBot/commit/1cd087a087717ec3f900f9c236ea80ca0eb3ce2f))
+
 ## [0.18.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.18.0...buhbot-v0.18.1) (2026-02-22)
 
 

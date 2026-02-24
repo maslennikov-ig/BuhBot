@@ -126,13 +126,16 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
     });
   };
 
-  // Copy to clipboard
-  const copyToClipboard = async (text: string, type: 'link' | 'command') => {
+  // CR-11: Copy to clipboard with separate state for each copy target
+  const copyToClipboard = async (text: string, type: 'link' | 'groupLink' | 'command') => {
     try {
       await navigator.clipboard.writeText(text);
       if (type === 'link') {
         setCopiedLink(true);
         setTimeout(() => setCopiedLink(false), 2000);
+      } else if (type === 'groupLink') {
+        setCopiedGroupLink(true);
+        setTimeout(() => setCopiedGroupLink(false), 2000);
       } else {
         setCopiedCommand(true);
         setTimeout(() => setCopiedCommand(false), 2000);
@@ -284,7 +287,7 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
               <div className="space-y-4">
                 {/* Description */}
                 <p className="text-sm text-[var(--buh-foreground-muted)]">
-                  Ссылка добавит бота в группу с правами на чтение сообщений
+                  Ссылка откроет диалог добавления бота в группу с предложением прав администратора
                 </p>
 
                 {/* Accountant Select */}
@@ -344,11 +347,7 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => {
-                          copyToClipboard(generatedGroupLink, 'link');
-                          setCopiedGroupLink(true);
-                          setTimeout(() => setCopiedGroupLink(false), 2000);
-                        }}
+                        onClick={() => copyToClipboard(generatedGroupLink, 'groupLink')}
                         className="shrink-0"
                       >
                         {copiedGroupLink ? (
@@ -359,8 +358,8 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
                       </Button>
                     </div>
                     <p className="text-xs text-[var(--buh-foreground-subtle)] mt-2">
-                      Клиент перейдёт по ссылке, выберет группу, и бот будет добавлен с правами
-                      администратора для чтения сообщений.
+                      Клиент перейдёт по ссылке, выберет группу и подтвердит назначение бота
+                      администратором с минимальными правами.
                     </p>
                   </div>
                 )}

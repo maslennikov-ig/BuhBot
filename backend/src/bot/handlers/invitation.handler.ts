@@ -125,6 +125,7 @@ export function registerInvitationHandler(): void {
 🔹 /menu — открыть меню самообслуживания
 🔹 /help — показать эту справку
 🔹 /connect <код> — подключить групповой чат
+🔹 /diagnose — диагностика получения сообщений
 
 *Как это работает:*
 Бот помогает отслеживать время ответа на ваши сообщения. Когда вы пишете сообщение, бухгалтер получает уведомление и должен ответить в установленный срок.
@@ -206,7 +207,7 @@ async function processInvitation(
         // Bot must be admin with invite_users permission
         let inviteLink: string | null = null;
         try {
-          inviteLink = await ctx.telegram.exportChatInviteLink(Number(chatId));
+          inviteLink = await ctx.telegram.exportChatInviteLink(chatId.toString());
           logger.info('Fetched invite link for chat', {
             chatId,
             hasInviteLink: !!inviteLink,
@@ -270,6 +271,35 @@ async function processInvitation(
       tokenPrefix: token.substring(0, 8) + '...',
       service: 'invitation-handler',
     });
+
+    // 5. Check if bot can read messages (non-blocking)
+    try {
+      const botInfo = await ctx.telegram.getMe();
+      if (!botInfo.can_read_all_group_messages && chatType !== 'private') {
+        const member = await ctx.telegram.getChatMember(chatId.toString(), botInfo.id);
+        if (member.status !== 'administrator' && member.status !== 'creator') {
+          await ctx.reply(
+            '⚠️ Внимание: у бота включён Privacy Mode и он не является администратором.\n' +
+              'В supergroup-чатах бот не будет видеть обычные сообщения.\n' +
+              'Пожалуйста, назначьте бота администратором чата.'
+          );
+          logger.warn('Bot lacks admin rights with Privacy Mode ON after /connect', {
+            chatId,
+            chatType,
+            botStatus: member.status,
+            service: 'invitation-handler',
+          });
+        }
+      }
+    } catch (checkError) {
+      // Non-blocking: don't fail /connect if this check fails
+      logger.warn('Failed to check bot permissions after /connect', {
+        chatId,
+        error: checkError instanceof Error ? checkError.message : String(checkError),
+        service: 'invitation-handler',
+      });
+    }
+
     return;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

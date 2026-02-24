@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import logger from '../../../utils/logger.js';
-import { isProduction } from '../../../config/env.js';
+import env, { isProduction } from '../../../config/env.js';
 import { randomBytes } from 'crypto';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
@@ -785,6 +785,7 @@ export const chatsRouter = router({
         id: z.string().uuid(),
         token: z.string(),
         deepLink: z.string(),
+        groupLink: z.string(),
         connectCommand: z.string(),
         expiresAt: z.date(),
       })
@@ -813,9 +814,8 @@ export const chatsRouter = router({
         },
       });
 
-      // Get bot username from environment (required for deep links)
-      // Enforce strict check as per production requirements
-      const botUsername = process.env['BOT_USERNAME'];
+      // Get bot username from validated env (required for deep links)
+      const botUsername = env.BOT_USERNAME;
       if (!botUsername) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -827,6 +827,7 @@ export const chatsRouter = router({
         id: invitation.id,
         token: invitation.token,
         deepLink: `https://t.me/${botUsername}?start=${invitation.token}`,
+        groupLink: `https://t.me/${botUsername}?startgroup=${invitation.token}&admin=manage_chat`,
         connectCommand: `/connect ${invitation.token}`,
         expiresAt: invitation.expiresAt,
       };

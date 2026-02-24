@@ -16,6 +16,58 @@ import type { Application } from 'express';
 import { bot } from './bot.js';
 import logger from '../utils/logger.js';
 import env from '../config/env.js';
+import { initBotInfo } from './utils/bot-info.js';
+
+/** CR-14: Shared bot command list for both webhook and polling modes */
+const BOT_COMMANDS = [
+  { command: 'start', description: 'Начать работу с ботом' },
+  { command: 'menu', description: 'Открыть меню' },
+  { command: 'help', description: 'Помощь' },
+  { command: 'connect', description: 'Подключить чат (код)' },
+  { command: 'diagnose', description: 'Диагностика получения сообщений' },
+];
+
+/**
+ * Configure bot defaults shared between webhook and polling modes.
+ * Sets bot commands, default admin rights, and initializes bot info cache.
+ */
+async function configureBotDefaults(): Promise<void> {
+  // Set bot commands for menu button
+  await bot.telegram.setMyCommands(BOT_COMMANDS);
+  logger.debug('Bot commands set successfully', { service: 'webhook' });
+
+  // CR-2: Set suggested admin rights for groups. These are shown to users when
+  // promoting the bot through Telegram's admin UI (independent of &admin= links).
+  try {
+    await bot.telegram.setMyDefaultAdministratorRights({
+      rights: {
+        is_anonymous: false,
+        can_manage_chat: true,
+        can_delete_messages: false,
+        can_manage_video_chats: false,
+        can_restrict_members: false,
+        can_promote_members: false,
+        can_change_info: false,
+        can_invite_users: false,
+        can_pin_messages: false,
+        can_manage_topics: false,
+      },
+      forChannels: false,
+    });
+    logger.info('Default administrator rights set (manage_chat only)', {
+      service: 'webhook',
+    });
+  } catch (adminRightsError) {
+    logger.warn('Failed to set default administrator rights', {
+      error:
+        adminRightsError instanceof Error ? adminRightsError.message : String(adminRightsError),
+      service: 'webhook',
+    });
+  }
+
+  // Initialize bot info cache and log Privacy Mode status
+  await initBotInfo();
+}
 
 /**
  * Setup webhook for Telegram bot
@@ -79,39 +131,7 @@ export async function setupWebhook(app: Application, webhookPath: string): Promi
     // but we need explicit path matching for Express routing
     app.post(webhookPath, webhookMiddleware);
 
-    // Set bot commands for menu button
-    await bot.telegram.setMyCommands([
-      { command: 'start', description: 'Начать работу с ботом' },
-      { command: 'menu', description: 'Открыть меню' },
-      { command: 'help', description: 'Помощь' },
-      { command: 'connect', description: 'Подключить чат (код)' },
-      { command: 'diagnose', description: 'Диагностика получения сообщений' },
-    ]);
-    logger.debug('Bot commands set successfully', { service: 'webhook' });
-
-    // Check Privacy Mode on startup and log warning if enabled
-    try {
-      const botInfo = await bot.telegram.getMe();
-      if (!botInfo.can_read_all_group_messages) {
-        logger.warn(
-          'Privacy Mode is ON: bot cannot read messages in supergroups where it is not admin. ' +
-            'Disable via BotFather or ensure bot is admin in all monitored supergroups.',
-          { service: 'webhook' }
-        );
-      } else {
-        logger.info('Privacy Mode is OFF: bot can read all group messages', {
-          service: 'webhook',
-        });
-      }
-    } catch (privacyCheckError) {
-      logger.warn('Failed to check Privacy Mode on startup', {
-        error:
-          privacyCheckError instanceof Error
-            ? privacyCheckError.message
-            : String(privacyCheckError),
-        service: 'webhook',
-      });
-    }
+    await configureBotDefaults();
 
     logger.info('Telegram webhook configured successfully', {
       webhookUrl: fullWebhookUrl,
@@ -201,9 +221,8 @@ export async function launchPolling(): Promise<void> {
     // Remove any existing webhook before starting polling
     await removeWebhook();
 
-    // Set bot commands for menu button
-    await bot.telegram.setMyCommands([{ command: 'menu', description: 'Открыть меню' }]);
-    logger.debug('Bot commands set successfully', { service: 'webhook' });
+    // CR-8: Use same defaults as webhook mode
+    await configureBotDefaults();
 
     // Start polling
     await bot.launch();

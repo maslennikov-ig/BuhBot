@@ -15,6 +15,7 @@
 import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
+import { getBotInfo, privacyModeWarning } from '../utils/bot-info.js';
 
 /** Max chat title length stored in DB (gh-120) */
 const MAX_TITLE_LENGTH = 255;
@@ -72,21 +73,12 @@ export function registerChatEventHandler(): void {
         // Bot was ADDED to the chat
         logger.info('Bot added to chat', { chatId, title, service: 'chat-event-handler' });
 
-        // Check Privacy Mode and warn if bot is not admin in supergroup
+        // Check Privacy Mode and warn if bot is not admin in group
         try {
-          const botInfo = await ctx.telegram.getMe();
-          if (
-            !botInfo.can_read_all_group_messages &&
-            newStatus === 'member' &&
-            chatType === 'supergroup'
-          ) {
-            await ctx.telegram.sendMessage(
-              chatId,
-              '⚠️ Внимание: у бота включён Privacy Mode и он добавлен как обычный участник.\n' +
-                'В supergroup-чатах бот не будет видеть обычные сообщения.\n' +
-                'Пожалуйста, назначьте бота администратором чата для корректной работы.'
-            );
-            logger.warn('Bot added as member with Privacy Mode ON in supergroup', {
+          const botInfo = await getBotInfo();
+          if (!botInfo.can_read_all_group_messages && newStatus === 'member') {
+            await ctx.telegram.sendMessage(chatId, privacyModeWarning(botInfo.username));
+            logger.warn('Bot added as member with Privacy Mode ON', {
               chatId,
               chatType,
               service: 'chat-event-handler',

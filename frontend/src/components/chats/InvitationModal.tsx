@@ -57,8 +57,10 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
 
   // Generated invitation state
   const [generatedLink, setGeneratedLink] = React.useState('');
+  const [generatedGroupLink, setGeneratedGroupLink] = React.useState('');
   const [generatedCommand, setGeneratedCommand] = React.useState('');
   const [copiedLink, setCopiedLink] = React.useState(false);
+  const [copiedGroupLink, setCopiedGroupLink] = React.useState(false);
   const [copiedCommand, setCopiedCommand] = React.useState(false);
 
   // Manual registration state (Tab 3 - Legacy)
@@ -71,6 +73,7 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
   const createInvitation = trpc.chats.createInvitation.useMutation({
     onSuccess: (data) => {
       setGeneratedLink(data.deepLink);
+      setGeneratedGroupLink(data.groupLink);
       setGeneratedCommand(data.connectCommand);
       toast.success('Ссылка готова! Отправьте её клиенту для подключения чата');
     },
@@ -98,8 +101,10 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
     setAccountantId(null);
     setInitialTitle('');
     setGeneratedLink('');
+    setGeneratedGroupLink('');
     setGeneratedCommand('');
     setCopiedLink(false);
+    setCopiedGroupLink(false);
     setCopiedCommand(false);
     setTelegramChatId('');
     setChatType('private');
@@ -121,13 +126,16 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
     });
   };
 
-  // Copy to clipboard
-  const copyToClipboard = async (text: string, type: 'link' | 'command') => {
+  // CR-11: Copy to clipboard with separate state for each copy target
+  const copyToClipboard = async (text: string, type: 'link' | 'groupLink' | 'command') => {
     try {
       await navigator.clipboard.writeText(text);
       if (type === 'link') {
         setCopiedLink(true);
         setTimeout(() => setCopiedLink(false), 2000);
+      } else if (type === 'groupLink') {
+        setCopiedGroupLink(true);
+        setTimeout(() => setCopiedGroupLink(false), 2000);
       } else {
         setCopiedCommand(true);
         setTimeout(() => setCopiedCommand(false), 2000);
@@ -279,7 +287,7 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
               <div className="space-y-4">
                 {/* Description */}
                 <p className="text-sm text-[var(--buh-foreground-muted)]">
-                  Добавьте бота в группу и отправьте туда этот код
+                  Ссылка откроет диалог добавления бота в группу с предложением прав администратора
                 </p>
 
                 {/* Accountant Select */}
@@ -319,14 +327,49 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
                       Генерация...
                     </>
                   ) : (
-                    'Сгенерировать код'
+                    'Сгенерировать ссылку для группы'
                   )}
                 </Button>
 
-                {/* Generated Command */}
+                {/* Generated Group Link (primary) */}
+                {generatedGroupLink && (
+                  <div className="space-y-2 buh-animate-fade-in-up">
+                    <Label className="text-[var(--buh-foreground)]">
+                      Ссылка для добавления в группу
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={generatedGroupLink}
+                        readOnly
+                        className="bg-[var(--buh-surface-elevated)] border-[var(--buh-border)] font-mono text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => copyToClipboard(generatedGroupLink, 'groupLink')}
+                        className="shrink-0"
+                      >
+                        {copiedGroupLink ? (
+                          <Check className="h-4 w-4 text-[var(--buh-success)]" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-[var(--buh-foreground-subtle)] mt-2">
+                      Клиент перейдёт по ссылке, выберет группу и подтвердит назначение бота
+                      администратором с минимальными правами.
+                    </p>
+                  </div>
+                )}
+
+                {/* Generated Command (fallback) */}
                 {generatedCommand && (
                   <div className="space-y-2 buh-animate-fade-in-up">
-                    <Label className="text-[var(--buh-foreground)]">Код для группы</Label>
+                    <Label className="text-[var(--buh-foreground-muted)] text-xs">
+                      Альтернатива: код для ручного подключения
+                    </Label>
                     <div className="flex gap-2">
                       <div className="flex-1 flex items-center px-4 py-3 rounded-lg bg-[var(--buh-surface-elevated)] border border-[var(--buh-border)]">
                         <code className="text-lg font-mono font-semibold text-[var(--buh-accent)]">
@@ -348,8 +391,8 @@ export function InvitationModal({ isOpen, onClose, onSuccess }: InvitationModalP
                       </Button>
                     </div>
                     <p className="text-xs text-[var(--buh-foreground-subtle)] mt-2">
-                      Добавьте бота в группу, отправьте этот код. Чат появится в системе после
-                      подключения.
+                      Если бот уже в группе: отправьте этот код в чат. После этого назначьте бота
+                      администратором.
                     </p>
                   </div>
                 )}

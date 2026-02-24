@@ -3,6 +3,7 @@
  *
  * Handles system commands:
  * - /info - Show bot information and status
+ * - /diagnose - Runtime chat diagnostics (group admins only)
  *
  * @module bot/handlers/system.handler
  */
@@ -11,6 +12,7 @@ import { bot, BotContext } from '../bot.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
 import { prisma } from '../../lib/prisma.js';
+import { getBotInfo } from '../utils/bot-info.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -57,18 +59,30 @@ export function registerSystemHandler(): void {
     }
   });
 
-  // Handle /diagnose command
+  // Handle /diagnose command (group admins only)
   bot.command('diagnose', async (ctx: BotContext) => {
     try {
       const chatId = ctx.chat?.id;
+      const chatType = ctx.chat?.type;
 
-      if (!chatId) {
-        await ctx.reply('Команда доступна только в групповых чатах.');
+      // CR-13: /diagnose only works in group chats
+      if (!chatId || chatType === 'private') {
+        await ctx.reply('Команда /diagnose предназначена для групповых чатов.');
         return;
       }
 
-      // Get bot info (includes Privacy Mode status)
-      const botInfo = await ctx.telegram.getMe();
+      // CR-1: Restrict to group admins only (security — prevents leaking SLA/monitoring state)
+      const invokerId = ctx.from?.id;
+      if (!invokerId) return;
+
+      const invokerMember = await ctx.telegram.getChatMember(chatId, invokerId);
+      if (!['administrator', 'creator'].includes(invokerMember.status)) {
+        await ctx.reply('Команда /diagnose доступна только администраторам группы.');
+        return;
+      }
+
+      // CR-6: Use cached getMe() instead of calling Telegram API on every invocation
+      const botInfo = await getBotInfo();
 
       // Get bot's member status in this chat
       const chatMember = await ctx.telegram.getChatMember(chatId, botInfo.id);
@@ -95,15 +109,15 @@ export function registerSystemHandler(): void {
         },
       });
 
-      // Determine verdict
+      // CR-3: Determine verdict — handle both 'group' and 'supergroup' types
       let verdict: string;
-      const chatType = ctx.chat?.type;
       const privacyModeOn = !botInfo.can_read_all_group_messages;
+      const isAdmin = memberStatus === 'administrator' || memberStatus === 'creator';
 
-      if (privacyModeOn && memberStatus !== 'administrator' && chatType === 'supergroup') {
+      if (privacyModeOn && !isAdmin) {
         verdict =
-          'ПРОБЛЕМА: Privacy Mode включён, бот НЕ администратор. Бот не видит обычные сообщения в supergroup. Решение: назначьте бота администратором.';
-      } else if (privacyModeOn && memberStatus === 'administrator') {
+          'ПРОБЛЕМА: Privacy Mode включён, бот НЕ администратор. Бот не видит обычные сообщения. Решение: назначьте бота администратором.';
+      } else if (privacyModeOn && isAdmin) {
         verdict = 'OK: Privacy Mode включён, но бот — администратор. Сообщения должны приходить.';
       } else {
         verdict = 'OK: Privacy Mode выключен. Бот видит все сообщения.';
@@ -117,7 +131,7 @@ export function registerSystemHandler(): void {
 
       const diagnosticMessage =
         `Диагностика чата ${chatId}:\n\n` +
-        `Privacy Mode: ${botInfo.can_read_all_group_messages ? 'ВЫКЛ (бот видит все)' : 'ВКЛ (нужны права админа для supergroup)'}\n` +
+        `Privacy Mode: ${botInfo.can_read_all_group_messages ? 'ВЫКЛ (бот видит все)' : 'ВКЛ (нужны права админа)'}\n` +
         `Статус бота: ${memberStatus}\n` +
         `Тип чата: ${chatType}\n` +
         `В базе данных: ${chatRecord ? 'Да' : 'Нет'}\n` +
@@ -130,7 +144,7 @@ export function registerSystemHandler(): void {
 
       logger.info('Diagnose command processed', {
         chatId,
-        userId: ctx.from?.id,
+        userId: invokerId,
         memberStatus,
         privacyModeOn,
         chatRecordExists: !!chatRecord,
@@ -144,7 +158,11 @@ export function registerSystemHandler(): void {
         error: errorMessage,
         service: 'system-handler',
       });
-      await ctx.reply('Ошибка при диагностике.');
+      // CR-10: Actionable error message
+      await ctx.reply(
+        'Ошибка при диагностике. Возможно, бот не имеет прав на получение информации о чате. ' +
+          'Попробуйте назначить бота администратором и повторите команду.'
+      );
     }
   });
 

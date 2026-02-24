@@ -11,6 +11,7 @@
 import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
+import { getBotInfo, privacyModeWarning } from '../utils/bot-info.js';
 
 // Token validation: alphanumeric, 8-64 characters
 const TOKEN_REGEX = /^[a-zA-Z0-9_-]{8,64}$/;
@@ -274,15 +275,11 @@ async function processInvitation(
 
     // 5. Check if bot can read messages (non-blocking)
     try {
-      const botInfo = await ctx.telegram.getMe();
+      const botInfo = await getBotInfo();
       if (!botInfo.can_read_all_group_messages && chatType !== 'private') {
         const member = await ctx.telegram.getChatMember(chatId.toString(), botInfo.id);
         if (member.status !== 'administrator' && member.status !== 'creator') {
-          await ctx.reply(
-            '⚠️ Внимание: у бота включён Privacy Mode и он не является администратором.\n' +
-              'В supergroup-чатах бот не будет видеть обычные сообщения.\n' +
-              'Пожалуйста, назначьте бота администратором чата.'
-          );
+          await ctx.reply(privacyModeWarning(botInfo.username));
           logger.warn('Bot lacks admin rights with Privacy Mode ON after /connect', {
             chatId,
             chatType,

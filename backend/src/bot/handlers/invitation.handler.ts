@@ -279,9 +279,13 @@ async function processInvitation(
         const member = await ctx.telegram.getChatMember(chatId.toString(), botInfo.id);
         if (member.status !== 'administrator' && member.status !== 'creator') {
           await ctx.reply(
-            '⚠️ Внимание: у бота включён Privacy Mode и он не является администратором.\n' +
-              'В supergroup-чатах бот не будет видеть обычные сообщения.\n' +
-              'Пожалуйста, назначьте бота администратором чата.'
+            '⚠️ Для корректной работы боту нужны права администратора.\n\n' +
+              'Без прав админа бот не видит обычные сообщения в supergroup-чатах.\n\n' +
+              'Как исправить:\n' +
+              '1. Откройте настройки группы\n' +
+              '2. Перейдите в «Администраторы»\n' +
+              `3. Назначьте @${botInfo.username} администратором\n` +
+              '4. Достаточно минимальных прав (только «Управление чатом»)'
           );
           logger.warn('Bot lacks admin rights with Privacy Mode ON after /connect', {
             chatId,

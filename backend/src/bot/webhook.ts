@@ -89,6 +89,35 @@ export async function setupWebhook(app: Application, webhookPath: string): Promi
     ]);
     logger.debug('Bot commands set successfully', { service: 'webhook' });
 
+    // Set suggested admin rights for groups (Telegram will propose these
+    // when the bot is added as admin via t.me link with &admin= parameter)
+    try {
+      await bot.telegram.setMyDefaultAdministratorRights({
+        rights: {
+          is_anonymous: false,
+          can_manage_chat: true,
+          can_delete_messages: false,
+          can_manage_video_chats: false,
+          can_restrict_members: false,
+          can_promote_members: false,
+          can_change_info: false,
+          can_invite_users: false,
+          can_pin_messages: false,
+          can_manage_topics: false,
+        },
+        for_channels: false,
+      });
+      logger.info('Default administrator rights set (manage_chat only)', {
+        service: 'webhook',
+      });
+    } catch (adminRightsError) {
+      logger.warn('Failed to set default administrator rights', {
+        error:
+          adminRightsError instanceof Error ? adminRightsError.message : String(adminRightsError),
+        service: 'webhook',
+      });
+    }
+
     // Check Privacy Mode on startup and log warning if enabled
     try {
       const botInfo = await bot.telegram.getMe();

@@ -785,6 +785,7 @@ export const chatsRouter = router({
         id: z.string().uuid(),
         token: z.string(),
         deepLink: z.string(),
+        groupLink: z.string(),
         connectCommand: z.string(),
         expiresAt: z.date(),
       })
@@ -827,6 +828,7 @@ export const chatsRouter = router({
         id: invitation.id,
         token: invitation.token,
         deepLink: `https://t.me/${botUsername}?start=${invitation.token}`,
+        groupLink: `https://t.me/${botUsername}?startgroup=${invitation.token}&admin=manage_chat`,
         connectCommand: `/connect ${invitation.token}`,
         expiresAt: invitation.expiresAt,
       };

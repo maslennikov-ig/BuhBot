@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.19.0...buhbot-v0.20.0) (2026-02-24)
+
+
+### Features
+
+* **bot:** add suggested admin rights and group invite links ([#204](https://github.com/maslennikov-ig/BuhBot/issues/204)) ([77c242e](https://github.com/maslennikov-ig/BuhBot/commit/77c242edad753c3d15173a1127a31e3698ae15e6))
+
 ## [0.19.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.18.1...buhbot-v0.19.0) (2026-02-24)
 
 

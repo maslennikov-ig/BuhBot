@@ -85,8 +85,33 @@ export async function setupWebhook(app: Application, webhookPath: string): Promi
       { command: 'menu', description: 'Открыть меню' },
       { command: 'help', description: 'Помощь' },
       { command: 'connect', description: 'Подключить чат (код)' },
+      { command: 'diagnose', description: 'Диагностика получения сообщений' },
     ]);
     logger.debug('Bot commands set successfully', { service: 'webhook' });
+
+    // Check Privacy Mode on startup and log warning if enabled
+    try {
+      const botInfo = await bot.telegram.getMe();
+      if (!botInfo.can_read_all_group_messages) {
+        logger.warn(
+          'Privacy Mode is ON: bot cannot read messages in supergroups where it is not admin. ' +
+            'Disable via BotFather or ensure bot is admin in all monitored supergroups.',
+          { service: 'webhook' }
+        );
+      } else {
+        logger.info('Privacy Mode is OFF: bot can read all group messages', {
+          service: 'webhook',
+        });
+      }
+    } catch (privacyCheckError) {
+      logger.warn('Failed to check Privacy Mode on startup', {
+        error:
+          privacyCheckError instanceof Error
+            ? privacyCheckError.message
+            : String(privacyCheckError),
+        service: 'webhook',
+      });
+    }
 
     logger.info('Telegram webhook configured successfully', {
       webhookUrl: fullWebhookUrl,

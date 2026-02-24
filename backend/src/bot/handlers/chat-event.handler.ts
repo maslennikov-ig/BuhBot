@@ -72,6 +72,37 @@ export function registerChatEventHandler(): void {
         // Bot was ADDED to the chat
         logger.info('Bot added to chat', { chatId, title, service: 'chat-event-handler' });
 
+        // Check Privacy Mode and warn if bot is not admin in supergroup
+        try {
+          const botInfo = await ctx.telegram.getMe();
+          if (
+            !botInfo.can_read_all_group_messages &&
+            newStatus === 'member' &&
+            chatType === 'supergroup'
+          ) {
+            await ctx.telegram.sendMessage(
+              chatId,
+              '⚠️ Внимание: у бота включён Privacy Mode и он добавлен как обычный участник.\n' +
+                'В supergroup-чатах бот не будет видеть обычные сообщения.\n' +
+                'Пожалуйста, назначьте бота администратором чата для корректной работы.'
+            );
+            logger.warn('Bot added as member with Privacy Mode ON in supergroup', {
+              chatId,
+              chatType,
+              service: 'chat-event-handler',
+            });
+          }
+        } catch (privacyCheckError) {
+          logger.warn('Failed to check Privacy Mode on bot add', {
+            chatId,
+            error:
+              privacyCheckError instanceof Error
+                ? privacyCheckError.message
+                : String(privacyCheckError),
+            service: 'chat-event-handler',
+          });
+        }
+
         // Fetch default SLA threshold from GlobalSettings
         const globalSettings = await prisma.globalSettings.findUnique({
           where: { id: 'default' },

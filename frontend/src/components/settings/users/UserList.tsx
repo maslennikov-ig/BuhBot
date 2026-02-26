@@ -16,6 +16,7 @@ type UserItem = RouterOutputs['auth']['listUsers'][number];
 
 interface UserListProps {
   onEditRole: (user: UserItem) => void;
+  onEditTelegramId: (user: UserItem) => void;
   onDeleteUser: (user: UserItem) => void;
   onAddUser: () => void;
   isAdmin: boolean;
@@ -33,7 +34,13 @@ const ROLE_COLORS = {
   observer: 'text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-subtle)]',
 };
 
-export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserListProps) {
+export function UserList({
+  onEditRole,
+  onEditTelegramId,
+  onDeleteUser,
+  onAddUser,
+  isAdmin,
+}: UserListProps) {
   const [search, setSearch] = React.useState('');
 
   const { data: users, isLoading } = trpc.auth.listUsers.useQuery({});
@@ -177,7 +184,23 @@ export function UserList({ onEditRole, onDeleteUser, onAddUser, isAdmin }: UserL
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {user.telegramId ? (
+                    {isAdmin ? (
+                      <button
+                        onClick={() => onEditTelegramId(user)}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                          user.telegramId
+                            ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)] hover:bg-[var(--buh-primary)]/20'
+                            : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-surface-subtle)] hover:text-[var(--buh-foreground-muted)]'
+                        }`}
+                        title={
+                          user.telegramId
+                            ? `Telegram ID: ${user.telegramId}`
+                            : 'Установить Telegram ID'
+                        }
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </button>
+                    ) : user.telegramId ? (
                       <div
                         className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]"
                         title="Подключен к Telegram"

@@ -249,6 +249,19 @@ const startServer = async (port: number) => {
     });
   }
 
+  // Start missing Telegram IDs checker (gh-207)
+  try {
+    const { startMissingTelegramIdsWorker, scheduleMissingTelegramIdsJob } =
+      await import('./jobs/missing-telegram-ids.job.js');
+    startMissingTelegramIdsWorker();
+    await scheduleMissingTelegramIdsJob();
+  } catch (error) {
+    logger.error('Failed to start missing Telegram IDs job', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'startup',
+    });
+  }
+
   // Setup Telegram bot (Webhook or Polling)
   try {
     if (env.TELEGRAM_WEBHOOK_URL) {

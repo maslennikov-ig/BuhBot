@@ -86,6 +86,15 @@ export interface DataRetentionJobData {
   triggeredBy: 'scheduler' | 'manual';
 }
 
+/**
+ * Missing Telegram IDs job data
+ * Used for periodic check of chats with SLA enabled but no notification recipients
+ */
+export interface MissingTelegramIdsJobData {
+  /** How the job was triggered */
+  triggeredBy: 'scheduler' | 'manual';
+}
+
 // ============================================================================
 // QUEUE CONFIGURATION
 // ============================================================================
@@ -115,6 +124,7 @@ export const QUEUE_NAMES = {
   ALERTS: 'alerts',
   DATA_RETENTION: 'data-retention',
   SURVEYS: 'surveys',
+  MISSING_TELEGRAM_IDS: 'missing-telegram-ids',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -216,6 +226,25 @@ export const dataRetentionQueue = new Queue<DataRetentionJobData>(QUEUE_NAMES.DA
   },
 });
 
+/**
+ * Missing Telegram IDs Queue
+ *
+ * Periodic check for chats with SLA enabled but no notification recipients configured.
+ * Alerts admin users when chats are missing manager/accountant Telegram IDs.
+ * Runs on weekdays at 09:00 UTC (12:00 Moscow).
+ */
+export const missingTelegramIdsQueue = new Queue<MissingTelegramIdsJobData>(
+  QUEUE_NAMES.MISSING_TELEGRAM_IDS,
+  {
+    connection: redis,
+    defaultJobOptions: {
+      ...defaultJobOptions,
+      attempts: 3,
+      removeOnComplete: 10,
+    },
+  }
+);
+
 // ============================================================================
 // QUEUE EVENTS
 // ============================================================================
@@ -245,6 +274,13 @@ export const slaReconciliationEvents = new QueueEvents(QUEUE_NAMES.SLA_RECONCILI
  * Queue events for monitoring data retention jobs
  */
 export const dataRetentionEvents = new QueueEvents(QUEUE_NAMES.DATA_RETENTION, {
+  connection: redis,
+});
+
+/**
+ * Queue events for monitoring missing Telegram IDs jobs
+ */
+export const missingTelegramIdsEvents = new QueueEvents(QUEUE_NAMES.MISSING_TELEGRAM_IDS, {
   connection: redis,
 });
 
@@ -321,6 +357,22 @@ function setupEventHandlers(): void {
       reason: failedReason,
     });
   });
+
+  // Missing Telegram IDs events
+  missingTelegramIdsEvents.on('completed', ({ jobId }) => {
+    logger.info('Missing Telegram IDs job completed', {
+      jobId,
+      queue: QUEUE_NAMES.MISSING_TELEGRAM_IDS,
+    });
+  });
+
+  missingTelegramIdsEvents.on('failed', ({ jobId, failedReason }) => {
+    logger.error('Missing Telegram IDs job failed', {
+      jobId,
+      queue: QUEUE_NAMES.MISSING_TELEGRAM_IDS,
+      reason: failedReason,
+    });
+  });
 }
 
 // ============================================================================
@@ -333,13 +385,19 @@ function setupEventHandlers(): void {
  */
 export async function updateQueueMetrics(): Promise<void> {
   try {
-    const [slaTimerCount, slaReconciliationCount, alertCount, dataRetentionCount] =
-      await Promise.all([
-        slaTimerQueue.getJobCounts('waiting', 'delayed', 'active'),
-        slaReconciliationQueue.getJobCounts('waiting', 'delayed', 'active'),
-        alertQueue.getJobCounts('waiting', 'delayed', 'active'),
-        dataRetentionQueue.getJobCounts('waiting', 'delayed', 'active'),
-      ]);
+    const [
+      slaTimerCount,
+      slaReconciliationCount,
+      alertCount,
+      dataRetentionCount,
+      missingTelegramIdsCount,
+    ] = await Promise.all([
+      slaTimerQueue.getJobCounts('waiting', 'delayed', 'active'),
+      slaReconciliationQueue.getJobCounts('waiting', 'delayed', 'active'),
+      alertQueue.getJobCounts('waiting', 'delayed', 'active'),
+      dataRetentionQueue.getJobCounts('waiting', 'delayed', 'active'),
+      missingTelegramIdsQueue.getJobCounts('waiting', 'delayed', 'active'),
+    ]);
 
     redisQueueLength.set(
       { queue_name: QUEUE_NAMES.SLA_TIMERS },
@@ -362,6 +420,12 @@ export async function updateQueueMetrics(): Promise<void> {
       (dataRetentionCount['waiting'] ?? 0) +
         (dataRetentionCount['delayed'] ?? 0) +
         (dataRetentionCount['active'] ?? 0)
+    );
+    redisQueueLength.set(
+      { queue_name: QUEUE_NAMES.MISSING_TELEGRAM_IDS },
+      (missingTelegramIdsCount['waiting'] ?? 0) +
+        (missingTelegramIdsCount['delayed'] ?? 0) +
+        (missingTelegramIdsCount['active'] ?? 0)
     );
   } catch (error) {
     logger.error('Failed to update queue metrics', {
@@ -410,6 +474,7 @@ export async function setupQueues(): Promise<void> {
       slaReconciliationQueue.getJobCounts(),
       alertQueue.getJobCounts(),
       dataRetentionQueue.getJobCounts(),
+      missingTelegramIdsQueue.getJobCounts(),
     ]);
 
     logger.info('BullMQ queues initialized successfully', {
@@ -456,6 +521,7 @@ export async function closeQueues(
       slaReconciliationEvents.close(),
       alertEvents.close(),
       dataRetentionEvents.close(),
+      missingTelegramIdsEvents.close(),
     ]);
     logger.debug('Queue event listeners closed');
 
@@ -465,6 +531,7 @@ export async function closeQueues(
       slaReconciliationQueue.close(),
       alertQueue.close(),
       dataRetentionQueue.close(),
+      missingTelegramIdsQueue.close(),
     ]);
 
     // Close survey queue (separate module)

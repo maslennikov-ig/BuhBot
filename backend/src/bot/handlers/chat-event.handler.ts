@@ -355,6 +355,7 @@ export function registerChatEventHandler(): void {
             data: {
               monitoringEnabled: false,
               slaEnabled: false,
+              isMigrated: true,
               title: oldChat.title ? `[MIGRATED] ${oldChat.title}` : '[MIGRATED]',
             },
           });

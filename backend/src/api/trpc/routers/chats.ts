@@ -95,6 +95,9 @@ export const chatsRouter = router({
         where.monitoringEnabled = true;
       }
 
+      // Always hide migrated chats (buh-5xx)
+      where.isMigrated = false;
+
       // Fetch chats with pagination
       const [chats, total] = await Promise.all([
         ctx.prisma.chat.findMany({

@@ -48,10 +48,17 @@ vi.mock('../../../utils/logger.js', () => ({
 vi.mock('../../../queues/setup.js', () => ({
   scheduleSlaCheck: vi.fn().mockResolvedValue(undefined),
   cancelSlaCheck: vi.fn().mockResolvedValue(true),
+  scheduleSlaWarning: vi.fn().mockResolvedValue(undefined),
+  cancelSlaWarning: vi.fn().mockResolvedValue(true),
   slaTimerQueue: {
     getJob: vi.fn(),
   },
   queueAlert: vi.fn(),
+}));
+
+// Mock config service (startSlaTimer calls getGlobalSettings for slaWarningPercent)
+vi.mock('../../../config/config.service.js', () => ({
+  getGlobalSettings: vi.fn().mockResolvedValue({ slaWarningPercent: 80 }),
 }));
 
 // Import after mocks are set up

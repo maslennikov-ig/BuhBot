@@ -60,9 +60,9 @@ export interface SlaStatus {
  */
 async function getScheduleForChat(chatId: string): Promise<WorkingSchedule> {
   try {
-    // Check if chat exists and get 24/7 mode setting
-    const chat = await prisma.chat.findUnique({
-      where: { id: BigInt(chatId) },
+    // Check if chat exists and get 24/7 mode setting (exclude soft-deleted, gh-209)
+    const chat = await prisma.chat.findFirst({
+      where: { id: BigInt(chatId), deletedAt: null },
       select: {
         is24x7Mode: true,
       },
@@ -781,8 +781,8 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
  */
 async function getManagersForChat(chatId: string): Promise<string[]> {
   try {
-    const chat = await prisma.chat.findUnique({
-      where: { id: BigInt(chatId) },
+    const chat = await prisma.chat.findFirst({
+      where: { id: BigInt(chatId), deletedAt: null },
       select: {
         managerTelegramIds: true,
       },

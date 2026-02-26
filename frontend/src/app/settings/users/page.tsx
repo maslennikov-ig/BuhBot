@@ -7,6 +7,7 @@ import { UserList } from '@/components/settings/users/UserList';
 import { UserRoleDialog } from '@/components/settings/users/UserRoleDialog';
 import { UserCreateDialog } from '@/components/settings/users/UserCreateDialog';
 import { UserDeleteDialog } from '@/components/settings/users/UserDeleteDialog';
+import { UserTelegramDialog } from '@/components/settings/users/UserTelegramDialog';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { trpc } from '@/lib/trpc';
 
@@ -18,8 +19,10 @@ type UserItem = RouterOutputs['auth']['listUsers'][number];
 
 export default function UsersPage() {
   const [editingUser, setEditingUser] = React.useState<UserItem | null>(null);
+  const [telegramUser, setTelegramUser] = React.useState<UserItem | null>(null);
   const [deletingUser, setDeletingUser] = React.useState<UserItem | null>(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = React.useState(false);
+  const [isTelegramDialogOpen, setIsTelegramDialogOpen] = React.useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
@@ -29,6 +32,11 @@ export default function UsersPage() {
   const handleEditRole = (user: UserItem) => {
     setEditingUser(user);
     setIsRoleDialogOpen(true);
+  };
+
+  const handleEditTelegramId = (user: UserItem) => {
+    setTelegramUser(user);
+    setIsTelegramDialogOpen(true);
   };
 
   const handleDeleteUser = (user: UserItem) => {
@@ -43,6 +51,11 @@ export default function UsersPage() {
   const handleCloseRoleDialog = () => {
     setIsRoleDialogOpen(false);
     setEditingUser(null);
+  };
+
+  const handleCloseTelegramDialog = () => {
+    setIsTelegramDialogOpen(false);
+    setTelegramUser(null);
   };
 
   const handleCloseCreateDialog = () => {
@@ -65,6 +78,7 @@ export default function UsersPage() {
 
       <UserList
         onEditRole={handleEditRole}
+        onEditTelegramId={handleEditTelegramId}
         onDeleteUser={handleDeleteUser}
         onAddUser={handleAddUser}
         isAdmin={isAdmin}
@@ -81,6 +95,13 @@ export default function UsersPage() {
         open={isCreateDialogOpen}
         onClose={handleCloseCreateDialog}
         onSuccess={handleCloseCreateDialog}
+      />
+
+      <UserTelegramDialog
+        user={telegramUser}
+        open={isTelegramDialogOpen}
+        onClose={handleCloseTelegramDialog}
+        onSuccess={handleCloseTelegramDialog}
       />
 
       <UserDeleteDialog

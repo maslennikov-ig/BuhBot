@@ -160,9 +160,10 @@ export async function getActiveClients(quarter: string): Promise<ActiveClient[]>
   const quarterStart = new Date(year, startMonth, 1);
   const quarterEnd = new Date(year, startMonth + 3, 0, 23, 59, 59);
 
-  // Find chats with messages in the quarter
+  // Find chats with messages in the quarter (exclude soft-deleted chats, gh-209)
   const activeChats = await prisma.chat.findMany({
     where: {
+      deletedAt: null,
       clientRequests: {
         some: {
           receivedAt: {

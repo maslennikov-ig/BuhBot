@@ -10,6 +10,7 @@
 
 import { router, authedProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { supabase } from '../../../lib/supabase.js';
 import env, { isDevMode } from '../../../config/env.js';
 import logger from '../../../utils/logger.js';
@@ -235,6 +236,83 @@ export const authRouter = router({
       await ctx.prisma.user.update({
         where: { id: input.userId },
         data: { role: input.role },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Set or clear a user's Telegram ID
+   *
+   * Allows admins to manually associate a Telegram ID with a user profile.
+   * Validates uniqueness against the TelegramAccount table to prevent conflicts.
+   *
+   * @param userId - Target user ID
+   * @param telegramId - Telegram ID as numeric string, or null to clear
+   * @returns Success status
+   * @authorization Admin only
+   */
+  setUserTelegramId: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        telegramId: z.string().regex(/^\d+$/, 'Telegram ID должен быть числом').nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Validate user exists
+      const targetUser = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!targetUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Пользователь не найден',
+        });
+      }
+
+      // If telegramId provided, check uniqueness against TelegramAccount table
+      if (input.telegramId) {
+        const existingAccount = await ctx.prisma.telegramAccount.findUnique({
+          where: { telegramId: BigInt(input.telegramId) },
+        });
+
+        if (existingAccount && existingAccount.userId !== input.userId) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'Этот Telegram ID уже привязан к другому пользователю',
+          });
+        }
+
+        // Also check if another User already has this telegramId
+        const existingUser = await ctx.prisma.user.findFirst({
+          where: {
+            telegramId: BigInt(input.telegramId),
+            id: { not: input.userId },
+          },
+        });
+
+        if (existingUser) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'Этот Telegram ID уже привязан к другому пользователю',
+          });
+        }
+      }
+
+      // Update User.telegramId
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          telegramId: input.telegramId ? BigInt(input.telegramId) : null,
+        },
+      });
+
+      logger.info('[Audit] Admin set user Telegram ID', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
+        telegramId: input.telegramId,
       });
 
       return { success: true };

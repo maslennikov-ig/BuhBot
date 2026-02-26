@@ -33,6 +33,7 @@ import { ChatSettingsForm } from '@/components/chats/ChatSettingsForm';
 import { ChatMessageThread } from '@/components/chats/ChatMessageThread';
 import { ChatTabs } from '@/components/chats/ChatTabs';
 import { trpc } from '@/lib/trpc';
+import { toast } from 'sonner';
 
 // ============================================
 // TYPES
@@ -172,6 +173,24 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
 export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
   const [activeTab, setActiveTab] = React.useState<Tab>('messages');
   const { data: chat, isLoading, error } = trpc.chats.getById.useQuery({ id: chatId });
+  const utils = trpc.useUtils();
+
+  // Restore mutation (gh-209)
+  const restoreMutation = trpc.chats.restore.useMutation({
+    onSuccess: () => {
+      toast.success('Чат восстановлен');
+      utils.chats.getById.invalidate({ id: chatId });
+      utils.chats.list.invalidate();
+      utils.chats.listDeleted.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Ошибка восстановления: ${err.message}`);
+    },
+  });
+
+  const handleRestore = () => {
+    restoreMutation.mutate({ id: chatId });
+  };
 
   // Loading state
   if (isLoading) {
@@ -249,6 +268,40 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
 
       {/* Content sections with staggered animation */}
       <div className="space-y-6">
+        {/* Deleted chat restoration banner (gh-209) */}
+        {chat.deletedAt && (
+          <section className="buh-animate-fade-in-up">
+            <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-center gap-3">
+              <Trash2 className="h-5 w-5 text-[var(--buh-warning)] shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium text-[var(--buh-foreground)]">
+                  Чат удалён{' '}
+                  {new Date(chat.deletedAt).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Все данные сохранены. Вы можете восстановить чат.
+                </p>
+              </div>
+              <Button
+                onClick={handleRestore}
+                disabled={restoreMutation.isPending}
+                className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:text-white shrink-0"
+              >
+                {restoreMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                )}
+                Восстановить
+              </Button>
+            </div>
+          </section>
+        )}
+
         {/* Chat Info Section - always visible */}
         <section className="buh-animate-fade-in-up">
           <ChatInfoCard chat={chat as ChatInfoCardProps['chat']} />
@@ -269,21 +322,50 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
-              {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
-              <ChatSettingsForm
-                chatId={chat.id}
-                managerTelegramIds={chat.managerTelegramIds ?? []}
-                initialData={{
-                  slaEnabled: chat.slaEnabled,
-                  slaThresholdMinutes: chat.slaThresholdMinutes,
-                  assignedAccountantId: chat.assignedAccountantId,
-                  accountantUsernames: chat.accountantUsernames ?? [],
-                  notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
-                }}
-              />
+              {chat.deletedAt ? (
+                /* When deleted, show read-only notice instead of settings (gh-209) */
+                <GlassCard variant="default" padding="lg">
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Trash2 className="h-12 w-12 text-[var(--buh-foreground-subtle)] mb-4" />
+                    <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">
+                      Настройки недоступны
+                    </h3>
+                    <p className="text-sm text-[var(--buh-foreground-muted)] mb-4">
+                      Чат удалён. Восстановите чат, чтобы изменить настройки.
+                    </p>
+                    <Button
+                      onClick={handleRestore}
+                      disabled={restoreMutation.isPending}
+                      className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:text-white"
+                    >
+                      {restoreMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                      )}
+                      Восстановить чат
+                    </Button>
+                  </div>
+                </GlassCard>
+              ) : (
+                <>
+                  {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
+                  <ChatSettingsForm
+                    chatId={chat.id}
+                    managerTelegramIds={chat.managerTelegramIds ?? []}
+                    initialData={{
+                      slaEnabled: chat.slaEnabled,
+                      slaThresholdMinutes: chat.slaThresholdMinutes,
+                      assignedAccountantId: chat.assignedAccountantId,
+                      accountantUsernames: chat.accountantUsernames ?? [],
+                      notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
+                    }}
+                  />
 
-              {/* Danger Zone */}
-              <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+                  {/* Danger Zone */}
+                  <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+                </>
+              )}
             </div>
           )}
 
@@ -354,7 +436,7 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
           </div>
           <div>
             <h3 className="text-xl font-semibold text-[var(--buh-foreground)]">Опасная зона</h3>
-            <p className="text-sm text-[var(--buh-foreground-muted)]">Необратимые действия</p>
+            <p className="text-sm text-[var(--buh-foreground-muted)]">Действия с чатом</p>
           </div>
         </div>
 
@@ -367,8 +449,8 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
             <div className="flex-1">
               <h4 className="font-semibold text-[var(--buh-foreground)] mb-1.5">Удалить чат</h4>
               <p className="text-sm text-[var(--buh-foreground-muted)] leading-relaxed">
-                Будут удалены все данные: запросы клиентов, SLA оповещения, расписание и статистика.
-                Это действие нельзя отменить.
+                Чат будет помечен как удалённый. Мониторинг и SLA будут отключены. Все данные
+                сохранятся, и чат можно будет восстановить позже.
               </p>
             </div>
           </div>
@@ -407,7 +489,7 @@ function DangerZone({ chatId, chatTitle }: DangerZoneProps) {
                   ) : (
                     <Trash2 className="mr-2 h-4 w-4" />
                   )}
-                  Да, удалить навсегда
+                  Да, удалить
                 </Button>
                 <Button
                   variant="outline"

@@ -137,9 +137,9 @@ export const messagesRouter = router({
       // Rate limit: 100 requests per minute per user
       checkRateLimit(ctx.user.id, 100, 60000);
 
-      // Verify chat exists
-      const chat = await ctx.prisma.chat.findUnique({
-        where: { id: BigInt(input.chatId) },
+      // Verify chat exists and is not soft-deleted (gh-209)
+      const chat = await ctx.prisma.chat.findFirst({
+        where: { id: BigInt(input.chatId), deletedAt: null },
       });
 
       if (!chat) {

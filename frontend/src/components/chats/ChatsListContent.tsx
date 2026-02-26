@@ -26,7 +26,10 @@ import {
   Loader2,
   X,
   AlertTriangle,
+  RotateCcw,
+  Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -100,6 +103,7 @@ export function ChatsListContent() {
   const [page, setPage] = React.useState(0);
   const [showFilters, setShowFilters] = React.useState(false);
   const [showAddModal, setShowAddModal] = React.useState(false);
+  const [showDeleted, setShowDeleted] = React.useState(false);
 
   const utils = trpc.useUtils();
 
@@ -126,7 +130,27 @@ export function ChatsListContent() {
     return params;
   }, [filters, page]);
 
-  const { data, isLoading, error } = trpc.chats.list.useQuery(queryParams);
+  const { data, isLoading, error } = trpc.chats.list.useQuery(queryParams, {
+    enabled: !showDeleted,
+  });
+
+  // Deleted chats query (gh-209)
+  const deletedChatsQuery = trpc.chats.listDeleted.useQuery(
+    { limit: 50, offset: 0 },
+    { enabled: showDeleted }
+  );
+
+  // Restore mutation (gh-209)
+  const restoreMutation = trpc.chats.restore.useMutation({
+    onSuccess: () => {
+      toast.success('Чат восстановлен');
+      utils.chats.listDeleted.invalidate();
+      utils.chats.list.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Ошибка восстановления: ${err.message}`);
+    },
+  });
 
   const chats = React.useMemo(() => (data?.chats ?? []) as Chat[], [data?.chats]);
   const total = data?.total ?? 0;
@@ -197,9 +221,14 @@ export function ChatsListContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => {
+                  setShowDeleted(false);
+                  setShowFilters(!showFilters);
+                }}
                 className={cn(
-                  showFilters && 'bg-[var(--buh-primary-muted)] border-[var(--buh-primary)]'
+                  !showDeleted &&
+                    showFilters &&
+                    'bg-[var(--buh-primary-muted)] border-[var(--buh-primary)]'
                 )}
               >
                 <Filter className="mr-2 h-4 w-4" />
@@ -207,6 +236,23 @@ export function ChatsListContent() {
                 {(filters.assignedTo || filters.slaEnabled !== 'all') && (
                   <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--buh-accent)] text-xs text-white">
                     {[filters.assignedTo, filters.slaEnabled !== 'all'].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleted(!showDeleted)}
+                className={cn(
+                  showDeleted &&
+                    'bg-[var(--buh-error)]/10 border-[var(--buh-error)]/40 text-[var(--buh-error)]'
+                )}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалённые
+                {deletedChatsQuery.data && deletedChatsQuery.data.total > 0 && (
+                  <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--buh-error)] text-xs text-white">
+                    {deletedChatsQuery.data.total}
                   </span>
                 )}
               </Button>
@@ -280,10 +326,122 @@ export function ChatsListContent() {
         </GlassCard>
       </div>
 
-      {/* Chats Table */}
+      {/* Chats Table / Deleted Chats Table */}
       <div className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
         <GlassCard variant="default" padding="none">
-          {isLoading ? (
+          {showDeleted ? (
+            /* Deleted chats view (gh-209) */
+            deletedChatsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--buh-accent)]" />
+              </div>
+            ) : deletedChatsQuery.error ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <XCircle className="h-12 w-12 text-[var(--buh-error)] mb-4" />
+                <p className="text-[var(--buh-foreground)]">Ошибка загрузки данных</p>
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  {deletedChatsQuery.error.message}
+                </p>
+              </div>
+            ) : !deletedChatsQuery.data?.chats.length ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Trash2 className="h-12 w-12 text-[var(--buh-foreground-subtle)] mb-4" />
+                <p className="text-[var(--buh-foreground)]">Нет удалённых чатов</p>
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Удалённые чаты будут отображаться здесь
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-overlay)]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                        Название
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                        Тип
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                        Удалён
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                        Действия
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--buh-border)]">
+                    {deletedChatsQuery.data.chats.map((chat, index) => {
+                      const TypeIcon = CHAT_TYPE_ICONS[chat.chatType] || MessageSquare;
+                      const deletedDate = new Date(chat.deletedAt).toLocaleDateString('ru-RU', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      });
+                      return (
+                        <tr
+                          key={chat.id}
+                          className="opacity-60 hover:opacity-80 transition-all"
+                          style={{ animationDelay: `${index * 0.05}s` }}
+                        >
+                          {/* Title */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--buh-foreground-subtle)]/10">
+                                <MessageSquare className="h-4 w-4 text-[var(--buh-foreground-subtle)]" />
+                              </div>
+                              <div>
+                                <span className="font-medium text-[var(--buh-foreground-muted)]">
+                                  {chat.title || `Чат #${chat.id}`}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Type */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <TypeIcon className="h-4 w-4 text-[var(--buh-foreground-subtle)]" />
+                              <span className="text-sm text-[var(--buh-foreground-subtle)]">
+                                {CHAT_TYPE_LABELS[chat.chatType]}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Deleted At */}
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-error)]">
+                              <Trash2 className="h-3 w-3" />
+                              {deletedDate}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-4 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => restoreMutation.mutate({ id: chat.id })}
+                              disabled={restoreMutation.isPending}
+                              className="text-[var(--buh-accent)] border-[var(--buh-accent)]/40 hover:bg-[var(--buh-accent)]/10 hover:border-[var(--buh-accent)]"
+                            >
+                              {restoreMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                              )}
+                              Восстановить
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : /* Regular chats view */
+          isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-[var(--buh-accent)]" />
             </div>
@@ -448,8 +606,8 @@ export function ChatsListContent() {
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+          {/* Pagination (only for regular list) */}
+          {!showDeleted && totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-[var(--buh-border)] px-4 py-3">
               <p className="text-sm text-[var(--buh-foreground-muted)]">
                 Страница {page + 1} из {totalPages}

@@ -495,9 +495,9 @@ export async function updateDeliveryStatus(
  */
 async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
   try {
-    // First, check chat-specific managers
-    const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+    // First, check chat-specific managers (exclude soft-deleted chats, gh-209)
+    const chat = await prisma.chat.findFirst({
+      where: { id: chatId, deletedAt: null },
       select: { managerTelegramIds: true },
     });
 

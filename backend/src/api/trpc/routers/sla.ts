@@ -269,8 +269,8 @@ export const slaRouter = router({
     .output(RequestOutput)
     .mutation(async ({ ctx, input }) => {
       // 1. Get chat config (or create if not exists)
-      let chat = await ctx.prisma.chat.findUnique({
-        where: { id: BigInt(input.chatId) },
+      let chat = await ctx.prisma.chat.findFirst({
+        where: { id: BigInt(input.chatId), deletedAt: null },
       });
 
       if (!chat) {

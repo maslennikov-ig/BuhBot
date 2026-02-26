@@ -190,6 +190,7 @@ const startServer = async (port: number) => {
       where: {
         slaEnabled: true,
         managerTelegramIds: { isEmpty: true },
+        deletedAt: null, // Exclude soft-deleted chats (gh-209)
       },
       select: {
         id: true,
@@ -244,6 +245,19 @@ const startServer = async (port: number) => {
     await scheduleSlaReconciliationJob();
   } catch (error) {
     logger.error('Failed to start SLA reconciliation job', {
+      error: error instanceof Error ? error.message : String(error),
+      service: 'startup',
+    });
+  }
+
+  // Start missing Telegram IDs checker (gh-207)
+  try {
+    const { startMissingTelegramIdsWorker, scheduleMissingTelegramIdsJob } =
+      await import('./jobs/missing-telegram-ids.job.js');
+    startMissingTelegramIdsWorker();
+    await scheduleMissingTelegramIdsJob();
+  } catch (error) {
+    logger.error('Failed to start missing Telegram IDs job', {
       error: error instanceof Error ? error.message : String(error),
       service: 'startup',
     });

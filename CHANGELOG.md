@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.20.0...buhbot-v0.21.0) (2026-02-26)
+
+
+### Features
+
+* misc improvements (gh-206, gh-207, gh-208, buh-5xx, buh-0kz, buh-pw4) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216)) ([a76663b](https://github.com/maslennikov-ig/BuhBot/commit/a76663b97b401422ad39bd7d6bb61ff6ef58b8a5))
+
 ## [0.20.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.19.0...buhbot-v0.20.0) (2026-02-24)
 
 

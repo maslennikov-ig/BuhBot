@@ -82,6 +82,7 @@ async function processMissingTelegramIds(
     where: {
       slaEnabled: true,
       isMigrated: false,
+      deletedAt: null, // Exclude soft-deleted chats (gh-209)
       managerTelegramIds: { isEmpty: true },
       accountantTelegramIds: { isEmpty: true },
     },

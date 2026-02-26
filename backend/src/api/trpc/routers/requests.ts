@@ -292,8 +292,8 @@ export const requestsRouter = router({
 
       // Authorization: observers can only view requests in chats assigned to them
       if (!['admin', 'manager'].includes(ctx.user.role)) {
-        const chat = await ctx.prisma.chat.findUnique({
-          where: { id: request.chatId },
+        const chat = await ctx.prisma.chat.findFirst({
+          where: { id: request.chatId, deletedAt: null },
           select: { assignedAccountantId: true },
         });
         if (chat) {
@@ -565,8 +565,8 @@ export const requestsRouter = router({
           select: { chatId: true },
         });
         if (request) {
-          const chat = await ctx.prisma.chat.findUnique({
-            where: { id: request.chatId },
+          const chat = await ctx.prisma.chat.findFirst({
+            where: { id: request.chatId, deletedAt: null },
             select: { assignedAccountantId: true },
           });
           if (chat) {
@@ -615,8 +615,8 @@ export const requestsRouter = router({
           select: { chatId: true },
         });
         if (firstRequest) {
-          const chat = await ctx.prisma.chat.findUnique({
-            where: { id: firstRequest.chatId },
+          const chat = await ctx.prisma.chat.findFirst({
+            where: { id: firstRequest.chatId, deletedAt: null },
             select: { assignedAccountantId: true },
           });
           if (chat) {

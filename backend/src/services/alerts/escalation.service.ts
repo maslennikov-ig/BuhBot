@@ -47,9 +47,9 @@ async function getEscalationConfig(): Promise<EscalationConfig> {
  */
 async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
   try {
-    // Check chat-specific managers first
-    const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+    // Check chat-specific managers first (exclude soft-deleted, gh-209)
+    const chat = await prisma.chat.findFirst({
+      where: { id: chatId, deletedAt: null },
       select: { managerTelegramIds: true },
     });
 

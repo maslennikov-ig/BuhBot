@@ -190,6 +190,7 @@ const startServer = async (port: number) => {
       where: {
         slaEnabled: true,
         managerTelegramIds: { isEmpty: true },
+        deletedAt: null, // Exclude soft-deleted chats (gh-209)
       },
       select: {
         id: true,

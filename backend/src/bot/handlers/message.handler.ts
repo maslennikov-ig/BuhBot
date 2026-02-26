@@ -108,7 +108,10 @@ export function registerMessageHandler(): void {
             slaEnabled: false, // Disabled by default; admin enables manually
             monitoringEnabled: true,
           },
-          update: { title }, // Update title if race condition
+          update: {
+            title, // Update title if race condition
+            deletedAt: null, // Clear soft-delete if re-registered (gh-209)
+          },
         });
       }
 

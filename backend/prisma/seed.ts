@@ -258,7 +258,7 @@ async function seedChats(): Promise<void> {
     const accountant = TEST_USERS[chat.accountantIdx];
     await prisma.chat.upsert({
       where: { id: chat.id },
-      update: {},
+      update: { deletedAt: null }, // Clear soft-delete on re-seed (gh-209)
       create: {
         id: chat.id,
         chatType: 'supergroup' as ChatType,

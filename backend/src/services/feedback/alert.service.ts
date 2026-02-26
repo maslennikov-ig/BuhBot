@@ -74,9 +74,9 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
   });
 
   try {
-    // Get chat info for the alert
-    const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+    // Get chat info for the alert (exclude soft-deleted chats, gh-209)
+    const chat = await prisma.chat.findFirst({
+      where: { id: chatId, deletedAt: null },
       select: {
         title: true,
         managerTelegramIds: true,

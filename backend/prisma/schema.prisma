@@ -234,6 +234,7 @@ model Chat {
   managerTelegramIds      String[] @default([]) @map("manager_telegram_ids") // Override global managers
   notifyInChatOnBreach    Boolean  @default(false) @map("notify_in_chat_on_breach") // TEST ONLY: breach notification to group chat (disabled by default to prevent leaking to clients)
   isMigrated              Boolean  @default(false) @map("is_migrated") // True when group migrated to supergroup (buh-5xx)
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6) // Soft-delete timestamp (gh-209)
 
   // Relations
   assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id], onDelete: SetNull)

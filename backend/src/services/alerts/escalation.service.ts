@@ -43,17 +43,17 @@ async function getEscalationConfig(): Promise<EscalationConfig> {
 
 /**
  * Get manager IDs for escalation (gh-74)
- * Precedence: Chat.managerTelegramIds > GlobalSettings.globalManagerIds > []
+ * Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
  */
 async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
   try {
-    // Check chat-specific managers first
+    // Check chat-specific managers and accountant IDs
     const chat = await prisma.chat.findUnique({
       where: { id: chatId },
-      select: { managerTelegramIds: true },
+      select: { managerTelegramIds: true, accountantTelegramIds: true },
     });
 
-    return getCachedManagerIds(chat?.managerTelegramIds);
+    return getCachedManagerIds(chat?.managerTelegramIds, chat?.accountantTelegramIds);
   } catch (error) {
     logger.error('Failed to get manager IDs', {
       chatId: String(chatId),

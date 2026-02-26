@@ -80,6 +80,7 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
       select: {
         title: true,
         managerTelegramIds: true,
+        accountantTelegramIds: true,
       },
     });
 
@@ -92,8 +93,8 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
       throw new Error(`Chat not found: ${chatId}`);
     }
 
-    // Get manager IDs (chat-specific or global fallback)
-    const managerIds = await getManagerIds(chat.managerTelegramIds);
+    // Get manager IDs (chat-specific > accountant > global fallback)
+    const managerIds = await getManagerIds(chat.managerTelegramIds, chat.accountantTelegramIds);
 
     if (managerIds.length === 0) {
       logger.warn('No managers found for low-rating alert', {
@@ -173,15 +174,24 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
 /**
  * Get manager Telegram IDs for alert delivery
  *
- * Falls back to global managers if no chat-specific managers configured.
+ * Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
  *
  * @param chatManagerIds - Chat-specific manager IDs
+ * @param accountantTelegramIds - Chat accountant Telegram IDs (BigInt[])
  * @returns Array of manager Telegram user IDs
  */
-async function getManagerIds(chatManagerIds: string[]): Promise<string[]> {
+async function getManagerIds(
+  chatManagerIds: string[],
+  accountantTelegramIds?: bigint[]
+): Promise<string[]> {
   // Use chat-specific managers if available
   if (chatManagerIds && chatManagerIds.length > 0) {
     return chatManagerIds;
+  }
+
+  // Fallback to accountant Telegram IDs
+  if (accountantTelegramIds && accountantTelegramIds.length > 0) {
+    return accountantTelegramIds.map((id) => id.toString());
   }
 
   // Fall back to global managers

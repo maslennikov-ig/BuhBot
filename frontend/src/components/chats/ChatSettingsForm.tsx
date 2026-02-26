@@ -39,12 +39,14 @@ import { cn } from '@/lib/utils';
 type ChatSettingsFormProps = {
   chatId: number;
   managerTelegramIds: string[];
+  accountantTelegramIds: number[];
   initialData?: {
     slaEnabled: boolean;
     slaThresholdMinutes: number;
     assignedAccountantId: string | null;
     accountantUsernames?: string[];
     notifyInChatOnBreach?: boolean;
+    managerTelegramIds?: string[];
   };
   onSuccess?: () => void;
   className?: string;
@@ -65,6 +67,7 @@ const chatSettingsSchema = z.object({
     .transform((val) => (val === '' ? null : val)),
   accountantUsernames: z.array(z.string()).optional(),
   notifyInChatOnBreach: z.boolean(),
+  managerTelegramIds: z.array(z.string()).optional(),
 });
 
 type ChatSettingsFormData = z.infer<typeof chatSettingsSchema>;
@@ -79,6 +82,7 @@ const DEFAULT_VALUES: ChatSettingsFormData = {
   assignedAccountantId: null,
   accountantUsernames: [],
   notifyInChatOnBreach: false,
+  managerTelegramIds: [],
 };
 
 // ============================================
@@ -98,6 +102,7 @@ const DEFAULT_VALUES: ChatSettingsFormData = {
 export function ChatSettingsForm({
   chatId,
   managerTelegramIds,
+  accountantTelegramIds,
   initialData,
   onSuccess,
   className,
@@ -143,6 +148,12 @@ export function ChatSettingsForm({
     name: 'slaEnabled',
   });
 
+  // Watch form-level managerTelegramIds for live warning banner updates
+  const formManagerIds = useWatch({
+    control: form.control,
+    name: 'managerTelegramIds',
+  });
+
   // Reset form when initial data changes
   React.useEffect(() => {
     if (initialData) {
@@ -158,6 +169,7 @@ export function ChatSettingsForm({
       assignedAccountantId: data.assignedAccountantId,
       accountantUsernames: data.accountantUsernames ?? [],
       notifyInChatOnBreach: data.notifyInChatOnBreach ?? false,
+      managerTelegramIds: data.managerTelegramIds ?? [],
     });
   };
 
@@ -218,21 +230,24 @@ export function ChatSettingsForm({
             )}
           />
 
-          {/* Warning Banner: SLA enabled but no managers configured */}
-          {slaEnabled && (!managerTelegramIds || managerTelegramIds.length === 0) && (
-            <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
-              <div>
-                <p className="font-medium text-[var(--buh-warning)]">
-                  Менеджеры для уведомлений не настроены
-                </p>
-                <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
-                  SLA уведомления не будут доставлены, так как не указаны Telegram ID менеджеров.
-                  Настройте менеджеров в Глобальных настройках или добавьте их для этого чата.
-                </p>
+          {/* Warning Banner: SLA enabled but no notification recipients configured */}
+          {slaEnabled &&
+            (!formManagerIds || formManagerIds.length === 0) &&
+            (!managerTelegramIds || managerTelegramIds.length === 0) &&
+            (!accountantTelegramIds || accountantTelegramIds.length === 0) && (
+              <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium text-[var(--buh-warning)]">
+                    Менеджеры для уведомлений не настроены
+                  </p>
+                  <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
+                    SLA уведомления не будут доставлены, так как не указаны Telegram ID менеджеров.
+                    Настройте менеджеров в Глобальных настройках или добавьте их для этого чата.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Notify in Chat on Breach */}
           <FormField
@@ -356,6 +371,44 @@ export function ChatSettingsForm({
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
                   Укажите @username бухгалтеров, ответственных за этот чат
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Manager Telegram IDs for SLA notifications */}
+          <FormField
+            control={form.control}
+            name="managerTelegramIds"
+            render={({ field }) => (
+              <FormItem
+                className={cn(
+                  'transition-opacity duration-200',
+                  !slaEnabled && 'opacity-50 pointer-events-none'
+                )}
+              >
+                <FormLabel className="text-[var(--buh-foreground)]">
+                  Менеджеры для SLA уведомлений (Telegram ID)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    disabled={!slaEnabled}
+                    placeholder="123456789, 987654321"
+                    value={(field.value ?? []).join(', ')}
+                    onChange={(e) => {
+                      const ids = e.target.value
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => /^\d+$/.test(s));
+                      field.onChange(ids);
+                    }}
+                    className="bg-[var(--buh-surface)] border-[var(--buh-border)] text-[var(--buh-foreground)]"
+                  />
+                </FormControl>
+                <FormDescription className="text-[var(--buh-foreground-subtle)]">
+                  Переопределяет получателей SLA-уведомлений для этого чата. Если не заданы,
+                  уведомления идут бухгалтерам чата, затем глобальным менеджерам.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

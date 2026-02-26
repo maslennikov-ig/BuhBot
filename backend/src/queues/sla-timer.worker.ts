@@ -153,10 +153,20 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
     }
 
     // 6. Get manager IDs for alert delivery
+    // Precedence: managerTelegramIds > accountantTelegramIds > globalManagerIds
     const managerIds = request.chat?.managerTelegramIds ?? [];
 
-    // If no chat-specific managers, get global managers
     let alertManagerIds = managerIds;
+
+    // If no chat-specific managers, check accountant Telegram IDs
+    if (alertManagerIds.length === 0) {
+      const accountantIds = request.chat?.accountantTelegramIds ?? [];
+      if (accountantIds.length > 0) {
+        alertManagerIds = accountantIds.map((id) => id.toString());
+      }
+    }
+
+    // If still no managers, get global managers
     if (alertManagerIds.length === 0) {
       const globalSettings = await prisma.globalSettings.findUnique({
         where: { id: 'default' },

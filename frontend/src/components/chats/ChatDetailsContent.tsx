@@ -273,12 +273,14 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
               <ChatSettingsForm
                 chatId={chat.id}
                 managerTelegramIds={chat.managerTelegramIds ?? []}
+                accountantTelegramIds={chat.accountantTelegramIds ?? []}
                 initialData={{
                   slaEnabled: chat.slaEnabled,
                   slaThresholdMinutes: chat.slaThresholdMinutes,
                   assignedAccountantId: chat.assignedAccountantId,
                   accountantUsernames: chat.accountantUsernames ?? [],
                   notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
+                  managerTelegramIds: chat.managerTelegramIds ?? [],
                 }}
               />
 

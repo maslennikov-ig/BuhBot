@@ -495,14 +495,18 @@ export async function updateDeliveryStatus(
  */
 async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
   try {
-    // First, check chat-specific managers
+    // Check chat-specific managers, then accountant IDs, then global fallback
     const chat = await prisma.chat.findUnique({
       where: { id: chatId },
-      select: { managerTelegramIds: true },
+      select: { managerTelegramIds: true, accountantTelegramIds: true },
     });
 
     if (chat?.managerTelegramIds && chat.managerTelegramIds.length > 0) {
       return chat.managerTelegramIds;
+    }
+
+    if (chat?.accountantTelegramIds && chat.accountantTelegramIds.length > 0) {
+      return chat.accountantTelegramIds.map((id) => id.toString());
     }
 
     // Fall back to global managers

@@ -197,11 +197,17 @@ export async function getSlaThreshold(
 
 /**
  * Get manager Telegram IDs for notifications.
- * Precedence: Chat.managerTelegramIds > GlobalSettings.globalManagerIds > []
+ * Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
  */
-export async function getManagerIds(chatManagerIds?: string[] | null): Promise<string[]> {
+export async function getManagerIds(
+  chatManagerIds?: string[] | null,
+  accountantTelegramIds?: bigint[] | null
+): Promise<string[]> {
   if (chatManagerIds && chatManagerIds.length > 0) {
     return chatManagerIds;
+  }
+  if (accountantTelegramIds && accountantTelegramIds.length > 0) {
+    return accountantTelegramIds.map((id) => id.toString());
   }
   const settings = await getGlobalSettings();
   return settings.globalManagerIds;

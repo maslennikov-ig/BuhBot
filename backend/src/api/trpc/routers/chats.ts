@@ -341,6 +341,9 @@ export const chatsRouter = router({
           )
           .default([]),
         notifyInChatOnBreach: z.boolean().optional(),
+        managerTelegramIds: z
+          .array(z.string().regex(/^\d+$/, 'Telegram ID должен быть числом'))
+          .optional(),
       })
     )
     .output(
@@ -380,43 +383,48 @@ export const chatsRouter = router({
             });
           }
 
-          // Validate: Cannot enable SLA without managers configured
+          // Validate: Cannot enable SLA without notification recipients configured
           if (input.slaEnabled === true && existingChat.slaEnabled === false) {
-            // Check for chat-level managers (if provided in input, use that; otherwise use existing)
             const chatManagers = existingChat.managerTelegramIds || [];
+            const accountantTgIds = existingChat.accountantTelegramIds || [];
 
-            // Check for global fallback managers
             const globalSettings = await tx.globalSettings.findUnique({
               where: { id: 'default' },
               select: { globalManagerIds: true },
             });
             const globalManagers = globalSettings?.globalManagerIds || [];
 
-            const hasManagers = chatManagers.length > 0 || globalManagers.length > 0;
+            const hasRecipients =
+              chatManagers.length > 0 || accountantTgIds.length > 0 || globalManagers.length > 0;
 
-            if (!hasManagers) {
+            if (!hasRecipients) {
               throw new TRPCError({
                 code: 'BAD_REQUEST',
                 message:
-                  'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
+                  'Невозможно включить SLA без настроенных получателей уведомлений. Добавьте бухгалтеров через @username или менеджеров в настройках.',
               });
             }
           }
 
-          // Warn if SLA is active but no managers configured (monitoring)
+          // Warn if SLA is active but no notification recipients configured (monitoring)
           if (
             (input.slaEnabled === true ||
               (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
             existingChat.slaEnabled
           ) {
             const chatManagers = existingChat.managerTelegramIds || [];
+            const accountantTgIds = existingChat.accountantTelegramIds || [];
             const globalSettings = await tx.globalSettings.findUnique({
               where: { id: 'default' },
               select: { globalManagerIds: true },
             });
             const globalManagers = globalSettings?.globalManagerIds || [];
-            if (chatManagers.length === 0 && globalManagers.length === 0) {
-              logger.warn('Chat has SLA enabled but no managers configured for notifications', {
+            if (
+              chatManagers.length === 0 &&
+              accountantTgIds.length === 0 &&
+              globalManagers.length === 0
+            ) {
+              logger.warn('Chat has SLA enabled but no notification recipients configured', {
                 chatId: input.id,
                 slaEnabled: true,
               });
@@ -448,6 +456,10 @@ export const chatsRouter = router({
               });
             }
             data.notifyInChatOnBreach = input.notifyInChatOnBreach;
+          }
+
+          if (input.managerTelegramIds !== undefined) {
+            data.managerTelegramIds = input.managerTelegramIds;
           }
 
           // Start with input usernames

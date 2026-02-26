@@ -23,7 +23,11 @@ import { prisma } from '../lib/prisma.js';
 import { bot } from '../bot/bot.js';
 import { registerWorker } from './setup.js';
 import type { AlertJobData, LowRatingAlertJobData } from './setup.js';
-import { formatAlertMessage, type AlertMessageData } from '../services/alerts/format.service.js';
+import {
+  formatAlertMessage,
+  formatWarningMessage,
+  type AlertMessageData,
+} from '../services/alerts/format.service.js';
 import { buildAlertKeyboard } from '../bot/keyboards/alert.keyboard.js';
 import { updateDeliveryStatus } from '../services/alerts/alert.service.js';
 import { scheduleNextEscalation } from '../services/alerts/escalation.service.js';
@@ -188,7 +192,21 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
         requestId,
       };
 
-      formattedMessage = formatAlertMessage(messageData);
+      formattedMessage =
+        alertType === 'warning'
+          ? formatWarningMessage({
+              clientUsername: request.clientUsername,
+              messagePreview: request.messageText.slice(0, messagePreviewLength),
+              minutesElapsed: request.slaAlerts[0]?.minutesElapsed ?? 0,
+              threshold: request.chat?.slaThresholdMinutes ?? 60,
+              remainingMinutes: Math.max(
+                0,
+                (request.chat?.slaThresholdMinutes ?? 60) -
+                  (request.slaAlerts[0]?.minutesElapsed ?? 0)
+              ),
+              chatTitle: request.chat?.title ?? null,
+            })
+          : formatAlertMessage(messageData);
     }
 
     // Build keyboard (include invite link if available)

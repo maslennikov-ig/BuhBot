@@ -51,15 +51,24 @@ async function getRecipientsForChat(
   chatId: bigint,
   escalationLevel: number
 ): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'both' | 'fallback' }> {
-  const chat = await prisma.chat.findFirst({
-    where: { id: chatId, deletedAt: null },
-    select: { managerTelegramIds: true, accountantTelegramIds: true },
-  });
-  return getRecipientsByLevel(
-    chat?.managerTelegramIds,
-    chat?.accountantTelegramIds,
-    escalationLevel
-  );
+  try {
+    const chat = await prisma.chat.findFirst({
+      where: { id: chatId, deletedAt: null },
+      select: { managerTelegramIds: true, accountantTelegramIds: true },
+    });
+    return getRecipientsByLevel(
+      chat?.managerTelegramIds,
+      chat?.accountantTelegramIds,
+      escalationLevel
+    );
+  } catch (error) {
+    logger.error('Failed to get recipients for chat', {
+      chatId: String(chatId),
+      error: error instanceof Error ? error.message : String(error),
+      service: 'escalation',
+    });
+    return { recipients: [], tier: 'fallback' as const };
+  }
 }
 
 /**

@@ -92,6 +92,19 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       const minutesElapsed = Math.round((Date.now() - receivedAt.getTime()) / 60000);
       const remainingMinutes = Math.max(0, threshold - minutesElapsed);
 
+      // Idempotency guard: skip if warning alert already exists for this request (CR-002)
+      const existingWarning = await prisma.slaAlert.findFirst({
+        where: { requestId, alertType: 'warning', escalationLevel: 0, resolvedAction: null },
+      });
+      if (existingWarning) {
+        logger.info('Warning alert already exists, skipping duplicate', {
+          requestId,
+          alertId: existingWarning.id,
+          service: 'sla-timer-worker',
+        });
+        return;
+      }
+
       // Create SLA alert with warning type (does NOT mark request as breached)
       const alert = await prisma.slaAlert.create({
         data: {

@@ -417,6 +417,13 @@ export const chatsRouter = router({
             });
           }
 
+          // Hoist globalSettings query to avoid duplicate read (CR-006)
+          const globalSettings = await tx.globalSettings.findUnique({
+            where: { id: 'default' },
+            select: { globalManagerIds: true },
+          });
+          const globalManagers = globalSettings?.globalManagerIds || [];
+
           // Validate: Cannot enable SLA without notification recipients configured
           if (input.slaEnabled === true && existingChat.slaEnabled === false) {
             const chatManagers =
@@ -424,12 +431,6 @@ export const chatsRouter = router({
                 ? input.managerTelegramIds
                 : existingChat.managerTelegramIds || [];
             const accountantTgIds = existingChat.accountantTelegramIds || [];
-
-            const globalSettings = await tx.globalSettings.findUnique({
-              where: { id: 'default' },
-              select: { globalManagerIds: true },
-            });
-            const globalManagers = globalSettings?.globalManagerIds || [];
 
             const hasRecipients =
               chatManagers.length > 0 || accountantTgIds.length > 0 || globalManagers.length > 0;
@@ -451,11 +452,6 @@ export const chatsRouter = router({
           ) {
             const chatManagers = existingChat.managerTelegramIds || [];
             const accountantTgIds = existingChat.accountantTelegramIds || [];
-            const globalSettings = await tx.globalSettings.findUnique({
-              where: { id: 'default' },
-              select: { globalManagerIds: true },
-            });
-            const globalManagers = globalSettings?.globalManagerIds || [];
             if (
               chatManagers.length === 0 &&
               accountantTgIds.length === 0 &&

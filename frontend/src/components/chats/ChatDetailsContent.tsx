@@ -171,14 +171,10 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
 
 export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
   const [activeTab, setActiveTab] = React.useState<Tab>('messages');
-  const { data: chat, isLoading, error, refetch } = trpc.chats.getById.useQuery({ id: chatId });
+  const { data: chat, isLoading, error } = trpc.chats.getById.useQuery({ id: chatId });
 
   // TODO: Replace with trpc.chats.restore.useMutation when backend procedure is implemented
-  const restoreMutation = { isPending: false, mutate: (_input: { id: number }) => {} };
-  const handleRestore = () => {
-    restoreMutation.mutate({ id: chatId });
-    void refetch();
-  };
+  const isRestoreAvailable = false;
 
   // Loading state
   if (isLoading) {
@@ -288,15 +284,11 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                       Чат удалён. Восстановите чат, чтобы изменить настройки.
                     </p>
                     <Button
-                      onClick={handleRestore}
-                      disabled={restoreMutation.isPending}
-                      className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:text-white"
+                      disabled={!isRestoreAvailable}
+                      title="Функция восстановления в разработке"
+                      className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:text-white disabled:opacity-50"
                     >
-                      {restoreMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                      )}
+                      <RotateCcw className="mr-2 h-4 w-4" />
                       Восстановить чат
                     </Button>
                   </div>

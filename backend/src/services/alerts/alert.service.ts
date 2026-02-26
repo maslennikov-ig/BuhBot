@@ -13,6 +13,7 @@
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import { queueAlert, scheduleEscalation } from '../../queues/setup.js';
+import { getManagerIds as getCachedManagerIds } from '../../config/config.service.js';
 import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '@prisma/client';
 import { appNotificationService } from '../notification/app-notification.service.js';
 
@@ -495,27 +496,12 @@ export async function updateDeliveryStatus(
  */
 async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
   try {
-    // Check chat-specific managers, then accountant IDs, then global fallback
     const chat = await prisma.chat.findUnique({
       where: { id: chatId },
       select: { managerTelegramIds: true, accountantTelegramIds: true },
     });
 
-    if (chat?.managerTelegramIds && chat.managerTelegramIds.length > 0) {
-      return chat.managerTelegramIds;
-    }
-
-    if (chat?.accountantTelegramIds && chat.accountantTelegramIds.length > 0) {
-      return chat.accountantTelegramIds.map((id) => id.toString());
-    }
-
-    // Fall back to global managers
-    const globalSettings = await prisma.globalSettings.findUnique({
-      where: { id: 'default' },
-      select: { globalManagerIds: true },
-    });
-
-    return globalSettings?.globalManagerIds ?? [];
+    return getCachedManagerIds(chat?.managerTelegramIds, chat?.accountantTelegramIds);
   } catch (error) {
     logger.error('Failed to get manager IDs for chat', {
       chatId: String(chatId),

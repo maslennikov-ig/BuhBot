@@ -17,6 +17,7 @@ import { prisma } from '../../lib/prisma.js';
 import { bot } from '../../bot/bot.js';
 import { buildLowRatingAlertKeyboard } from '../../bot/keyboards/alert.keyboard.js';
 import { escapeHtml, truncateText } from '../alerts/format.service.js';
+import { getManagerIds } from '../../config/config.service.js';
 import logger from '../../utils/logger.js';
 
 // ============================================================================
@@ -171,37 +172,8 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
 // HELPER FUNCTIONS
 // ============================================================================
 
-/**
- * Get manager Telegram IDs for alert delivery
- *
- * Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
- *
- * @param chatManagerIds - Chat-specific manager IDs
- * @param accountantTelegramIds - Chat accountant Telegram IDs (BigInt[])
- * @returns Array of manager Telegram user IDs
- */
-async function getManagerIds(
-  chatManagerIds: string[],
-  accountantTelegramIds?: bigint[]
-): Promise<string[]> {
-  // Use chat-specific managers if available
-  if (chatManagerIds && chatManagerIds.length > 0) {
-    return chatManagerIds;
-  }
-
-  // Fallback to accountant Telegram IDs
-  if (accountantTelegramIds && accountantTelegramIds.length > 0) {
-    return accountantTelegramIds.map((id) => id.toString());
-  }
-
-  // Fall back to global managers
-  const globalSettings = await prisma.globalSettings.findUnique({
-    where: { id: 'default' },
-    select: { globalManagerIds: true },
-  });
-
-  return globalSettings?.globalManagerIds ?? [];
-}
+// getManagerIds is imported from config.service.ts (DRY — single source of truth)
+// Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
 
 /**
  * Format low-rating alert message data

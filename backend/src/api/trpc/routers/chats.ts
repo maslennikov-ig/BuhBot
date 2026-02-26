@@ -385,7 +385,10 @@ export const chatsRouter = router({
 
           // Validate: Cannot enable SLA without notification recipients configured
           if (input.slaEnabled === true && existingChat.slaEnabled === false) {
-            const chatManagers = existingChat.managerTelegramIds || [];
+            const chatManagers =
+              input.managerTelegramIds !== undefined
+                ? input.managerTelegramIds
+                : existingChat.managerTelegramIds || [];
             const accountantTgIds = existingChat.accountantTelegramIds || [];
 
             const globalSettings = await tx.globalSettings.findUnique({

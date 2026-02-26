@@ -25,6 +25,11 @@ vi.mock('@/lib/trpc', () => ({
         useMutation: vi.fn(),
       },
     },
+    settings: {
+      getGlobalSettings: {
+        useQuery: vi.fn(() => ({ data: { globalManagerCount: 0 } })),
+      },
+    },
   },
 }));
 
@@ -229,6 +234,58 @@ describe('ChatSettingsForm', () => {
       );
 
       expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+    });
+
+    it('should NOT show warning when SLA enabled and accountants configured', () => {
+      createMockMutation();
+
+      render(
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={[]}
+          accountantTelegramIds={[123456789]}
+          initialData={{
+            slaEnabled: true,
+            slaThresholdMinutes: 60,
+            assignedAccountantId: null,
+            notifyInChatOnBreach: false,
+          }}
+        />
+      );
+
+      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+    });
+
+    it('should hide warning when user types a manager ID into the form field', async () => {
+      createMockMutation();
+      const user = userEvent.setup({ delay: null });
+
+      render(
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={[]}
+          accountantTelegramIds={[]}
+          initialData={{
+            slaEnabled: true,
+            slaThresholdMinutes: 60,
+            assignedAccountantId: null,
+            notifyInChatOnBreach: false,
+          }}
+        />
+      );
+
+      // Warning should be visible initially
+      expect(screen.getByText('Менеджеры для уведомлений не настроены')).toBeInTheDocument();
+
+      // Type a valid manager ID
+      await user.type(screen.getByPlaceholderText('123456789, 987654321'), '111222333');
+
+      // Warning should disappear
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Менеджеры для уведомлений не настроены')
+        ).not.toBeInTheDocument();
+      });
     });
   });
 

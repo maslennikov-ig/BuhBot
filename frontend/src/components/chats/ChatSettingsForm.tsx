@@ -154,6 +154,12 @@ export function ChatSettingsForm({
     name: 'managerTelegramIds',
   });
 
+  // Fetch global settings to check for global manager recipients (prevents false-positive warning)
+  const { data: globalSettings } = trpc.settings.getGlobalSettings.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000, // cache for 5 min, same as backend
+  });
+  const hasGlobalManagers = (globalSettings?.globalManagerCount ?? 0) > 0;
+
   // Reset form when initial data changes
   React.useEffect(() => {
     if (initialData) {
@@ -234,7 +240,8 @@ export function ChatSettingsForm({
           {slaEnabled &&
             (!formManagerIds || formManagerIds.length === 0) &&
             (!managerTelegramIds || managerTelegramIds.length === 0) &&
-            (!accountantTelegramIds || accountantTelegramIds.length === 0) && (
+            (!accountantTelegramIds || accountantTelegramIds.length === 0) &&
+            !hasGlobalManagers && (
               <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
                 <div>
@@ -242,8 +249,9 @@ export function ChatSettingsForm({
                     Менеджеры для уведомлений не настроены
                   </p>
                   <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
-                    SLA уведомления не будут доставлены, так как не указаны Telegram ID менеджеров.
-                    Настройте менеджеров в Глобальных настройках или добавьте их для этого чата.
+                    Для этого чата не настроены получатели SLA-уведомлений. Назначьте бухгалтера
+                    через @username ниже, добавьте менеджеров для этого чата или настройте
+                    глобальных менеджеров в Настройках системы.
                   </p>
                 </div>
               </div>

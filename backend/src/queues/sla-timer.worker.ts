@@ -20,6 +20,7 @@ import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
 import { QUEUE_NAMES, registerWorker, queueAlert, type SlaTimerJobData } from './setup.js';
 import { queueConfig } from '../config/queue.config.js';
+import { getManagerIds } from '../config/config.service.js';
 import { bot } from '../bot/bot.js';
 import { formatBreachChatNotification } from '../services/alerts/format.service.js';
 
@@ -154,25 +155,10 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
 
     // 6. Get manager IDs for alert delivery
     // Precedence: managerTelegramIds > accountantTelegramIds > globalManagerIds
-    const managerIds = request.chat?.managerTelegramIds ?? [];
-
-    let alertManagerIds = managerIds;
-
-    // If no chat-specific managers, check accountant Telegram IDs
-    if (alertManagerIds.length === 0) {
-      const accountantIds = request.chat?.accountantTelegramIds ?? [];
-      if (accountantIds.length > 0) {
-        alertManagerIds = accountantIds.map((id) => id.toString());
-      }
-    }
-
-    // If still no managers, get global managers
-    if (alertManagerIds.length === 0) {
-      const globalSettings = await prisma.globalSettings.findUnique({
-        where: { id: 'default' },
-      });
-      alertManagerIds = globalSettings?.globalManagerIds ?? [];
-    }
+    const alertManagerIds = await getManagerIds(
+      request.chat?.managerTelegramIds,
+      request.chat?.accountantTelegramIds
+    );
 
     // 7. Queue alert for delivery
     if (alertManagerIds.length > 0) {

@@ -25,6 +25,7 @@ export interface CachedGlobalSettings {
   defaultSlaThreshold: number;
   maxEscalations: number;
   escalationIntervalMin: number;
+  slaWarningPercent: number;
 
   // Manager Alerts
   globalManagerIds: string[];
@@ -60,6 +61,7 @@ const DEFAULTS: CachedGlobalSettings = {
   defaultSlaThreshold: 60,
   maxEscalations: 5,
   escalationIntervalMin: 30,
+  slaWarningPercent: 80,
   globalManagerIds: [],
   leadNotificationIds: [],
   aiConfidenceThreshold: 0.7,
@@ -113,6 +115,7 @@ export async function getGlobalSettings(): Promise<CachedGlobalSettings> {
         defaultSlaThreshold: settings.defaultSlaThreshold,
         maxEscalations: settings.maxEscalations,
         escalationIntervalMin: settings.escalationIntervalMin,
+        slaWarningPercent: settings.slaWarningPercent,
         globalManagerIds: settings.globalManagerIds,
         leadNotificationIds: settings.leadNotificationIds,
         aiConfidenceThreshold: settings.aiConfidenceThreshold,
@@ -198,6 +201,8 @@ export async function getSlaThreshold(
 /**
  * Get manager Telegram IDs for notifications.
  * Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
+ *
+ * @deprecated Use getRecipientsByLevel for new SLA alert code
  */
 export async function getManagerIds(
   chatManagerIds?: string[] | null,
@@ -211,6 +216,49 @@ export async function getManagerIds(
   }
   const settings = await getGlobalSettings();
   return settings.globalManagerIds;
+}
+
+/**
+ * Two-tier recipient resolution.
+ * Level 1: accountants (falls back to managers if no accountants)
+ * Level 2+: managers + accountants (both)
+ *
+ * @param chatManagerIds - Chat-specific manager Telegram IDs (or null to use global)
+ * @param accountantTelegramIds - Accountant Telegram IDs for this chat
+ * @param escalationLevel - Escalation level (1 = initial breach, 2+ = escalation)
+ */
+export async function getRecipientsByLevel(
+  chatManagerIds?: string[] | null,
+  accountantTelegramIds?: bigint[] | null,
+  escalationLevel: number = 1
+): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'both' | 'fallback' }> {
+  const accountantIds = (accountantTelegramIds ?? []).map((id) => String(id));
+  const managerIds = await getManagerIds(chatManagerIds);
+
+  if (escalationLevel <= 1) {
+    // Level 1: prefer accountants
+    if (accountantIds.length > 0) {
+      return { recipients: accountantIds, tier: 'accountant' };
+    }
+    // No accountants — fallback to managers
+    if (managerIds.length > 0) {
+      return { recipients: managerIds, tier: 'fallback' };
+    }
+    return { recipients: [], tier: 'fallback' };
+  }
+
+  // Level 2+: both managers and accountants
+  const allRecipients = [...new Set([...managerIds, ...accountantIds])];
+  if (allRecipients.length > 0) {
+    const tier =
+      accountantIds.length > 0 && managerIds.length > 0
+        ? 'both'
+        : accountantIds.length > 0
+          ? 'accountant'
+          : 'manager';
+    return { recipients: allRecipients, tier };
+  }
+  return { recipients: [], tier: 'fallback' };
 }
 
 /**
@@ -244,6 +292,16 @@ export async function getClassifierConfig(): Promise<{
 }
 
 /**
+ * Get SLA warning percent threshold.
+ * Returns the percentage (0-100) of SLA threshold at which a warning is sent.
+ * 0 means warnings are disabled.
+ */
+export async function getSlaWarningPercent(): Promise<number> {
+  const settings = await getGlobalSettings();
+  return settings.slaWarningPercent;
+}
+
+/**
  * Get survey configuration.
  */
 export async function getSurveyConfig(): Promise<{
@@ -267,7 +325,9 @@ export default {
   getTierDefaultThreshold,
   getSlaThreshold,
   getManagerIds,
+  getRecipientsByLevel,
   getEscalationConfig,
   getClassifierConfig,
+  getSlaWarningPercent,
   getSurveyConfig,
 };

@@ -36,6 +36,12 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================
 
+type AccountantVerification = {
+  username: string;
+  found: boolean;
+  hasTelegramId: boolean;
+};
+
 type ChatSettingsFormProps = {
   chatId: number;
   managerTelegramIds: string[];
@@ -48,6 +54,7 @@ type ChatSettingsFormProps = {
     notifyInChatOnBreach?: boolean;
     managerTelegramIds?: string[];
   };
+  accountantVerification?: AccountantVerification[];
   onSuccess?: () => void;
   className?: string;
 };
@@ -104,6 +111,7 @@ export function ChatSettingsForm({
   managerTelegramIds,
   accountantTelegramIds,
   initialData,
+  accountantVerification,
   onSuccess,
   className,
 }: ChatSettingsFormProps) {
@@ -372,13 +380,17 @@ export function ChatSettingsForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-[var(--buh-foreground)]">
-                  Бухгалтеры (@username)
+                  Ответственные бухгалтеры (@username)
                 </FormLabel>
                 <FormControl>
-                  <AccountantUsernamesInput value={field.value ?? []} onChange={field.onChange} />
+                  <AccountantUsernamesInput
+                    value={field.value ?? []}
+                    onChange={field.onChange}
+                    verification={accountantVerification}
+                  />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                  Укажите @username бухгалтеров, ответственных за этот чат
+                  Получают первичные SLA-уведомления. Если не ответят — эскалация до менеджеров.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

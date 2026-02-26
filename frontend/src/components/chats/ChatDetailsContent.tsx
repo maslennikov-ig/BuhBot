@@ -171,7 +171,14 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
 
 export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
   const [activeTab, setActiveTab] = React.useState<Tab>('messages');
-  const { data: chat, isLoading, error } = trpc.chats.getById.useQuery({ id: chatId });
+  const { data: chat, isLoading, error, refetch } = trpc.chats.getById.useQuery({ id: chatId });
+
+  // TODO: Replace with trpc.chats.restore.useMutation when backend procedure is implemented
+  const restoreMutation = { isPending: false, mutate: (_input: { id: number }) => {} };
+  const handleRestore = () => {
+    restoreMutation.mutate({ id: chatId });
+    void refetch();
+  };
 
   // Loading state
   if (isLoading) {
@@ -269,23 +276,52 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
-              {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
-              <ChatSettingsForm
-                chatId={chat.id}
-                managerTelegramIds={chat.managerTelegramIds ?? []}
-                accountantTelegramIds={chat.accountantTelegramIds ?? []}
-                initialData={{
-                  slaEnabled: chat.slaEnabled,
-                  slaThresholdMinutes: chat.slaThresholdMinutes,
-                  assignedAccountantId: chat.assignedAccountantId,
-                  accountantUsernames: chat.accountantUsernames ?? [],
-                  notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
-                  managerTelegramIds: chat.managerTelegramIds ?? [],
-                }}
-              />
+              {chat.deletedAt ? (
+                /* When deleted, show read-only notice instead of settings (gh-209) */
+                <GlassCard variant="default" padding="lg">
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Trash2 className="h-12 w-12 text-[var(--buh-foreground-subtle)] mb-4" />
+                    <h3 className="text-lg font-semibold text-[var(--buh-foreground)] mb-2">
+                      Настройки недоступны
+                    </h3>
+                    <p className="text-sm text-[var(--buh-foreground-muted)] mb-4">
+                      Чат удалён. Восстановите чат, чтобы изменить настройки.
+                    </p>
+                    <Button
+                      onClick={handleRestore}
+                      disabled={restoreMutation.isPending}
+                      className="bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] text-white hover:text-white"
+                    >
+                      {restoreMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                      )}
+                      Восстановить чат
+                    </Button>
+                  </div>
+                </GlassCard>
+              ) : (
+                <>
+                  {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
+                  <ChatSettingsForm
+                    chatId={chat.id}
+                    managerTelegramIds={chat.managerTelegramIds ?? []}
+                    accountantTelegramIds={chat.accountantTelegramIds ?? []}
+                    initialData={{
+                      slaEnabled: chat.slaEnabled,
+                      slaThresholdMinutes: chat.slaThresholdMinutes,
+                      assignedAccountantId: chat.assignedAccountantId,
+                      accountantUsernames: chat.accountantUsernames ?? [],
+                      notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
+                    }}
+                    accountantVerification={chat.accountantVerification}
+                  />
 
-              {/* Danger Zone */}
-              <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+                  {/* Danger Zone */}
+                  <DangerZone chatId={chat.id} chatTitle={chatTitle} />
+                </>
+              )}
             </div>
           )}
 

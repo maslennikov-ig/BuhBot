@@ -20,9 +20,9 @@ import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
 import { QUEUE_NAMES, registerWorker, queueAlert, type SlaTimerJobData } from './setup.js';
 import { queueConfig } from '../config/queue.config.js';
-import { getManagerIds } from '../config/config.service.js';
 import { bot } from '../bot/bot.js';
 import { formatBreachChatNotification } from '../services/alerts/format.service.js';
+import { getManagerIds, getRecipientsByLevel } from '../config/config.service.js';
 
 /**
  * Process SLA breach check job
@@ -34,12 +34,14 @@ import { formatBreachChatNotification } from '../services/alerts/format.service.
  */
 async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
   const { requestId, chatId, threshold } = job.data;
+  const jobType = job.data.type ?? 'breach';
 
   logger.info('Processing SLA timer job', {
     jobId: job.id,
     requestId,
     chatId,
     threshold,
+    jobType,
     service: 'sla-timer-worker',
   });
 
@@ -71,6 +73,75 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
         service: 'sla-timer-worker',
       });
       return;
+    }
+
+    // Handle WARNING jobs — proactive alert before SLA breach
+    if (jobType === 'warning') {
+      // Check if request is still pending
+      if (request.status !== 'pending') {
+        logger.info('Request no longer pending, warning skipped', {
+          requestId,
+          status: request.status,
+          service: 'sla-timer-worker',
+        });
+        return;
+      }
+
+      // Calculate elapsed minutes for the warning message
+      const receivedAt = request.receivedAt;
+      const minutesElapsed = Math.round((Date.now() - receivedAt.getTime()) / 60000);
+      const remainingMinutes = Math.max(0, threshold - minutesElapsed);
+
+      // Create SLA alert with warning type (does NOT mark request as breached)
+      const alert = await prisma.slaAlert.create({
+        data: {
+          requestId,
+          alertType: 'warning',
+          minutesElapsed,
+          deliveryStatus: 'pending',
+          escalationLevel: 0,
+        },
+      });
+
+      logger.info('SLA warning alert created', {
+        alertId: alert.id,
+        requestId,
+        minutesElapsed,
+        remainingMinutes,
+        threshold,
+        service: 'sla-timer-worker',
+      });
+
+      // Get accountant Telegram IDs for this chat (primary recipients for warnings)
+      const accountantIds = request.chat?.accountantTelegramIds ?? [];
+      const recipientIds =
+        accountantIds.length > 0
+          ? accountantIds.map((id) => String(id))
+          : await getManagerIds(request.chat?.managerTelegramIds);
+
+      if (recipientIds.length > 0) {
+        await queueAlert({
+          requestId,
+          alertType: 'warning',
+          managerIds: recipientIds,
+          escalationLevel: 0,
+        });
+
+        logger.info('SLA warning alert queued', {
+          requestId,
+          alertId: alert.id,
+          recipientCount: recipientIds.length,
+          service: 'sla-timer-worker',
+        });
+      } else {
+        logger.warn('No recipients for SLA warning', {
+          requestId,
+          chatId,
+          service: 'sla-timer-worker',
+        });
+      }
+
+      return; // Warning processed, don't continue to breach logic
     }
 
     // 3. Mark request as breached and create alert atomically
@@ -153,12 +224,18 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       }
     }
 
-    // 6. Get manager IDs for alert delivery
-    // Precedence: managerTelegramIds > accountantTelegramIds > globalManagerIds
-    const alertManagerIds = await getManagerIds(
+    // 6. Get recipients for alert delivery (level 1 = accountants, fallback to managers)
+    const { recipients: alertManagerIds, tier } = await getRecipientsByLevel(
       request.chat?.managerTelegramIds,
-      request.chat?.accountantTelegramIds
+      request.chat?.accountantTelegramIds,
+      1 // Level 1 = initial breach
     );
+    logger.info('SLA breach recipients resolved', {
+      requestId,
+      tier,
+      recipientCount: alertManagerIds.length,
+      service: 'sla-timer-worker',
+    });
 
     // 7. Queue alert for delivery
     if (alertManagerIds.length > 0) {

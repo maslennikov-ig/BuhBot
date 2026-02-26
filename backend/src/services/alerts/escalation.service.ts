@@ -19,7 +19,7 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import {
   getEscalationConfig as getCachedEscalationConfig,
-  getManagerIds as getCachedManagerIds,
+  getRecipientsByLevel,
 } from '../../config/config.service.js';
 import { scheduleEscalation, cancelEscalation as cancelEscalationJob } from '../../queues/setup.js';
 import { getAlertById, updateEscalationLevel } from './alert.service.js';
@@ -42,26 +42,24 @@ async function getEscalationConfig(): Promise<EscalationConfig> {
 }
 
 /**
- * Get manager IDs for escalation (gh-74)
- * Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
+ * Get level-aware recipients for a chat
+ *
+ * Level 1: accountants (fallback to managers)
+ * Level 2+: managers + accountants
  */
-async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
-  try {
-    // Check chat-specific managers and accountant IDs
-    const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
-      select: { managerTelegramIds: true, accountantTelegramIds: true },
-    });
-
-    return getCachedManagerIds(chat?.managerTelegramIds, chat?.accountantTelegramIds);
-  } catch (error) {
-    logger.error('Failed to get manager IDs', {
-      chatId: String(chatId),
-      error: error instanceof Error ? error.message : String(error),
-      service: 'escalation',
-    });
-    return [];
-  }
+async function getRecipientsForChat(
+  chatId: bigint,
+  escalationLevel: number
+): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'both' | 'fallback' }> {
+  const chat = await prisma.chat.findFirst({
+    where: { id: chatId, deletedAt: null },
+    select: { managerTelegramIds: true, accountantTelegramIds: true },
+  });
+  return getRecipientsByLevel(
+    chat?.managerTelegramIds,
+    chat?.accountantTelegramIds,
+    escalationLevel
+  );
 }
 
 /**
@@ -159,19 +157,27 @@ export async function scheduleNextEscalation(
       return;
     }
 
-    // Get manager IDs
-    const managerIds = await getManagerIdsForChat(request.chatId);
+    const nextLevel = currentLevel + 1;
+
+    // Get level-aware recipients (level 2+ = managers + accountants)
+    const { recipients: managerIds, tier } = await getRecipientsForChat(request.chatId, nextLevel);
+
+    logger.info('Escalation recipients resolved', {
+      alertId,
+      nextLevel,
+      tier,
+      recipientCount: managerIds.length,
+      service: 'escalation',
+    });
 
     if (managerIds.length === 0) {
-      logger.warn('No managers to escalate to', {
+      logger.warn('No recipients to escalate to', {
         alertId,
         chatId: String(request.chatId),
         service: 'escalation',
       });
       return;
     }
-
-    const nextLevel = currentLevel + 1;
     const nextEscalationAt = new Date(Date.now() + escalationIntervalMin * 60 * 1000);
 
     // Schedule escalation job with deduplication via deterministic jobId (gh-100)

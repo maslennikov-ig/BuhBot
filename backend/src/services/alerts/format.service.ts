@@ -204,9 +204,14 @@ export function formatAlertMessage(data: AlertMessageData): string {
     `\uD83D\uDCDD Сообщение: ${escapeHtml(truncatedPreview)}`, // Memo
     formatTimeInfo(minutesElapsed, threshold),
     formatChatInfo(chatTitle),
-    '',
-    '<b>Действия требуются!</b>',
   ];
+
+  // Add escalation context for level 2+ (accountants didn't respond)
+  if (escalationLevel >= 2) {
+    lines.push('\u2B06\uFE0F Эскалация: бухгалтеры не ответили вовремя');
+  }
+
+  lines.push('', '<b>Действия требуются!</b>');
 
   return lines.join('\n');
 }
@@ -326,12 +331,62 @@ export function formatBreachChatNotification(data: BreachChatNotificationData): 
   return lines.join('\n');
 }
 
+/**
+ * Data required to format a warning message
+ */
+export interface WarningMessageData {
+  /** Client's Telegram username (may be null) */
+  clientUsername: string | null;
+  /** Preview of the client's message */
+  messagePreview: string;
+  /** Minutes elapsed since request received */
+  minutesElapsed: number;
+  /** SLA threshold in minutes */
+  threshold: number;
+  /** Remaining minutes until breach */
+  remainingMinutes: number;
+  /** Chat title (may be null) */
+  chatTitle: string | null;
+}
+
+/**
+ * Format SLA warning message for Telegram
+ *
+ * Sent to accountants when SLA threshold is approaching.
+ * Purpose: give them a chance to respond BEFORE breach.
+ *
+ * @param data - Warning message data
+ * @returns Formatted HTML string
+ */
+export function formatWarningMessage(data: WarningMessageData): string {
+  const { clientUsername, messagePreview, minutesElapsed, threshold, remainingMinutes, chatTitle } =
+    data;
+
+  const clientInfo = clientUsername ? `@${escapeHtml(clientUsername)}` : 'Клиент';
+  const preview = truncateText(messagePreview, 150);
+  const chat = chatTitle ? escapeHtml(chatTitle) : '(личный чат)';
+
+  const lines = [
+    '\u26A0\uFE0F <b>ПРЕДУПРЕЖДЕНИЕ: Приближается порог SLA</b>',
+    '',
+    `\uD83D\uDC64 ${clientInfo} в чате "${chat}" ждёт ответа ${minutesElapsed} мин.`,
+    `\u23F3 Осталось: <b>${remainingMinutes} мин</b> из ${threshold} мин.`,
+    '',
+    `\uD83D\uDCDD Сообщение: <i>${escapeHtml(preview)}</i>`,
+    '',
+    '<b>Пожалуйста, ответьте клиенту!</b>',
+  ];
+
+  return lines.join('\n');
+}
+
 export default {
   formatAlertMessage,
   formatShortNotification,
   formatAccountantNotification,
   formatResolutionConfirmation,
   formatBreachChatNotification,
+  formatWarningMessage,
   escapeHtml,
   truncateText,
 };

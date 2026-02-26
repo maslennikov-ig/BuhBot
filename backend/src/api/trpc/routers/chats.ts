@@ -171,6 +171,14 @@ export const chatsRouter = router({
         clientTier: z.enum(['basic', 'standard', 'vip', 'premium']),
         managerTelegramIds: z.array(z.string()),
         notifyInChatOnBreach: z.boolean(),
+        accountantVerification: z.array(
+          z.object({
+            username: z.string(),
+            found: z.boolean(),
+            hasTelegramId: z.boolean(),
+          })
+        ),
+        deletedAt: z.date().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
       })
@@ -190,6 +198,7 @@ export const chatsRouter = router({
           clientTier: true,
           managerTelegramIds: true,
           notifyInChatOnBreach: true,
+          deletedAt: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -204,11 +213,34 @@ export const chatsRouter = router({
 
       requireChatAccess(ctx.user, chat);
 
+      // Resolve verification status for accountant usernames
+      let accountantVerification: { username: string; found: boolean; hasTelegramId: boolean }[] =
+        [];
+      if (chat.accountantUsernames.length > 0) {
+        const users = await ctx.prisma.user.findMany({
+          where: {
+            telegramUsername: { in: chat.accountantUsernames, mode: 'insensitive' },
+          },
+          select: { telegramUsername: true, telegramId: true },
+        });
+        const userMap = new Map(users.map((u) => [u.telegramUsername?.toLowerCase() ?? '', u]));
+        accountantVerification = chat.accountantUsernames.map((username) => {
+          const user = userMap.get(username.toLowerCase());
+          return {
+            username,
+            found: !!user,
+            hasTelegramId: !!user?.telegramId,
+          };
+        });
+      }
+
       return {
         ...chat,
         id: safeNumberFromBigInt(chat.id),
         accountantUsername: chat.accountantUsernames[0] ?? null,
         accountantTelegramIds: chat.accountantTelegramIds.map((id) => safeNumberFromBigInt(id)),
+        accountantVerification,
+        deletedAt: chat.deletedAt,
       };
     }),
 
@@ -339,11 +371,13 @@ export const chatsRouter = router({
                   'Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)',
               })
           )
+          .max(20, 'Максимум 20 бухгалтеров')
           .default([]),
-        notifyInChatOnBreach: z.boolean().optional(),
         managerTelegramIds: z
           .array(z.string().regex(/^\d+$/, 'Telegram ID должен быть числом'))
+          .max(20, 'Максимум 20 менеджеров')
           .optional(),
+        notifyInChatOnBreach: z.boolean().optional(),
       })
     )
     .output(
@@ -448,6 +482,9 @@ export const chatsRouter = router({
           if (input.clientTier !== undefined) {
             data.clientTier = input.clientTier;
           }
+          if (input.managerTelegramIds !== undefined) {
+            data.managerTelegramIds = input.managerTelegramIds;
+          }
           if (input.notifyInChatOnBreach !== undefined) {
             // Security: Block enabling in-chat breach notifications in production
             // This setting leaks internal SLA data (breach time, accountant info) to client-facing chats
@@ -459,10 +496,6 @@ export const chatsRouter = router({
               });
             }
             data.notifyInChatOnBreach = input.notifyInChatOnBreach;
-          }
-
-          if (input.managerTelegramIds !== undefined) {
-            data.managerTelegramIds = input.managerTelegramIds;
           }
 
           // Start with input usernames
@@ -505,8 +538,18 @@ export const chatsRouter = router({
             );
             const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
             if (unverified.length > 0) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message:
+                  `Пользователи не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. ` +
+                  'Они должны быть зарегистрированы в панели администратора и привязать Telegram.',
+              });
+            }
+
+            const noTelegramId = knownUsers.filter((u) => !u.telegramId);
+            if (noTelegramId.length > 0) {
               warnings.push(
-                `Следующие @username не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. Убедитесь, что они корректны.`
+                `Пользователи без привязанного Telegram ID: ${noTelegramId.map((u) => `@${u.telegramUsername}`).join(', ')}. Уведомления не будут доставлены.`
               );
             }
 

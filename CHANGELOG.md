@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.2...buhbot-v0.21.3) (2026-02-27)
+
+
+### Bug Fixes
+
+* **monitoring:** wire error capture and alerts ([#222](https://github.com/maslennikov-ig/BuhBot/issues/222)) ([ca73648](https://github.com/maslennikov-ig/BuhBot/commit/ca73648435b4394933aa0dd3a05a38a9b00c64de))
+
 ## [0.21.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.1...buhbot-v0.21.2) (2026-02-27)
 
 

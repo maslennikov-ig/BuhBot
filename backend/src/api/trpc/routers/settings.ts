@@ -50,6 +50,7 @@ const UpdateGlobalSettingsInput = z.object({
   defaultSlaThreshold: z.number().min(1).max(480).optional(),
   maxEscalations: z.number().min(1).max(10).optional(),
   escalationIntervalMin: z.number().min(5).max(120).optional(),
+  slaWarningPercent: z.number().min(0).max(99).optional(),
 
   // Manager Alerts
   globalManagerIds: z.array(z.string()).optional(),
@@ -129,6 +130,7 @@ const GlobalSettingsOutput = z.object({
   defaultSlaThreshold: z.number(),
   maxEscalations: z.number(),
   escalationIntervalMin: z.number(),
+  slaWarningPercent: z.number(),
 
   // Manager Alerts
   globalManagerIds: z.array(z.string()),
@@ -271,6 +273,7 @@ export const settingsRouter = router({
       defaultSlaThreshold: settings.defaultSlaThreshold,
       maxEscalations: settings.maxEscalations,
       escalationIntervalMin: settings.escalationIntervalMin,
+      slaWarningPercent: settings.slaWarningPercent,
       globalManagerIds: settings.globalManagerIds,
       globalManagerCount: settings.globalManagerIds.length,
       leadNotificationIds: settings.leadNotificationIds,
@@ -367,6 +370,7 @@ export const settingsRouter = router({
         defaultSlaThreshold: settings.defaultSlaThreshold,
         maxEscalations: settings.maxEscalations,
         escalationIntervalMin: settings.escalationIntervalMin,
+        slaWarningPercent: settings.slaWarningPercent,
         globalManagerIds: settings.globalManagerIds,
         globalManagerCount: settings.globalManagerIds.length,
         leadNotificationIds: settings.leadNotificationIds,

@@ -15,6 +15,7 @@ import logger from '../../utils/logger.js';
 import { queueAlert, scheduleEscalation } from '../../queues/setup.js';
 import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '@prisma/client';
 import { appNotificationService } from '../notification/app-notification.service.js';
+import { getRecipientsByLevel } from '../../config/config.service.js';
 
 /** UUID v4 format validation (gh-121) */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -161,8 +162,8 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
       service: 'alert',
     });
 
-    // Get manager IDs to notify
-    const managerIds = await getManagerIdsForChat(request.chatId);
+    // Get level-aware recipients to notify
+    const managerIds = await getManagerIdsForChat(request.chatId, escalationLevel);
 
     if (managerIds.length === 0) {
       logger.warn('No managers found to notify for alert', {
@@ -485,33 +486,32 @@ export async function updateDeliveryStatus(
 }
 
 /**
- * Get manager Telegram IDs for a chat
+ * Get recipient Telegram IDs for a chat (level-aware)
  *
- * Returns chat-specific managers if configured,
- * otherwise falls back to global managers.
+ * Level 1: accountants (fallback to managers if none)
+ * Level 2+: managers + accountants (both)
  *
  * @param chatId - Telegram chat ID as bigint
- * @returns Array of manager Telegram user IDs
+ * @param escalationLevel - Escalation level (default: 1)
+ * @returns Array of recipient Telegram user IDs
  */
-async function getManagerIdsForChat(chatId: bigint): Promise<string[]> {
+async function getManagerIdsForChat(
+  chatId: bigint,
+  escalationLevel: number = 1
+): Promise<string[]> {
   try {
-    // First, check chat-specific managers (exclude soft-deleted chats, gh-209)
+    // Check chat-specific managers and accountants (exclude soft-deleted chats, gh-209)
     const chat = await prisma.chat.findFirst({
       where: { id: chatId, deletedAt: null },
-      select: { managerTelegramIds: true },
+      select: { managerTelegramIds: true, accountantTelegramIds: true },
     });
 
-    if (chat?.managerTelegramIds && chat.managerTelegramIds.length > 0) {
-      return chat.managerTelegramIds;
-    }
-
-    // Fall back to global managers
-    const globalSettings = await prisma.globalSettings.findUnique({
-      where: { id: 'default' },
-      select: { globalManagerIds: true },
-    });
-
-    return globalSettings?.globalManagerIds ?? [];
+    const { recipients } = await getRecipientsByLevel(
+      chat?.managerTelegramIds,
+      chat?.accountantTelegramIds,
+      escalationLevel
+    );
+    return recipients;
   } catch (error) {
     logger.error('Failed to get manager IDs for chat', {
       chatId: String(chatId),

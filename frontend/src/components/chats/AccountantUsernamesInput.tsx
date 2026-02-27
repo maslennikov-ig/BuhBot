@@ -4,18 +4,24 @@
  * AccountantUsernamesInput Component
  *
  * Multi-input component for entering and managing Telegram @username list.
- * Displays usernames as removable chips/tags.
+ * Displays usernames as removable chips/tags with verification status.
  *
  * @module components/chats/AccountantUsernamesInput
  */
 
 import * as React from 'react';
-import { X, Plus, User } from 'lucide-react';
+import { X, Plus, User, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ============================================
 // TYPES
 // ============================================
+
+type VerificationStatus = {
+  username: string;
+  found: boolean;
+  hasTelegramId: boolean;
+};
 
 type AccountantUsernamesInputProps = {
   value: string[];
@@ -23,6 +29,8 @@ type AccountantUsernamesInputProps = {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  /** Verification status from backend (optional) */
+  verification?: VerificationStatus[];
 };
 
 // ============================================
@@ -49,6 +57,26 @@ const cleanUsername = (username: string): string => {
 };
 
 // ============================================
+// VERIFICATION STATUS ICON
+// ============================================
+
+function VerificationIcon({ status }: { status?: VerificationStatus }) {
+  if (!status) return null;
+
+  if (status.found && status.hasTelegramId) {
+    return <CheckCircle2 className="h-3.5 w-3.5 text-green-500" aria-label="Верифицирован" />;
+  }
+
+  if (status.found && !status.hasTelegramId) {
+    return (
+      <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" aria-label="Telegram не привязан" />
+    );
+  }
+
+  return <XCircle className="h-3.5 w-3.5 text-red-500" aria-label="Не найден в системе" />;
+}
+
+// ============================================
 // ACCOUNTANT USERNAMES INPUT COMPONENT
 // ============================================
 
@@ -61,6 +89,7 @@ const cleanUsername = (username: string): string => {
  * - Validates username format
  * - Prevents duplicates
  * - Auto-cleans @ prefix
+ * - Verification status indicators (green/yellow/red)
  * - BuhBot design system styling
  */
 export function AccountantUsernamesInput({
@@ -69,10 +98,17 @@ export function AccountantUsernamesInput({
   disabled = false,
   placeholder = 'Введите @username',
   className,
+  verification,
 }: AccountantUsernamesInputProps) {
   const [inputValue, setInputValue] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Build verification lookup map
+  const verificationMap = React.useMemo(() => {
+    if (!verification) return null;
+    return new Map(verification.map((v) => [v.username.toLowerCase(), v]));
+  }, [verification]);
 
   // Add username to list
   const addUsername = () => {
@@ -175,44 +211,58 @@ export function AccountantUsernamesInput({
       {/* Username Chips */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {value.map((username) => (
-            <div
-              key={username}
-              className={cn(
-                'group flex items-center gap-2 rounded-full border px-3 py-1.5',
-                'bg-[var(--buh-primary-muted)] border-[var(--buh-border)]',
-                'transition-all duration-150',
-                'hover:border-[var(--buh-primary)] hover:bg-[var(--buh-primary-muted)]',
-                'buh-animate-fade-in-scale'
-              )}
-            >
-              {/* User Icon */}
-              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">
-                <User className="h-2.5 w-2.5 text-white" />
+          {value.map((username) => {
+            const status = verificationMap?.get(username.toLowerCase());
+            return (
+              <div
+                key={username}
+                className={cn(
+                  'group flex items-center gap-2 rounded-full border px-3 py-1.5',
+                  'bg-[var(--buh-primary-muted)] border-[var(--buh-border)]',
+                  'transition-all duration-150',
+                  'hover:border-[var(--buh-primary)] hover:bg-[var(--buh-primary-muted)]',
+                  'buh-animate-fade-in-scale',
+                  status && !status.found && 'border-red-300 bg-red-50 dark:bg-red-950/20',
+                  status &&
+                    status.found &&
+                    !status.hasTelegramId &&
+                    'border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20'
+                )}
+              >
+                {/* User Icon or Verification Status */}
+                {status ? (
+                  <VerificationIcon status={status} />
+                ) : (
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">
+                    <User className="h-2.5 w-2.5 text-white" />
+                  </div>
+                )}
+
+                {/* Username */}
+                <span className="text-sm font-medium text-[var(--buh-foreground)]">
+                  @{username}
+                </span>
+
+                {/* Remove Button */}
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={() => removeUsername(username)}
+                    className={cn(
+                      'flex h-4 w-4 items-center justify-center rounded-full',
+                      'text-[var(--buh-foreground-muted)]',
+                      'transition-colors duration-150',
+                      'hover:bg-[var(--buh-error)] hover:text-white',
+                      'focus:outline-none focus:ring-2 focus:ring-[var(--buh-error)]'
+                    )}
+                    aria-label={`Удалить ${username}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
-
-              {/* Username */}
-              <span className="text-sm font-medium text-[var(--buh-foreground)]">@{username}</span>
-
-              {/* Remove Button */}
-              {!disabled && (
-                <button
-                  type="button"
-                  onClick={() => removeUsername(username)}
-                  className={cn(
-                    'flex h-4 w-4 items-center justify-center rounded-full',
-                    'text-[var(--buh-foreground-muted)]',
-                    'transition-colors duration-150',
-                    'hover:bg-[var(--buh-error)] hover:text-white',
-                    'focus:outline-none focus:ring-2 focus:ring-[var(--buh-error)]'
-                  )}
-                  aria-label={`Удалить ${username}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

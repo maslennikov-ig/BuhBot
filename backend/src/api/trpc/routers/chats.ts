@@ -177,6 +177,13 @@ export const chatsRouter = router({
         clientTier: z.enum(['basic', 'standard', 'vip', 'premium']),
         managerTelegramIds: z.array(z.string()),
         notifyInChatOnBreach: z.boolean(),
+        accountantVerification: z.array(
+          z.object({
+            username: z.string(),
+            found: z.boolean(),
+            hasTelegramId: z.boolean(),
+          })
+        ),
         deletedAt: z.date().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -213,11 +220,33 @@ export const chatsRouter = router({
 
       requireChatAccess(ctx.user, chat);
 
+      // Resolve verification status for accountant usernames
+      let accountantVerification: { username: string; found: boolean; hasTelegramId: boolean }[] =
+        [];
+      if (chat.accountantUsernames.length > 0) {
+        const users = await ctx.prisma.user.findMany({
+          where: {
+            telegramUsername: { in: chat.accountantUsernames, mode: 'insensitive' },
+          },
+          select: { telegramUsername: true, telegramId: true },
+        });
+        const userMap = new Map(users.map((u) => [u.telegramUsername?.toLowerCase() ?? '', u]));
+        accountantVerification = chat.accountantUsernames.map((username) => {
+          const user = userMap.get(username.toLowerCase());
+          return {
+            username,
+            found: !!user,
+            hasTelegramId: !!user?.telegramId,
+          };
+        });
+      }
+
       return {
         ...chat,
         id: safeNumberFromBigInt(chat.id),
         accountantUsername: chat.accountantUsernames[0] ?? null,
         accountantTelegramIds: chat.accountantTelegramIds.map((id) => safeNumberFromBigInt(id)),
+        accountantVerification,
         deletedAt: chat.deletedAt,
       };
     }),
@@ -349,7 +378,12 @@ export const chatsRouter = router({
                   'Неверный формат username (5-32 символа, латиница, цифры, _, не начинается/заканчивается на _)',
               })
           )
+          .max(20, 'Максимум 20 бухгалтеров')
           .default([]),
+        managerTelegramIds: z
+          .array(z.string().regex(/^\d+$/, 'Telegram ID должен быть числом'))
+          .max(20, 'Максимум 20 менеджеров')
+          .optional(),
         notifyInChatOnBreach: z.boolean().optional(),
       })
     )
@@ -391,43 +425,47 @@ export const chatsRouter = router({
             });
           }
 
-          // Validate: Cannot enable SLA without managers configured
+          // Hoist globalSettings query to avoid duplicate read (CR-006)
+          const globalSettings = await tx.globalSettings.findUnique({
+            where: { id: 'default' },
+            select: { globalManagerIds: true },
+          });
+          const globalManagers = globalSettings?.globalManagerIds || [];
+
+          // Validate: Cannot enable SLA without notification recipients configured
           if (input.slaEnabled === true && existingChat.slaEnabled === false) {
-            // Check for chat-level managers (if provided in input, use that; otherwise use existing)
-            const chatManagers = existingChat.managerTelegramIds || [];
+            const chatManagers =
+              input.managerTelegramIds !== undefined
+                ? input.managerTelegramIds
+                : existingChat.managerTelegramIds || [];
+            const accountantTgIds = existingChat.accountantTelegramIds || [];
 
-            // Check for global fallback managers
-            const globalSettings = await tx.globalSettings.findUnique({
-              where: { id: 'default' },
-              select: { globalManagerIds: true },
-            });
-            const globalManagers = globalSettings?.globalManagerIds || [];
+            const hasRecipients =
+              chatManagers.length > 0 || accountantTgIds.length > 0 || globalManagers.length > 0;
 
-            const hasManagers = chatManagers.length > 0 || globalManagers.length > 0;
-
-            if (!hasManagers) {
+            if (!hasRecipients) {
               throw new TRPCError({
                 code: 'BAD_REQUEST',
                 message:
-                  'Невозможно включить SLA без настроенных менеджеров. Добавьте менеджеров в настройках чата или глобальных настройках.',
+                  'Невозможно включить SLA без настроенных получателей уведомлений. Добавьте бухгалтеров через @username или менеджеров в настройках.',
               });
             }
           }
 
-          // Warn if SLA is active but no managers configured (monitoring)
+          // Warn if SLA is active but no notification recipients configured (monitoring)
           if (
             (input.slaEnabled === true ||
               (input.slaEnabled === undefined && existingChat.slaEnabled)) &&
             existingChat.slaEnabled
           ) {
             const chatManagers = existingChat.managerTelegramIds || [];
-            const globalSettings = await tx.globalSettings.findUnique({
-              where: { id: 'default' },
-              select: { globalManagerIds: true },
-            });
-            const globalManagers = globalSettings?.globalManagerIds || [];
-            if (chatManagers.length === 0 && globalManagers.length === 0) {
-              logger.warn('Chat has SLA enabled but no managers configured for notifications', {
+            const accountantTgIds = existingChat.accountantTelegramIds || [];
+            if (
+              chatManagers.length === 0 &&
+              accountantTgIds.length === 0 &&
+              globalManagers.length === 0
+            ) {
+              logger.warn('Chat has SLA enabled but no notification recipients configured', {
                 chatId: input.id,
                 slaEnabled: true,
               });
@@ -447,6 +485,9 @@ export const chatsRouter = router({
           }
           if (input.clientTier !== undefined) {
             data.clientTier = input.clientTier;
+          }
+          if (input.managerTelegramIds !== undefined) {
+            data.managerTelegramIds = input.managerTelegramIds;
           }
           if (input.notifyInChatOnBreach !== undefined) {
             // Security: Block enabling in-chat breach notifications in production
@@ -501,8 +542,18 @@ export const chatsRouter = router({
             );
             const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
             if (unverified.length > 0) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message:
+                  `Пользователи не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. ` +
+                  'Они должны быть зарегистрированы в панели администратора и привязать Telegram.',
+              });
+            }
+
+            const noTelegramId = knownUsers.filter((u) => !u.telegramId);
+            if (noTelegramId.length > 0) {
               warnings.push(
-                `Следующие @username не найдены в системе: ${unverified.map((u) => `@${u}`).join(', ')}. Убедитесь, что они корректны.`
+                `Пользователи без привязанного Telegram ID: ${noTelegramId.map((u) => `@${u.telegramUsername}`).join(', ')}. Уведомления не будут доставлены.`
               );
             }
 

@@ -562,6 +562,7 @@ model GlobalSettings {
   defaultSlaThreshold   Int @default(60) @map("default_sla_threshold") // Minutes
   maxEscalations        Int @default(5) @map("max_escalations") // Max escalation levels
   escalationIntervalMin Int @default(30) @map("escalation_interval_min") // Minutes between escalations
+  slaWarningPercent     Int @default(80) @map("sla_warning_percent") // Percentage of SLA threshold for warning alert (0 = disabled)
 
   // Manager Alerts
   globalManagerIds String[] @default([]) @map("global_manager_ids") // Telegram IDs

@@ -353,6 +353,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                   <ChatSettingsForm
                     chatId={chat.id}
                     managerTelegramIds={chat.managerTelegramIds ?? []}
+                    accountantTelegramIds={chat.accountantTelegramIds ?? []}
                     initialData={{
                       slaEnabled: chat.slaEnabled,
                       slaThresholdMinutes: chat.slaThresholdMinutes,
@@ -360,6 +361,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                       accountantUsernames: chat.accountantUsernames ?? [],
                       notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
                     }}
+                    accountantVerification={chat.accountantVerification}
                   />
 
                   {/* Danger Zone */}

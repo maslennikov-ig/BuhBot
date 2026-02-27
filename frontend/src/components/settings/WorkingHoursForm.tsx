@@ -47,6 +47,7 @@ const workingHoursSchema = z.object({
   defaultSlaThreshold: z.number().min(1, 'Минимум 1 минута').max(480, 'Максимум 480 минут'),
   maxEscalations: z.number().min(1, 'Минимум 1 эскалация').max(10, 'Максимум 10 эскалаций'),
   escalationIntervalMin: z.number().min(5, 'Минимум 5 минут').max(120, 'Максимум 120 минут'),
+  slaWarningPercent: z.number().min(0, '0 = отключено').max(99, 'Максимум 99%'),
 });
 
 type WorkingHoursFormData = z.infer<typeof workingHoursSchema>;
@@ -62,6 +63,7 @@ const DEFAULT_VALUES: WorkingHoursFormData = {
   defaultSlaThreshold: 60,
   maxEscalations: 3,
   escalationIntervalMin: 30,
+  slaWarningPercent: 80,
 };
 
 /**
@@ -104,6 +106,7 @@ export function WorkingHoursForm() {
         maxEscalations: settings.maxEscalations ?? DEFAULT_VALUES.maxEscalations,
         escalationIntervalMin:
           settings.escalationIntervalMin ?? DEFAULT_VALUES.escalationIntervalMin,
+        slaWarningPercent: settings.slaWarningPercent ?? DEFAULT_VALUES.slaWarningPercent,
       });
     }
   }, [settings, form]);
@@ -383,6 +386,34 @@ export function WorkingHoursForm() {
                     </FormControl>
                     <FormDescription className="text-[var(--buh-foreground-subtle)]">
                       Между эскалациями (5-120 мин)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* SLA Warning Percent */}
+              <FormField
+                control={form.control}
+                name="slaWarningPercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 text-[var(--buh-foreground)]">
+                      <AlertTriangle className="h-4 w-4 text-[var(--buh-warning)]" />
+                      Предупреждение SLA (%)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={99}
+                        className="bg-[var(--buh-surface)] border-[var(--buh-border)] focus:border-[var(--buh-accent)] focus:ring-[var(--buh-accent-glow)]"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-[var(--buh-foreground-subtle)]">
+                      При достижении X% от SLA бухгалтеры получат предупреждение. 0 = отключено.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

@@ -14,7 +14,15 @@
 
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
-import { scheduleSlaCheck, cancelSlaCheck, slaTimerQueue, queueAlert } from '../../queues/setup.js';
+import {
+  scheduleSlaCheck,
+  cancelSlaCheck,
+  slaTimerQueue,
+  queueAlert,
+  scheduleSlaWarning,
+  cancelSlaWarning,
+} from '../../queues/setup.js';
+import { getGlobalSettings } from '../../config/config.service.js';
 import {
   calculateDelayUntilBreach,
   calculateWorkingMinutes,
@@ -231,6 +239,29 @@ export async function startSlaTimer(
     // Schedule the breach check job
     await scheduleSlaCheck(requestId, chatId, thresholdMinutes, delayMs);
 
+    // Schedule SLA warning if configured (Phase 3)
+    const settings = await getGlobalSettings();
+    const warningPercent = settings.slaWarningPercent;
+    if (warningPercent > 0 && warningPercent < 100) {
+      const warningThreshold = Math.floor((thresholdMinutes * warningPercent) / 100);
+      const warningDelayMs = calculateDelayUntilBreach(
+        request.receivedAt,
+        warningThreshold,
+        schedule
+      );
+      if (warningDelayMs > 0) {
+        await scheduleSlaWarning(requestId, chatId, thresholdMinutes, warningDelayMs);
+        logger.info('SLA warning scheduled', {
+          requestId,
+          chatId,
+          warningPercent,
+          warningThreshold,
+          warningDelayMs,
+          service: 'sla-timer',
+        });
+      }
+    }
+
     logger.info('SLA timer started successfully', {
       requestId,
       chatId,
@@ -331,6 +362,9 @@ export async function stopSlaTimer(
         service: 'sla-timer',
       });
     }
+
+    // Cancel SLA warning too
+    await cancelSlaWarning(requestId);
 
     // Get request to calculate elapsed working time
     const request = await prisma.clientRequest.findUnique({

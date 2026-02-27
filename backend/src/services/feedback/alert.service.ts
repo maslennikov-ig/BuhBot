@@ -17,6 +17,7 @@ import { prisma } from '../../lib/prisma.js';
 import { bot } from '../../bot/bot.js';
 import { buildLowRatingAlertKeyboard } from '../../bot/keyboards/alert.keyboard.js';
 import { escapeHtml, truncateText } from '../alerts/format.service.js';
+import { getManagerIds } from '../../config/config.service.js';
 import logger from '../../utils/logger.js';
 
 // ============================================================================
@@ -80,6 +81,7 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
       select: {
         title: true,
         managerTelegramIds: true,
+        accountantTelegramIds: true,
       },
     });
 
@@ -92,8 +94,8 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
       throw new Error(`Chat not found: ${chatId}`);
     }
 
-    // Get manager IDs (chat-specific or global fallback)
-    const managerIds = await getManagerIds(chat.managerTelegramIds);
+    // Get manager IDs (chat-specific > accountant > global fallback)
+    const managerIds = await getManagerIds(chat.managerTelegramIds, chat.accountantTelegramIds);
 
     if (managerIds.length === 0) {
       logger.warn('No managers found for low-rating alert', {
@@ -170,28 +172,8 @@ export async function sendLowRatingAlert(params: LowRatingAlertParams): Promise<
 // HELPER FUNCTIONS
 // ============================================================================
 
-/**
- * Get manager Telegram IDs for alert delivery
- *
- * Falls back to global managers if no chat-specific managers configured.
- *
- * @param chatManagerIds - Chat-specific manager IDs
- * @returns Array of manager Telegram user IDs
- */
-async function getManagerIds(chatManagerIds: string[]): Promise<string[]> {
-  // Use chat-specific managers if available
-  if (chatManagerIds && chatManagerIds.length > 0) {
-    return chatManagerIds;
-  }
-
-  // Fall back to global managers
-  const globalSettings = await prisma.globalSettings.findUnique({
-    where: { id: 'default' },
-    select: { globalManagerIds: true },
-  });
-
-  return globalSettings?.globalManagerIds ?? [];
-}
+// getManagerIds is imported from config.service.ts (DRY — single source of truth)
+// Precedence: Chat.managerTelegramIds > Chat.accountantTelegramIds > GlobalSettings.globalManagerIds > []
 
 /**
  * Format low-rating alert message data

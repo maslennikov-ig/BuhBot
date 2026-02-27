@@ -16,6 +16,7 @@ import { WorkingHoursForm } from '@/components/settings/WorkingHoursForm';
 import { HolidayCalendar } from '@/components/settings/HolidayCalendar';
 import { NotificationSettingsForm } from '@/components/settings/NotificationSettingsForm';
 import { OpenRouterSettingsForm } from '@/components/settings/OpenRouterSettingsForm';
+import { SlaManagerSettingsForm } from '@/components/settings/SlaManagerSettingsForm';
 import { HelpButton } from '@/components/ui/HelpButton';
 
 /**
@@ -72,8 +73,13 @@ export function SettingsPageContent() {
           </div>
         </div>
 
-        {/* Working Hours Section */}
+        {/* SLA Manager Settings Section */}
         <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <SlaManagerSettingsForm />
+        </section>
+
+        {/* Working Hours Section */}
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
           <WorkingHoursForm />
         </section>
 
@@ -90,7 +96,7 @@ export function SettingsPageContent() {
         </div>
 
         {/* Holidays Calendar Section */}
-        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+        <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           <HolidayCalendar />
         </section>
       </div>

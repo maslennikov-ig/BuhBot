@@ -25,6 +25,11 @@ vi.mock('@/lib/trpc', () => ({
         useMutation: vi.fn(),
       },
     },
+    settings: {
+      getGlobalSettings: {
+        useQuery: vi.fn(() => ({ data: { globalManagerCount: 0 } })),
+      },
+    },
   },
 }));
 
@@ -155,6 +160,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={DEFAULT_INITIAL_DATA}
         />
       );
@@ -176,6 +182,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           className="custom-test-class"
         />
       );
@@ -190,6 +197,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={[]}
+          accountantTelegramIds={[]}
           initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
         />
       );
@@ -202,7 +210,12 @@ describe('ChatSettingsForm', () => {
       createMockMutation();
 
       render(
-        <ChatSettingsForm chatId={123} managerTelegramIds={[]} initialData={DEFAULT_INITIAL_DATA} />
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={[]}
+          accountantTelegramIds={[]}
+          initialData={DEFAULT_INITIAL_DATA}
+        />
       );
 
       expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
@@ -215,11 +228,64 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345', '67890']}
+          accountantTelegramIds={[]}
           initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
         />
       );
 
       expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+    });
+
+    it('should NOT show warning when SLA enabled and accountants configured', () => {
+      createMockMutation();
+
+      render(
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={[]}
+          accountantTelegramIds={[123456789]}
+          initialData={{
+            slaEnabled: true,
+            slaThresholdMinutes: 60,
+            assignedAccountantId: null,
+            notifyInChatOnBreach: false,
+          }}
+        />
+      );
+
+      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+    });
+
+    it('should hide warning when user types a manager ID into the form field', async () => {
+      createMockMutation();
+      const user = userEvent.setup({ delay: null });
+
+      render(
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={[]}
+          accountantTelegramIds={[]}
+          initialData={{
+            slaEnabled: true,
+            slaThresholdMinutes: 60,
+            assignedAccountantId: null,
+            notifyInChatOnBreach: false,
+          }}
+        />
+      );
+
+      // Warning should be visible initially
+      expect(screen.getByText('Менеджеры для уведомлений не настроены')).toBeInTheDocument();
+
+      // Type a valid manager ID
+      await user.type(screen.getByPlaceholderText('123456789, 987654321'), '111222333');
+
+      // Warning should disappear
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Менеджеры для уведомлений не настроены')
+        ).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -231,7 +297,9 @@ describe('ChatSettingsForm', () => {
     it('should use default values when no initialData provided', () => {
       createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       const slaToggle = screen.getByRole('switch', { name: /Мониторинг SLA/i });
       expect(slaToggle).toHaveAttribute('aria-checked', 'false');
@@ -250,6 +318,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{
             slaEnabled: true,
             slaThresholdMinutes: 120,
@@ -277,6 +346,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={DEFAULT_INITIAL_DATA}
         />
       );
@@ -299,6 +369,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{
             slaEnabled: true,
             slaThresholdMinutes: 90,
@@ -320,6 +391,7 @@ describe('ChatSettingsForm', () => {
           assignedAccountantId: '550e8400-e29b-41d4-a716-446655440000',
           accountantUsernames: ['user1'],
           notifyInChatOnBreach: true,
+          managerTelegramIds: [],
         });
       });
     });
@@ -332,6 +404,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{
             slaEnabled: true,
             slaThresholdMinutes: 60,
@@ -362,6 +435,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={DEFAULT_INITIAL_DATA}
         />
       );
@@ -381,7 +455,9 @@ describe('ChatSettingsForm', () => {
     it('should disable submit button while mutation is pending', () => {
       createMockMutation({ isPending: true });
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       const submitButton = screen.getByRole('button', { name: /Сохранение/i });
       expect(submitButton).toBeDisabled();
@@ -390,7 +466,9 @@ describe('ChatSettingsForm', () => {
     it('should enable submit button when mutation is not pending', () => {
       createMockMutation({ isPending: false });
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       const submitButton = screen.getByRole('button', { name: /Сохранить/i });
       expect(submitButton).not.toBeDisabled();
@@ -405,7 +483,9 @@ describe('ChatSettingsForm', () => {
     it('should display success message after mutation success', async () => {
       const { triggerSuccess } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: [] });
 
@@ -416,7 +496,9 @@ describe('ChatSettingsForm', () => {
       vi.useFakeTimers();
       const { triggerSuccess } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: [] });
       expect(screen.getByText('Настройки успешно сохранены')).toBeInTheDocument();
@@ -434,7 +516,12 @@ describe('ChatSettingsForm', () => {
       const { triggerSuccess } = createMockMutation();
 
       render(
-        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} onSuccess={onSuccess} />
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
+          onSuccess={onSuccess}
+        />
       );
 
       await triggerSuccess({ warnings: [] });
@@ -445,7 +532,9 @@ describe('ChatSettingsForm', () => {
     it('should invalidate queries after successful mutation', async () => {
       const { triggerSuccess, mockUtils } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: [] });
 
@@ -462,7 +551,9 @@ describe('ChatSettingsForm', () => {
     it('should display warnings when mutation returns warnings array', async () => {
       const { triggerSuccess } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({
         warnings: ['Предупреждение 1', 'Предупреждение 2'],
@@ -475,7 +566,9 @@ describe('ChatSettingsForm', () => {
     it('should NOT display warnings when warnings array is empty', async () => {
       const { triggerSuccess } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: [] });
 
@@ -488,7 +581,9 @@ describe('ChatSettingsForm', () => {
       vi.useFakeTimers();
       const { triggerSuccess } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: ['Test warning'] });
       expect(screen.getByText('Test warning')).toBeInTheDocument();
@@ -504,7 +599,9 @@ describe('ChatSettingsForm', () => {
     it('should handle warnings with undefined', async () => {
       const { triggerSuccess } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: undefined });
 
@@ -521,7 +618,9 @@ describe('ChatSettingsForm', () => {
     it('should display error message after mutation error', async () => {
       const { triggerError } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerError({ message: 'Ошибка сервера' });
 
@@ -532,7 +631,9 @@ describe('ChatSettingsForm', () => {
       vi.useFakeTimers();
       const { triggerError } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerError({ message: 'Network error' });
       expect(screen.getByText('Ошибка: Network error')).toBeInTheDocument();
@@ -548,7 +649,9 @@ describe('ChatSettingsForm', () => {
     it('should clear success message when error occurs', async () => {
       const { triggerSuccess, triggerError } = createMockMutation();
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       await triggerSuccess({ warnings: [] });
       expect(screen.getByText('Настройки успешно сохранены')).toBeInTheDocument();
@@ -569,7 +672,9 @@ describe('ChatSettingsForm', () => {
       createMockMutation();
       const user = userEvent.setup({ delay: null });
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       const slaToggle = screen.getByRole('switch', { name: /Мониторинг SLA/i });
       expect(slaToggle).toHaveAttribute('aria-checked', 'false');
@@ -593,6 +698,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
         />
       );
@@ -618,6 +724,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={DEFAULT_INITIAL_DATA}
         />
       );
@@ -633,6 +740,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={DEFAULT_INITIAL_DATA}
         />
       );
@@ -648,6 +756,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
         />
       );
@@ -664,6 +773,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
         />
       );
@@ -691,6 +801,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={DEFAULT_INITIAL_DATA}
         />
       );
@@ -702,6 +813,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{
             slaEnabled: true,
             slaThresholdMinutes: 120,
@@ -721,7 +833,9 @@ describe('ChatSettingsForm', () => {
       const { mockMutate } = createMockMutation();
       const user = userEvent.setup({ delay: null });
 
-      render(<ChatSettingsForm chatId={123} managerTelegramIds={['12345']} />);
+      render(
+        <ChatSettingsForm chatId={123} managerTelegramIds={['12345']} accountantTelegramIds={[]} />
+      );
 
       const accountantSelect = screen.getByTestId('accountant-select');
       await user.selectOptions(accountantSelect, '550e8400-e29b-41d4-a716-446655440000');
@@ -746,6 +860,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={123}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{
             ...DEFAULT_INITIAL_DATA,
             accountantUsernames: undefined,
@@ -773,6 +888,7 @@ describe('ChatSettingsForm', () => {
         <ChatSettingsForm
           chatId={456}
           managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
           initialData={{
             slaEnabled: true,
             slaThresholdMinutes: 90,
@@ -794,6 +910,7 @@ describe('ChatSettingsForm', () => {
           assignedAccountantId: '550e8400-e29b-41d4-a716-446655440001',
           accountantUsernames: ['user1', 'user2', 'user3'],
           notifyInChatOnBreach: true,
+          managerTelegramIds: [],
         });
       });
     });

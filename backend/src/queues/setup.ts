@@ -34,6 +34,8 @@ export interface SlaTimerJobData {
   chatId: string;
   /** SLA threshold in minutes */
   threshold: number;
+  /** Job type: 'warning' fires at X% of SLA, 'breach' fires at 100%. Default: 'breach' for backward compatibility. */
+  type?: 'warning' | 'breach';
 }
 
 /**
@@ -612,6 +614,76 @@ export async function cancelSlaCheck(requestId: string): Promise<boolean> {
     return false;
   } catch (error) {
     logger.error('Failed to cancel SLA breach check', {
+      requestId,
+      jobId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+/**
+ * Schedule an SLA warning check job
+ *
+ * @param requestId - Unique identifier for the client request
+ * @param chatId - Telegram chat ID
+ * @param thresholdMinutes - Full SLA threshold in minutes (for context in the job)
+ * @param delayMs - Delay in milliseconds until the warning fires
+ * @returns The created job
+ */
+export async function scheduleSlaWarning(
+  requestId: string,
+  chatId: string,
+  thresholdMinutes: number,
+  delayMs: number
+) {
+  const jobId = `sla-warning-${requestId}`;
+
+  const job = await slaTimerQueue.add(
+    'check-warning',
+    {
+      requestId,
+      chatId,
+      threshold: thresholdMinutes,
+      type: 'warning',
+    },
+    {
+      delay: delayMs,
+      jobId,
+    }
+  );
+
+  logger.info('SLA warning check scheduled', {
+    requestId,
+    chatId,
+    thresholdMinutes,
+    delayMs,
+    jobId: job.id,
+  });
+
+  return job;
+}
+
+/**
+ * Cancel a scheduled SLA warning check
+ *
+ * @param requestId - Unique identifier for the client request
+ * @returns true if job was found and removed, false otherwise
+ */
+export async function cancelSlaWarning(requestId: string): Promise<boolean> {
+  const jobId = `sla-warning-${requestId}`;
+
+  try {
+    const job = await slaTimerQueue.getJob(jobId);
+    if (job) {
+      await job.remove();
+      logger.info('SLA warning check cancelled', { requestId, jobId });
+      return true;
+    }
+    logger.debug('SLA warning check job not found', { requestId, jobId });
+    return false;
+  } catch (error) {
+    logger.error('Failed to cancel SLA warning check', {
       requestId,
       jobId,
       error: error instanceof Error ? error.message : String(error),

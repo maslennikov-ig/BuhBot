@@ -117,6 +117,7 @@ export function registerChatEventHandler(): void {
             title: title,
             chatType: chatType as 'group' | 'supergroup',
             // Don't re-enable if it was manually disabled, but ensure we update title
+            deletedAt: null, // Clear soft-delete if bot re-added (gh-209)
           },
         });
 
@@ -207,6 +208,7 @@ export function registerChatEventHandler(): void {
               },
               update: {
                 chatType: 'supergroup',
+                deletedAt: null, // Clear soft-delete on migration (gh-209)
               },
             });
             return;
@@ -244,6 +246,7 @@ export function registerChatEventHandler(): void {
               assignedAccountantId: oldChat.assignedAccountantId,
               clientTier: oldChat.clientTier,
               inviteLink: oldChat.inviteLink,
+              deletedAt: null, // Clear soft-delete on migration (gh-209)
             },
           });
 
@@ -355,6 +358,7 @@ export function registerChatEventHandler(): void {
             data: {
               monitoringEnabled: false,
               slaEnabled: false,
+              isMigrated: true,
               title: oldChat.title ? `[MIGRATED] ${oldChat.title}` : '[MIGRATED]',
             },
           });

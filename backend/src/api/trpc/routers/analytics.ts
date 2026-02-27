@@ -970,10 +970,11 @@ export const analyticsRouter = router({
             },
           });
 
-          // Count assigned chats
+          // Count assigned chats (exclude soft-deleted, gh-209)
           const assignedChats = await ctx.prisma.chat.count({
             where: {
               assignedAccountantId: acc.id,
+              deletedAt: null,
             },
           });
 

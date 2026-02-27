@@ -108,7 +108,10 @@ export function registerMessageHandler(): void {
             slaEnabled: false, // Disabled by default; admin enables manually
             monitoringEnabled: true,
           },
-          update: { title }, // Update title if race condition
+          update: {
+            title, // Update title if race condition
+            deletedAt: null, // Clear soft-delete if re-registered (gh-209)
+          },
         });
       }
 
@@ -187,7 +190,17 @@ export function registerMessageHandler(): void {
         }
       }
 
-      // 5. Check monitoringEnabled AFTER logging — messages are always persisted,
+      // 5. Skip SLA processing for soft-deleted chats (gh-209)
+      // Messages are still logged above for data integrity
+      if (chat.deletedAt) {
+        logger.debug('Chat is soft-deleted, message logged but skipping SLA', {
+          chatId,
+          service: 'message-handler',
+        });
+        return next();
+      }
+
+      // 6. Check monitoringEnabled AFTER logging — messages are always persisted,
       // but SLA classification only runs when monitoring is active (gh-185)
       if (!chat.monitoringEnabled) {
         logger.debug('Monitoring disabled for chat, message logged but skipping SLA', {
@@ -197,7 +210,7 @@ export function registerMessageHandler(): void {
         return next();
       }
 
-      // 6. Skip SLA classification for FAQ-handled messages (gh-185)
+      // 7. Skip SLA classification for FAQ-handled messages (gh-185)
       if (ctx.state.faqHandled) {
         logger.debug('FAQ-handled message, skipping SLA classification', {
           chatId,
@@ -207,7 +220,7 @@ export function registerMessageHandler(): void {
         return next();
       }
 
-      // 7. Check if SLA is enabled AFTER logging message (messages are always logged)
+      // 8. Check if SLA is enabled AFTER logging message (messages are always logged)
       if (!chat.slaEnabled) {
         logger.debug('SLA disabled for chat, message logged but skipping classification', {
           chatId,
@@ -218,7 +231,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 8. If accountant, pass to response handler (don't process as client message)
+      // 9. If accountant, pass to response handler (don't process as client message)
       if (isAccountant) {
         logger.debug('Accountant message detected, skipping classification', {
           chatId,
@@ -231,7 +244,7 @@ export function registerMessageHandler(): void {
         return next();
       }
 
-      // 9. Classify message using AI/keyword classifier
+      // 10. Classify message using AI/keyword classifier
       const tracer = getTracer('message-handler');
       const classifySpan = tracer.startSpan('classify_message', {
         attributes: { 'chat.id': chatId, 'message.id': messageId },
@@ -255,7 +268,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 10. Only create ClientRequest for REQUEST and CLARIFICATION
+      // 11. Only create ClientRequest for REQUEST and CLARIFICATION
       if (!['REQUEST', 'CLARIFICATION'].includes(classification.classification)) {
         logger.debug('Non-actionable message, not creating ClientRequest', {
           chatId,
@@ -266,7 +279,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 11. Deduplication check (gh-66)
+      // 12. Deduplication check (gh-66)
       const contentHash = hashMessageContent(text);
       const dedupCutoff = new Date(Date.now() - DEDUP_WINDOW_MS);
 
@@ -292,7 +305,7 @@ export function registerMessageHandler(): void {
         return;
       }
 
-      // 12. Thread detection via reply_to_message (gh-75)
+      // 13. Thread detection via reply_to_message (gh-75)
       let threadId: string | null = null;
       let parentMessageId: bigint | null = null;
       const replyToMessage = ctx.message.reply_to_message;
@@ -349,7 +362,7 @@ export function registerMessageHandler(): void {
         threadId = randomUUID();
       }
 
-      // 13. Create ClientRequest record (only for REQUEST/CLARIFICATION)
+      // 14. Create ClientRequest record (only for REQUEST/CLARIFICATION)
       const request = await prisma.clientRequest.create({
         data: {
           chatId: BigInt(chatId),
@@ -378,7 +391,7 @@ export function registerMessageHandler(): void {
         service: 'message-handler',
       });
 
-      // 14. Start SLA timer for REQUEST messages only
+      // 15. Start SLA timer for REQUEST messages only
       if (classification.classification === 'REQUEST') {
         const thresholdMinutes = chat.slaThresholdMinutes ?? 60;
 

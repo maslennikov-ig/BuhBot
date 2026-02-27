@@ -72,6 +72,23 @@ export const botWebhookSignatureFailures = new Counter({
 });
 
 // ============================================================================
+// HTTP ERROR METRICS
+// ============================================================================
+
+/**
+ * Counter: Total HTTP 500 errors
+ * Labels:
+ * - method: HTTP method (GET, POST, etc.)
+ * - path: Route path or request path
+ */
+export const httpErrorsTotal = new Counter({
+  name: 'http_errors_total',
+  help: 'Total HTTP 500 errors',
+  labelNames: ['method', 'path'] as const,
+  registers: [register],
+});
+
+// ============================================================================
 // REDIS QUEUE METRICS (BullMQ)
 // ============================================================================
 

@@ -489,7 +489,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(bot_errors_total{instance=~\"$instance\"}[5m]) / rate(bot_messages_received_total{instance=~\"$instance\"}[5m]) * 100",
+          "expr": "rate(http_errors_total{instance=~\"$instance\"}[5m]) / rate(bot_messages_received_total{instance=~\"$instance\"}[5m]) * 100",
           "legendFormat": "{{ instance }} - Error Rate",
           "refId": "A"
         }

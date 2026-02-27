@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 import { authedProcedure, router } from '../trpc.js';
 import { telegramAuthService } from '../../../services/telegram/auth.service.js';
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
@@ -155,7 +156,7 @@ export const userRouter = router({
       logger.debug('[DEBUG] user.list input:', input);
       const start = Date.now();
 
-      const where: any = {};
+      const where: Prisma.UserWhereInput = {};
 
       if (input?.role) {
         if (Array.isArray(input.role)) {

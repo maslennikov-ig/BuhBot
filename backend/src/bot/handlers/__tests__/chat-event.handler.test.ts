@@ -21,10 +21,10 @@ describe('Chat migration handler regression', () => {
     expect(migrationSection).toBeDefined();
 
     // Should use upsert, not bare create
-    expect(migrationSection).toContain('prisma.chat.upsert');
+    expect(migrationSection).toContain('tx.chat.upsert');
     // Verify no bare create calls in migration handler
     // (upsert internally has create/update blocks, but no standalone prisma.chat.create)
-    const standaloneCreates = migrationSection!.match(/prisma\.chat\.create\(/g);
+    const standaloneCreates = migrationSection!.match(/tx\.chat\.create\(/g);
     expect(standaloneCreates).toBeNull();
   });
 

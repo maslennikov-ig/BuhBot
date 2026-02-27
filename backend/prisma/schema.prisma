@@ -213,28 +213,48 @@ model TelegramAccount {
   @@schema("public")
 }
 
-/// Telegram chat metadata for SLA tracking and accountant assignments
+/// Telegram chat metadata for SLA monitoring, notification routing, and accountant assignments.
+/// Supports soft-delete (gh-209) and Telegram group-to-supergroup migration tracking (buh-5xx).
 model Chat {
+  /// Telegram chat ID (primary key, BigInt because Telegram IDs can be negative for groups)
   id                   BigInt   @id @db.BigInt
+  /// Telegram chat type: private, group, or supergroup
   chatType             ChatType @map("chat_type")
+  /// Chat title from Telegram (null for private chats)
   title                String?
-  inviteLink           String?  @map("invite_link") // Telegram invite link for "Open chat" button
-  accountantUsernames  String[] @default([]) @map("accountant_usernames") // Usernames (fallback)
-  accountantTelegramIds BigInt[] @default([]) @map("accountant_telegram_ids") @db.BigInt // Secure: immutable IDs (gh-68)
+  /// Telegram invite link shown as "Open chat" button in admin UI
+  inviteLink           String?  @map("invite_link")
+  /// Telegram @usernames of accountants, editable via admin UI.
+  /// Auto-populated when assignedAccountantId is set; used for username-based identity verification.
+  accountantUsernames  String[] @default([]) @map("accountant_usernames")
+  /// Immutable Telegram user IDs, auto-resolved from accountantUsernames during chat update (gh-68).
+  /// Used by notification system for direct Telegram API calls. Never edited manually.
+  accountantTelegramIds BigInt[] @default([]) @map("accountant_telegram_ids") @db.BigInt
+  /// UUID reference to User model. The "primary" accountant for DB relations and authorization.
+  /// Their @username is auto-added to accountantUsernames on save.
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
-  clientTier           ClientTier @default(standard) @map("client_tier") // VIP tier for differentiated SLA (gh-76)
-  slaEnabled           Boolean  @default(false) @map("sla_enabled") // Disabled by default; enabled manually via admin UI
+  /// VIP tier for differentiated SLA thresholds: basic=120min, standard=60min, vip=30min, premium=15min (gh-76)
+  clientTier           ClientTier @default(standard) @map("client_tier")
+  /// Master switch for SLA monitoring. Cannot enable without at least one notification recipient.
+  slaEnabled           Boolean  @default(false) @map("sla_enabled")
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // SLA Configuration per chat (T007)
-  slaThresholdMinutes     Int      @default(60) @map("sla_threshold_minutes") // SLA breach threshold
-  monitoringEnabled       Boolean  @default(true) @map("monitoring_enabled") // Enable/disable monitoring
-  is24x7Mode              Boolean  @default(false) @map("is_24x7_mode") // Ignore working hours
-  managerTelegramIds      String[] @default([]) @map("manager_telegram_ids") // Override global managers
-  notifyInChatOnBreach    Boolean  @default(false) @map("notify_in_chat_on_breach") // TEST ONLY: breach notification to group chat (disabled by default to prevent leaking to clients)
-  isMigrated              Boolean  @default(false) @map("is_migrated") // True when group migrated to supergroup (buh-5xx)
-  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6) // Soft-delete timestamp (gh-209)
+  /// SLA breach threshold override. Precedence: this field > clientTier default > GlobalSettings.defaultSlaThreshold > 60min
+  slaThresholdMinutes     Int      @default(60) @map("sla_threshold_minutes")
+  /// Master monitoring switch. When false, chat is hidden from default lists and message processing is skipped.
+  monitoringEnabled       Boolean  @default(true) @map("monitoring_enabled")
+  /// When true, SLA timer runs 24/7 ignoring working hours schedule and holidays
+  is24x7Mode              Boolean  @default(false) @map("is_24x7_mode")
+  /// Chat-specific override for SLA notification recipients. When set, these IDs receive Level 2+ escalation alerts instead of globalManagerIds.
+  managerTelegramIds      String[] @default([]) @map("manager_telegram_ids")
+  /// TEST ONLY: sends SLA breach notification into the Telegram group chat. Blocked in production to prevent leaking internal SLA data to clients.
+  notifyInChatOnBreach    Boolean  @default(false) @map("notify_in_chat_on_breach")
+  /// True when Telegram group migrated to supergroup (buh-5xx). Migrated chats are hidden from listings.
+  isMigrated              Boolean  @default(false) @map("is_migrated")
+  /// Soft-delete timestamp (gh-209). When set, chat is excluded from active queries but data is preserved for restoration.
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   // Relations
   assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id], onDelete: SetNull)

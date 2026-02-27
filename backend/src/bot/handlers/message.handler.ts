@@ -116,11 +116,22 @@ export function registerMessageHandler(): void {
       }
 
       // 2. Check if sender is accountant FIRST (before logging)
-      const { isAccountant, accountantId } = await isAccountantForChat(
-        BigInt(chatId),
-        username,
-        ctx.from?.id ?? 0
-      );
+      let isAccountant = false;
+      let accountantId: string | null = null;
+      try {
+        const result = await isAccountantForChat(BigInt(chatId), username, ctx.from?.id ?? 0);
+        isAccountant = result.isAccountant;
+        accountantId = result.accountantId;
+      } catch (accountantError) {
+        logger.warn('[TRANSIENT_ERROR] isAccountantForChat failed, defaulting to false', {
+          chatId,
+          messageId,
+          username,
+          error:
+            accountantError instanceof Error ? accountantError.message : String(accountantError),
+          service: 'message-handler',
+        });
+      }
 
       // 3. Validate input data before database insertion
       const validationResult = TelegramMessageSchema.safeParse({

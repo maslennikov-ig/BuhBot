@@ -29,6 +29,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { AccountantSelect } from '@/components/chats/AccountantSelect';
 import { AccountantUsernamesInput } from '@/components/chats/AccountantUsernamesInput';
+import { ManagerMultiSelect } from '@/components/chats/ManagerMultiSelect';
+import { TelegramAuthModal } from '@/components/chats/TelegramAuthModal';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
@@ -118,6 +120,7 @@ export function ChatSettingsForm({
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [saveWarnings, setSaveWarnings] = React.useState<string[]>([]);
+  const [pendingUser, setPendingUser] = React.useState<{ id: string; name: string } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -409,21 +412,14 @@ export function ChatSettingsForm({
                 )}
               >
                 <FormLabel className="text-[var(--buh-foreground)]">
-                  Менеджеры для SLA уведомлений (Telegram ID)
+                  Менеджеры для SLA уведомлений
                 </FormLabel>
                 <FormControl>
-                  <Input
+                  <ManagerMultiSelect
+                    value={field.value ?? []}
+                    onChange={field.onChange}
                     disabled={!slaEnabled}
-                    placeholder="123456789, 987654321"
-                    value={(field.value ?? []).join(', ')}
-                    onChange={(e) => {
-                      const ids = e.target.value
-                        .split(',')
-                        .map((s) => s.trim())
-                        .filter((s) => /^\d+$/.test(s));
-                      field.onChange(ids);
-                    }}
-                    className="bg-[var(--buh-surface)] border-[var(--buh-border)] text-[var(--buh-foreground)]"
+                    onSelectUserWithoutTelegram={(user) => setPendingUser(user)}
                   />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
@@ -484,6 +480,18 @@ export function ChatSettingsForm({
           </div>
         </form>
       </Form>
+
+      {/* TelegramAuthModal for users without linked Telegram */}
+      <TelegramAuthModal
+        open={!!pendingUser}
+        user={pendingUser}
+        onClose={() => setPendingUser(null)}
+        onSuccess={(telegramId) => {
+          const current = form.getValues('managerTelegramIds') ?? [];
+          form.setValue('managerTelegramIds', [...current, telegramId], { shouldDirty: true });
+          setPendingUser(null);
+        }}
+      />
     </GlassCard>
   );
 }

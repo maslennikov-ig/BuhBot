@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
-import { authedProcedure, router } from '../trpc.js';
+import { authedProcedure, managerProcedure, router } from '../trpc.js';
 import { telegramAuthService } from '../../../services/telegram/auth.service.js';
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
+import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 import logger from '../../../utils/logger.js';
 
 const LinkTelegramInput = z.object({
@@ -175,6 +176,8 @@ export const userRouter = router({
           fullName: true,
           email: true,
           role: true,
+          telegramId: true,
+          telegramUsername: true,
         },
         orderBy: { fullName: 'asc' },
       });
@@ -183,6 +186,88 @@ export const userRouter = router({
         `[DEBUG] user.list finished in ${Date.now() - start}ms. Found ${users.length} users.`
       );
 
-      return users;
+      return users.map((u) => ({
+        ...u,
+        telegramId: u.telegramId ? safeNumberFromBigInt(u.telegramId) : null,
+      }));
+    }),
+
+  /**
+   * Verify Telegram username and link to user
+   * Looks up telegram_user_id from chat_messages, sends verification message, updates User record
+   */
+  verifyTelegramUsername: managerProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        username: z.string().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 1. Check user exists
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, fullName: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Пользователь не найден',
+        });
+      }
+
+      // 2. Normalize username
+      const normalizedUsername = input.username.replace(/^@/, '').toLowerCase();
+
+      // 3. Lookup telegram_user_id from chat_messages
+      const messageWithTgId = await ctx.prisma.chatMessage.findFirst({
+        where: {
+          username: { equals: normalizedUsername, mode: 'insensitive' },
+        },
+        select: { telegramUserId: true },
+        orderBy: { telegramDate: 'desc' },
+      });
+
+      if (!messageWithTgId) {
+        return { success: false as const, error: 'user_not_found_in_messages' as const };
+      }
+
+      const telegramUserId = messageWithTgId.telegramUserId;
+
+      // 4. Try to send verification message
+      const { bot } = await import('../../../bot/bot.js');
+      try {
+        await bot.telegram.sendMessage(
+          telegramUserId.toString(),
+          `Вы были добавлены как менеджер SLA-уведомлений для системы BuhBot.\n\nЕсли это ошибка, обратитесь к администратору.`
+        );
+      } catch (sendError: unknown) {
+        const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
+        if (errorMessage.includes('403') || errorMessage.includes('bot was blocked')) {
+          return { success: false as const, error: 'bot_blocked' as const };
+        }
+        throw sendError;
+      }
+
+      // 5. Update User record
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          telegramId: telegramUserId,
+          telegramUsername: normalizedUsername,
+        },
+      });
+
+      logger.info('[Audit] Telegram username verified and linked', {
+        userId: input.userId,
+        telegramUsername: normalizedUsername,
+        telegramUserId: telegramUserId.toString(),
+      });
+
+      return {
+        success: true as const,
+        telegramId: safeNumberFromBigInt(telegramUserId).toString(),
+      };
     }),
 });

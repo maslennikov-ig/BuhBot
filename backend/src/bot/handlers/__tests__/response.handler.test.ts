@@ -550,16 +550,15 @@ describe('isAccountantForChat', () => {
       );
     });
 
-    it('should handle database errors gracefully', async () => {
+    it('should re-throw database errors', async () => {
       const dbError = new Error('Database connection failed');
       mockPrisma.chat.findUnique.mockRejectedValue(dbError);
 
-      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
-
-      expect(result.isAccountant).toBe(false);
-      expect(result.accountantId).toBeNull();
+      await expect(isAccountantForChat(BigInt(123), 'some_user', 456)).rejects.toThrow(
+        'Database connection failed'
+      );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        'Error checking if user is accountant',
+        'Error checking if user is accountant, re-throwing',
         expect.objectContaining({
           chatId: '123',
           username: 'some_user',
@@ -570,15 +569,14 @@ describe('isAccountantForChat', () => {
       );
     });
 
-    it('should handle non-Error exceptions gracefully', async () => {
+    it('should re-throw non-Error exceptions', async () => {
       mockPrisma.chat.findUnique.mockRejectedValue('Unexpected error string');
 
-      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
-
-      expect(result.isAccountant).toBe(false);
-      expect(result.accountantId).toBeNull();
+      await expect(isAccountantForChat(BigInt(123), 'some_user', 456)).rejects.toBe(
+        'Unexpected error string'
+      );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        'Error checking if user is accountant',
+        'Error checking if user is accountant, re-throwing',
         expect.objectContaining({
           error: 'Unexpected error string',
         })

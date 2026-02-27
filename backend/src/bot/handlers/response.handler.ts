@@ -205,7 +205,7 @@ export async function isAccountantForChat(
     });
     return { isAccountant: false, accountantId: null };
   } catch (error) {
-    logger.error('Error checking if user is accountant', {
+    logger.error('Error checking if user is accountant, re-throwing', {
       chatId: chatId.toString(),
       username,
       telegramUserId,
@@ -213,7 +213,7 @@ export async function isAccountantForChat(
       stack: error instanceof Error ? error.stack : undefined,
       service: 'response-handler',
     });
-    return { isAccountant: false, accountantId: null };
+    throw error;
   }
 }
 

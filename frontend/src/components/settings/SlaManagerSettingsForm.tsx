@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc';
@@ -48,8 +48,6 @@ export function SlaManagerSettingsForm() {
     }
   }, [settings, form]);
 
-  const watchedIds = useWatch({ control: form.control, name: 'ids' });
-
   const onSubmit = (data: FormValues) => {
     updateSettings.mutate({
       globalManagerIds: data.ids,
@@ -84,17 +82,23 @@ export function SlaManagerSettingsForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <ManagerMultiSelect
-              value={watchedIds}
-              onChange={(val) => form.setValue('ids', val, { shouldDirty: true })}
-              onSelectUserWithoutTelegram={(user) => setPendingUser(user)}
-            />
-            <p className="text-sm text-[var(--buh-foreground-muted)]">
-              Глобальные менеджеры для SLA-уведомлений. Используются для чатов без назначенных
-              менеджеров.
-            </p>
-          </div>
+          <Controller
+            control={form.control}
+            name="ids"
+            render={({ field }) => (
+              <div className="space-y-2">
+                <ManagerMultiSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  onSelectUserWithoutTelegram={(user) => setPendingUser(user)}
+                />
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Глобальные менеджеры для SLA-уведомлений. Используются для чатов без назначенных
+                  менеджеров.
+                </p>
+              </div>
+            )}
+          />
 
           <div className="flex justify-end pt-4">
             <Button

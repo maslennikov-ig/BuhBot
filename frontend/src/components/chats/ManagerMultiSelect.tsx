@@ -25,6 +25,7 @@ type ManagerMultiSelectProps = {
   onChange: (value: string[]) => void;
   disabled?: boolean;
   onSelectUserWithoutTelegram?: (user: { id: string; name: string }) => void;
+  className?: string;
 };
 
 type ResolvedChip = {
@@ -54,6 +55,7 @@ export function ManagerMultiSelect({
   onChange,
   disabled = false,
   onSelectUserWithoutTelegram,
+  className,
 }: ManagerMultiSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -161,7 +163,7 @@ export function ManagerMultiSelect({
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn('relative', className)}>
       {/* Trigger / Chips Area */}
       <div
         role="combobox"

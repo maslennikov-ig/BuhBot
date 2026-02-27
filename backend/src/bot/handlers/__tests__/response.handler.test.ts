@@ -69,7 +69,7 @@ describe('isAccountantForChat', () => {
     vi.resetAllMocks();
   });
 
-  describe('Check 0 - accountantUsernames array match (highest priority)', () => {
+  describe('Check 2 - accountantUsernames array match (username fallback)', () => {
     it('should match when username is in accountantUsernames array', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
@@ -615,7 +615,7 @@ describe('isAccountantForChat', () => {
 
   describe('BigInt handling', () => {
     it('should correctly compare BigInt telegramUserId values', async () => {
-      const largeTelegramId = BigInt('9007199254740991'); // Max safe integer + 1
+      const largeTelegramId = BigInt('9007199254740992'); // First value above MAX_SAFE_INTEGER
 
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc';
@@ -48,6 +48,8 @@ export function SlaManagerSettingsForm() {
     }
   }, [settings, form]);
 
+  const watchedIds = useWatch({ control: form.control, name: 'ids' });
+
   const onSubmit = (data: FormValues) => {
     updateSettings.mutate({
       globalManagerIds: data.ids,
@@ -84,7 +86,7 @@ export function SlaManagerSettingsForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <ManagerMultiSelect
-              value={form.watch('ids')}
+              value={watchedIds}
               onChange={(val) => form.setValue('ids', val, { shouldDirty: true })}
               onSelectUserWithoutTelegram={(user) => setPendingUser(user)}
             />

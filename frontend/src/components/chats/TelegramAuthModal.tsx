@@ -52,6 +52,7 @@ type ModalState =
 export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAuthModalProps) {
   const [username, setUsername] = React.useState('');
   const [state, setState] = React.useState<ModalState>({ status: 'idle' });
+  const utils = trpc.useUtils();
 
   // Reset state when user changes or modal opens
   React.useEffect(() => {
@@ -64,6 +65,7 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
   const verifyMutation = trpc.user.verifyTelegramUsername.useMutation({
     onSuccess: (data) => {
       if (data.success) {
+        utils.user.list.invalidate();
         setState({ status: 'success', telegramId: data.telegramId, username });
       } else {
         setState({ status: 'error', code: data.error });
@@ -91,14 +93,15 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
     }
   };
 
-  const handleClose = () => {
-    onClose();
-  };
-
   if (!open || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tg-auth-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    >
       <GlassCard
         variant="elevated"
         padding="lg"
@@ -106,7 +109,7 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
       >
         {/* Close button */}
         <button
-          onClick={handleClose}
+          onClick={onClose}
           className="absolute right-4 top-4 text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
           aria-label="Закрыть"
         >
@@ -119,7 +122,10 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
             <MessageCircle className="h-6 w-6 text-[var(--buh-primary)]" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-[var(--buh-foreground)]">
+            <h2
+              id="tg-auth-modal-title"
+              className="text-xl font-semibold text-[var(--buh-foreground)]"
+            >
               Привязка Telegram
             </h2>
             <p className="text-sm text-[var(--buh-foreground-muted)]">
@@ -160,7 +166,7 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={handleClose}>
+              <Button type="button" variant="ghost" onClick={onClose}>
                 Отмена
               </Button>
               <Button
@@ -223,7 +229,7 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={handleClose}>
+              <Button variant="ghost" onClick={onClose}>
                 Закрыть
               </Button>
               <Button variant="outline" onClick={() => setState({ status: 'idle' })}>
@@ -250,7 +256,7 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={handleClose}>
+              <Button variant="ghost" onClick={onClose}>
                 Закрыть
               </Button>
               <Button variant="outline" onClick={() => setState({ status: 'idle' })}>
@@ -270,7 +276,7 @@ export function TelegramAuthModal({ open, user, onClose, onSuccess }: TelegramAu
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={handleClose}>
+              <Button variant="ghost" onClick={onClose}>
                 Закрыть
               </Button>
               <Button variant="outline" onClick={() => setState({ status: 'idle' })}>

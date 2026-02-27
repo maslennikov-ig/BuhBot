@@ -202,6 +202,11 @@ export function ManagerMultiSelect({
                     ? 'hover:border-[var(--buh-primary)]'
                     : 'border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20'
                 )}
+                title={
+                  chip.verified
+                    ? undefined
+                    : 'Пользователь не найден в системе. Возможно, аккаунт был удалён.'
+                }
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Status Icon */}
@@ -304,11 +309,19 @@ export function ManagerMultiSelect({
                   key={user.id}
                   role="option"
                   aria-selected={false}
+                  tabIndex={0}
                   onClick={() => handleSelect(user)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect(user);
+                    }
+                  }}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 cursor-pointer',
                     'transition-colors duration-150',
-                    'hover:bg-[var(--buh-surface-elevated)]'
+                    'hover:bg-[var(--buh-surface-elevated)]',
+                    'focus:bg-[var(--buh-surface-elevated)] focus:outline-none'
                   )}
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">

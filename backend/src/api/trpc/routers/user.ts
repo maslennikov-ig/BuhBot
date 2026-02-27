@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client';
 import { authedProcedure, managerProcedure, router } from '../trpc.js';
 import { telegramAuthService } from '../../../services/telegram/auth.service.js';
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
-import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 import logger from '../../../utils/logger.js';
 
 const LinkTelegramInput = z.object({
@@ -188,7 +187,7 @@ export const userRouter = router({
 
       return users.map((u) => ({
         ...u,
-        telegramId: u.telegramId ? safeNumberFromBigInt(u.telegramId) : null,
+        telegramId: u.telegramId ? u.telegramId.toString() : null,
       }));
     }),
 
@@ -200,7 +199,11 @@ export const userRouter = router({
     .input(
       z.object({
         userId: z.string().uuid(),
-        username: z.string().min(1),
+        username: z
+          .string()
+          .min(5)
+          .max(32)
+          .regex(/^@?[a-z0-9][a-z0-9_]{3,30}[a-z0-9]$/i, 'Неверный формат Telegram username'),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -235,22 +238,40 @@ export const userRouter = router({
 
       const telegramUserId = messageWithTgId.telegramUserId;
 
-      // 4. Try to send verification message
-      const { bot } = await import('../../../bot/bot.js');
+      // 4. Check for conflicting TelegramAccount (CR-02)
+      const conflictingAccount = await ctx.prisma.telegramAccount.findUnique({
+        where: { telegramId: telegramUserId },
+      });
+
+      if (conflictingAccount && conflictingAccount.userId !== input.userId) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Этот Telegram аккаунт уже привязан к другому пользователю',
+        });
+      }
+
+      // 5. Try to send verification message
+      const { telegramClient } = await import('../../../bot/telegram-client.js');
       try {
-        await bot.telegram.sendMessage(
+        await telegramClient.sendMessage(
           telegramUserId.toString(),
-          `Вы были добавлены как менеджер SLA-уведомлений для системы BuhBot.\n\nЕсли это ошибка, обратитесь к администратору.`
+          'Вы были добавлены как менеджер SLA-уведомлений для системы BuhBot.\n\nЕсли это ошибка, обратитесь к администратору.'
         );
       } catch (sendError: unknown) {
-        const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
-        if (errorMessage.includes('403') || errorMessage.includes('bot was blocked')) {
-          return { success: false as const, error: 'bot_blocked' as const };
+        // Detect Telegram API error codes structurally (CR-03)
+        const isTelegramError = (e: unknown): e is { response?: { error_code?: number } } =>
+          typeof e === 'object' && e !== null;
+
+        if (isTelegramError(sendError)) {
+          const code = sendError.response?.error_code;
+          if (code === 403 || code === 400) {
+            return { success: false as const, error: 'bot_blocked' as const };
+          }
         }
         throw sendError;
       }
 
-      // 5. Update User record
+      // 6. Update User record
       await ctx.prisma.user.update({
         where: { id: input.userId },
         data: {
@@ -267,7 +288,7 @@ export const userRouter = router({
 
       return {
         success: true as const,
-        telegramId: safeNumberFromBigInt(telegramUserId).toString(),
+        telegramId: telegramUserId.toString(),
       };
     }),
 });

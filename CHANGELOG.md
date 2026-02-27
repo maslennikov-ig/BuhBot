@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.1...buhbot-v0.21.2) (2026-02-27)
+
+
+### Bug Fixes
+
+* **ci:** unmask test failures and fix hidden bugs (buh-bt0) ([#220](https://github.com/maslennikov-ig/BuhBot/issues/220)) ([1e1be09](https://github.com/maslennikov-ig/BuhBot/commit/1e1be09e711a9c99502c71c6eaf0c61bc8dbfd4b))
+
 ## [0.21.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.0...buhbot-v0.21.1) (2026-02-27)
 
 

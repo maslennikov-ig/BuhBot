@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Use vi.hoisted to define mock before the vi.mock call is hoisted
 const mockPrisma = vi.hoisted(() => ({
   chat: {
-    findUnique: vi.fn(),
+    findFirst: vi.fn(),
   },
   workingSchedule: {
     findMany: vi.fn(),
@@ -87,7 +87,7 @@ describe('SLA Timer Service - Schedule Resolution', () => {
 
     it('should use 24/7 mode when chat has is24x7Mode enabled', async () => {
       // Setup: Chat with is24x7Mode = true
-      mockPrisma.chat.findUnique.mockResolvedValue({
+      mockPrisma.chat.findFirst.mockResolvedValue({
         is24x7Mode: true,
       });
       mockPrisma.clientRequest.findUnique.mockResolvedValue(mockRequest);
@@ -111,7 +111,7 @@ describe('SLA Timer Service - Schedule Resolution', () => {
 
     it('should use GlobalSettings when chat has no custom schedule', async () => {
       // Setup: Chat without custom schedule, global settings = full day coverage
-      mockPrisma.chat.findUnique.mockResolvedValue({
+      mockPrisma.chat.findFirst.mockResolvedValue({
         is24x7Mode: false,
       });
       mockPrisma.workingSchedule.findMany.mockResolvedValue([]);
@@ -136,7 +136,7 @@ describe('SLA Timer Service - Schedule Resolution', () => {
 
     it('should use GlobalSettings working hours when partial day', async () => {
       // Setup: Chat without custom schedule, global settings = business hours only
-      mockPrisma.chat.findUnique.mockResolvedValue({
+      mockPrisma.chat.findFirst.mockResolvedValue({
         is24x7Mode: false,
       });
       mockPrisma.workingSchedule.findMany.mockResolvedValue([]);
@@ -171,7 +171,7 @@ describe('SLA Timer Service - Schedule Resolution', () => {
       // Setup: Request received outside working hours
       vi.setSystemTime(new Date('2025-01-29T03:00:00.000Z')); // 06:00 Moscow (before 09:00)
 
-      mockPrisma.chat.findUnique.mockResolvedValue({
+      mockPrisma.chat.findFirst.mockResolvedValue({
         is24x7Mode: false,
       });
       mockPrisma.workingSchedule.findMany.mockResolvedValue([]);
@@ -203,7 +203,7 @@ describe('SLA Timer Service - Schedule Resolution', () => {
     });
 
     it('should fallback to hardcoded defaults when GlobalSettings not found', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
+      mockPrisma.chat.findFirst.mockResolvedValue({
         is24x7Mode: false,
       });
       mockPrisma.workingSchedule.findMany.mockResolvedValue([]);
@@ -218,7 +218,7 @@ describe('SLA Timer Service - Schedule Resolution', () => {
     });
 
     it('should use chat-specific WorkingSchedule when available', async () => {
-      mockPrisma.chat.findUnique.mockResolvedValue({
+      mockPrisma.chat.findFirst.mockResolvedValue({
         is24x7Mode: false,
       });
       mockPrisma.workingSchedule.findMany.mockResolvedValue([

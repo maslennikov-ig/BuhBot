@@ -271,12 +271,7 @@ jobs:
 
       - name: Run tests
         working-directory: ./backend
-        run: |
-          if pnpm test 2>/dev/null; then
-            echo "Tests completed"
-          else
-            echo "No tests configured or tests passed"
-          fi
+        run: pnpm test
         env:
           NODE_ENV: test
           REDIS_HOST: localhost

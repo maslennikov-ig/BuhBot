@@ -40,6 +40,22 @@ vi.mock('../../../utils/logger.js', () => ({
   default: mockLogger,
 }));
 
+// Mock bot module to prevent env.ts validation side-effect (bot.ts → env.ts)
+vi.mock('../../bot.js', () => ({
+  bot: { on: vi.fn(), use: vi.fn(), command: vi.fn(), hears: vi.fn() },
+  BotContext: {},
+}));
+
+// Mock SLA services to prevent transitive env imports
+vi.mock('../../../services/sla/timer.service.js', () => ({
+  stopSlaTimer: vi.fn(),
+}));
+
+vi.mock('../../../services/sla/request.service.js', () => ({
+  getRequestByMessage: vi.fn(),
+  findLatestPendingRequest: vi.fn(),
+}));
+
 // Now import the function under test
 import { isAccountantForChat } from '../response.handler.js';
 

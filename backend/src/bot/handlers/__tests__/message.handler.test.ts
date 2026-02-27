@@ -60,14 +60,14 @@ describe('Message Handler - Filtering Logic', () => {
     const { isAccountantForChat } = await import('../response.handler.js');
 
     // Mock chat as registered and enabled
-    (mockPrisma.chat.findUnique as any).mockResolvedValue({
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
       id: BigInt(123),
       slaEnabled: true,
       monitoringEnabled: true,
     });
 
     // Mock sender as accountant
-    (isAccountantForChat as any).mockResolvedValue({
+    vi.mocked(isAccountantForChat).mockResolvedValue({
       isAccountant: true,
       accountantId: 'acc_123',
     });
@@ -98,7 +98,7 @@ describe('Message Handler - Filtering Logic', () => {
     const { startSlaTimer } = await import('../../../services/sla/timer.service.js');
 
     // Mock chat
-    (mockPrisma.chat.findUnique as any).mockResolvedValue({
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
       id: BigInt(123),
       slaEnabled: true,
       monitoringEnabled: true,
@@ -106,7 +106,7 @@ describe('Message Handler - Filtering Logic', () => {
     });
 
     // Mock sender as client (not accountant)
-    (isAccountantForChat as any).mockResolvedValue({
+    vi.mocked(isAccountantForChat).mockResolvedValue({
       isAccountant: false,
       accountantId: null,
     });
@@ -118,7 +118,7 @@ describe('Message Handler - Filtering Logic', () => {
       model: 'openrouter',
       reasoning: 'Client asking for documents',
     };
-    (classifyMessage as any).mockResolvedValue(classificationResult);
+    vi.mocked(classifyMessage).mockResolvedValue(classificationResult);
 
     // Mock clientRequest creation
     const mockRequest = {
@@ -127,7 +127,7 @@ describe('Message Handler - Filtering Logic', () => {
       messageId: BigInt(456),
       status: 'pending',
     };
-    (mockPrisma.clientRequest.create as any).mockResolvedValue(mockRequest);
+    vi.mocked(mockPrisma.clientRequest.create).mockResolvedValue(mockRequest);
 
     // Simulate message handler logic
     const chat = await mockPrisma.chat.findUnique({ where: { id: BigInt(123) } });
@@ -178,7 +178,7 @@ describe('Message Handler - Filtering Logic', () => {
     const { startSlaTimer } = await import('../../../services/sla/timer.service.js');
 
     // Mock chat
-    (mockPrisma.chat.findUnique as any).mockResolvedValue({
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
       id: BigInt(123),
       slaEnabled: true,
       monitoringEnabled: true,
@@ -186,7 +186,7 @@ describe('Message Handler - Filtering Logic', () => {
     });
 
     // Mock sender as client
-    (isAccountantForChat as any).mockResolvedValue({
+    vi.mocked(isAccountantForChat).mockResolvedValue({
       isAccountant: false,
       accountantId: null,
     });
@@ -198,7 +198,7 @@ describe('Message Handler - Filtering Logic', () => {
       model: 'openrouter',
       reasoning: 'Follow-up to previous message',
     };
-    (classifyMessage as any).mockResolvedValue(classificationResult);
+    vi.mocked(classifyMessage).mockResolvedValue(classificationResult);
 
     // Mock clientRequest creation
     const mockRequest = {
@@ -207,7 +207,7 @@ describe('Message Handler - Filtering Logic', () => {
       messageId: BigInt(789),
       status: 'answered',
     };
-    (mockPrisma.clientRequest.create as any).mockResolvedValue(mockRequest);
+    vi.mocked(mockPrisma.clientRequest.create).mockResolvedValue(mockRequest);
 
     // Simulate message handler logic
     const chat = await mockPrisma.chat.findUnique({ where: { id: BigInt(123) } });
@@ -257,14 +257,14 @@ describe('Message Handler - Filtering Logic', () => {
     const { isAccountantForChat } = await import('../response.handler.js');
 
     // Mock chat
-    (mockPrisma.chat.findUnique as any).mockResolvedValue({
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
       id: BigInt(123),
       slaEnabled: true,
       monitoringEnabled: true,
     });
 
     // Mock sender as client
-    (isAccountantForChat as any).mockResolvedValue({
+    vi.mocked(isAccountantForChat).mockResolvedValue({
       isAccountant: false,
       accountantId: null,
     });
@@ -276,7 +276,7 @@ describe('Message Handler - Filtering Logic', () => {
       model: 'openrouter',
       reasoning: 'Simple acknowledgment',
     };
-    (classifyMessage as any).mockResolvedValue(classificationResult);
+    vi.mocked(classifyMessage).mockResolvedValue(classificationResult);
 
     // Simulate message handler logic
     await mockPrisma.chat.findUnique({ where: { id: BigInt(123) } });
@@ -300,14 +300,14 @@ describe('Message Handler - Filtering Logic', () => {
     const { isAccountantForChat } = await import('../response.handler.js');
 
     // Mock chat
-    (mockPrisma.chat.findUnique as any).mockResolvedValue({
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
       id: BigInt(123),
       slaEnabled: true,
       monitoringEnabled: true,
     });
 
     // Mock sender as client
-    (isAccountantForChat as any).mockResolvedValue({
+    vi.mocked(isAccountantForChat).mockResolvedValue({
       isAccountant: false,
       accountantId: null,
     });
@@ -319,7 +319,7 @@ describe('Message Handler - Filtering Logic', () => {
       model: 'openrouter',
       reasoning: 'Thank you message',
     };
-    (classifyMessage as any).mockResolvedValue(classificationResult);
+    vi.mocked(classifyMessage).mockResolvedValue(classificationResult);
 
     // Simulate message handler logic
     await mockPrisma.chat.findUnique({ where: { id: BigInt(123) } });
@@ -342,7 +342,7 @@ describe('Message Handler - Filtering Logic', () => {
     const { classifyMessage } = await import('../../../services/classifier/index.js');
 
     // Mock chat as not found (null)
-    (mockPrisma.chat.findUnique as any).mockResolvedValue(null);
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue(null);
 
     // Simulate message handler logic
     const chat = await mockPrisma.chat.findUnique({ where: { id: BigInt(999) } });
@@ -360,7 +360,7 @@ describe('Message Handler - Filtering Logic', () => {
     const { classifyMessage } = await import('../../../services/classifier/index.js');
 
     // Mock chat with monitoring disabled
-    (mockPrisma.chat.findUnique as any).mockResolvedValue({
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
       id: BigInt(123),
       slaEnabled: false,
       monitoringEnabled: false,

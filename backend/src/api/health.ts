@@ -20,7 +20,7 @@
  */
 
 import { Request, Response, Application } from 'express';
-import { testDatabaseConnection } from '../lib/prisma.js';
+import { testDatabaseConnection, prisma } from '../lib/prisma.js';
 import { testRedisConnection } from '../lib/redis.js';
 import logger from '../utils/logger.js';
 
@@ -48,6 +48,7 @@ interface HealthCheckResponse {
   checks: {
     database: CheckResult;
     redis: CheckResult;
+    schema: CheckResult;
   };
 }
 
@@ -132,6 +133,34 @@ async function checkRedis(timeoutMs: number = 5000): Promise<CheckResult> {
 }
 
 /**
+ * Check database schema consistency
+ * Queries columns from recent migrations to detect schema drift.
+ * If the query fails (e.g. "column does not exist"), schema is out of sync.
+ *
+ * @param timeoutMs - Maximum time to wait (default: 5000ms)
+ * @returns Check result with status and latency
+ */
+async function checkSchema(timeoutMs: number = 5000): Promise<CheckResult> {
+  const start = Date.now();
+
+  try {
+    await Promise.race([
+      prisma.$queryRaw`SELECT "deleted_at", "is_migrated" FROM "chats" LIMIT 1`,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Schema check timeout')), timeoutMs)
+      ),
+    ]);
+    return { status: 'ok', latency_ms: Date.now() - start };
+  } catch (error) {
+    return {
+      status: 'down',
+      latency_ms: Date.now() - start,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
  * Determine overall health status from individual checks
  *
  * Logic:
@@ -145,9 +174,15 @@ async function checkRedis(timeoutMs: number = 5000): Promise<CheckResult> {
 function determineHealthStatus(checks: {
   database: CheckResult;
   redis: CheckResult;
+  schema: CheckResult;
 }): HealthStatus {
   // Database is critical - if it's down, the whole service is down
   if (checks.database.status === 'down') {
+    return 'down';
+  }
+
+  // Schema drift is critical - means migrations are missing
+  if (checks.schema.status === 'down') {
     return 'down';
   }
 
@@ -175,11 +210,16 @@ export async function healthHandler(_req: Request, res: Response): Promise<void>
 
   try {
     // Run health checks in parallel with 5s timeout
-    const [databaseCheck, redisCheck] = await Promise.all([checkDatabase(5000), checkRedis(5000)]);
+    const [databaseCheck, redisCheck, schemaCheck] = await Promise.all([
+      checkDatabase(5000),
+      checkRedis(5000),
+      checkSchema(5000),
+    ]);
 
     const checks = {
       database: databaseCheck,
       redis: redisCheck,
+      schema: schemaCheck,
     };
 
     // Determine overall status
@@ -201,6 +241,7 @@ export async function healthHandler(_req: Request, res: Response): Promise<void>
       status,
       databaseLatency: databaseCheck.latency_ms,
       redisLatency: redisCheck.latency_ms,
+      schemaLatency: schemaCheck.latency_ms,
     });
 
     res.status(httpStatus).json(response);
@@ -222,6 +263,10 @@ export async function healthHandler(_req: Request, res: Response): Promise<void>
           error: 'Health check failed',
         },
         redis: {
+          status: 'down',
+          error: 'Health check failed',
+        },
+        schema: {
           status: 'down',
           error: 'Health check failed',
         },

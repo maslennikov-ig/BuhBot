@@ -378,6 +378,22 @@ deploy_services() {
 }
 
 # ============================================================================
+# Database Migrations
+# ============================================================================
+
+run_migrations() {
+    log_info "Running Prisma migrations..."
+
+    if docker exec buhbot-bot-backend npx prisma migrate deploy 2>&1; then
+        log_success "Migrations applied successfully"
+        return 0
+    else
+        log_error "Migration failed!"
+        return 1
+    fi
+}
+
+# ============================================================================
 # Health Checks
 # ============================================================================
 
@@ -547,6 +563,13 @@ main() {
     # Deploy new services
     if ! deploy_services; then
         log_error "Deployment failed, initiating rollback..."
+        rollback
+        exit 1
+    fi
+
+    # Run database migrations after containers are up
+    if ! run_migrations; then
+        log_error "Migration failed, initiating rollback..."
         rollback
         exit 1
     fi

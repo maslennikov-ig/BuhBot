@@ -7,6 +7,7 @@ import cors from 'cors';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import packageJson from '../package.json' with { type: 'json' };
 import logger from './utils/logger.js';
+import { httpErrorsTotal } from './utils/metrics.js';
 import env, { isProduction, isDevelopment, isDevMode } from './config/env.js';
 import { healthHandler } from './api/health.js';
 import { metricsHandler } from './api/metrics.js';
@@ -15,6 +16,8 @@ import { disconnectRedis } from './lib/redis.js';
 import { appRouter, createContext } from './api/trpc/index.js';
 import { registerHandlers, setupWebhook, launchPolling, stopBot } from './bot/index.js';
 import { recoverPendingSlaTimers } from './services/sla/timer.service.js';
+import { errorCaptureService } from './services/logging/error-capture.service.js';
+import { getAlertService } from './services/telegram-alerts.js';
 
 // Initialize BullMQ workers for background job processing
 // Workers self-register when imported, enabling SLA monitoring, alert delivery, and surveys
@@ -158,6 +161,30 @@ const registerFinalHandlers = () => {
         path: req.path,
         method: req.method,
       });
+
+      // Prometheus counter for HTTP 500 errors
+      httpErrorsTotal.inc({ method: req.method, path: req.route?.path ?? req.path });
+
+      // Capture to error_log table (with fingerprinting and deduplication)
+      const captureOpts: Parameters<typeof errorCaptureService.captureError>[0] = {
+        level: 'error',
+        message: err.message,
+        service: 'express',
+        metadata: { path: req.path, method: req.method },
+      };
+      if (err.stack) captureOpts.stack = err.stack;
+      errorCaptureService.captureError(captureOpts);
+
+      // Telegram alert for Prisma/DB errors (critical)
+      if (
+        err.name === 'PrismaClientKnownRequestError' ||
+        err.name === 'PrismaClientUnknownRequestError'
+      ) {
+        getAlertService().sendCritical('Database Error', err.message, {
+          path: req.path,
+          errorName: err.name,
+        });
+      }
 
       res.status(500).json({
         error: 'Internal Server Error',

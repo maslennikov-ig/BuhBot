@@ -51,7 +51,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { data: files } = await github.rest.repos.listCommitFiles({
+            const { data: files } = await github.rest.git.listCommitFiles({
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha

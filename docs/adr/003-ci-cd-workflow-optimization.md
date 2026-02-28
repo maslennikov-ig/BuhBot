@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -206,22 +206,22 @@ If issues arise:
 1. **Should we add path filtering to CI?**
    - Would skip Docker builds on documentation-only changes
    - Saves ~5-10 minutes per doc commit
-   - Recommend: Yes, in future optimization
+   - Answer: **Yes, implement now** - This will be implemented as part of the release workflow optimization
 
 2. **Should we add a staging deployment?**
    - Current flow goes directly to production
    - Consider staging for larger changes
-   - Recommend: Evaluate after some releases
+   - Answer: **After Blue/Green envs setup** - Will evaluate once Blue/Green deployment environments are configured
 
 3. **How should we handle failed deployments?**
    - Currently has rollback mechanism
    - Should we add automated retry?
-   - Recommend: Monitor and evaluate
+   - Answer: **After Blue/Green envs setup** - Will add automated retry once Blue/Green environments provide proper rollback capabilities
 
 4. **Should Release Please create releases for docs-only changes?**
    - Currently it could, but deploy won't trigger
    - Could add path filtering to skip release for docs-only
-   - Recommend: Keep current behavior, deploy won't run anyway
+   - Answer: **Yes, implement path-filtering to skip release for docs-only** - Added step to check file changes and skip release if only documentation files changed
 
 ## References
 

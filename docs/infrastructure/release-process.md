@@ -4,9 +4,11 @@ Releases are created by the **Release Please** GitHub Action. No manual version 
 
 ## How it works
 
-1. **Merge to main:** When PRs are merged to `main`, Release Please analyzes conventional commits since the last release.
-2. **Release PR:** The action opens or updates a release PR that updates `CHANGELOG.md` and version(s) in `package.json` (and `.release-please-manifest.json`).
-3. **Publish release:** Merging that release PR creates the git tag (e.g. `v0.9.20`) and the GitHub release.
+1. **Merge to main:** When PRs are merged to `main`, CI runs first.
+2. **Release Please runs:** After CI completes successfully, the Release Please workflow triggers (via `workflow_run`).
+3. **Release PR:** The action opens or updates a release PR that updates `CHANGELOG.md` and version(s) in `package.json` (and `.release-please-manifest.json`).
+4. **Publish release:** Merging that release PR creates the git tag (e.g. `v0.9.20`) and the GitHub release.
+5. **Deploy to Production:** After the release is published, the production deployment is triggered automatically (only if a version bump occurred).
 
 **Important:** Release Please only *creates or updates* the release PR. It does **not** merge it. The tag and GitHub release are created only when that PR is merged (e.g. by a maintainer or by enabling [GitHub Auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request) on the release PR).
 
@@ -20,9 +22,8 @@ The [.claude/scripts/release.sh](../../.claude/scripts/release.sh) script and `/
 
 ## Configuration
 
-- **Workflow:** [.github/workflows/release-please.yml](../../.github/workflows/release-please.yml)
-- **Config:** [release-please-config.json](../../release-please-config.json)
-- **Manifest:** [.release-please-manifest.json](../../.release-please-manifest.json)
+- **Workflow:** [.github/workflows/release-please.yml](../../.github/workflows/release-please.yml) — triggers on `workflow_run` after CI completes, then creates/updates the release PR.
+- **Deploy Workflow:** [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml) — triggered automatically by Release Please when a release is created (not on every CI run).
 
 ## Troubleshooting
 

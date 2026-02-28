@@ -24,19 +24,19 @@ All agents and contributors MUST follow these rules when writing commit messages
 
 ### Allowed Types
 
-| Type       | Changelog / Release Please | Use for                                |
-| ---------- | -------------------------- | -------------------------------------- |
-| `feat`     | **Added** (minor bump)     | New user-facing or API feature         |
-| `fix`      | **Fixed** (patch bump)     | Bug fix                                |
-| `docs`     | Often omitted or "Other"   | Documentation only                     |
-| `refactor` | Often omitted or "Changed" | Code change, no behavior/API change    |
-| `test`     | Omitted                    | Adding or updating tests               |
-| `build`    | Omitted                    | Build system, dependencies             |
-| `chore`    | Omitted                    | Build, config, deps, tooling           |
-| `style`    | Omitted                    | Formatting, whitespace, no code change |
-| `perf`     | **Changed** (patch)        | Performance improvement                |
-| `ci`       | Omitted                    | CI/config changes                      |
-| `revert`   | Omitted                    | Reverting a previous commit            |
+| Type       | Changelog Section       | Use for                                |
+| ---------- | ---------------------- | -------------------------------------- |
+| `feat`     | **Features** (minor)   | New user-facing or API feature         |
+| `fix`      | **Bug Fixes** (patch)  | Bug fix                                |
+| `docs`     | **Documentation**     | Documentation only                     |
+| `refactor` | **Refactoring**        | Code change, no behavior/API change    |
+| `test`     | (hidden)               | Adding or updating tests               |
+| `build`    | (hidden)               | Build system, dependencies             |
+| `chore`    | **Maintenance**        | Build, config, deps, tooling           |
+| `style`    | (hidden)               | Formatting, whitespace, no code change |
+| `perf`     | **Performance**         | Performance improvement                |
+| `ci`       | (hidden)               | CI/config changes                      |
+| `revert`   | **Reverts**            | Reverting a previous commit            |
 
 ### Allowed Subject Cases
 
@@ -115,14 +115,16 @@ feat: Add new feature.                     # Period at end; not imperative
 
 ## 3. Keep a Changelog Mapping
 
-This project uses [Keep a Changelog](https://keepachangelog.com/). Commit types map roughly as follows:
+This project uses [Keep a Changelog](https://keepachangelog.com/) with custom sections configured in [`release-please-config.json`](../../release-please-config.json). Commit types map as follows:
 
-- **Added** ← `feat`
-- **Changed** ← `refactor`, `perf`, or breaking changes
-- **Fixed** ← `fix`
-- **Removed** ← breaking removals
-- **Security** ← security-related `fix` or `feat`
-- **Other** ← `docs`, `chore`, `style`, `test`, `ci`, `build`, `revert` (or as configured by the release tool)
+- **Features** ← `feat` (minor version bump)
+- **Bug Fixes** ← `fix` (patch version bump)
+- **Performance** ← `perf` (patch version bump)
+- **Refactoring** ← `refactor`
+- **Documentation** ← `docs`
+- **Maintenance** ← `chore`
+- **Reverts** ← `revert`
+- **(hidden)** ← `test`, `build`, `ci`, `style`
 
 Release Please (or the release script) uses these mappings when generating `CHANGELOG.md` and release notes.
 

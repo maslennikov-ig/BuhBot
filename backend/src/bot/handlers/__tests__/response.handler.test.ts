@@ -69,7 +69,7 @@ describe('isAccountantForChat', () => {
     vi.resetAllMocks();
   });
 
-  describe('Check 0 - accountantUsernames array match (highest priority)', () => {
+  describe('Check 2 - accountantUsernames array match (username fallback)', () => {
     it('should match when username is in accountantUsernames array', async () => {
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),
@@ -550,16 +550,15 @@ describe('isAccountantForChat', () => {
       );
     });
 
-    it('should handle database errors gracefully', async () => {
+    it('should re-throw database errors', async () => {
       const dbError = new Error('Database connection failed');
       mockPrisma.chat.findUnique.mockRejectedValue(dbError);
 
-      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
-
-      expect(result.isAccountant).toBe(false);
-      expect(result.accountantId).toBeNull();
+      await expect(isAccountantForChat(BigInt(123), 'some_user', 456)).rejects.toThrow(
+        'Database connection failed'
+      );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        'Error checking if user is accountant',
+        'Error checking if user is accountant, re-throwing',
         expect.objectContaining({
           chatId: '123',
           username: 'some_user',
@@ -570,15 +569,14 @@ describe('isAccountantForChat', () => {
       );
     });
 
-    it('should handle non-Error exceptions gracefully', async () => {
+    it('should re-throw non-Error exceptions', async () => {
       mockPrisma.chat.findUnique.mockRejectedValue('Unexpected error string');
 
-      const result = await isAccountantForChat(BigInt(123), 'some_user', 456);
-
-      expect(result.isAccountant).toBe(false);
-      expect(result.accountantId).toBeNull();
+      await expect(isAccountantForChat(BigInt(123), 'some_user', 456)).rejects.toBe(
+        'Unexpected error string'
+      );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        'Error checking if user is accountant',
+        'Error checking if user is accountant, re-throwing',
         expect.objectContaining({
           error: 'Unexpected error string',
         })
@@ -617,7 +615,7 @@ describe('isAccountantForChat', () => {
 
   describe('BigInt handling', () => {
     it('should correctly compare BigInt telegramUserId values', async () => {
-      const largeTelegramId = BigInt('9007199254740991'); // Max safe integer + 1
+      const largeTelegramId = BigInt('9007199254740992'); // First value above MAX_SAFE_INTEGER
 
       mockPrisma.chat.findUnique.mockResolvedValue({
         id: BigInt(123),

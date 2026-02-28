@@ -1,11 +1,6 @@
 name: Deploy to Production
 
 on:
-  # Trigger after CI workflow completes successfully
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       skip_approval:

@@ -154,3 +154,34 @@ Use the format your issue tracker expects (e.g. `gh-42`, `#42`, `buh-xxx`).
 - **commitlint** runs on `commit-msg` (Husky) to enforce format locally. Config: `commitlint.config.js`.
 - **CI** runs `pnpm format:check` as a safety net; it may run commitlint on PRs as a backup.
 - **Agents** MUST use the `format-commit-message` skill (or these rules) for every commit, including when using `/push patch -m "..."`.
+
+## 7. AI & Squash Merge Guidelines
+
+See: [Release-Please: How can I fix release notes?](https://github.com/googleapis/release-please/tree/main#how-can-i-fix-release-notes)
+
+### BEGIN_COMMIT_OVERRIDE Pattern
+
+For PRs with multiple changes, wrap additional commits:
+
+```
+feat: add new feature
+
+BEGIN_COMMIT_OVERRIDE
+fix: fix bug in existing feature
+chore: update dependencies
+END_COMMIT_OVERRIDE
+```
+
+### Multiple Commits in Body
+
+Each line with `type(scope):` in body is parsed as separate commit:
+
+```
+feat: primary feature
+
+fix(ci): unmask test failures
+fix(db): apply migrations
+refactor(sla): improve patterns
+
+Refs: issue-id
+```

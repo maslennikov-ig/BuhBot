@@ -26,16 +26,21 @@ jobs:
         with:
           script: |
             // Wait for CI workflow to complete
+            // Use workflow_run event's head_sha for the commit
+            const headSha = context.payload.workflow_run.head_sha;
+            console.log('Checking CI for commit:', headSha);
+
             const { data: runs } = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'ci.yml',
-              head_sha: context.sha,
+              head_sha: headSha,
               status: 'completed',
               per_page: 1
             });
             if (runs.workflow_runs.length > 0) {
               const conclusion = runs.workflow_runs[0].conclusion;
+              console.log('CI conclusion:', conclusion);
               if (conclusion !== 'success') {
                 core.setFailed('CI workflow failed, skipping release');
               }
@@ -48,36 +53,41 @@ jobs:
 
       - name: Check if code changed
         id: check-files
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const response = await github.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/files', {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha
-            });
-            const files = response.data;
+        run: |
+          # Get the commit SHA from the workflow run event
+          COMMIT_SHA=${{ github.event.workflow_run.head_sha }}
 
-            const codePatterns = [
-              'backend/', 'frontend/', 'package.json', 'pnpm-lock.yaml',
-              'Dockerfile', '.github/workflows/', 'infrastructure/'
-            ];
+          # Use gh CLI to get commit files (more reliable than github.rest)
+          echo "Fetching files for commit: $COMMIT_SHA"
+          FILES_JSON=$(gh api repos/${{ github.repository }}/commits/$COMMIT_SHA/files)
 
-            const hasCodeChanges = files.some(file => {
-              return codePatterns.some(pattern => 
-                file.filename.startsWith(pattern) || file.filename.includes(pattern)
-              );
-            });
+          # Parse files and check for code changes
+          CODE_PATTERNS="backend/ frontend/ package.json pnpm-lock.yaml Dockerfile .github/workflows/ infrastructure/"
+          HAS_CODE_CHANGES="false"
 
-            console.log('Files changed:', files.map(f => f.filename));
-            console.log('Has code changes:', hasCodeChanges);
+          # Check if any file matches our code patterns
+          for pattern in $CODE_PATTERNS; do
+            if echo "$FILES_JSON" | jq -r '.[].filename' 2>/dev/null | grep -q "$pattern"; then
+              HAS_CODE_CHANGES="true"
+              echo "Found code change matching: $pattern"
+              break
+            fi
+          done
 
-            if (!hasCodeChanges) {
-              console.log('No code changes, skipping release');
-              core.setOutput('should_release', 'false');
-            } else {
-              core.setOutput('should_release', 'true');
-            }
+          # Also check if there are any files at all
+          FILE_COUNT=$(echo "$FILES_JSON" | jq 'length')
+          echo "Files changed: $FILE_COUNT"
+
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "No files changed, skipping release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          elif [ "$HAS_CODE_CHANGES" = "true" ]; then
+            echo "has_code_changes=true" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "No code changes detected, skipping release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run Release Please
         id: release

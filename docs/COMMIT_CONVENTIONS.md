@@ -152,7 +152,7 @@ Use the format your issue tracker expects (e.g. `gh-42`, `#42`, `buh-xxx`).
 
 ## 6. Enforcement
 
-- **Release process:** Releases and CHANGELOG are created by Release Please when changes are merged to `main`. The workflow waits for CI to complete, then creates/updates a release PR. When that PR is merged, the release is published and production deployment is triggered automatically (only if a version bump occurred). **Documentation-only changes** (markdown files in `docs/`, root `.md` files) will run through CI but will NOT create a release PR or trigger deployment. This optimization saves resources and prevents unnecessary releases for non-code changes. Conventional commits drive CHANGELOG and version bumps. Do not rely on manual `/push` for normal releases.
+- **Release process:** Releases and CHANGELOG are created by Release Please when changes are merged to `main`. The workflow waits for CI to complete, then creates/updates a release PR. When that PR is merged, the release is published and production deployment is triggered automatically (only if a version bump occurred). Conventional commits drive CHANGELOG and version bumps. Do not rely on manual `/push` for normal releases.
 - **commitlint** runs on `commit-msg` (Husky) to enforce format locally. Config: `commitlint.config.js`.
 - **CI** runs `pnpm format:check` as a safety net; it may run commitlint on PRs as a backup.
 - **Agents** MUST use the `format-commit-message` skill (or these rules) for every commit, including when using `/push patch -m "..."`.

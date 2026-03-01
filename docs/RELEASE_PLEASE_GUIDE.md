@@ -559,6 +559,252 @@ For `docs:`, `chore:`, `refactor:`, and similar non-bumping commits:
 
 ---
 
+## The Squash-Merge Commit Compression Problem
+
+### How Squash-Merge Destroys Commit Granularity
+
+When you use GitHub's "Squash and merge" button, ALL commits in a PR are compressed into a **single commit** on the `main` branch. The commit message becomes:
+
+- **First line (title)**: The PR title (e.g., `docs: update commitlint to v20.4.2 (#225)`)
+- **Body**: The PR description or a list of squashed commit messages
+
+**Release-please ONLY reads the first line (title) of each commit.** It does NOT parse the body for additional conventional commits (unless you use `BEGIN_COMMIT_OVERRIDE`).
+
+This means:
+
+```
+PR Title: docs: update commitlint to v20.4.2 (#225)
+PR Internal Commits:
+  - chore: update commitlint to v20.4.2         ← LOST
+  - docs: update changelog config                ← LOST
+  
+Release-please sees: docs: update commitlint...  → No version bump → SKIPPED
+```
+
+### Real Examples from This Repository
+
+#### Example 1: PR #216 → v0.21.0 (8 commits → 1 line)
+
+**PR Title**: `feat: misc improvements (gh-206, gh-207, gh-208, buh-5xx, buh-0kz, buh-pw4)`
+
+**Internal commits that were LOST:**
+| Lost Commit | Type | Impact |
+|---|---|---|
+| `feat(auth): add admin mutation to set user Telegram ID` | feat | Should appear in Features |
+| `feat(sla): add missing Telegram IDs periodic check` | feat | Should appear in Features |
+| `feat(ui): add auto-scroll and jump-to-latest in chat` | feat | Should appear in Features |
+| `feat(db): add isMigrated field to Chat model` | feat | Should appear in Features |
+| `feat(nginx): add CSP, Referrer-Policy, Permissions-Policy` | feat | Should appear in Features |
+| `feat(chats): add soft-delete with restore functionality` | feat | Should appear in Features |
+| `fix(bot): skip SLA processing for soft-deleted chats` | fix | Should appear in Bug Fixes |
+| `test(logger): add Winston logger smoke test` | test | Hidden (test) |
+
+**Result**: 7 meaningful entries compressed into 1 generic "misc improvements" line.
+
+#### Example 2: PR #215 → v0.21.1 (Wrong version bump)
+
+**PR Title**: `fix(sla): add accountant fallback in alerts (#215)`
+
+**Internal commits that were LOST:**
+| Lost Commit | Type | Impact |
+|---|---|---|
+| `feat(sla): overhaul notification system` | **feat** | Should have triggered MINOR bump |
+| `refactor(sla): dry up manager resolution` | refactor | Should appear in Refactoring |
+| `test(sla): add warning/escalation tests` | test | Hidden (test) |
+
+**Result**: v0.21.1 was released as a **PATCH** (0.21.0 → 0.21.1), but it should have been a **MINOR** bump (0.22.0) because it contained `feat(sla): overhaul notification system`.
+
+#### Example 3: PR #226 → Pending (feat hidden inside fix)
+
+**PR Title**: `fix: improve release workflow - sequential pipeline with path filtering (#226)`
+
+**Internal commit that was LOST:**
+- `feat(release): add path filtering to skip release for docs-only`
+
+**Result**: This feature will be recorded as just a bug fix.
+
+### Impact Assessment
+
+| Release | CHANGELOG Entries | Squashed From | Lost Entries |
+|---------|:-:|:-:|---|
+| v0.21.3 | 1 fix | #222 | 2 fixes collapsed |
+| v0.21.1 | 1 fix | #215 | **1 feat + 1 refactor + 1 test** (wrong bump!) |
+| v0.21.0 | 1 feat | #216 | **6 feats + 1 fix** (compressed to "misc") |
+| v0.20.0 | 1 feat | #204 | Code review fixes lost |
+| v0.18.0 | 1 feat | #197 | Code review fixes lost |
+
+> **⚠️ Critical**: v0.21.1 should have been v0.22.0 (MINOR bump), affecting all subsequent version numbers.
+
+---
+
+## Recovery Plan for Missed CHANGELOG Entries
+
+Since release-please only prepends new entries to the top of CHANGELOG.md, it will **never retroactively fix** compressed entries from past releases. You have two options:
+
+### Option A: Manual CHANGELOG Edit (Recommended)
+
+Manually edit `CHANGELOG.md` to expand the compressed entries under each affected release. This is the cleanest approach because:
+- It preserves the existing release-please format
+- It doesn't affect future releases
+- It provides accurate project history
+
+**Steps:**
+1. For each affected release (v0.21.0, v0.21.1, etc.), edit the CHANGELOG section
+2. Add the missing entries from the squashed commits
+3. Commit with `chore: expand compressed changelog entries for v0.18.0-v0.21.3`
+
+**Example — Expanding v0.21.0:**
+
+Before:
+```markdown
+## [0.21.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.20.0...buhbot-v0.21.0) (2026-02-26)
+
+### Features
+
+* misc improvements (gh-206, gh-207, gh-208, buh-5xx, buh-0kz, buh-pw4) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216)) ([a76663b](https://github.com/maslennikov-ig/BuhBot/commit/a76663b))
+```
+
+After:
+```markdown
+## [0.21.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.20.0...buhbot-v0.21.0) (2026-02-26)
+
+### Features
+
+* **auth:** add admin mutation to set user Telegram ID (gh-206) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+* **sla:** add missing Telegram IDs periodic check (gh-207) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+* **ui:** add auto-scroll and jump-to-latest in chat (gh-208) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+* **db:** add isMigrated field to Chat model (buh-5xx) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+* **nginx:** add CSP, Referrer-Policy, Permissions-Policy (buh-0kz) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+* **chats:** add soft-delete with restore functionality (buh-pw4) ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+
+### Bug Fixes
+
+* **bot:** skip SLA processing for soft-deleted chats ([#216](https://github.com/maslennikov-ig/BuhBot/issues/216))
+```
+
+### Option B: Use BEGIN_COMMIT_OVERRIDE on Next Release
+
+Push an empty commit with overrides that include the missed entries:
+
+```bash
+git commit --allow-empty -m "chore: recover missed changelog entries
+
+BEGIN_COMMIT_OVERRIDE
+feat(auth): add admin mutation to set user Telegram ID (gh-206)
+feat(sla): add missing Telegram IDs periodic check (gh-207)
+feat(ui): add auto-scroll and jump-to-latest in chat (gh-208)
+feat(db): add isMigrated field to Chat model
+feat(nginx): add CSP, Referrer-Policy, Permissions-Policy
+feat(chats): add soft-delete with restore functionality
+fix(bot): skip SLA processing for soft-deleted chats
+feat(sla): overhaul notification system with warnings and two-tier escalation
+feat(release): add path filtering to skip release for docs-only changes
+END_COMMIT_OVERRIDE"
+```
+
+> **⚠️ Warning**: This will include ALL these entries in the NEXT release (e.g., v0.22.0), not retroactively in their original versions. The CHANGELOG will be historically accurate going forward but the version numbers in the entries won't match when they actually shipped.
+
+### Option C: Clean Up Legacy CHANGELOG Content
+
+Regardless of which option above you choose, also clean up the legacy Keep-a-Changelog content at the bottom of `CHANGEL.md`:
+
+1. Remove lines 587-1137 (everything from `## [Unreleased]` to the end)
+2. These are duplicate entries from the old manual release script that are already captured in the release-please format above
+
+### Recommended Approach
+
+Use **Option A** (manual edit) for historical accuracy, combined with **Option C** (legacy cleanup).
+
+---
+
+## Prevention — Enforcing Proper PR Titles
+
+### Rule: PR Title Must Reflect the Highest-Severity Change
+
+When using squash-and-merge, the PR title becomes the ONLY signal to release-please. Therefore:
+
+| If PR contains... | PR title MUST use... | Version bump |
+|---|---|---|
+| Any `feat:` commit | `feat(scope): description` | MINOR |
+| Only `fix:`/`perf:` commits | `fix(scope): description` | PATCH |
+| Any `BREAKING CHANGE` or `!` | `feat!:` or `fix!:` | MAJOR |
+| Only `docs:`/`chore:`/`ci:` | `docs(scope): description` | None (included in next release with a bump) |
+
+### Add PR Title Linter CI Check
+
+Add this workflow to `.github/workflows/pr-title.yml`:
+
+```yaml
+name: PR Title Check
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  lint-pr-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^.+$
+          subjectPatternError: |
+            The PR title "{title}" doesn't follow conventional commit format.
+            Use: type(optional-scope): description
+            Example: feat(sla): add warning notifications
+```
+
+### Merge Workflow Decision Tree
+
+When merging a PR, follow this decision tree:
+
+```
+Is PR a single logical change?
+├── YES → Squash and merge (PR title IS the commit)
+│         Make sure title = highest-severity type
+│
+└── NO (multiple unrelated changes) →
+    ├── Option 1: Split into separate PRs (BEST)
+    │
+    ├── Option 2: Squash merge + BEGIN_COMMIT_OVERRIDE
+    │   Edit the merge commit body to list all changes:
+    │   BEGIN_COMMIT_OVERRIDE
+    │   feat(scope): first change
+    │   fix(scope): second change
+    │   END_COMMIT_OVERRIDE
+    │
+    └── Option 3: Use regular merge commit (not squash)
+        Each commit appears separately on main
+```
+
+### Team Rules
+
+1. **One PR = One logical change** — Avoid "kitchen sink" PRs like "misc improvements"
+2. **PR title = conventional commit** — `type(scope): description`
+3. **Title reflects highest-severity type** — If PR has ANY `feat:`, title must be `feat:`
+4. **Use BEGIN_COMMIT_OVERRIDE for multi-change PRs** — When you can't split the PR
+5. **Never use generic titles** — Bad: "misc improvements", Good: "feat(sla): add warning notifications"
+
+---
+
 ## Quick Reference Card
 
 | Question | Answer |

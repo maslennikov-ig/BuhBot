@@ -26,7 +26,6 @@ jobs:
         with:
           script: |
             // Wait for CI workflow to complete
-            // Use workflow_run event's head_sha for the commit
             const headSha = context.payload.workflow_run.head_sha;
             console.log('Checking CI for commit:', headSha);
 
@@ -51,49 +50,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check if code changed
-        id: check-files
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Get the commit SHA from the workflow run event
-          COMMIT_SHA=${{ github.event.workflow_run.head_sha }}
-
-          # Use gh CLI to get commit files (more reliable than github.rest)
-          echo "Fetching files for commit: $COMMIT_SHA"
-          FILES_JSON=$(gh api repos/${{ github.repository }}/commits/$COMMIT_SHA/files)
-
-          # Parse files and check for code changes
-          CODE_PATTERNS="backend/ frontend/ package.json pnpm-lock.yaml Dockerfile .github/workflows/ infrastructure/"
-          HAS_CODE_CHANGES="false"
-
-          # Check if any file matches our code patterns
-          for pattern in $CODE_PATTERNS; do
-            if echo "$FILES_JSON" | jq -r '.[].filename' 2>/dev/null | grep -q "$pattern"; then
-              HAS_CODE_CHANGES="true"
-              echo "Found code change matching: $pattern"
-              break
-            fi
-          done
-
-          # Also check if there are any files at all
-          FILE_COUNT=$(echo "$FILES_JSON" | jq 'length')
-          echo "Files changed: $FILE_COUNT"
-
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "No files changed, skipping release"
-            echo "should_release=false" >> $GITHUB_OUTPUT
-          elif [ "$HAS_CODE_CHANGES" = "true" ]; then
-            echo "has_code_changes=true" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
-          else
-            echo "No code changes detected, skipping release"
-            echo "should_release=false" >> $GITHUB_OUTPUT
-          fi
-
+      # Release Please handles the logic of whether to create a release
+      # based on conventional commits (feat:, fix:, etc.)
+      # No need to manually check for code changes
       - name: Run Release Please
         id: release
-        if: steps.check-files.outputs.should_release == 'true'
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

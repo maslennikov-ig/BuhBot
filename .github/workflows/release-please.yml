@@ -26,16 +26,21 @@ jobs:
         with:
           script: |
             // Wait for CI workflow to complete
+            // Use workflow_run event's head_sha for the commit
+            const headSha = context.payload.workflow_run.head_sha;
+            console.log('Checking CI for commit:', headSha);
+
             const { data: runs } = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'ci.yml',
-              head_sha: context.sha,
+              head_sha: headSha,
               status: 'completed',
               per_page: 1
             });
             if (runs.workflow_runs.length > 0) {
               const conclusion = runs.workflow_runs[0].conclusion;
+              console.log('CI conclusion:', conclusion);
               if (conclusion !== 'success') {
                 core.setFailed('CI workflow failed, skipping release');
               }

@@ -5,6 +5,18 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.4](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.3...buhbot-v0.21.4) (2026-03-01)
+
+
+### Bug Fixes
+
+* Add GH_TOKEN env for gh CLI in release-please ([#231](https://github.com/maslennikov-ig/BuhBot/issues/231)) ([e966f1a](https://github.com/maslennikov-ig/BuhBot/commit/e966f1a5fa22ac1d2e01c13fdcea325a0d81094d))
+* Correct GitHub API endpoint for listCommitFiles ([#227](https://github.com/maslennikov-ig/BuhBot/issues/227)) ([a70a24d](https://github.com/maslennikov-ig/BuhBot/commit/a70a24d3151d55c7da984d8b2dcb3d09e8b76125))
+* improve release workflow - sequential pipeline with path filtering ([#226](https://github.com/maslennikov-ig/BuhBot/issues/226)) ([7111cb7](https://github.com/maslennikov-ig/BuhBot/commit/7111cb7ca81c161c76543dc8231b612d1c9b7138))
+* Simplify release-please workflow - remove manual file check ([#232](https://github.com/maslennikov-ig/BuhBot/issues/232)) ([466e0c3](https://github.com/maslennikov-ig/BuhBot/commit/466e0c3b5c5fe93fc5514a9b77eb481b2e6b7dea))
+* Use gh CLI and correct workflow_run SHA ([#230](https://github.com/maslennikov-ig/BuhBot/issues/230)) ([2c78350](https://github.com/maslennikov-ig/BuhBot/commit/2c78350bc6394a46c2ab218a330ebc124578956b))
+* Use github.request() for listing commit files ([#229](https://github.com/maslennikov-ig/BuhBot/issues/229)) ([443b145](https://github.com/maslennikov-ig/BuhBot/commit/443b1458dd649c80272ee96ac18921e5a0673add))
+
 ## [0.21.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.2...buhbot-v0.21.3) (2026-02-27)
 
 

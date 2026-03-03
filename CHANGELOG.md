@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.4...buhbot-v0.22.0) (2026-03-03)
+
+
+### Features
+
+* **sla:** manager multi-select dropdown ([#224](https://github.com/maslennikov-ig/BuhBot/issues/224)) ([15d7dbd](https://github.com/maslennikov-ig/BuhBot/commit/15d7dbdf5acbbbcafc2905516841a933e869bcc8))
+
 ## [0.21.4](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.3...buhbot-v0.21.4) (2026-03-01)
 
 

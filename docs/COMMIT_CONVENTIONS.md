@@ -24,19 +24,19 @@ All agents and contributors MUST follow these rules when writing commit messages
 
 ### Allowed Types
 
-| Type       | Changelog / Release Please | Use for                                |
-| ---------- | -------------------------- | -------------------------------------- |
-| `feat`     | **Added** (minor bump)     | New user-facing or API feature         |
-| `fix`      | **Fixed** (patch bump)     | Bug fix                                |
-| `docs`     | Often omitted or "Other"   | Documentation only                     |
-| `refactor` | Often omitted or "Changed" | Code change, no behavior/API change    |
-| `test`     | Omitted                    | Adding or updating tests               |
-| `build`    | Omitted                    | Build system, dependencies             |
-| `chore`    | Omitted                    | Build, config, deps, tooling           |
-| `style`    | Omitted                    | Formatting, whitespace, no code change |
-| `perf`     | **Changed** (patch)        | Performance improvement                |
-| `ci`       | Omitted                    | CI/config changes                      |
-| `revert`   | Omitted                    | Reverting a previous commit            |
+| Type       | Changelog Section       | Use for                                |
+| ---------- | ---------------------- | -------------------------------------- |
+| `feat`     | **Features** (minor)   | New user-facing or API feature         |
+| `fix`      | **Bug Fixes** (patch)  | Bug fix                                |
+| `docs`     | **Documentation**     | Documentation only                     |
+| `refactor` | **Refactoring**        | Code change, no behavior/API change    |
+| `test`     | (hidden)               | Adding or updating tests               |
+| `build`    | (hidden)               | Build system, dependencies             |
+| `chore`    | **Maintenance**        | Build, config, deps, tooling           |
+| `style`    | (hidden)               | Formatting, whitespace, no code change |
+| `perf`     | **Performance**         | Performance improvement                |
+| `ci`       | (hidden)               | CI/config changes                      |
+| `revert`   | **Reverts**            | Reverting a previous commit            |
 
 ### Allowed Subject Cases
 
@@ -115,14 +115,16 @@ feat: Add new feature.                     # Period at end; not imperative
 
 ## 3. Keep a Changelog Mapping
 
-This project uses [Keep a Changelog](https://keepachangelog.com/). Commit types map roughly as follows:
+This project uses [Keep a Changelog](https://keepachangelog.com/) with custom sections configured in [`release-please-config.json`](../../release-please-config.json). Commit types map as follows:
 
-- **Added** ← `feat`
-- **Changed** ← `refactor`, `perf`, or breaking changes
-- **Fixed** ← `fix`
-- **Removed** ← breaking removals
-- **Security** ← security-related `fix` or `feat`
-- **Other** ← `docs`, `chore`, `style`, `test`, `ci`, `build`, `revert` (or as configured by the release tool)
+- **Features** ← `feat` (minor version bump)
+- **Bug Fixes** ← `fix` (patch version bump)
+- **Performance** ← `perf` (patch version bump)
+- **Refactoring** ← `refactor`
+- **Documentation** ← `docs`
+- **Maintenance** ← `chore`
+- **Reverts** ← `revert`
+- **(hidden)** ← `test`, `build`, `ci`, `style`
 
 Release Please (or the release script) uses these mappings when generating `CHANGELOG.md` and release notes.
 
@@ -150,7 +152,38 @@ Use the format your issue tracker expects (e.g. `gh-42`, `#42`, `buh-xxx`).
 
 ## 6. Enforcement
 
-- **Release process:** Releases and CHANGELOG are created by Release Please when changes are merged to `main`. Conventional commits drive CHANGELOG and version bumps. Do not rely on manual `/push` for normal releases.
+- **Release process:** Releases and CHANGELOG are created by Release Please when changes are merged to `main`. The workflow waits for CI to complete, then creates/updates a release PR. When that PR is merged, the release is published and production deployment is triggered automatically (only if a version bump occurred). **Documentation-only changes** (markdown files in `docs/`, root `.md` files) will run through CI but will NOT create a release PR or trigger deployment. This optimization saves resources and prevents unnecessary releases for non-code changes. Conventional commits drive CHANGELOG and version bumps. Do not rely on manual `/push` for normal releases.
 - **commitlint** runs on `commit-msg` (Husky) to enforce format locally. Config: `commitlint.config.js`.
 - **CI** runs `pnpm format:check` as a safety net; it may run commitlint on PRs as a backup.
 - **Agents** MUST use the `format-commit-message` skill (or these rules) for every commit, including when using `/push patch -m "..."`.
+
+## 7. AI & Squash Merge Guidelines
+
+See: [Release-Please: How can I fix release notes?](https://github.com/googleapis/release-please/tree/main#how-can-i-fix-release-notes)
+
+### BEGIN_COMMIT_OVERRIDE Pattern
+
+For PRs with multiple changes, wrap additional commits:
+
+```
+feat: add new feature
+
+BEGIN_COMMIT_OVERRIDE
+fix: fix bug in existing feature
+chore: update dependencies
+END_COMMIT_OVERRIDE
+```
+
+### Multiple Commits in Body
+
+Each line with `type(scope):` in body is parsed as separate commit:
+
+```
+feat: primary feature
+
+fix(ci): unmask test failures
+fix(db): apply migrations
+refactor(sla): improve patterns
+
+Refs: issue-id
+```

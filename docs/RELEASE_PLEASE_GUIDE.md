@@ -203,6 +203,32 @@ END_COMMIT_OVERRIDE
 
 Each line between the markers must be a valid conventional commit message. Scope is optional — both `feat(api): description` and `feat: description` work.
 
+> **🚨 CRITICAL: Do NOT use bullet points (`* `) before commit lines!**
+>
+> This is the #1 cause of override failure. When GitHub generates the squash merge body,
+> it formats the list of squashed commits with `* ` prefix (markdown bullet points).
+> Release-please's conventional commit parser does NOT recognize lines starting with `* `.
+>
+> **WRONG** (silently ignored — falls back to PR title only):
+> ```
+> BEGIN_COMMIT_OVERRIDE
+> * fix(ci): unmask test failures
+> * feat(sla): add dropdown
+> END_COMMIT_OVERRIDE
+> ```
+>
+> **CORRECT** (each line parsed as a separate conventional commit):
+> ```
+> BEGIN_COMMIT_OVERRIDE
+> fix(ci): unmask test failures
+> feat(sla): add dropdown
+> END_COMMIT_OVERRIDE
+> ```
+>
+> **What happened in v0.22.0**: PR #224 used the `* ` format. Release-please couldn't parse
+> any override line, fell back to the PR title `feat(sla): manager multi-select dropdown`,
+> and 5 out of 6 entries were silently lost from the changelog.
+
 ### When to Use It
 
 - When a single squash-merged PR contains **multiple conventional commits** that should each be recorded separately in the changelog
@@ -254,6 +280,17 @@ The version bump is **MINOR** (due to `feat:`), not PATCH (which the PR title's 
 | **Breaking changes** | Include `BREAKING CHANGE: description` as a footer, or use `!` suffix |
 | **Blank lines** | Avoid blank lines between the markers |
 
+### Known Pitfalls
+
+| Pitfall | Symptom | Fix |
+|---|---|---|
+| `* ` bullet prefix on lines | Override silently ignored, only PR title in changelog | Remove `* ` prefix from each line |
+| Markdown formatting (bold, backticks) | Lines fail to parse | Use plain text only |
+| Extra blank lines between entries | Some entries skipped | No blank lines between commits |
+| Markers inside code blocks (`\`\`\``) | Markers not detected | Put markers outside code blocks |
+| Trailing whitespace on marker lines | Markers not detected | No spaces after `BEGIN_COMMIT_OVERRIDE` or `END_COMMIT_OVERRIDE` |
+| Using PR description instead of merge commit body | GitHub may reformat/truncate | Always verify in the merge dialog |
+
 ### PR Description vs. Merge Commit Body
 
 > **⚠️ Warning:** The PR description on GitHub (what you see in the PR UI) is **not the same** as the commit message. Release-please reads **commit messages** from the Git history, not PR descriptions.
@@ -261,6 +298,57 @@ The version bump is **MINOR** (due to `feat:`), not PATCH (which the PR title's 
 > **However**, with squash-and-merge, GitHub copies the PR description into the commit body by default. So if you add the override markers to the PR description **before** merging, they will end up in the commit body.
 >
 > You can also edit the extended description directly in the merge dialog at merge time.
+
+### How to Verify Override Worked
+
+After merging, check the commit body on main:
+
+```bash
+git log --format="%b" -1 <merge-commit-sha>
+```
+
+Then check the release-please PR — it should show MULTIPLE entries in the changelog section.
+
+If only the PR title appears:
+1. The override format was incorrect (check for `* ` prefix)
+2. Close and reopen the release-please PR to force re-processing
+3. Or push a correcting empty commit with proper override format
+
+### Real Failure Case: v0.22.0 (PR #224)
+
+**What was attempted**: The merge commit `15d7dbdf5a` included:
+```
+BEGIN_COMMIT_OVERRIDE
+* fix(ci): unmask test failures and fix hidden bugs (buh-bt0)
+* fix(db): apply 6 pending migrations to production (buh-1jc)
+* fix(monitoring): wire error capture and alerts
+* feat(sla): manager multi-select dropdown
+* fix(sla): address code review findings
+* refactor(sla): improve pattern consistency
+END_COMMIT_OVERRIDE
+```
+
+**What release-please produced**: Only 1 entry in v0.22.0 changelog:
+```
+### Features
+* **sla:** manager multi-select dropdown (#224)
+```
+
+**Root cause**: Every line inside the override started with `* ` (markdown bullet point). The conventional commit parser expected lines starting with `type(scope):` but got `* type(scope):`. All 6 lines failed to parse, so release-please fell back to the PR title (`feat(sla): manager multi-select dropdown`).
+
+**Lost entries**: 3 fix commits, 1 refactor commit — all silently dropped from the changelog.
+
+**Correct format would have been**:
+```
+BEGIN_COMMIT_OVERRIDE
+fix(ci): unmask test failures and fix hidden bugs (buh-bt0)
+fix(db): apply 6 pending migrations to production (buh-1jc)
+fix(monitoring): wire error capture and alerts
+feat(sla): manager multi-select dropdown
+fix(sla): address code review findings
+refactor(sla): improve pattern consistency
+END_COMMIT_OVERRIDE
+```
 
 ---
 

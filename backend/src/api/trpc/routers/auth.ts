@@ -350,6 +350,11 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }) => {
       // DEV_MODE: Create user directly in DB without Supabase invite
       if (isDevMode) {
+        const existing = await ctx.prisma.user.findUnique({ where: { email: input.email } });
+        if (existing) {
+          throw new Error('Пользователь с таким email уже существует');
+        }
+
         const devUserId = crypto.randomUUID();
         const newUser = await ctx.prisma.user.create({
           data: {

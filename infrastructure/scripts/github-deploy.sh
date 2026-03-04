@@ -465,22 +465,14 @@ rollback() {
         if [ -n "$previous_commit" ] && [ "$previous_commit" != "null" ]; then
             log_info "Rolling back to commit: $previous_commit"
 
-            # Check if previous images exist before re-tagging
-            if ! docker image inspect "buhbot-backend:${previous_commit}" &>/dev/null; then
-                log_warning "Previous image buhbot-backend:${previous_commit} not found locally"
-                log_warning "Attempting to use :latest tag for rollback"
-                # Skip re-tag, rely on :latest
-            fi
-
-            # Re-tag previous images if available
-            if docker images -q "buhbot-backend:${previous_commit}" &>/dev/null; then
+            # Re-tag previous images if available, otherwise use :latest
+            if docker image inspect "buhbot-backend:${previous_commit}" &>/dev/null; then
                 docker tag "buhbot-backend:${previous_commit}" "buhbot-backend:latest" || true
-            fi
-            if docker images -q "buhbot-frontend:${previous_commit}" &>/dev/null; then
                 docker tag "buhbot-frontend:${previous_commit}" "buhbot-frontend:latest" || true
-            fi
-            if docker images -q "buhbot-monitoring:${previous_commit}" &>/dev/null; then
                 docker tag "buhbot-monitoring:${previous_commit}" "buhbot-monitoring:latest" || true
+            else
+                log_warning "Previous images for ${previous_commit} not found locally"
+                log_warning "Using current :latest tag for rollback"
             fi
         fi
     fi

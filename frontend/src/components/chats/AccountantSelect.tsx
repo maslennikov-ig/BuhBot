@@ -201,6 +201,10 @@ export function AccountantSelect({
           className="w-[--radix-popover-trigger-width] p-0 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg shadow-black/10"
           align="start"
           sideOffset={4}
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            inputRef.current?.focus();
+          }}
         >
           {/* Search Input */}
           <div className="p-2 border-b border-[var(--buh-border)]">

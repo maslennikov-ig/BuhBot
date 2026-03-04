@@ -33,9 +33,14 @@ echo "🔄 Applying database migrations..."
     echo "⚠️  Migration failed — database may need manual setup. Try: cd backend && npx prisma db push"
 }
 
-# 3b. Seed database if empty (check Settings table)
+# 3b. Seed database if empty (check GlobalSettings table via tsx)
 echo "🌱 Checking if database needs seeding..."
-SEED_CHECK=$(cd backend && npx prisma db execute --stdin --schema=prisma/schema.prisma <<< "SELECT COUNT(*) as cnt FROM \"GlobalSettings\"" 2>/dev/null | grep -o '[0-9]*' | head -1)
+SEED_CHECK=$(cd backend && npx tsx -e "
+import { PrismaClient } from '@prisma/client';
+const p = new PrismaClient();
+try { const c = await p.globalSettings.count(); console.log(c); } catch { console.log('0'); }
+await p.\$disconnect();
+" 2>/dev/null)
 if [ "$SEED_CHECK" = "0" ] || [ -z "$SEED_CHECK" ]; then
     echo "📦 Seeding database with test data..."
     (cd backend && npx prisma db seed) || echo "⚠️  Seed failed — try: cd backend && npm run prisma:seed"

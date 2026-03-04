@@ -60,7 +60,9 @@ export function AccountantSelect({
 }: AccountantSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [focusedIndex, setFocusedIndex] = React.useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const listRef = React.useRef<HTMLUListElement>(null);
 
   // Fetch accountants if not provided (assume 'manager' and 'admin' roles are for accountants)
   const { data: fetchedUsers, isLoading } = trpc.user.list.useQuery(
@@ -99,14 +101,50 @@ export function AccountantSelect({
     }
   }, [isOpen]);
 
+  // Reset focused index when search query changes
+  React.useEffect(() => {
+    setFocusedIndex(-1);
+  }, [searchQuery]);
+
+  // Scroll focused option into view
+  React.useEffect(() => {
+    if (focusedIndex >= 0 && listRef.current) {
+      const el = listRef.current.querySelector(`[data-option-index="${focusedIndex}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [focusedIndex]);
+
   // Handle keyboard navigation
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
       setIsOpen(false);
       setSearchQuery('');
+      setFocusedIndex(-1);
     }
     if (event.key === 'Enter' && !isOpen) {
       setIsOpen(true);
+    }
+    if (!isOpen) return;
+
+    // "Не назначен" (index 0) + filteredAccountants
+    const optionCount = 1 + filteredAccountants.length;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setFocusedIndex((prev) => (prev + 1) % optionCount);
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setFocusedIndex((prev) => (prev <= 0 ? optionCount - 1 : prev - 1));
+    }
+    if (event.key === 'Enter' && focusedIndex >= 0) {
+      event.preventDefault();
+      if (focusedIndex === 0) {
+        handleSelect(null);
+      } else {
+        handleSelect(filteredAccountants[focusedIndex - 1].id);
+      }
+      setFocusedIndex(-1);
     }
   };
 
@@ -117,11 +155,12 @@ export function AccountantSelect({
     setSearchQuery('');
   };
 
-  // Clear search when popover closes
+  // Clear search and reset focus when popover closes
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
       setSearchQuery('');
+      setFocusedIndex(-1);
     }
   };
 
@@ -213,6 +252,7 @@ export function AccountantSelect({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Поиск..."
               className={cn(
                 'w-full rounded-md border px-3 py-2 text-sm',
@@ -225,6 +265,7 @@ export function AccountantSelect({
 
           {/* Options List */}
           <ul
+            ref={listRef}
             id="accountant-select-listbox"
             role="listbox"
             className="max-h-60 overflow-y-auto py-1 buh-scrollbar"
@@ -233,13 +274,15 @@ export function AccountantSelect({
             <li
               role="option"
               aria-selected={value === null}
+              data-option-index={0}
               onClick={() => handleSelect(null)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 cursor-pointer',
                 'transition-colors duration-150',
                 value === null
                   ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]'
-                  : 'hover:bg-[var(--buh-surface-elevated)]'
+                  : 'hover:bg-[var(--buh-surface-elevated)]',
+                focusedIndex === 0 && 'bg-[var(--buh-surface-elevated)]'
               )}
             >
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)] border border-dashed border-[var(--buh-border)]">
@@ -253,18 +296,20 @@ export function AccountantSelect({
 
             {/* Accountant Options */}
             {filteredAccountants.length > 0 ? (
-              filteredAccountants.map((accountant) => (
+              filteredAccountants.map((accountant, idx) => (
                 <li
                   key={accountant.id}
                   role="option"
                   aria-selected={value === accountant.id}
+                  data-option-index={idx + 1}
                   onClick={() => handleSelect(accountant.id)}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 cursor-pointer',
                     'transition-colors duration-150',
                     value === accountant.id
                       ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]'
-                      : 'hover:bg-[var(--buh-surface-elevated)]'
+                      : 'hover:bg-[var(--buh-surface-elevated)]',
+                    focusedIndex === idx + 1 && 'bg-[var(--buh-surface-elevated)]'
                   )}
                 >
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[var(--buh-accent)] to-[var(--buh-primary)]">

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
-import { authedProcedure, router } from '../trpc.js';
+import { authedProcedure, managerProcedure, router } from '../trpc.js';
 import { telegramAuthService } from '../../../services/telegram/auth.service.js';
 import { isRateLimited } from '../../../services/telegram/rate-limiter.js';
 import logger from '../../../utils/logger.js';
@@ -175,6 +175,8 @@ export const userRouter = router({
           fullName: true,
           email: true,
           role: true,
+          telegramId: true,
+          telegramUsername: true,
         },
         orderBy: { fullName: 'asc' },
       });
@@ -183,6 +185,110 @@ export const userRouter = router({
         `[DEBUG] user.list finished in ${Date.now() - start}ms. Found ${users.length} users.`
       );
 
-      return users;
+      return users.map((u) => ({
+        ...u,
+        telegramId: u.telegramId ? u.telegramId.toString() : null,
+      }));
+    }),
+
+  /**
+   * Verify Telegram username and link to user
+   * Looks up telegram_user_id from chat_messages, sends verification message, updates User record
+   */
+  verifyTelegramUsername: managerProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        username: z
+          .string()
+          .min(5)
+          .max(32)
+          .regex(/^@?[a-z0-9][a-z0-9_]{3,30}[a-z0-9]$/i, 'Неверный формат Telegram username'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 1. Check user exists
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, fullName: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Пользователь не найден',
+        });
+      }
+
+      // 2. Normalize username
+      const normalizedUsername = input.username.replace(/^@/, '').toLowerCase();
+
+      // 3. Lookup telegram_user_id from chat_messages
+      const messageWithTgId = await ctx.prisma.chatMessage.findFirst({
+        where: {
+          username: { equals: normalizedUsername, mode: 'insensitive' },
+        },
+        select: { telegramUserId: true },
+        orderBy: { telegramDate: 'desc' },
+      });
+
+      if (!messageWithTgId) {
+        return { success: false as const, error: 'user_not_found_in_messages' as const };
+      }
+
+      const telegramUserId = messageWithTgId.telegramUserId;
+
+      // 4. Check for conflicting TelegramAccount (CR-02)
+      const conflictingAccount = await ctx.prisma.telegramAccount.findUnique({
+        where: { telegramId: telegramUserId },
+      });
+
+      if (conflictingAccount && conflictingAccount.userId !== input.userId) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Этот Telegram аккаунт уже привязан к другому пользователю',
+        });
+      }
+
+      // 5. Try to send verification message
+      const { telegramClient } = await import('../../../bot/telegram-client.js');
+      try {
+        await telegramClient.sendMessage(
+          telegramUserId.toString(),
+          'Вы были добавлены как менеджер SLA-уведомлений для системы BuhBot.\n\nЕсли это ошибка, обратитесь к администратору.'
+        );
+      } catch (sendError: unknown) {
+        // Detect Telegram API error codes structurally (CR-03)
+        const isTelegramError = (e: unknown): e is { response?: { error_code?: number } } =>
+          typeof e === 'object' && e !== null;
+
+        if (isTelegramError(sendError)) {
+          const code = sendError.response?.error_code;
+          if (code === 403 || code === 400) {
+            return { success: false as const, error: 'bot_blocked' as const };
+          }
+        }
+        throw sendError;
+      }
+
+      // 6. Update User record
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          telegramId: telegramUserId,
+          telegramUsername: normalizedUsername,
+        },
+      });
+
+      logger.info('[Audit] Telegram username verified and linked', {
+        userId: input.userId,
+        telegramUsername: normalizedUsername,
+        telegramUserId: telegramUserId.toString(),
+      });
+
+      return {
+        success: true as const,
+        telegramId: telegramUserId.toString(),
+      };
     }),
 });

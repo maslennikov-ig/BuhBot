@@ -1,24 +1,25 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Loader2, Save, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { ManagerMultiSelect } from '@/components/chats/ManagerMultiSelect';
+import { TelegramAuthModal } from '@/components/chats/TelegramAuthModal';
 
 const formSchema = z.object({
-  ids: z.string().describe('Comma separated IDs'),
+  ids: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export function SlaManagerSettingsForm() {
+  const [pendingUser, setPendingUser] = React.useState<{ id: string; name: string } | null>(null);
   const utils = trpc.useUtils();
   const { data: settings, isLoading } = trpc.settings.getGlobalSettings.useQuery();
   const updateSettings = trpc.settings.updateGlobalSettings.useMutation({
@@ -34,7 +35,7 @@ export function SlaManagerSettingsForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      ids: '',
+      ids: [],
     },
   });
 
@@ -42,19 +43,14 @@ export function SlaManagerSettingsForm() {
   React.useEffect(() => {
     if (settings) {
       form.reset({
-        ids: settings.globalManagerIds.join(', '),
+        ids: settings.globalManagerIds,
       });
     }
   }, [settings, form]);
 
   const onSubmit = (data: FormValues) => {
-    const ids = data.ids
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => /^\d+$/.test(s));
-
     updateSettings.mutate({
-      globalManagerIds: ids,
+      globalManagerIds: data.ids,
     });
   };
 
@@ -86,18 +82,23 @@ export function SlaManagerSettingsForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="manager-ids">Telegram ID менеджеров (через запятую)</Label>
-            <Input
-              id="manager-ids"
-              placeholder="123456789, 987654321"
-              {...form.register('ids')}
-              className="bg-[var(--buh-surface-elevated)]"
-            />
-            <p className="text-sm text-[var(--buh-foreground-muted)]">
-              Персональные Telegram ID менеджеров (не группы). ID можно узнать через @getmyid_bot.
-            </p>
-          </div>
+          <Controller
+            control={form.control}
+            name="ids"
+            render={({ field }) => (
+              <div className="space-y-2">
+                <ManagerMultiSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  onSelectUserWithoutTelegram={(user) => setPendingUser(user)}
+                />
+                <p className="text-sm text-[var(--buh-foreground-muted)]">
+                  Глобальные менеджеры для SLA-уведомлений. Используются для чатов без назначенных
+                  менеджеров.
+                </p>
+              </div>
+            )}
+          />
 
           <div className="flex justify-end pt-4">
             <Button
@@ -114,6 +115,18 @@ export function SlaManagerSettingsForm() {
             </Button>
           </div>
         </form>
+
+        {/* TelegramAuthModal for users without linked Telegram */}
+        <TelegramAuthModal
+          open={!!pendingUser}
+          user={pendingUser}
+          onClose={() => setPendingUser(null)}
+          onSuccess={(telegramId) => {
+            const current = form.getValues('ids');
+            form.setValue('ids', [...current, telegramId], { shouldDirty: true });
+            setPendingUser(null);
+          }}
+        />
       </CardContent>
     </Card>
   );

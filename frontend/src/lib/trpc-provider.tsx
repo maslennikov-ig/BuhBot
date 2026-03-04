@@ -49,8 +49,19 @@ export function TRPCProvider({ children }: TRPCProviderProps) {
             refetchOnWindowFocus: true,
           },
           mutations: {
-            // Don't retry mutations by default
             retry: false,
+            onError: (error) => {
+              if (
+                process.env.NEXT_PUBLIC_DEV_MODE === 'true' &&
+                process.env.NODE_ENV === 'development'
+              ) {
+                console.error('[DEV MODE] Mutation failed:', error.message);
+                if (typeof window !== 'undefined') {
+                  const msg = `API Error: ${error.message}`;
+                  console.warn(`%c${msg}`, 'color: red; font-weight: bold; font-size: 14px;');
+                }
+              }
+            },
           },
         },
       })

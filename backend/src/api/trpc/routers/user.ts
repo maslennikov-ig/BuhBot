@@ -236,6 +236,7 @@ export const userRouter = router({
         return { success: false as const, error: 'user_not_found_in_messages' as const };
       }
 
+      // telegramUserId is non-nullable BigInt in schema — null check not needed after findFirst guard
       const telegramUserId = messageWithTgId.telegramUserId;
 
       // 4. Check for conflicting TelegramAccount (CR-02)
@@ -251,6 +252,7 @@ export const userRouter = router({
       }
 
       // 5. Try to send verification message
+      // Dynamic import to avoid circular: user.ts → telegram-client → bot → trpc → user.ts
       const { telegramClient } = await import('../../../bot/telegram-client.js');
       try {
         await telegramClient.sendMessage(

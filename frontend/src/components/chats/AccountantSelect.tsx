@@ -5,6 +5,7 @@
  *
  * Dropdown component for selecting an accountant to assign to a chat.
  * Supports unassign option (null value).
+ * Uses Radix Popover (portal) to escape CSS stacking contexts.
  *
  * @module components/chats/AccountantSelect
  */
@@ -13,6 +14,7 @@ import * as React from 'react';
 import { ChevronDown, User, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 // ============================================
 // TYPES
@@ -46,6 +48,7 @@ type AccountantSelectProps = {
  * - Option to unassign (clear selection)
  * - Shows accountant name and email
  * - Keyboard navigation support
+ * - Radix Popover portal to avoid stacking context issues
  */
 export function AccountantSelect({
   value,
@@ -57,7 +60,6 @@ export function AccountantSelect({
 }: AccountantSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch accountants if not provided (assume 'manager' and 'admin' roles are for accountants)
@@ -90,19 +92,6 @@ export function AccountantSelect({
     );
   }, [accountants, searchQuery]);
 
-  // Close dropdown when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Focus input when dropdown opens
   React.useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -128,85 +117,90 @@ export function AccountantSelect({
     setSearchQuery('');
   };
 
+  // Clear search when popover closes
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setSearchQuery('');
+    }
+  };
+
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
-      {/* Trigger Container */}
-      <div
-        role="combobox"
-        tabIndex={disabled ? -1 : 0}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
-        aria-disabled={disabled}
-        className={cn(
-          'flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5',
-          'bg-[var(--buh-surface)] border-[var(--buh-border)]',
-          'text-sm text-left',
-          'transition-all duration-200',
-          'focus:outline-none focus:border-[var(--buh-accent)] focus:ring-2 focus:ring-[var(--buh-accent-glow)]',
-          disabled && 'opacity-50 cursor-not-allowed',
-          !disabled && 'hover:border-[var(--buh-foreground-subtle)] cursor-pointer',
-          isOpen && 'border-[var(--buh-accent)] ring-2 ring-[var(--buh-accent-glow)]'
-        )}
-        aria-expanded={isOpen}
-        aria-controls="accountant-select-listbox"
-        aria-haspopup="listbox"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          {isLoading && !selectedAccountant ? (
-            <div className="flex items-center gap-2 text-[var(--buh-foreground-muted)]">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Загрузка...</span>
-            </div>
-          ) : selectedAccountant ? (
-            <>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] shrink-0">
-                <User className="h-3.5 w-3.5 text-[var(--buh-primary)]" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-medium text-[var(--buh-foreground)]">
-                  {selectedAccountant.name}
-                </p>
-              </div>
-            </>
-          ) : (
-            <span className="text-[var(--buh-foreground-subtle)]">{placeholder}</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Clear button */}
-          {selectedAccountant && !disabled && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelect(null);
-              }}
-              className="flex h-5 w-5 items-center justify-center rounded hover:bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
-              aria-label="Очистить выбор"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <ChevronDown
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
+      <div className={className}>
+        {/* Trigger Container */}
+        <PopoverTrigger asChild>
+          <div
+            role="combobox"
+            tabIndex={disabled ? -1 : 0}
+            onKeyDown={handleKeyDown}
+            aria-disabled={disabled}
             className={cn(
-              'h-4 w-4 text-[var(--buh-foreground-muted)] transition-transform duration-200',
-              isOpen && 'rotate-180'
+              'flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5',
+              'bg-[var(--buh-surface)] border-[var(--buh-border)]',
+              'text-sm text-left',
+              'transition-all duration-200',
+              'focus:outline-none focus:border-[var(--buh-accent)] focus:ring-2 focus:ring-[var(--buh-accent-glow)]',
+              disabled && 'opacity-50 cursor-not-allowed',
+              !disabled && 'hover:border-[var(--buh-foreground-subtle)] cursor-pointer',
+              isOpen && 'border-[var(--buh-accent)] ring-2 ring-[var(--buh-accent-glow)]'
             )}
-          />
-        </div>
-      </div>
+            aria-expanded={isOpen}
+            aria-controls="accountant-select-listbox"
+            aria-haspopup="listbox"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {isLoading && !selectedAccountant ? (
+                <div className="flex items-center gap-2 text-[var(--buh-foreground-muted)]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Загрузка...</span>
+                </div>
+              ) : selectedAccountant ? (
+                <>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] shrink-0">
+                    <User className="h-3.5 w-3.5 text-[var(--buh-primary)]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-[var(--buh-foreground)]">
+                      {selectedAccountant.name}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <span className="text-[var(--buh-foreground-subtle)]">{placeholder}</span>
+              )}
+            </div>
 
-      {/* Dropdown Panel */}
-      {isOpen && (
-        <div
-          className={cn(
-            'absolute z-[1000] mt-1 w-full rounded-lg border',
-            'bg-[var(--buh-surface)] border-[var(--buh-border)]',
-            'shadow-lg shadow-black/10',
-            'buh-animate-fade-in-up'
-          )}
-          style={{ animationDuration: '0.15s' }}
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Clear button */}
+              {selectedAccountant && !disabled && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelect(null);
+                  }}
+                  className="flex h-5 w-5 items-center justify-center rounded hover:bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)] hover:text-[var(--buh-foreground)]"
+                  aria-label="Очистить выбор"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 text-[var(--buh-foreground-muted)] transition-transform duration-200',
+                  isOpen && 'rotate-180'
+                )}
+              />
+            </div>
+          </div>
+        </PopoverTrigger>
+
+        {/* Dropdown Panel */}
+        <PopoverContent
+          className="w-[--radix-popover-trigger-width] p-0 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg shadow-black/10"
+          align="start"
+          sideOffset={4}
         >
           {/* Search Input */}
           <div className="p-2 border-b border-[var(--buh-border)]">
@@ -301,9 +295,9 @@ export function AccountantSelect({
               </li>
             )}
           </ul>
-        </div>
-      )}
-    </div>
+        </PopoverContent>
+      </div>
+    </Popover>
   );
 }
 

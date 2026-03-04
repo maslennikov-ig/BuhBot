@@ -27,6 +27,22 @@ done
 
 echo "✅ Redis started on localhost:$REDIS_PORT"
 
+# 3a. Apply database migrations
+echo "🔄 Applying database migrations..."
+(cd backend && npx prisma migrate deploy --schema=prisma/schema.prisma 2>&1) || {
+    echo "⚠️  Migration failed — database may need manual setup. Try: cd backend && npx prisma db push"
+}
+
+# 3b. Seed database if empty (check Settings table)
+echo "🌱 Checking if database needs seeding..."
+SEED_CHECK=$(cd backend && npx prisma db execute --stdin --schema=prisma/schema.prisma <<< "SELECT COUNT(*) as cnt FROM \"GlobalSettings\"" 2>/dev/null | grep -o '[0-9]*' | head -1)
+if [ "$SEED_CHECK" = "0" ] || [ -z "$SEED_CHECK" ]; then
+    echo "📦 Seeding database with test data..."
+    (cd backend && npx prisma db seed) || echo "⚠️  Seed failed — try: cd backend && npm run prisma:seed"
+else
+    echo "✅ Database already seeded (found $SEED_CHECK settings records)"
+fi
+
 # Cleanup function
 cleanup() {
     echo ""

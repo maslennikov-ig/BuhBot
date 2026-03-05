@@ -34,8 +34,9 @@ import logger from '../../utils/logger.js';
 interface ContextUser {
   id: string; // UUID from Supabase Auth
   email: string; // User email
-  role: 'admin' | 'manager' | 'observer'; // Role for RBAC
+  role: 'admin' | 'manager' | 'observer' | 'accountant'; // Role for RBAC
   fullName: string; // Display name
+  isActive: boolean; // Account active status
 }
 
 /**
@@ -49,6 +50,7 @@ const DEV_MODE_USER: ContextUser = {
   email: env.DEV_USER_EMAIL || 'admin@buhbot.local',
   role: 'admin',
   fullName: 'DEV Admin',
+  isActive: true,
 };
 
 /**
@@ -184,6 +186,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         email: true,
         fullName: true,
         role: true,
+        isActive: true,
       },
     });
     logger.debug(`[CTX:${reqId}] prisma.user.findUnique() completed in ${Date.now() - dbStart}ms`);
@@ -206,7 +209,8 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         id: dbUser.id,
         email: dbUser.email,
         fullName: dbUser.fullName,
-        role: dbUser.role as 'admin' | 'manager' | 'observer',
+        role: dbUser.role as 'admin' | 'manager' | 'observer' | 'accountant',
+        isActive: dbUser.isActive,
       },
       session: {
         accessToken: token,

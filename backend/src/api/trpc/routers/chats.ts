@@ -15,7 +15,8 @@
  */
 
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
-import { requireChatAccess } from '../authorization.js';
+import { requireChatAccessWithScoping } from '../authorization.js';
+import { getScopedChatIds } from '../helpers/scoping.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
@@ -83,9 +84,10 @@ export const chatsRouter = router({
         where.slaEnabled = input.slaEnabled;
       }
 
-      // Observer role: restrict to assigned chats only (gh-185)
-      if (ctx.user.role === 'observer') {
-        where.assignedAccountantId = ctx.user.id;
+      // Role-based scoping: admin sees all, manager sees managed accountants' chats, accountant/observer sees own
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null) {
+        where.id = { in: scopedChatIds };
       }
 
       // Filter out disabled/migrated chats by default (gh-185)
@@ -218,7 +220,9 @@ export const chatsRouter = router({
         });
       }
 
-      requireChatAccess(ctx.user, chat);
+      // Role-based scoping (managers see only managed accountants' chats)
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      requireChatAccessWithScoping(ctx.user, chat.id, scopedChatIds);
 
       // Resolve verification status for accountant usernames
       let accountantVerification: { username: string; found: boolean; hasTelegramId: boolean }[] =
@@ -324,7 +328,9 @@ export const chatsRouter = router({
         });
       }
 
-      requireChatAccess(ctx.user, chat);
+      // Role-based scoping (managers see only managed accountants' chats)
+      const scopedIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      requireChatAccessWithScoping(ctx.user, chat.id, scopedIds);
 
       return {
         chat: {
@@ -475,6 +481,31 @@ export const chatsRouter = router({
           // Build update data from optional fields
           const data: Prisma.ChatUncheckedUpdateInput = {};
           if (input.assignedAccountantId !== undefined) {
+            // Validate accountant has completed onboarding (Telegram linked)
+            if (input.assignedAccountantId !== null) {
+              const assignee = await tx.user.findUnique({
+                where: { id: input.assignedAccountantId },
+                select: { isOnboardingComplete: true, isActive: true, fullName: true },
+              });
+              if (!assignee) {
+                throw new TRPCError({
+                  code: 'NOT_FOUND',
+                  message: 'Назначаемый пользователь не найден',
+                });
+              }
+              if (!assignee.isActive) {
+                throw new TRPCError({
+                  code: 'BAD_REQUEST',
+                  message: `Пользователь "${assignee.fullName}" деактивирован`,
+                });
+              }
+              if (!assignee.isOnboardingComplete) {
+                throw new TRPCError({
+                  code: 'BAD_REQUEST',
+                  message: `Пользователь "${assignee.fullName}" не завершил онбординг (не привязан Telegram)`,
+                });
+              }
+            }
             data.assignedAccountantId = input.assignedAccountantId;
           }
           if (input.slaEnabled !== undefined) {
@@ -1034,7 +1065,7 @@ export const chatsRouter = router({
    * @param id - Chat ID (Telegram chat ID)
    * @returns Success status
    * @throws NOT_FOUND if chat doesn't exist
-   * @authorization Admins only
+   * @authorization Admins and managers only
    */
   delete: managerProcedure
     .input(

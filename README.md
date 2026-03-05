@@ -160,7 +160,8 @@ pnpm type-check
 
 ## 📖 Документация
 
-- [Release process](docs/infrastructure/release-process.md) — how releases and CHANGELOG are created (Release Please)
+- [Release process](docs/infrastructure/release-process.md) — how releases and CHANGELOG are created (Release Please with custom changelog sections, path filtering for docs-only changes)
+- [CI/CD Workflow Optimization (ADR-003)](docs/adr/003-ci-cd-workflow-optimization.md) — sequential release pipeline implementation details
 - [Техническое задание](docs/Technical-Specification.md)
 - [Детальное предложение с часами](docs/Final-Modular-Offer-With-Hours.md)
 - [Архитектура агентной системы](docs/Agents%20Ecosystem/ARCHITECTURE.md)

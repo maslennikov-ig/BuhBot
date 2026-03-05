@@ -28,7 +28,7 @@ Adopt **Release Please** as the primary release automation:
 
 ### Configuration
 
-- **Workflow:** [.github/workflows/release-please.yml](.github/workflows/release-please.yml) — trigger on `push` to `main`, `googleapis/release-please-action@v4`, permissions `contents: write`, `pull-requests: write`.
+- **Workflow:** [.github/workflows/release-please.yml](.github/workflows/release-please.yml) — triggers on `workflow_run` after CI completes (not direct `push` to `main`), `googleapis/release-please-action@v4`, permissions `contents: write`, `pull-requests: write`, `actions: read`.
 - **Config:** `release-type: node`, `changelog-path: CHANGELOG.md`, single package `"."`.
 - **Manifest:** `.release-please-manifest.json` with current version; Release Please updates it and root package.json.
 

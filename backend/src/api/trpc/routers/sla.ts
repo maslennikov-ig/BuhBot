@@ -23,6 +23,7 @@ import { router, authedProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma, ClientRequest, Chat, User } from '@prisma/client';
+import { getScopedChatIds } from '../helpers/scoping.js';
 import { classifyMessage as classifyMessageService } from '../../../services/classifier/index.js';
 import { startSlaTimer, stopSlaTimer, getSlaStatus } from '../../../services/sla/timer.service.js';
 import {
@@ -511,6 +512,23 @@ export const slaRouter = router({
         }
       }
 
+      // Apply role-based chat scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null) {
+        // If a specific chatId was requested, verify it's within scope
+        if (where.chatId !== undefined) {
+          const requestedChatId = where.chatId as bigint;
+          if (!scopedChatIds.some((id) => id === requestedChatId)) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Access denied. The requested chat is not within your managed scope.',
+            });
+          }
+        } else {
+          where.chatId = { in: scopedChatIds };
+        }
+      }
+
       // Fetch requests with relations
       const [requests, total] = await Promise.all([
         ctx.prisma.clientRequest.findMany({
@@ -562,6 +580,15 @@ export const slaRouter = router({
         });
       }
 
+      // Role-based scoping: verify user can access this request's chat
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null && !scopedChatIds.some((id) => id === request.chatId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied. You can only access requests for chats assigned to you.',
+        });
+      }
+
       return formatRequestOutput(request, request.chat, request.assignedUser);
     }),
 
@@ -587,6 +614,19 @@ export const slaRouter = router({
 
       if (input.chatId !== undefined) {
         where.chatId = BigInt(input.chatId);
+      }
+
+      // Apply role-based chat scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null) {
+        if (where.chatId !== undefined) {
+          const requestedChatId = where.chatId as bigint;
+          if (!scopedChatIds.includes(requestedChatId)) {
+            return [];
+          }
+        } else {
+          where.chatId = { in: scopedChatIds };
+        }
       }
 
       // Fetch active requests

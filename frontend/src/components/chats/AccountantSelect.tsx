@@ -64,9 +64,9 @@ export function AccountantSelect({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
 
-  // Fetch accountants if not provided (assume 'manager' and 'admin' roles are for accountants)
+  // Fetch only accountant-role users for assignment dropdown
   const { data: fetchedUsers, isLoading } = trpc.user.list.useQuery(
-    { role: ['manager', 'admin'] },
+    { role: 'accountant' },
     { enabled: !providedAccountants }
   );
 

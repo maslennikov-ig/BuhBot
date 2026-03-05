@@ -14,11 +14,12 @@ import { TRPCError } from '@trpc/server';
 import { supabase } from '../../../lib/supabase.js';
 import env, { isDevMode } from '../../../config/env.js';
 import logger from '../../../utils/logger.js';
+import { randomBytes } from 'crypto';
 
 /**
  * User role schema (matches Prisma UserRole enum)
  */
-const UserRoleSchema = z.enum(['admin', 'manager', 'observer']);
+const UserRoleSchema = z.enum(['admin', 'manager', 'observer', 'accountant']);
 type UserRole = z.infer<typeof UserRoleSchema>;
 
 /**
@@ -47,6 +48,7 @@ export const authRouter = router({
         fullName: z.string(),
         role: UserRoleSchema,
         isOnboardingComplete: z.boolean(),
+        isActive: z.boolean(),
         createdAt: z.date(),
         telegramId: z.string().nullable().optional(),
         telegramUsername: z.string().nullable().optional(),
@@ -100,6 +102,7 @@ export const authRouter = router({
             fullName: created.fullName,
             role: asUserRole(created.role),
             isOnboardingComplete: created.isOnboardingComplete,
+            isActive: created.isActive,
             createdAt: created.createdAt,
             telegramId: created.telegramId?.toString() ?? null,
             telegramUsername: created.telegramUsername,
@@ -115,6 +118,7 @@ export const authRouter = router({
         fullName: dbUser.fullName,
         role: asUserRole(dbUser.role),
         isOnboardingComplete: dbUser.isOnboardingComplete,
+        isActive: dbUser.isActive,
         createdAt: dbUser.createdAt,
         telegramId: dbUser.telegramId?.toString() ?? null,
         telegramUsername: dbUser.telegramUsername,
@@ -187,6 +191,7 @@ export const authRouter = router({
           email: z.string().email(),
           fullName: z.string(),
           role: UserRoleSchema,
+          isActive: z.boolean(),
           telegramId: z.string().nullable(),
         })
       )
@@ -203,6 +208,7 @@ export const authRouter = router({
           email: true,
           fullName: true,
           role: true,
+          isActive: true,
           telegramId: true,
         },
         orderBy: {
@@ -213,6 +219,7 @@ export const authRouter = router({
       return users.map((user) => ({
         ...user,
         role: asUserRole(user.role),
+        isActive: user.isActive,
         telegramId: user.telegramId?.toString() ?? null,
       }));
     }),
@@ -336,6 +343,7 @@ export const authRouter = router({
         email: z.string().email('Неверный формат email'),
         fullName: z.string().min(1, 'Имя обязательно'),
         role: UserRoleSchema,
+        managerIds: z.array(z.string().uuid()).optional(),
       })
     )
     .output(
@@ -384,6 +392,32 @@ export const authRouter = router({
         throw new Error('Пользователь с таким email уже существует');
       }
 
+      // managerIds only applies to accountant role — reject if passed for other roles
+      if (input.role !== 'accountant' && input.managerIds && input.managerIds.length > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'managerIds можно указать только для роли accountant',
+        });
+      }
+
+      // Validate managerIds if provided for accountant role
+      if (input.role === 'accountant' && input.managerIds && input.managerIds.length > 0) {
+        const managers = await ctx.prisma.user.findMany({
+          where: {
+            id: { in: input.managerIds },
+            role: { in: ['admin', 'manager'] },
+          },
+          select: { id: true },
+        });
+        if (managers.length !== input.managerIds.length) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'Один или несколько указанных менеджеров не найдены или не имеют роль менеджера/администратора.',
+          });
+        }
+      }
+
       // Invite user via Supabase Auth (sends email automatically)
       const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
         input.email,
@@ -410,16 +444,62 @@ export const authRouter = router({
         throw new Error('Не удалось создать пользователя');
       }
 
-      // Create user profile in our database with Supabase Auth ID
-      const newUser = await ctx.prisma.user.create({
-        data: {
-          id: authData.user.id, // Use Supabase Auth user ID
-          email: input.email,
-          fullName: input.fullName,
-          role: input.role,
-          isOnboardingComplete: true, // Skip onboarding (all settings available in /settings)
-        },
-      });
+      // Use transaction to create user + related records atomically
+      // If DB transaction fails, clean up Supabase Auth user to prevent split-brain state
+      let newUser;
+      try {
+        newUser = await ctx.prisma.$transaction(async (tx) => {
+          // Create user profile in our database with Supabase Auth ID
+          const user = await tx.user.create({
+            data: {
+              id: authData.user.id,
+              email: input.email,
+              fullName: input.fullName,
+              role: input.role,
+              isOnboardingComplete: input.role !== 'accountant', // Accountants need Telegram verification
+            },
+          });
+
+          // For accountant role: create manager assignments and verification token
+          if (input.role === 'accountant') {
+            // Create UserManager records
+            if (input.managerIds && input.managerIds.length > 0) {
+              await tx.userManager.createMany({
+                data: input.managerIds.map((managerId) => ({
+                  managerId,
+                  accountantId: user.id,
+                })),
+              });
+            }
+
+            // Create verification token for Telegram linking
+            const tokenValue = randomBytes(16).toString('base64url');
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+
+            await tx.verificationToken.create({
+              data: {
+                userId: user.id,
+                token: tokenValue,
+                expiresAt,
+              },
+            });
+          }
+
+          return user;
+        });
+      } catch (dbError) {
+        // Rollback Supabase Auth user to prevent split-brain state
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          logger.error('Failed to clean up Supabase Auth user after DB transaction failure', {
+            supabaseUserId: authData.user.id,
+            error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+          });
+        }
+        throw dbError;
+      }
 
       return {
         id: newUser.id,
@@ -480,14 +560,165 @@ export const authRouter = router({
         data: { assignedAccountantId: null },
       });
 
-      // Delete telegram account if exists
-      await ctx.prisma.telegramAccount.deleteMany({
-        where: { userId: input.userId },
-      });
+      // Delete related records (UserManager, VerificationToken, NotificationPreference, TelegramAccount)
+      // Also clear overriddenBy references in other users' preferences (FK SET NULL handles DB level,
+      // but we explicitly clear to ensure consistency)
+      await Promise.all([
+        ctx.prisma.userManager.deleteMany({
+          where: { OR: [{ managerId: input.userId }, { accountantId: input.userId }] },
+        }),
+        ctx.prisma.verificationToken.deleteMany({
+          where: { userId: input.userId },
+        }),
+        ctx.prisma.notificationPreference.deleteMany({
+          where: { userId: input.userId },
+        }),
+        ctx.prisma.notificationPreference.updateMany({
+          where: { overriddenBy: input.userId },
+          data: { overriddenBy: null },
+        }),
+        ctx.prisma.telegramAccount.deleteMany({
+          where: { userId: input.userId },
+        }),
+      ]);
 
       // Delete user
       await ctx.prisma.user.delete({
         where: { id: input.userId },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Deactivate a user account
+   *
+   * Sets isActive=false. For accountants: checks no assigned chats remain.
+   * For managers: checks no orphaned accountants (managed only by this manager).
+   *
+   * @param userId - Target user ID
+   * @returns Success status with optional warnings
+   * @authorization Admin only
+   */
+  deactivateUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Нельзя деактивировать самого себя',
+        });
+      }
+
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        include: {
+          assignedChats: { select: { id: true, title: true } },
+          managedAccountants: {
+            select: {
+              accountant: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  managedByManagers: { select: { managerId: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Пользователь не найден' });
+      }
+
+      if (!user.isActive) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Пользователь уже деактивирован' });
+      }
+
+      // Check no assigned chats remain (any role can be assigned to chats)
+      if (user.assignedChats.length > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Невозможно деактивировать: у пользователя есть назначенные чаты (${user.assignedChats.length}). Сначала переназначьте чаты.`,
+        });
+      }
+
+      // For managers: check for orphaned accountants
+      if (['admin', 'manager'].includes(user.role) && user.managedAccountants.length > 0) {
+        const orphans = user.managedAccountants.filter(
+          (um) => um.accountant.managedByManagers.length <= 1
+        );
+        if (orphans.length > 0) {
+          const orphanNames = orphans.map((o) => o.accountant.fullName).join(', ');
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Невозможно деактивировать: бухгалтеры ${orphanNames} останутся без менеджера. Сначала назначьте им другого менеджера.`,
+          });
+        }
+      }
+
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { isActive: false },
+      });
+
+      logger.info('[Audit] User deactivated', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Reactivate a deactivated user account
+   *
+   * @param userId - Target user ID
+   * @returns Success status
+   * @authorization Admin only
+   */
+  reactivateUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+      })
+    )
+    .output(
+      z.object({
+        success: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Пользователь не найден' });
+      }
+
+      if (user.isActive) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Пользователь уже активен' });
+      }
+
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { isActive: true },
+      });
+
+      logger.info('[Audit] User reactivated', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
       });
 
       return { success: true };

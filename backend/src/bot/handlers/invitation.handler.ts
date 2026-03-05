@@ -62,6 +62,12 @@ export function registerInvitationHandler(): void {
         return;
       }
 
+      // Handle verification token (accountant Telegram linking)
+      if (payload.startsWith('verify_')) {
+        await processVerification(ctx, payload.substring(7));
+        return;
+      }
+
       logger.info('Processing invitation via /start', {
         chatId,
         tokenLength: payload.length,
@@ -325,5 +331,130 @@ async function processInvitation(
 
     await ctx.reply('Произошла ошибка при обработке приглашения. Попробуйте позже.');
     return;
+  }
+}
+
+/**
+ * Process Telegram verification token for accountant onboarding
+ *
+ * Links a Telegram account to a BuhBot user via verification token.
+ * Token format: /start verify_<token>
+ */
+async function processVerification(ctx: BotContext, token: string): Promise<void> {
+  const telegramUser = ctx.from;
+  if (!telegramUser) {
+    await ctx.reply('Не удалось определить пользователя Telegram.');
+    return;
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Find verification token
+      const verificationToken = await tx.verificationToken.findUnique({
+        where: { token },
+        include: { user: true },
+      });
+
+      if (!verificationToken) {
+        throw new Error('INVALID_TOKEN');
+      }
+
+      if (verificationToken.isUsed) {
+        throw new Error('ALREADY_USED');
+      }
+
+      if (verificationToken.expiresAt < new Date()) {
+        throw new Error('EXPIRED');
+      }
+
+      // 2. Check Telegram ID not already linked to another user
+      const existingLink = await tx.user.findFirst({
+        where: {
+          telegramId: BigInt(telegramUser.id),
+          id: { not: verificationToken.userId },
+        },
+      });
+
+      if (existingLink) {
+        throw new Error('TELEGRAM_ALREADY_LINKED');
+      }
+
+      // 3. Update user with Telegram info
+      await tx.user.update({
+        where: { id: verificationToken.userId },
+        data: {
+          telegramId: BigInt(telegramUser.id),
+          telegramUsername: telegramUser.username ?? null,
+          isOnboardingComplete: true,
+        },
+      });
+
+      // 4. Upsert TelegramAccount
+      await tx.telegramAccount.upsert({
+        where: { telegramId: BigInt(telegramUser.id) },
+        create: {
+          userId: verificationToken.userId,
+          telegramId: BigInt(telegramUser.id),
+          username: telegramUser.username ?? null,
+          firstName: telegramUser.first_name ?? null,
+          lastName: telegramUser.last_name ?? null,
+          authDate: BigInt(Math.floor(Date.now() / 1000)),
+        },
+        update: {
+          userId: verificationToken.userId,
+          username: telegramUser.username ?? null,
+          firstName: telegramUser.first_name ?? null,
+          lastName: telegramUser.last_name ?? null,
+        },
+      });
+
+      // 5. Mark token as used
+      await tx.verificationToken.update({
+        where: { id: verificationToken.id },
+        data: {
+          isUsed: true,
+          usedAt: new Date(),
+        },
+      });
+    });
+
+    await ctx.reply(
+      '✅ Верификация успешна!\n\nВаш аккаунт Telegram привязан к BuhBot. ' +
+        'Теперь вы можете использовать команды:\n' +
+        '/mystats — ваша статистика\n' +
+        '/mychats — ваши чаты\n' +
+        '/newchat — создать приглашение для нового чата'
+    );
+
+    logger.info('Accountant verification successful', {
+      telegramId: telegramUser.id,
+      service: 'invitation-handler',
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (errorMessage === 'INVALID_TOKEN') {
+      await ctx.reply('❌ Неверный или несуществующий токен верификации.');
+      return;
+    }
+    if (errorMessage === 'ALREADY_USED') {
+      await ctx.reply('⚠️ Этот токен верификации уже был использован.');
+      return;
+    }
+    if (errorMessage === 'EXPIRED') {
+      await ctx.reply('⏰ Срок действия токена верификации истёк. Обратитесь к администратору.');
+      return;
+    }
+    if (errorMessage === 'TELEGRAM_ALREADY_LINKED') {
+      await ctx.reply('⚠️ Ваш аккаунт Telegram уже привязан к другому пользователю BuhBot.');
+      return;
+    }
+
+    logger.error('Unexpected error during verification', {
+      error: errorMessage,
+      telegramId: telegramUser.id,
+      service: 'invitation-handler',
+    });
+    await ctx.reply('Произошла ошибка при верификации. Попробуйте позже.');
   }
 }

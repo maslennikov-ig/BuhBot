@@ -11,7 +11,8 @@
  */
 
 import { router, authedProcedure } from '../trpc.js';
-import { requireChatAccess } from '../authorization.js';
+import { requireChatAccessWithScoping } from '../authorization.js';
+import { getScopedChatIds } from '../helpers/scoping.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
@@ -149,7 +150,9 @@ export const messagesRouter = router({
         });
       }
 
-      requireChatAccess(ctx.user, chat);
+      // Role-based scoping (admin: all, manager: managed accountants' chats, accountant/observer: own)
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      requireChatAccessWithScoping(ctx.user, BigInt(input.chatId), scopedChatIds);
 
       // Resolve cursor to (telegramDate, id) for compound cursor pagination.
       // Telegram timestamps have second precision, so multiple messages can share

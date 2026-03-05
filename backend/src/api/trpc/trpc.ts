@@ -70,6 +70,13 @@ const isAuthed = t.middleware(({ ctx, next }) => {
     });
   }
 
+  if (ctx.user.isActive === false) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Ваш аккаунт деактивирован.',
+    });
+  }
+
   // Narrow context type to ensure user is non-null in procedures
   return next({
     ctx: {
@@ -92,17 +99,38 @@ const isAuthed = t.middleware(({ ctx, next }) => {
  * - FAQ creation
  */
 const isManager = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Authentication required. Please provide a valid JWT token.',
-    });
-  }
-
-  if (!['admin', 'manager'].includes(ctx.user.role)) {
+  // Note: isAuthed already checked user != null and isActive
+  if (!ctx.user || !['admin', 'manager'].includes(ctx.user.role)) {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'Access denied. This operation requires admin or manager role.',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+/**
+ * Middleware: Require admin, manager, or accountant role
+ *
+ * Checks for admin, manager, or accountant role in user context
+ * Throws FORBIDDEN if user is observer or unauthenticated
+ *
+ * Use for read operations accessible to accountants:
+ * - Viewing assigned chats, requests, alerts
+ * - Viewing personal analytics
+ */
+const isAccountant = t.middleware(({ ctx, next }) => {
+  // Note: isAuthed already checked user != null and isActive
+  if (!ctx.user || !['admin', 'manager', 'accountant'].includes(ctx.user.role)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Access denied. This operation requires admin, manager, or accountant role.',
     });
   }
 
@@ -126,14 +154,8 @@ const isManager = t.middleware(({ ctx, next }) => {
  * - User management
  */
 const isAdmin = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Authentication required. Please provide a valid JWT token.',
-    });
-  }
-
-  if (ctx.user.role !== 'admin') {
+  // Note: isAuthed already checked user != null and isActive
+  if (!ctx.user || ctx.user.role !== 'admin') {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'Access denied. This operation requires admin role.',
@@ -171,7 +193,7 @@ export const authedProcedure = publicProcedure.use(isAuthed);
  * - Creating/updating templates
  * - Creating/updating FAQ
  */
-export const managerProcedure = publicProcedure.use(isManager);
+export const managerProcedure = authedProcedure.use(isManager);
 
 /**
  * Admin procedure (requires admin role only)
@@ -183,4 +205,25 @@ export const managerProcedure = publicProcedure.use(isManager);
  * - Deleting FAQ items
  * - User management
  */
-export const adminProcedure = publicProcedure.use(isAdmin);
+/**
+ * Accountant procedure (requires admin, manager, or accountant role)
+ *
+ * Available to: admin, manager, accountant
+ *
+ * Use for read operations accessible to accountants:
+ * - Viewing assigned chats, requests, alerts
+ * - Viewing personal analytics
+ */
+export const accountantProcedure = authedProcedure.use(isAccountant);
+
+/**
+ * Admin procedure (requires admin role only)
+ *
+ * Available to: admin
+ *
+ * Use for destructive operations:
+ * - Deleting templates
+ * - Deleting FAQ items
+ * - User management
+ */
+export const adminProcedure = authedProcedure.use(isAdmin);

@@ -23,6 +23,7 @@ enum UserRole {
   admin
   manager
   observer
+  accountant
 
   @@schema("public")
 }
@@ -152,6 +153,7 @@ model User {
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   isOnboardingComplete Boolean @default(false) @map("is_onboarding_complete")
+  isActive             Boolean @default(true) @map("is_active")
 
   // Relations
   assignedChats      Chat[]           @relation("AssignedAccountant")
@@ -166,8 +168,16 @@ model User {
   assignedErrors     ErrorLog[]       @relation("ErrorLogAssignee")
   classificationCorrections ClassificationCorrection[]
 
+  // Manager-Accountant M:N relations
+  managedByManagers      UserManager[]          @relation("ManagedAccountant")
+  managedAccountants     UserManager[]          @relation("ManagingManager")
+  verificationTokens     VerificationToken[]
+  notificationPreferences          NotificationPreference[] @relation("userNotificationPreferences")
+  overriddenNotificationPreferences NotificationPreference[] @relation("overriddenNotificationPreferences")
+
   @@index([email])
   @@index([role])
+  @@index([isActive])
   @@map("users")
   @@schema("public")
 }
@@ -786,5 +796,69 @@ model ErrorLog {
   @@index([timestamp(sort: Desc)])
   @@index([assignedTo])
   @@map("error_logs")
+  @@schema("public")
+}
+
+// ============================================================================
+// ACCOUNTANT ROLE MODELS
+// ============================================================================
+
+/// Manager-Accountant M:N join table
+/// Tracks which managers oversee which accountants
+model UserManager {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  managerId    String   @map("manager_id") @db.Uuid
+  accountantId String   @map("accountant_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  manager    User @relation("ManagingManager", fields: [managerId], references: [id], onDelete: Cascade)
+  accountant User @relation("ManagedAccountant", fields: [accountantId], references: [id], onDelete: Cascade)
+
+  @@unique([managerId, accountantId], name: "unique_manager_accountant")
+  @@index([managerId])
+  @@index([accountantId])
+  @@map("user_managers")
+  @@schema("public")
+}
+
+/// Verification tokens for Telegram account linking
+/// Sent to accountants during onboarding for identity verification
+model VerificationToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  token     String    @unique
+  isUsed    Boolean   @default(false) @map("is_used")
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("verification_tokens")
+  @@schema("public")
+}
+
+/// Per-user notification preferences with manager override capability
+/// Controls which notifications a user receives (per PRD §7.8.3)
+model NotificationPreference {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  notificationType String   @map("notification_type") // e.g., 'sla_warning', 'sla_breach', 'new_request', 'assignment'
+  isEnabled        Boolean  @default(true) @map("is_enabled")
+  overriddenBy     String?  @map("overridden_by") @db.Uuid // Manager/admin who locked this preference
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user        User  @relation("userNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+  overrideBy  User? @relation("overriddenNotificationPreferences", fields: [overriddenBy], references: [id], onDelete: SetNull)
+
+  @@unique([userId, notificationType], name: "unique_user_notification_type")
+  @@index([userId])
+  @@map("notification_preferences")
   @@schema("public")
 }

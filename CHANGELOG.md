@@ -5,6 +5,19 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.22.0...buhbot-v0.23.0) (2026-03-05)
+
+
+### Features
+
+* **auth:** add accountant role with rbac scoping and verification ([2841242](https://github.com/maslennikov-ig/BuhBot/commit/28412429e7363c0c6a86fe9d9cce38b80b62aef3))
+* **auth:** add accountant role with RBAC scoping and verification ([#241](https://github.com/maslennikov-ig/BuhBot/issues/241)) ([2841242](https://github.com/maslennikov-ig/BuhBot/commit/28412429e7363c0c6a86fe9d9cce38b80b62aef3))
+
+
+### Bug Fixes
+
+* resolve 5 GitHub issues and add keyboard navigation ([#240](https://github.com/maslennikov-ig/BuhBot/issues/240)) ([7122aea](https://github.com/maslennikov-ig/BuhBot/commit/7122aead683089534fb03388bd53f3f70528e80a))
+
 ## [0.22.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.4...buhbot-v0.22.0) (2026-03-03)
 
 

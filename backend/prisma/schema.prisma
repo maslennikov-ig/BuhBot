@@ -172,7 +172,8 @@ model User {
   managedByManagers      UserManager[]          @relation("ManagedAccountant")
   managedAccountants     UserManager[]          @relation("ManagingManager")
   verificationTokens     VerificationToken[]
-  notificationPreferences NotificationPreference[]
+  notificationPreferences          NotificationPreference[] @relation("userNotificationPreferences")
+  overriddenNotificationPreferences NotificationPreference[] @relation("overriddenNotificationPreferences")
 
   @@index([email])
   @@index([role])
@@ -853,7 +854,8 @@ model NotificationPreference {
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User  @relation("userNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+  overrideBy  User? @relation("overriddenNotificationPreferences", fields: [overriddenBy], references: [id], onDelete: SetNull)
 
   @@unique([userId, notificationType], name: "unique_user_notification_type")
   @@index([userId])

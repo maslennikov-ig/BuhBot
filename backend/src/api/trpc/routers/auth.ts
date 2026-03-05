@@ -372,6 +372,14 @@ export const authRouter = router({
         throw new Error('Пользователь с таким email уже существует');
       }
 
+      // managerIds only applies to accountant role — reject if passed for other roles
+      if (input.role !== 'accountant' && input.managerIds && input.managerIds.length > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'managerIds можно указать только для роли accountant',
+        });
+      }
+
       // Validate managerIds if provided for accountant role
       if (input.role === 'accountant' && input.managerIds && input.managerIds.length > 0) {
         const managers = await ctx.prisma.user.findMany({
@@ -533,6 +541,8 @@ export const authRouter = router({
       });
 
       // Delete related records (UserManager, VerificationToken, NotificationPreference, TelegramAccount)
+      // Also clear overriddenBy references in other users' preferences (FK SET NULL handles DB level,
+      // but we explicitly clear to ensure consistency)
       await Promise.all([
         ctx.prisma.userManager.deleteMany({
           where: { OR: [{ managerId: input.userId }, { accountantId: input.userId }] },
@@ -542,6 +552,10 @@ export const authRouter = router({
         }),
         ctx.prisma.notificationPreference.deleteMany({
           where: { userId: input.userId },
+        }),
+        ctx.prisma.notificationPreference.updateMany({
+          where: { overriddenBy: input.userId },
+          data: { overriddenBy: null },
         }),
         ctx.prisma.telegramAccount.deleteMany({
           where: { userId: input.userId },

@@ -66,3 +66,4 @@ ALTER TABLE "public"."verification_tokens" ADD CONSTRAINT "verification_tokens_u
 
 -- AddForeignKey: notification_preferences
 ALTER TABLE "public"."notification_preferences" ADD CONSTRAINT "notification_preferences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."notification_preferences" ADD CONSTRAINT "notification_preferences_overridden_by_fkey" FOREIGN KEY ("overridden_by") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;

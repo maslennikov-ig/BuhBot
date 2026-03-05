@@ -515,12 +515,14 @@ export const slaRouter = router({
       // Apply role-based chat scoping
       const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
       if (scopedChatIds !== null) {
-        // If a specific chatId was requested, intersect with scoped access
+        // If a specific chatId was requested, verify it's within scope
         if (where.chatId !== undefined) {
           const requestedChatId = where.chatId as bigint;
-          if (!scopedChatIds.includes(requestedChatId)) {
-            // Requested chat is outside the user's scope — return empty
-            return { items: [], total: 0, hasMore: false };
+          if (!scopedChatIds.some((id) => id === requestedChatId)) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Access denied. The requested chat is not within your managed scope.',
+            });
           }
         } else {
           where.chatId = { in: scopedChatIds };

@@ -15,20 +15,11 @@ import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
+import { findUserByTelegramId } from '../utils/user.js';
 
 // ============================================================================
 // Helpers
 // ============================================================================
-
-/**
- * Look up the internal User record by Telegram user ID.
- * Returns null when not found.
- */
-async function findUserByTelegramId(telegramId: number) {
-  return prisma.user.findFirst({
-    where: { telegramId: BigInt(telegramId) },
-  });
-}
 
 /**
  * Generate a cryptographically random base64url token.

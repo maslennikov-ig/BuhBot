@@ -10,6 +10,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
+import logger from '../../../utils/logger.js';
 
 /**
  * Minimal Prisma client interface for scoping queries.
@@ -55,7 +56,14 @@ export async function getScopedChatIds(
       select: { id: true },
     });
 
-    return chats.map((c) => c.id);
+    const chatIds = chats.map((c) => c.id);
+    if (chatIds.length === 0) {
+      logger.debug('Manager has zero scoped chats', {
+        userId,
+        managedAccountants: accountantIds.length,
+      });
+    }
+    return chatIds;
   }
 
   // Accountant/Observer: only chats where assignedAccountantId matches their user ID.
@@ -69,5 +77,9 @@ export async function getScopedChatIds(
     select: { id: true },
   });
 
-  return chats.map((c) => c.id);
+  const chatIds = chats.map((c) => c.id);
+  if (chatIds.length === 0) {
+    logger.debug('User has zero scoped chats', { userId, role });
+  }
+  return chatIds;
 }

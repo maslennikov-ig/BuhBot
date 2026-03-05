@@ -25,9 +25,10 @@ COPY prisma ./prisma
 # Generate Prisma Client (required before TypeScript compilation)
 RUN npx prisma generate
 
-# Copy TypeScript configuration and source code
+# Copy TypeScript configuration, Prisma config, and source code
 COPY tsconfig.json tsconfig.build.json ./
 COPY eslint.config.mjs ./
+COPY prisma.config.ts ./
 COPY src ./src
 
 # Build TypeScript -> JavaScript (output to dist/) using relaxed build config
@@ -59,8 +60,9 @@ COPY package.json package-lock.json ./
 # Using --legacy-peer-deps to handle peer dependency conflicts from @prisma/client
 RUN npm install --omit=dev --legacy-peer-deps
 
-# Copy Prisma schema from builder stage
+# Copy Prisma schema and config from builder stage
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 # Copy generated Prisma client from builder stage (generated into node_modules/.prisma)
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma

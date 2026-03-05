@@ -5,6 +5,17 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.23.0...buhbot-v0.23.1) (2026-03-05)
+
+
+### Bug Fixes
+
+* **ci:** switch backend jobs from pnpm to npm ([dc175f7](https://github.com/maslennikov-ig/BuhBot/commit/dc175f7fbbda7fe8040fa09bb0b25f79bb67e1a0))
+* **deploy:** move prisma to production dependencies ([#244](https://github.com/maslennikov-ig/BuhBot/issues/244)) ([0f1753d](https://github.com/maslennikov-ig/BuhBot/commit/0f1753da94ddf2cc92af83333694193fcf9a12bd))
+* **deps:** restore backend lockfile with compatible trpc version ([2c2547a](https://github.com/maslennikov-ig/BuhBot/commit/2c2547a81602f54ef89c0ceaac3c2f47da6b493d))
+* **docker:** add legacy-peer-deps to frontend dockerfile backend stage ([931585e](https://github.com/maslennikov-ig/BuhBot/commit/931585e6cd155387c655669cc4e609736ce6967a))
+* **docker:** include prisma.config.ts in backend image ([0c94493](https://github.com/maslennikov-ig/BuhBot/commit/0c9449378dd5103db1320ec6853f5d21fe6d005f))
+
 ## [0.23.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.22.0...buhbot-v0.23.0) (2026-03-05)
 
 

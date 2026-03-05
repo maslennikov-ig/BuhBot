@@ -12,7 +12,8 @@
  */
 
 import { router, authedProcedure, managerProcedure } from '../trpc.js';
-import { requireChatAccess } from '../authorization.js';
+// Authorization handled via getScopedChatIds inline checks
+import { getScopedChatIds } from '../helpers/scoping.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
@@ -133,6 +134,14 @@ export const requestsRouter = router({
         if (input.endDate) {
           where.receivedAt.lte = input.endDate;
         }
+      }
+
+      // Role-based scoping: accountant/observer only see requests in their chats
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null) {
+        where.chatId = where.chatId
+          ? { equals: where.chatId as bigint, in: scopedChatIds }
+          : { in: scopedChatIds };
       }
 
       // Build order by clause
@@ -290,15 +299,13 @@ export const requestsRouter = router({
         });
       }
 
-      // Authorization: observers can only view requests in chats assigned to them
-      if (!['admin', 'manager'].includes(ctx.user.role)) {
-        const chat = await ctx.prisma.chat.findFirst({
-          where: { id: request.chatId, deletedAt: null },
-          select: { assignedAccountantId: true },
+      // Role-based scoping (admin: all, manager: managed scope, accountant/observer: own)
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null && !scopedChatIds.some((id) => id === request.chatId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied. You can only access requests for chats assigned to you.',
         });
-        if (chat) {
-          requireChatAccess(ctx.user, chat);
-        }
       }
 
       return {
@@ -558,20 +565,18 @@ export const requestsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
-      // Authorization: observers can only view history for requests in their chats
-      if (!['admin', 'manager'].includes(ctx.user.role)) {
-        const request = await ctx.prisma.clientRequest.findUnique({
-          where: { id: input.requestId },
-          select: { chatId: true },
-        });
-        if (request) {
-          const chat = await ctx.prisma.chat.findFirst({
-            where: { id: request.chatId, deletedAt: null },
-            select: { assignedAccountantId: true },
+      // Role-based scoping
+      const request = await ctx.prisma.clientRequest.findUnique({
+        where: { id: input.requestId },
+        select: { chatId: true },
+      });
+      if (request) {
+        const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+        if (scopedChatIds !== null && !scopedChatIds.some((id) => id === request.chatId)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied.',
           });
-          if (chat) {
-            requireChatAccess(ctx.user, chat);
-          }
         }
       }
 
@@ -608,20 +613,18 @@ export const requestsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
-      // Authorization: observers can only view threads in their chats
-      if (!['admin', 'manager'].includes(ctx.user.role)) {
-        const firstRequest = await ctx.prisma.clientRequest.findFirst({
-          where: { threadId: input.threadId },
-          select: { chatId: true },
-        });
-        if (firstRequest) {
-          const chat = await ctx.prisma.chat.findFirst({
-            where: { id: firstRequest.chatId, deletedAt: null },
-            select: { assignedAccountantId: true },
+      // Role-based scoping
+      const firstRequest = await ctx.prisma.clientRequest.findFirst({
+        where: { threadId: input.threadId },
+        select: { chatId: true },
+      });
+      if (firstRequest) {
+        const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+        if (scopedChatIds !== null && !scopedChatIds.some((id) => id === firstRequest.chatId)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied.',
           });
-          if (chat) {
-            requireChatAccess(ctx.user, chat);
-          }
         }
       }
 

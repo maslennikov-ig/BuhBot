@@ -145,8 +145,8 @@ export const userRouter = router({
         .object({
           role: z
             .union([
-              z.enum(['admin', 'manager', 'observer']),
-              z.array(z.enum(['admin', 'manager', 'observer'])),
+              z.enum(['admin', 'manager', 'observer', 'accountant']),
+              z.array(z.enum(['admin', 'manager', 'observer', 'accountant'])),
             ])
             .optional(),
         })

@@ -38,7 +38,10 @@ import {
   getAggregates,
   getRecentComments,
   getTrendData,
+  calculateNPS,
+  calculateDistribution,
 } from '../../../services/feedback/analytics.service.js';
+import { getScopedChatIds } from '../helpers/scoping.js';
 import { recordResponse, getDeliveryById } from '../../../services/feedback/survey.service.js';
 import { prisma } from '../../../lib/prisma.js';
 import { queueLowRatingAlert } from '../../../queues/setup.js';
@@ -66,30 +69,92 @@ export const feedbackRouter = router({
         })
         .optional()
     )
-    .query(async ({ input }) => {
-      const dateRange =
-        input?.dateFrom && input?.dateTo
-          ? { from: input.dateFrom, to: input.dateTo }
-          : input?.dateFrom
-            ? { from: input.dateFrom }
-            : input?.dateTo
-              ? { to: input.dateTo }
-              : undefined;
+    .query(async ({ ctx, input }) => {
+      // Apply role-based chat scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
 
-      const aggregates = await getAggregates(dateRange, input?.surveyId);
-      const trendData = await getTrendData(4);
-      const recentComments = await getRecentComments(10, false); // Anonymized
+      // If user has unrestricted access, use the existing service functions
+      if (scopedChatIds === null) {
+        const dateRange =
+          input?.dateFrom && input?.dateTo
+            ? { from: input.dateFrom, to: input.dateTo }
+            : input?.dateFrom
+              ? { from: input.dateFrom }
+              : input?.dateTo
+                ? { to: input.dateTo }
+                : undefined;
+
+        const aggregates = await getAggregates(dateRange, input?.surveyId);
+        const trendData = await getTrendData(4);
+        const recentComments = await getRecentComments(10, false); // Anonymized
+
+        return {
+          totalResponses: aggregates.totalResponses,
+          averageRating: aggregates.averageRating,
+          npsScore: aggregates.nps.score,
+          ratingDistribution: aggregates.distribution,
+          recentComments: recentComments.map((c) => ({
+            comment: c.comment,
+            rating: c.rating,
+            submittedAt: c.submittedAt,
+          })),
+          trendData,
+        };
+      }
+
+      // Scoped path: query with chatId filter
+      const feedbackWhere: Prisma.FeedbackResponseWhereInput = {
+        chatId: { in: scopedChatIds },
+      };
+      if (input?.dateFrom || input?.dateTo) {
+        feedbackWhere.submittedAt = {
+          ...(input.dateFrom && { gte: input.dateFrom }),
+          ...(input.dateTo && { lte: input.dateTo }),
+        };
+      }
+      if (input?.surveyId) {
+        feedbackWhere.surveyId = input.surveyId;
+      }
+
+      const responses = await ctx.prisma.feedbackResponse.findMany({
+        where: feedbackWhere,
+        select: { rating: true, comment: true, submittedAt: true },
+        orderBy: { submittedAt: 'desc' },
+      });
+
+      const ratings = responses.map((r) => r.rating);
+      const totalResponses = ratings.length;
+      const averageRating =
+        totalResponses > 0
+          ? Math.round((ratings.reduce((sum, r) => sum + r, 0) / totalResponses) * 10) / 10
+          : 0;
+      const nps = calculateNPS(ratings);
+      const distribution = calculateDistribution(ratings);
+
+      const recentComments = responses
+        .filter((r) => r.comment !== null)
+        .slice(0, 10)
+        .map((r) => ({
+          comment: r.comment!,
+          rating: r.rating,
+          submittedAt: r.submittedAt,
+        }));
+
+      // Trend data is cross-chat aggregate; return empty for scoped users
+      // (per-chat trend would require significant per-quarter queries)
+      const trendData: {
+        period: string;
+        averageRating: number;
+        responseCount: number;
+        npsScore: number;
+      }[] = [];
 
       return {
-        totalResponses: aggregates.totalResponses,
-        averageRating: aggregates.averageRating,
-        npsScore: aggregates.nps.score,
-        ratingDistribution: aggregates.distribution,
-        recentComments: recentComments.map((c) => ({
-          comment: c.comment,
-          rating: c.rating,
-          submittedAt: c.submittedAt,
-        })),
+        totalResponses,
+        averageRating,
+        npsScore: nps.score,
+        ratingDistribution: distribution,
+        recentComments,
         trendData,
       };
     }),

@@ -15,6 +15,7 @@ import { Prisma } from '@prisma/client';
 import { redis } from '../../../lib/redis.js';
 import logger from '../../../utils/logger.js';
 import { dashboardCacheHitsTotal, dashboardCacheMissesTotal } from '../../../utils/metrics.js';
+import { getScopedChatIds } from '../helpers/scoping.js';
 
 // ============================================================================
 // DASHBOARD CACHE CONFIGURATION
@@ -86,6 +87,12 @@ export const analyticsRouter = router({
       };
       if (input.assignedTo) {
         where.assignedTo = input.assignedTo;
+      }
+
+      // Apply role-based chat scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null) {
+        where.chatId = { in: scopedChatIds };
       }
 
       // Fetch requests in date range
@@ -204,14 +211,22 @@ export const analyticsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      // Apply role-based chat scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+
+      const feedbackWhere: Prisma.FeedbackResponseWhereInput = {
+        submittedAt: {
+          gte: input.startDate,
+          lte: input.endDate,
+        },
+      };
+      if (scopedChatIds !== null) {
+        feedbackWhere.chatId = { in: scopedChatIds };
+      }
+
       // Fetch feedback responses in date range
       const responses = await ctx.prisma.feedbackResponse.findMany({
-        where: {
-          submittedAt: {
-            gte: input.startDate,
-            lte: input.endDate,
-          },
-        },
+        where: feedbackWhere,
         select: {
           rating: true,
         },
@@ -291,16 +306,24 @@ export const analyticsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
+      // Apply role-based chat scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+
+      const requestWhere: Prisma.ClientRequestWhereInput = {
+        assignedTo: { not: null },
+        receivedAt: {
+          gte: input.startDate,
+          lte: input.endDate,
+        },
+        classification: 'REQUEST',
+      };
+      if (scopedChatIds !== null) {
+        requestWhere.chatId = { in: scopedChatIds };
+      }
+
       // Single batch query for all requests in date range (gh-113: eliminates N+1)
       const requests = await ctx.prisma.clientRequest.findMany({
-        where: {
-          assignedTo: { not: null },
-          receivedAt: {
-            gte: input.startDate,
-            lte: input.endDate,
-          },
-          classification: 'REQUEST',
-        },
+        where: requestWhere,
         select: {
           id: true,
           assignedTo: true,

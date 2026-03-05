@@ -31,6 +31,8 @@ import { surveyRouter } from './routers/survey.js';
 import { contactRouter } from './routers/contact.js';
 import { userRouter } from './routers/user.js';
 import { notificationRouter } from './routers/notification.js';
+import { notificationPrefRouter } from './routers/notificationPref.js';
+import { userManagerRouter } from './routers/userManager.js';
 import { messagesRouter } from './routers/messages.js';
 import { logsRouter } from './routers/logs.js';
 
@@ -243,6 +245,29 @@ export const appRouter = router({
    * Notification router - In-app notifications
    */
   notification: notificationRouter,
+
+  /**
+   * NotificationPref router - User notification preference management
+   *
+   * Procedures:
+   * - get: Get own notification preferences (authed)
+   * - update: Toggle own preference (authed, blocked if overridden)
+   * - override: Lock/set preference for a managed accountant (manager)
+   * - adminOverride: Override any user's preference (admin)
+   */
+  notificationPref: notificationPrefRouter,
+
+  /**
+   * UserManager router - Manager-Accountant M:N relationship management
+   *
+   * Procedures:
+   * - assign: Create manager-accountant relationship (admin)
+   * - unassign: Remove relationship (admin)
+   * - reassign: Move accountant to new manager (admin)
+   * - listByManager: List accountants for a manager
+   * - listByAccountant: List managers for an accountant
+   */
+  userManager: userManagerRouter,
 
   /**
    * Logs router - System error logs management

@@ -384,7 +384,7 @@ deploy_services() {
 run_migrations() {
     log_info "Running Prisma migrations..."
 
-    if docker exec buhbot-bot-backend npx prisma migrate deploy 2>&1; then
+    if docker exec buhbot-bot-backend ./node_modules/.bin/prisma migrate deploy 2>&1; then
         log_success "Migrations applied successfully"
         return 0
     else
@@ -465,15 +465,14 @@ rollback() {
         if [ -n "$previous_commit" ] && [ "$previous_commit" != "null" ]; then
             log_info "Rolling back to commit: $previous_commit"
 
-            # Re-tag previous images if available
-            if docker images -q "buhbot-backend:${previous_commit}" &>/dev/null; then
+            # Re-tag previous images if available, otherwise use :latest
+            if docker image inspect "buhbot-backend:${previous_commit}" &>/dev/null; then
                 docker tag "buhbot-backend:${previous_commit}" "buhbot-backend:latest" || true
-            fi
-            if docker images -q "buhbot-frontend:${previous_commit}" &>/dev/null; then
                 docker tag "buhbot-frontend:${previous_commit}" "buhbot-frontend:latest" || true
-            fi
-            if docker images -q "buhbot-monitoring:${previous_commit}" &>/dev/null; then
                 docker tag "buhbot-monitoring:${previous_commit}" "buhbot-monitoring:latest" || true
+            else
+                log_warning "Previous images for ${previous_commit} not found locally"
+                log_warning "Using current :latest tag for rollback"
             fi
         fi
     fi

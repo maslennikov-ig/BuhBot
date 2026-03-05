@@ -356,11 +356,31 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // DEV_MODE: Supabase invite requires real credentials
+      // DEV_MODE: Create user directly in DB without Supabase invite
       if (isDevMode) {
-        throw new Error(
-          'Создание пользователей недоступно в DEV_MODE (нет реальных Supabase-ключей)'
-        );
+        const existing = await ctx.prisma.user.findUnique({ where: { email: input.email } });
+        if (existing) {
+          throw new Error('Пользователь с таким email уже существует');
+        }
+
+        const devUserId = crypto.randomUUID();
+        const newUser = await ctx.prisma.user.create({
+          data: {
+            id: devUserId,
+            email: input.email,
+            fullName: input.fullName,
+            role: input.role,
+            isOnboardingComplete: true,
+          },
+        });
+
+        return {
+          id: newUser.id,
+          email: newUser.email,
+          fullName: newUser.fullName,
+          role: asUserRole(newUser.role),
+          inviteSent: false,
+        };
       }
 
       // Check if user with this email already exists in our database

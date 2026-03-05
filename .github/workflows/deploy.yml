@@ -14,7 +14,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '18'
   VDS_DEPLOY_PATH: /home/buhbot/BuhBot
   # Use workflow_run SHA when triggered by CI completion, otherwise current SHA (for manual or Release Please dispatch)
   DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -212,7 +211,7 @@ jobs:
           EOF
 
       - name: Rollback on failure
-        if: failure() && steps.deploy.outcome == 'failure'
+        if: failure()
         run: |
           echo "Deployment failed, initiating rollback..."
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${{ secrets.VDS_USER }}@${{ secrets.VDS_HOST }} << 'EOF'

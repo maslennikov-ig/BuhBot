@@ -72,8 +72,14 @@ COPY --from=builder /app/dist ./dist
 RUN mkdir -p logs && \
     chown -R nodejs:nodejs /app
 
+# Create npm cache directory with proper permissions
+RUN mkdir -p /app/.npm && chown nodejs:nodejs /app/.npm
+
 # Switch to non-root user
 USER nodejs
+
+ENV HOME=/app
+ENV npm_config_cache=/app/.npm
 
 # Expose application port (bot webhook + tRPC API)
 EXPOSE 3000

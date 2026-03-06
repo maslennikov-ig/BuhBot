@@ -5,6 +5,18 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.23.1...buhbot-v0.24.0) (2026-03-06)
+
+
+### Features
+
+* **users:** overhaul users page and accountant role ([#248](https://github.com/maslennikov-ig/BuhBot/issues/248)) ([18b05bf](https://github.com/maslennikov-ig/BuhBot/commit/18b05bfb22794b000c8acebed8ec32da278ce97b))
+
+
+### Bug Fixes
+
+* **users:** use success-muted css var and clean up catch blocks ([5282a25](https://github.com/maslennikov-ig/BuhBot/commit/5282a25cfcbbe84983e2a534bad52242d3a73e45))
+
 ## [0.23.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.23.0...buhbot-v0.23.1) (2026-03-05)
 
 

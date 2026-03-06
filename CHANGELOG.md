@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.0...buhbot-v0.24.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* **db:** add accountant to users_role_check constraint ([98d5ddb](https://github.com/maslennikov-ig/BuhBot/commit/98d5ddbc624ade6e7646b590d5e1b64cab1cb804))
+
 ## [0.24.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.23.1...buhbot-v0.24.0) (2026-03-06)
 
 

@@ -35,6 +35,6 @@ export const ROLE_LABELS: Record<string, string> = {
 export const ROLE_COLORS: Record<string, string> = {
   admin: 'text-[var(--buh-error)] bg-[var(--buh-error-muted)]',
   manager: 'text-[var(--buh-primary)] bg-[var(--buh-primary-muted)]',
-  accountant: 'text-[var(--buh-success)] bg-[var(--buh-success)]/10',
+  accountant: 'text-[var(--buh-success)] bg-[var(--buh-success-muted)]',
   observer: 'text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-subtle)]',
 };

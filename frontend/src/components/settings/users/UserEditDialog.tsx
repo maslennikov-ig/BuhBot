@@ -79,16 +79,14 @@ export function UserEditDialog({ user, open, onClose }: UserEditDialogProps) {
     if (fullName !== user.fullName) updateData.fullName = fullName;
     if (selectedRole !== user.role) updateData.role = selectedRole;
 
-    await updateUserMutation
-      .mutateAsync(updateData)
-      .then(() => {
-        utils.auth.listUsers.invalidate();
-        toast.success('Пользователь обновлён');
-        onClose();
-      })
-      .catch(() => {
-        // Error displayed via onError -> setError
-      });
+    try {
+      await updateUserMutation.mutateAsync(updateData);
+      utils.auth.listUsers.invalidate();
+      toast.success('Пользователь обновлён');
+      onClose();
+    } catch {
+      // Handled by mutation onError → setError
+    }
   };
 
   const handleToggleActive = async () => {
@@ -98,16 +96,14 @@ export function UserEditDialog({ user, open, onClose }: UserEditDialogProps) {
     const mutation = user.isActive ? deactivateMutation : reactivateMutation;
     const message = user.isActive ? 'Пользователь деактивирован' : 'Пользователь активирован';
 
-    await mutation
-      .mutateAsync({ userId: user.id })
-      .then(() => {
-        utils.auth.listUsers.invalidate();
-        toast.success(message);
-        onClose();
-      })
-      .catch(() => {
-        // Error displayed via onError -> setError
-      });
+    try {
+      await mutation.mutateAsync({ userId: user.id });
+      utils.auth.listUsers.invalidate();
+      toast.success(message);
+      onClose();
+    } catch {
+      // Handled by mutation onError → setError
+    }
   };
 
   const handleClose = () => {

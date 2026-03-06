@@ -221,7 +221,7 @@ If issues arise:
 4. **Should Release Please create releases for docs-only changes?**
    - Currently it could, but deploy won't trigger
    - Could add path filtering to skip release for docs-only
-   - Answer: **Yes, implement path-filtering to skip release for docs-only** - Added step to check file changes and skip release if only documentation files changed
+   - Answer: **Simplified workflow** - Release Please runs unconditionally and handles its own logic based on conventional commits. If no conventional commit types (feat:, fix:, etc.) are found, no release is created.
 
 ## References
 

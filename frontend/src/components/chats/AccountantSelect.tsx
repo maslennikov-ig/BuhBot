@@ -64,9 +64,9 @@ export function AccountantSelect({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
 
-  // Fetch only accountant-role users for assignment dropdown
+  // Fetch all assignable users (accountants, managers, admins) for assignment dropdown
   const { data: fetchedUsers, isLoading } = trpc.user.list.useQuery(
-    { role: 'accountant' },
+    { role: ['accountant', 'manager', 'admin'], activeOnly: true },
     { enabled: !providedAccountants }
   );
 
@@ -340,7 +340,7 @@ export function AccountantSelect({
               ))
             ) : (
               <li className="px-3 py-4 text-center text-sm text-[var(--buh-foreground-muted)]">
-                Бухгалтеры не найдены
+                Ответственные не найдены
               </li>
             )}
           </ul>

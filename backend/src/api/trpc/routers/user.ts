@@ -149,6 +149,7 @@ export const userRouter = router({
               z.array(z.enum(['admin', 'manager', 'observer', 'accountant'])),
             ])
             .optional(),
+          activeOnly: z.boolean().optional(),
         })
         .optional()
     )
@@ -164,6 +165,10 @@ export const userRouter = router({
         } else {
           where.role = input.role;
         }
+      }
+
+      if (input?.activeOnly) {
+        where.isActive = true;
       }
 
       logger.debug('[DEBUG] user.list query where:', JSON.stringify(where));

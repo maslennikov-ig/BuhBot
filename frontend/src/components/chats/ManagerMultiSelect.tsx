@@ -69,6 +69,7 @@ export function ManagerMultiSelect({
   // Fetch managers and admins
   const { data: users, isLoading } = trpc.user.list.useQuery({
     role: ['manager', 'admin'],
+    activeOnly: true,
   });
 
   // Build a lookup: telegramId string -> user

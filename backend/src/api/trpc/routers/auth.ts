@@ -3,7 +3,15 @@
  *
  * Procedures:
  * - me: Get current authenticated user profile
+ * - updateProfile: Update own profile (fullName, telegramUsername)
  * - listUsers: List all users (for assignment dropdowns)
+ * - updateUser: Admin update user profile/role
+ * - updateUserRole: Admin change user role
+ * - setUserTelegramId: Admin set/clear user Telegram ID
+ * - createUser: Admin create and invite new user
+ * - deleteUser: Admin delete user
+ * - deactivateUser: Admin deactivate user account
+ * - reactivateUser: Admin reactivate user account
  *
  * @module api/trpc/routers/auth
  */
@@ -225,6 +233,65 @@ export const authRouter = router({
     }),
 
   /**
+   * Update user profile fields and/or role
+   *
+   * Email editing is intentionally excluded to avoid split-brain state
+   * with Supabase Auth (CR-1). Will be added when Supabase email sync
+   * is implemented.
+   *
+   * @param userId - Target user ID
+   * @param fullName - New full name (optional)
+   * @param role - New role (optional)
+   * @returns Success status
+   * @authorization Admin only
+   */
+  updateUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        fullName: z.string().min(1).optional(),
+        role: UserRoleSchema.optional(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const targetUser = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!targetUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Пользователь не найден',
+        });
+      }
+
+      const updateData: { fullName?: string; role?: string } = {};
+      if (input.fullName !== undefined) updateData.fullName = input.fullName;
+      if (input.role !== undefined) updateData.role = input.role;
+
+      if (Object.keys(updateData).length === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Не указаны поля для обновления',
+        });
+      }
+
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: updateData,
+      });
+
+      logger.info('[Audit] Admin updated user', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
+        updatedFields: Object.keys(updateData),
+      });
+
+      return { success: true };
+    }),
+
+  /**
    * Update a user's role
    *
    * @param userId - Target user ID
@@ -243,6 +310,12 @@ export const authRouter = router({
       await ctx.prisma.user.update({
         where: { id: input.userId },
         data: { role: input.role },
+      });
+
+      logger.info('[Audit] Admin updated user role', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
+        newRole: input.role,
       });
 
       return { success: true };

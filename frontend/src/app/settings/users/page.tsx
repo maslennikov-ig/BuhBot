@@ -84,12 +84,7 @@ export default function UsersPage() {
         isAdmin={isAdmin}
       />
 
-      <UserEditDialog
-        user={editUser}
-        open={isEditDialogOpen}
-        onClose={handleCloseEditDialog}
-        onSuccess={handleCloseEditDialog}
-      />
+      <UserEditDialog user={editUser} open={isEditDialogOpen} onClose={handleCloseEditDialog} />
 
       <UserCreateDialog
         open={isCreateDialogOpen}

@@ -66,7 +66,7 @@ export function AccountantSelect({
 
   // Fetch all assignable users (accountants, managers, admins) for assignment dropdown
   const { data: fetchedUsers, isLoading } = trpc.user.list.useQuery(
-    { role: ['accountant', 'manager', 'admin'] },
+    { role: ['accountant', 'manager', 'admin'], activeOnly: true },
     { enabled: !providedAccountants }
   );
 

@@ -13,30 +13,13 @@ import { AppRouter } from '@/types/trpc';
 type RouterInputs = inferRouterInputs<AppRouter>;
 type UserRole = RouterInputs['auth']['createUser']['role'];
 
+import { ROLES } from './constants';
+
 interface UserCreateDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const ROLES: { value: UserRole; label: string; description: string }[] = [
-  {
-    value: 'admin',
-    label: 'Администратор',
-    description: 'Полный доступ ко всем функциям системы.',
-  },
-  {
-    value: 'manager',
-    label: 'Менеджер',
-    description: 'Управление клиентами, задачами и базой знаний.',
-  },
-  {
-    value: 'accountant',
-    label: 'Бухгалтер',
-    description: 'Ответственный за чаты с клиентами. Получает SLA-уведомления.',
-  },
-  { value: 'observer', label: 'Наблюдатель', description: 'Только просмотр статистики и отчетов.' },
-];
 
 export function UserCreateDialog({ open, onClose, onSuccess }: UserCreateDialogProps) {
   const [email, setEmail] = React.useState('');

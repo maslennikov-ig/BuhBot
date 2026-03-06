@@ -15,35 +15,16 @@ type RouterInputs = inferRouterInputs<AppRouter>;
 type UserItem = RouterOutputs['auth']['listUsers'][number];
 type UserRole = RouterInputs['auth']['updateUserRole']['role'];
 
-const ROLES: { value: UserRole; label: string; description: string }[] = [
-  {
-    value: 'admin',
-    label: 'Администратор',
-    description: 'Полный доступ ко всем функциям системы.',
-  },
-  {
-    value: 'manager',
-    label: 'Менеджер',
-    description: 'Управление клиентами, задачами и базой знаний.',
-  },
-  {
-    value: 'accountant',
-    label: 'Бухгалтер',
-    description: 'Ответственный за чаты с клиентами. Получает SLA-уведомления.',
-  },
-  { value: 'observer', label: 'Наблюдатель', description: 'Только просмотр статистики и отчетов.' },
-];
+import { ROLES } from './constants';
 
 interface UserEditDialogProps {
   user: UserItem | null;
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
-export function UserEditDialog({ user, open, onClose, onSuccess }: UserEditDialogProps) {
+export function UserEditDialog({ user, open, onClose }: UserEditDialogProps) {
   const [fullName, setFullName] = React.useState('');
-  const [email, setEmail] = React.useState('');
   const [selectedRole, setSelectedRole] = React.useState<UserRole>('observer');
   const [error, setError] = React.useState<string | null>(null);
   const utils = trpc.useContext();
@@ -51,18 +32,15 @@ export function UserEditDialog({ user, open, onClose, onSuccess }: UserEditDialo
   React.useEffect(() => {
     if (user) {
       setFullName(user.fullName);
-      setEmail(user.email);
-      setSelectedRole(user.role as UserRole);
+      setSelectedRole(user.role);
       setError(null);
     }
   }, [user]);
 
+  const isDirty = user ? fullName !== user.fullName || selectedRole !== user.role : false;
+
   // Mutations
   const updateUserMutation = trpc.auth.updateUser.useMutation({
-    onError: (err) => setError(err.message),
-  });
-
-  const updateRoleMutation = trpc.auth.updateUserRole.useMutation({
     onError: (err) => setError(err.message),
   });
 
@@ -89,62 +67,47 @@ export function UserEditDialog({ user, open, onClose, onSuccess }: UserEditDialo
     );
 
   const isPending =
-    updateUserMutation.isPending ||
-    updateRoleMutation.isPending ||
-    deactivateMutation.isPending ||
-    reactivateMutation.isPending;
+    updateUserMutation.isPending || deactivateMutation.isPending || reactivateMutation.isPending;
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || !isDirty) return;
     setError(null);
 
-    try {
-      // Update profile fields if changed
-      const profileChanged = fullName !== user.fullName || email !== user.email;
-      if (profileChanged) {
-        const updateData: { userId: string; fullName?: string; email?: string } = {
-          userId: user.id,
-        };
-        if (fullName !== user.fullName) updateData.fullName = fullName;
-        if (email !== user.email) updateData.email = email;
-        await updateUserMutation.mutateAsync(updateData);
-      }
+    const updateData: { userId: string; fullName?: string; role?: UserRole } = {
+      userId: user.id,
+    };
+    if (fullName !== user.fullName) updateData.fullName = fullName;
+    if (selectedRole !== user.role) updateData.role = selectedRole;
 
-      // Update role if changed
-      if (selectedRole !== user.role) {
-        await updateRoleMutation.mutateAsync({
-          userId: user.id,
-          role: selectedRole,
-        });
-      }
-
-      utils.auth.listUsers.invalidate();
-      toast.success('Пользователь обновлён');
-      onSuccess();
-      onClose();
-    } catch {
-      // Error already handled by mutation onError
-    }
+    await updateUserMutation
+      .mutateAsync(updateData)
+      .then(() => {
+        utils.auth.listUsers.invalidate();
+        toast.success('Пользователь обновлён');
+        onClose();
+      })
+      .catch(() => {
+        // Error displayed via onError -> setError
+      });
   };
 
   const handleToggleActive = async () => {
     if (!user) return;
     setError(null);
 
-    try {
-      if (user.isActive) {
-        await deactivateMutation.mutateAsync({ userId: user.id });
-        toast.success('Пользователь деактивирован');
-      } else {
-        await reactivateMutation.mutateAsync({ userId: user.id });
-        toast.success('Пользователь активирован');
-      }
-      utils.auth.listUsers.invalidate();
-      onSuccess();
-      onClose();
-    } catch {
-      // Error already handled by mutation onError
-    }
+    const mutation = user.isActive ? deactivateMutation : reactivateMutation;
+    const message = user.isActive ? 'Пользователь деактивирован' : 'Пользователь активирован';
+
+    await mutation
+      .mutateAsync({ userId: user.id })
+      .then(() => {
+        utils.auth.listUsers.invalidate();
+        toast.success(message);
+        onClose();
+      })
+      .catch(() => {
+        // Error displayed via onError -> setError
+      });
   };
 
   const handleClose = () => {
@@ -196,18 +159,6 @@ export function UserEditDialog({ user, open, onClose, onSuccess }: UserEditDialo
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] px-3 text-sm focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--buh-foreground)] mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] px-3 text-sm focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]"
             />
           </div>
@@ -336,7 +287,8 @@ export function UserEditDialog({ user, open, onClose, onSuccess }: UserEditDialo
               variant="ghost"
               size="sm"
               onClick={handleToggleActive}
-              disabled={isPending}
+              disabled={isPending || isDirty}
+              title={isDirty ? 'Сначала сохраните или отмените изменения' : undefined}
               className={
                 user.isActive
                   ? 'text-[var(--buh-error)] hover:text-[var(--buh-error)] hover:bg-[var(--buh-error-muted)]'
@@ -353,7 +305,7 @@ export function UserEditDialog({ user, open, onClose, onSuccess }: UserEditDialo
           <Button variant="ghost" onClick={handleClose}>
             Отмена
           </Button>
-          <Button className="buh-btn-primary" onClick={handleSave} disabled={isPending}>
+          <Button className="buh-btn-primary" onClick={handleSave} disabled={isPending || !isDirty}>
             {isPending ? 'Сохранение...' : 'Сохранить'}
           </Button>
         </div>

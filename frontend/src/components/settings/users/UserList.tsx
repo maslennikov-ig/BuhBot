@@ -14,6 +14,8 @@ import { AppRouter } from '@/types/trpc';
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UserItem = RouterOutputs['auth']['listUsers'][number];
 
+import { ROLE_LABELS, ROLE_COLORS } from './constants';
+
 interface UserListProps {
   onEditUser: (user: UserItem) => void;
   onEditTelegramId: (user: UserItem) => void;
@@ -21,20 +23,6 @@ interface UserListProps {
   onAddUser: () => void;
   isAdmin: boolean;
 }
-
-const ROLE_LABELS = {
-  admin: 'Администратор',
-  manager: 'Менеджер',
-  accountant: 'Бухгалтер',
-  observer: 'Наблюдатель',
-};
-
-const ROLE_COLORS = {
-  admin: 'text-[var(--buh-error)] bg-[var(--buh-error-muted)]',
-  manager: 'text-[var(--buh-primary)] bg-[var(--buh-primary-muted)]',
-  accountant: 'text-[var(--buh-success)] bg-[var(--buh-success)]/10',
-  observer: 'text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-subtle)]',
-};
 
 const ROLE_FILTER_OPTIONS: { label: string; value: string | null }[] = [
   { label: 'Все', value: null },
@@ -220,9 +208,9 @@ export function UserList({
                   <td className="px-4 py-3 text-[var(--buh-foreground-muted)]">{user.email}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role as keyof typeof ROLE_COLORS] || ROLE_COLORS.observer}`}
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role] || ROLE_COLORS.observer}`}
                     >
-                      {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                      {ROLE_LABELS[user.role] || user.role}
                     </span>
                   </td>
                   <td className="px-4 py-3">

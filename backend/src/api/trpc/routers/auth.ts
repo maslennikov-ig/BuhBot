@@ -225,6 +225,63 @@ export const authRouter = router({
     }),
 
   /**
+   * Update user profile fields
+   *
+   * @param userId - Target user ID
+   * @param fullName - New full name (optional)
+   * @param email - New email (optional)
+   * @returns Success status
+   * @authorization Admin only
+   */
+  updateUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        fullName: z.string().min(1).optional(),
+        email: z.string().email().optional(),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      // Validate user exists
+      const targetUser = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+      });
+
+      if (!targetUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Пользователь не найден',
+        });
+      }
+
+      // Build update data from provided fields
+      const updateData: { fullName?: string; email?: string } = {};
+      if (input.fullName !== undefined) updateData.fullName = input.fullName;
+      if (input.email !== undefined) updateData.email = input.email;
+
+      if (Object.keys(updateData).length === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Не указаны поля для обновления',
+        });
+      }
+
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: updateData,
+      });
+
+      logger.info('[Audit] Admin updated user profile', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
+        updatedFields: Object.keys(updateData),
+      });
+
+      return { success: true };
+    }),
+
+  /**
    * Update a user's role
    *
    * @param userId - Target user ID

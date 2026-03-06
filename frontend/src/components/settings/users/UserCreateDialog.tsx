@@ -30,6 +30,11 @@ const ROLES: { value: UserRole; label: string; description: string }[] = [
     label: 'Менеджер',
     description: 'Управление клиентами, задачами и базой знаний.',
   },
+  {
+    value: 'accountant',
+    label: 'Бухгалтер',
+    description: 'Ответственный за чаты с клиентами. Получает SLA-уведомления.',
+  },
   { value: 'observer', label: 'Наблюдатель', description: 'Только просмотр статистики и отчетов.' },
 ];
 

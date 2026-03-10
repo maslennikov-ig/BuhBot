@@ -23,7 +23,7 @@ env:
   # 1. Use explicit input if provided (from release-please)
   # 2. Use workflow_run head_sha if triggered by workflow_run
   # 3. Fall back to current commit
-  DEPLOY_SHA: ${{ inputs.sha || github.event.workflow_run.head_sha || github.sha }}
+  DEPLOY_SHA: ${{ github.event.inputs.sha || github.event.workflow_run.head_sha || github.sha }}
   REGISTRY: ghcr.io
 
 jobs:

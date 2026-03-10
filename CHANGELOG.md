@@ -5,6 +5,21 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.2...buhbot-v0.25.0) (2026-03-10)
+
+
+### Features
+
+* add workflow_dispatch trigger and update commitlint docs ([#253](https://github.com/maslennikov-ig/BuhBot/issues/253)) ([a3c1777](https://github.com/maslennikov-ig/BuhBot/commit/a3c17776ed84676df53185a42221373548180119))
+
+
+### Bug Fixes
+
+* correct ci-success job bash syntax for checking job results ([a6575a9](https://github.com/maslennikov-ig/BuhBot/commit/a6575a98719996e925e4a767b063c5eb342ef6ac))
+* optimize release-please workflow with smart CI and PAT ([a6575a9](https://github.com/maslennikov-ig/BuhBot/commit/a6575a98719996e925e4a767b063c5eb342ef6ac))
+* Simplify release-please workflow - remove manual file check ([a6575a9](https://github.com/maslennikov-ig/BuhBot/commit/a6575a98719996e925e4a767b063c5eb342ef6ac))
+* Update release workflow and documentation ([#234](https://github.com/maslennikov-ig/BuhBot/issues/234)) ([a6575a9](https://github.com/maslennikov-ig/BuhBot/commit/a6575a98719996e925e4a767b063c5eb342ef6ac))
+
 ## [0.24.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.1...buhbot-v0.24.2) (2026-03-10)
 
 
@@ -652,5 +667,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **users:** allow selecting admins as accountants ([3c0e188](https://github.com/maslennikov-ig/BuhBot/commit/3c0e188624614ed07f615b6084957a3ddfaeabdd))
 * **webhook:** skip express.json() for Telegram webhook path ([1cb266b](https://github.com/maslennikov-ig/BuhBot/commit/1cb266bf36298e6c22c24b0d4419fe65efcf484f))
 * **webhook:** use explicit POST route for Telegraf middleware ([f2081af](https://github.com/maslennikov-ig/BuhBot/commit/f2081af80244867314867e5b1013142531f21ae9))
-
-

@@ -17,7 +17,62 @@ env:
 
 jobs:
   # ==========================================================================
-  # Lint Job - Code quality checks
+  # Detect if this is a Release-Please PR (lightweight check)
+  # ==========================================================================
+  detect-release-pr:
+    name: Detect Release PR
+    runs-on: ubuntu-latest
+    outputs:
+      is_release_pr: ${{ steps.check.outputs.is_release_pr }}
+      should_skip_heavy: ${{ steps.check.outputs.should_skip_heavy }}
+    steps:
+      - name: Check if release PR
+        id: check
+        run: |
+          IS_RELEASE_PR="false"
+          SHOULD_SKIP_HEAVY="false"
+
+          # Check 1: Actor is a known release bot (common patterns)
+          # The PAT user name is typically the GitHub username of the token owner
+          ACTOR="${{ github.actor }}"
+          if [[ "$ACTOR" == *"release"* ]] || [[ "$ACTOR" == *"bot"* ]]; then
+            IS_RELEASE_PR="true"
+            SHOULD_SKIP_HEAVY="true"
+            echo "::notice::Detected release bot actor: $ACTOR"
+          fi
+
+          # Check 2: For pull requests, check if only CHANGELOG and version files changed
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Get the list of changed files from the PR
+            CHANGED_FILES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "${{ github.event.pull_request.url }}/files" | \
+              jq -r '.[].filename')
+            
+            # Check if all changed files are only release-related
+            ALL_RELEASE_FILES=true
+            for file in $CHANGED_FILES; do
+              case "$file" in
+                CHANGELOG.md|.release-please-manifest.json|package.json|release-please-config.json)
+                  # These are expected for release PRs
+                  ;;
+                *)
+                  ALL_RELEASE_FILES=false
+                  break
+                  ;;
+              esac
+            done
+            
+            if [ "$ALL_RELEASE_FILES" = true ] && [ -n "$CHANGED_FILES" ]; then
+              SHOULD_SKIP_HEAVY="true"
+              echo "::notice::Release PR detected: only release-related files changed"
+            fi
+          fi
+
+          echo "is_release_pr=$IS_RELEASE_PR" >> $GITHUB_OUTPUT
+          echo "should_skip_heavy=$SHOULD_SKIP_HEAVY" >> $GITHUB_OUTPUT
+
+  # ==========================================================================
+  # Lint Job - Code quality checks (always run)
   # ==========================================================================
   lint:
     name: Lint
@@ -49,7 +104,7 @@ jobs:
         run: pnpm lint
 
   # ==========================================================================
-  # Format Check Job - Prettier (safety net for --no-verify)
+  # Format Check Job - Prettier (always run)
   # ==========================================================================
   format:
     name: Format
@@ -79,7 +134,7 @@ jobs:
         run: pnpm format:check
 
   # ==========================================================================
-  # Type Check Job - TypeScript validation
+  # Type Check Job - TypeScript validation (always run)
   # ==========================================================================
   type-check:
     name: Type Check
@@ -115,7 +170,7 @@ jobs:
         run: pnpm type-check
 
   # ==========================================================================
-  # Build Docker Images Job - Build and push to ghcr.io
+  # Build Docker Images Job - Skip for Release PRs
   # ==========================================================================
   build-docker:
     name: Build Docker Images
@@ -124,6 +179,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    # Skip this job for release PRs to save compute
+    if: needs.detect-release-pr.outputs.should_skip_heavy != 'true'
 
     steps:
       - name: Checkout code
@@ -194,7 +251,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=monitoring
 
   # ==========================================================================
-  # Security Scan Job - npm audit
+  # Security Scan Job - Always run (lightweight)
   # ==========================================================================
   security-scan:
     name: Security Scan
@@ -227,12 +284,14 @@ jobs:
         continue-on-error: true
 
   # ==========================================================================
-  # Test Job - Run tests if present
+  # Test Job - Skip for Release PRs
   # ==========================================================================
   test:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Skip this job for release PRs to save compute
+    if: needs.detect-release-pr.outputs.should_skip_heavy != 'true'
 
     services:
       redis:
@@ -278,12 +337,12 @@ jobs:
           REDIS_PORT: 6379
 
   # ==========================================================================
-  # CI Summary Job - Final status
+  # CI Summary Job - Handles skipped jobs correctly
   # ==========================================================================
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [lint, format, type-check, build-docker, security-scan, test]
+    needs: [detect-release-pr, lint, format, type-check, build-docker, security-scan, test]
     if: always()
 
     steps:
@@ -291,31 +350,46 @@ jobs:
         id: check
         run: |
           FAILED=""
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            echo "::error::Lint job failed"
-            FAILED="${FAILED}lint,"
-          fi
-          if [ "${{ needs.format.result }}" != "success" ]; then
-            echo "::error::Format job failed"
-            FAILED="${FAILED}format,"
-          fi
-          if [ "${{ needs.type-check.result }}" != "success" ]; then
-            echo "::error::Type check job failed"
-            FAILED="${FAILED}type-check,"
-          fi
-          if [ "${{ needs.build-docker.result }}" != "success" ]; then
-            echo "::error::Docker build job failed"
-            FAILED="${FAILED}build-docker,"
-          fi
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "::error::Test job failed"
-            FAILED="${FAILED}test,"
-          fi
+          SKIPPED=""
+          IS_RELEASE_PR="${{ needs.detect-release-pr.outputs.is_release_pr }}"
+          SHOULD_SKIP="${{ needs.detect-release-pr.outputs.should_skip_heavy }}"
+
+          # For lint, format, type-check, security-scan - always require success
+          for job in lint format type-check security-scan; do
+            result="\${needs.${job}.result}"
+            if [ "$result" != "success" ]; then
+              echo "::error::$job job failed or was skipped"
+              FAILED="${FAILED}${job},"
+            fi
+          done
+
+          # For heavy jobs (build-docker, test) - allow skipped if it's a release PR
+          for job in build-docker test; do
+            result="\${needs.${job}.result}"
+            if [ "$result" == "failure" ]; then
+              echo "::error::$job job failed"
+              FAILED="${FAILED}${job},"
+            elif [ "$result" == "skipped" ]; then
+              if [ "$SHOULD_SKIP" == "true" ]; then
+                echo "::notice::$job skipped for release PR (expected)"
+                SKIPPED="${SKIPPED}${job},"
+              else
+                echo "::error::$job was unexpectedly skipped"
+                FAILED="${FAILED}${job},"
+              fi
+            fi
+          done
+
           if [ -n "$FAILED" ]; then
             echo "failed_jobs=${FAILED%,}" >> $GITHUB_OUTPUT
             exit 1
           fi
-          echo "All CI checks passed successfully!"
+
+          if [ -n "$SKIPPED" ]; then
+            echo "Lightweight CI passed (skipped: ${SKIPPED%,})"
+          else
+            echo "All CI checks passed successfully!"
+          fi
 
       - name: Send Telegram notification on failure
         if: failure() && github.ref == 'refs/heads/main'

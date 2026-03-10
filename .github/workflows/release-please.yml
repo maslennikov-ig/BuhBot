@@ -14,6 +14,7 @@ on:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for CI
+        # Only wait for CI when triggered by workflow_run (not manual dispatch)
+        if: github.event_name != 'workflow_dispatch'
         uses: actions/github-script@v7
         with:
           script: |
@@ -90,8 +93,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // Get the SHA to deploy - prefer the release PR branch SHA
-            const releaseSha = '${{ steps.sha.outputs.release_sha }}' || context.payload.workflow_run.head_sha;
+            // Get the SHA to deploy - prefer the release PR branch SHA, fallback to context SHA
+            const releaseSha = '${{ steps.sha.outputs.release_sha }}' || context.payload.workflow_run?.head_sha || context.sha;
             console.log('Triggering deploy for SHA:', releaseSha);
 
             await github.rest.actions.createWorkflowDispatch({

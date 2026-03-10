@@ -20,7 +20,7 @@ All agents and contributors MUST follow these rules when writing commit messages
 
 - **Type** (required): Lowercase, one of the allowed types below.
 - **Scope** (optional): Lowercase, no spaces; the area of the codebase affected (e.g. `auth`, `api`, `frontend`).
-- **Subject** (required): Imperative mood, no trailing period. Max **72 characters**. Describes what the commit does, not what was done. Multiple case formats are allowed (see [Allowed Subject Cases](#allowed-subject-cases)).
+- **Subject** (required): Imperative mood, no trailing period. Max **100 characters**. Describes what the commit does, not what was done. Multiple case formats are allowed (see [Allowed Subject Cases](#allowed-subject-cases)).
 
 ### Allowed Types
 
@@ -78,7 +78,7 @@ These rules ensure Release Please (and similar tools) parse commits correctly an
 
 | Rule                              | Requirement                                                                                                                                                                                  |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Subject format**                | Imperative mood, no period at end, ≤ 72 chars. Lowercase recommended; other cases allowed when appropriate (e.g., code references).                                                          |
+| **Subject format**                | Imperative mood, no period at end, ≤ 100 chars. Lowercase recommended; other cases allowed when appropriate (e.g., code references).                                                          |
 | **One logical change per commit** | Prefer one fix/feature per commit. Avoid "fix: resolve 6 bugs" when you can split; each commit becomes one changelog line.                                                                   |
 | **No meta commits in changelog**  | Avoid commits that only say "bd sync", "update docs", or "chore: update project files" if they add no user-facing meaning. Use descriptive messages or accept they may appear under "Other". |
 | **Reserve chore(release)**        | Only Release Please (or the release script) should create `chore(release): vX.Y.Z`. Never use `chore(release):` for other changes.                                                           |
@@ -153,7 +153,7 @@ Use the format your issue tracker expects (e.g. `gh-42`, `#42`, `buh-xxx`).
 ## 6. Enforcement
 
 - **Release process:** Releases and CHANGELOG are created by Release Please when changes are merged to `main`. The workflow waits for CI to complete, then creates/updates a release PR. When that PR is merged, the release is published and production deployment is triggered automatically (only if a version bump occurred). Conventional commits drive CHANGELOG and version bumps. Do not rely on manual `/push` for normal releases.
-- **commitlint** runs on `commit-msg` (Husky) to enforce format locally. Config: `commitlint.config.js`.
+- **commitlint** runs on `commit-msg` (Husky) to enforce format locally. Config: `commitlint.config.js`. The linter is configured with relaxed rules: subject-case validation is disabled, and header/body max length is 100 characters to accommodate PR suffixes like `(#123)`.
 - **CI** runs `pnpm format:check` as a safety net; it may run commitlint on PRs as a backup.
 - **Agents** MUST use the `format-commit-message` skill (or these rules) for every commit, including when using `/push patch -m "..."`.
 

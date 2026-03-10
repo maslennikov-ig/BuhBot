@@ -8,17 +8,23 @@ on:
         required: false
         default: false
         type: boolean
+      sha:
+        description: 'Commit SHA to deploy (defaults to current or workflow_run head)'
+        required: false
+        type: string
 
 concurrency:
   group: deploy-production
-  cancel-in-progress: false
+  cancel-in-progress: false # Never cancel a deployment in progress
 
 env:
   VDS_DEPLOY_PATH: /home/buhbot/BuhBot
-  # Use workflow_run SHA when triggered by CI completion, otherwise current SHA (for manual or Release Please dispatch)
-  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  # Determine SHA to deploy:
+  # 1. Use explicit input if provided (from release-please)
+  # 2. Use workflow_run head_sha if triggered by workflow_run
+  # 3. Fall back to current commit
+  DEPLOY_SHA: ${{ inputs.sha || github.event.workflow_run.head_sha || github.sha }}
   REGISTRY: ghcr.io
-  # Note: IMAGE_PREFIX is set per-job to ensure lowercase (see prepare job)
 
 jobs:
   # ==========================================================================
@@ -33,6 +39,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       image_tag: ${{ env.DEPLOY_SHA }}
       image_prefix: ${{ steps.repo.outputs.prefix }}
+      trigger_source: ${{ steps.trigger_info.outputs.source }}
 
     steps:
       - name: Checkout code
@@ -50,6 +57,18 @@ jobs:
           VERSION=$(jq -r '.version' package.json)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Deploying version: $VERSION (commit: ${{ env.DEPLOY_SHA }})"
+
+      - name: Determine trigger source
+        id: trigger_info
+        run: |
+          if [ "${{ github.event.inputs.sha }}" != "" ]; then
+            echo "source=release-please" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.workflow_run.head_sha }}" != "" ]; then
+            echo "source=ci-workflow" >> $GITHUB_OUTPUT
+          else
+            echo "source=manual" >> $GITHUB_OUTPUT
+          fi
+          echo "Trigger source: ${{ steps.trigger_info.outputs.source }}"
 
       - name: Verify images exist in registry
         run: |
@@ -76,6 +95,7 @@ jobs:
           echo "Commit: ${{ env.DEPLOY_SHA }}"
           echo "Version: ${{ needs.prepare.outputs.version }}"
           echo "Triggered by: ${{ github.actor }}"
+          echo "Source: ${{ needs.prepare.outputs.trigger_source }}"
 
   # ==========================================================================
   # Deploy to VDS (pull images from ghcr.io)
@@ -257,6 +277,7 @@ jobs:
           COMMIT_SHA: ${{ env.DEPLOY_SHA }}
           ACTOR: ${{ github.actor }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER_SOURCE: ${{ needs.prepare.outputs.trigger_source }}
         if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
         run: |
           if [ "$DEPLOY_RESULT" == "success" ]; then
@@ -280,4 +301,5 @@ jobs:
           echo "| Version | ${{ needs.prepare.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | ${{ env.DEPLOY_SHA }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Actor | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger Source | ${{ needs.prepare.outputs.trigger_source }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Environment | production |" >> $GITHUB_STEP_SUMMARY

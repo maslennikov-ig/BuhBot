@@ -32,6 +32,7 @@ import { cancelEscalation } from '../../../services/alerts/escalation.service.js
 import { formatAccountantNotification } from '../../../services/alerts/format.service.js';
 import { bot } from '../../../bot/bot.js';
 import logger from '../../../utils/logger.js';
+import { getScopedChatIds } from '../helpers/scoping.js';
 
 // ============================================================================
 // SHARED SCHEMAS
@@ -575,6 +576,12 @@ export const alertRouter = router({
         }
       }
 
+      // Role-based scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null) {
+        where.request = { ...((where.request as object) ?? {}), chatId: { in: scopedChatIds } };
+      }
+
       // Fetch alerts with pagination
       const [alerts, total] = await Promise.all([
         ctx.prisma.slaAlert.findMany({
@@ -636,6 +643,15 @@ export const alertRouter = router({
         });
       }
 
+      // Role-based scoping: verify user can access this alert's chat
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      if (scopedChatIds !== null && !scopedChatIds.some((id) => id === alert.request.chatId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied. You can only access alerts for chats assigned to you.',
+        });
+      }
+
       return transformAlertToOutput(alert);
     }),
 
@@ -650,9 +666,13 @@ export const alertRouter = router({
     .input(GetActiveAlertsInput)
     .output(z.array(AlertOutput))
     .query(async ({ ctx }) => {
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      const requestFilter = scopedChatIds !== null ? { chatId: { in: scopedChatIds } } : {};
+
       const alerts = await ctx.prisma.slaAlert.findMany({
         where: {
           resolvedAction: null,
+          request: requestFilter,
         },
         include: {
           request: {
@@ -680,9 +700,13 @@ export const alertRouter = router({
   getActiveAlertCount: authedProcedure
     .output(z.object({ count: z.number() }))
     .query(async ({ ctx }) => {
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      const requestFilter = scopedChatIds !== null ? { chatId: { in: scopedChatIds } } : {};
+
       const count = await ctx.prisma.slaAlert.count({
         where: {
           resolvedAction: null,
+          request: requestFilter,
         },
       });
 
@@ -711,11 +735,16 @@ export const alertRouter = router({
       const monthStart = new Date(todayStart);
       monthStart.setDate(monthStart.getDate() - 30);
 
+      // Role-based scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      const requestFilter = scopedChatIds !== null ? { chatId: { in: scopedChatIds } } : {};
+
       // Get today's stats
       const [todayAlerts, weekAlerts, monthBreaches] = await Promise.all([
         ctx.prisma.slaAlert.findMany({
           where: {
             alertSentAt: { gte: todayStart },
+            request: requestFilter,
           },
           select: {
             alertType: true,
@@ -725,6 +754,7 @@ export const alertRouter = router({
         ctx.prisma.slaAlert.findMany({
           where: {
             alertSentAt: { gte: weekStart },
+            request: requestFilter,
           },
           select: {
             alertType: true,
@@ -736,6 +766,7 @@ export const alertRouter = router({
           where: {
             alertSentAt: { gte: monthStart },
             alertType: 'breach',
+            request: requestFilter,
           },
           include: {
             request: {

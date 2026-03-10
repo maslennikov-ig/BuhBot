@@ -13,7 +13,7 @@ WORKDIR /backend
 COPY backend/package.json backend/package-lock.json ./
 
 # Install backend dependencies (only for Prisma generation)
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy Prisma schema
 COPY backend/prisma ./prisma

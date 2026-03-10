@@ -4,7 +4,7 @@ import * as React from 'react';
 import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
-import { Search, User as UserIcon, MessageCircle, Users, Trash2, Plus } from 'lucide-react';
+import { Search, User as UserIcon, MessageCircle, Users, Trash2, Plus, Pencil } from 'lucide-react';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 
@@ -14,47 +14,52 @@ import { AppRouter } from '@/types/trpc';
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UserItem = RouterOutputs['auth']['listUsers'][number];
 
+import { ROLE_LABELS, ROLE_COLORS } from './constants';
+
 interface UserListProps {
-  onEditRole: (user: UserItem) => void;
+  onEditUser: (user: UserItem) => void;
   onEditTelegramId: (user: UserItem) => void;
   onDeleteUser: (user: UserItem) => void;
   onAddUser: () => void;
   isAdmin: boolean;
 }
 
-const ROLE_LABELS = {
-  admin: 'Администратор',
-  manager: 'Менеджер',
-  observer: 'Наблюдатель',
-};
-
-const ROLE_COLORS = {
-  admin: 'text-[var(--buh-error)] bg-[var(--buh-error-muted)]',
-  manager: 'text-[var(--buh-primary)] bg-[var(--buh-primary-muted)]',
-  observer: 'text-[var(--buh-foreground-muted)] bg-[var(--buh-surface-subtle)]',
-};
+const ROLE_FILTER_OPTIONS: { label: string; value: string | null }[] = [
+  { label: 'Все', value: null },
+  { label: 'Администраторы', value: 'admin' },
+  { label: 'Менеджеры', value: 'manager' },
+  { label: 'Бухгалтеры', value: 'accountant' },
+  { label: 'Наблюдатели', value: 'observer' },
+];
 
 export function UserList({
-  onEditRole,
+  onEditUser,
   onEditTelegramId,
   onDeleteUser,
   onAddUser,
   isAdmin,
 }: UserListProps) {
   const [search, setSearch] = React.useState('');
+  const [roleFilter, setRoleFilter] = React.useState<string | null>(null);
 
   const { data: users, isLoading } = trpc.auth.listUsers.useQuery({});
 
   const filteredItems = React.useMemo(() => {
     if (!users) return [];
-    if (!search) return users;
-    const lowerSearch = search.toLowerCase();
-    return users.filter(
-      (user) =>
-        user.fullName.toLowerCase().includes(lowerSearch) ||
-        user.email.toLowerCase().includes(lowerSearch)
-    );
-  }, [users, search]);
+    let result = users;
+    if (roleFilter) {
+      result = result.filter((user) => user.role === roleFilter);
+    }
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      result = result.filter(
+        (user) =>
+          user.fullName.toLowerCase().includes(lowerSearch) ||
+          user.email.toLowerCase().includes(lowerSearch)
+      );
+    }
+    return result;
+  }, [users, search, roleFilter]);
 
   const { sortedData, requestSort, getSortIcon } = useTableSort(filteredItems, 'fullName', 'asc');
 
@@ -95,6 +100,25 @@ export function UserList({
             Управление ролями и доступом
           </p>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {ROLE_FILTER_OPTIONS.map((option) => {
+          const isActive = roleFilter === option.value;
+          return (
+            <button
+              key={option.label}
+              onClick={() => setRoleFilter(option.value)}
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                isActive
+                  ? 'bg-[var(--buh-primary)] text-white'
+                  : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-primary-muted)] hover:text-[var(--buh-primary)]'
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-between gap-4">
@@ -138,6 +162,12 @@ export function UserList({
                 onClick={() => requestSort('role')}
                 className="px-6 py-3"
               />
+              <SortableHeader
+                label="Статус"
+                sortDirection={getSortIcon('isActive')}
+                onClick={() => requestSort('isActive')}
+                className="px-6 py-3"
+              />
               <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                 Telegram
               </th>
@@ -149,7 +179,7 @@ export function UserList({
           <tbody className="divide-y divide-[var(--buh-border)] bg-[var(--buh-surface)]">
             {sortedData.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center">
+                <td colSpan={6} className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)]">
                       <Users className="h-8 w-8 text-[var(--buh-foreground-subtle)]" />
@@ -178,10 +208,21 @@ export function UserList({
                   <td className="px-4 py-3 text-[var(--buh-foreground-muted)]">{user.email}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role as keyof typeof ROLE_COLORS] || ROLE_COLORS.observer}`}
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[user.role] || ROLE_COLORS.observer}`}
                     >
-                      {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role}
+                      {ROLE_LABELS[user.role] || user.role}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {user.isActive ? (
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-[var(--buh-success)] bg-[var(--buh-success)]/10">
+                        Активен
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-[var(--buh-error)] bg-[var(--buh-error-muted)]">
+                        Деактивирован
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {isAdmin ? (
@@ -217,10 +258,11 @@ export function UserList({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onEditRole(user)}
-                          className="text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)]"
+                          onClick={() => onEditUser(user)}
+                          className="text-[var(--buh-primary)] hover:text-[var(--buh-primary-hover)] hover:bg-[var(--buh-primary-muted)]"
+                          title="Редактировать пользователя"
                         >
-                          Изменить роль
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       )}
                       {isAdmin && (

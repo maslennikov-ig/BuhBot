@@ -349,7 +349,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                 </GlassCard>
               ) : (
                 <>
-                  {/* Settings Form - dropdown uses z-[1000] so no wrapper z-index needed */}
+                  {/* Settings Form */}
                   <ChatSettingsForm
                     chatId={chat.id}
                     managerTelegramIds={chat.managerTelegramIds ?? []}

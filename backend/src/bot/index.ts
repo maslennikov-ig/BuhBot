@@ -41,6 +41,7 @@ import { registerEditHandler } from './handlers/edit.handler.js';
 import { registerFileHandler } from './handlers/file.handler.js';
 import { registerTemplateHandler } from './handlers/template.handler.js';
 import { registerSystemHandler } from './handlers/system.handler.js';
+import { registerAccountantHandler } from './handlers/accountant.handler.js';
 import { setupWebhook, removeWebhook, getWebhookInfo, launchPolling } from './webhook.js';
 import logger from '../utils/logger.js';
 
@@ -90,6 +91,9 @@ export function registerHandlers(): void {
 
   // Register system handler (/info, /version)
   registerSystemHandler();
+
+  // Register accountant handler (/mystats, /mychats, /newchat, /notifications)
+  registerAccountantHandler();
 
   // Register menu handler for client self-service menu
   // IMPORTANT: Must be registered BEFORE message handler to ensure /menu command is processed

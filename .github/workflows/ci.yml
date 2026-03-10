@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -12,7 +13,7 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '9'
+  PNPM_VERSION: '10'
   DOCKER_BUILDKIT: 1
 
 jobs:
@@ -83,25 +84,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: backend/pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: pnpm install --frozen-lockfile
+        run: npm ci --legacy-peer-deps
 
       - name: Run ESLint
         working-directory: ./backend
-        run: pnpm lint
+        run: npx eslint src
 
   # ==========================================================================
   # Format Check Job - Prettier (always run)
@@ -145,29 +141,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: backend/pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: pnpm install --frozen-lockfile
+        run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma client
         working-directory: ./backend
-        run: pnpm prisma generate
+        run: npx prisma generate
 
       - name: Run TypeScript type check
         working-directory: ./backend
-        run: pnpm type-check
+        run: npx tsc --noEmit
 
   # ==========================================================================
   # Build Docker Images Job - Skip for Release PRs
@@ -262,25 +253,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: backend/pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: pnpm install --frozen-lockfile
+        run: npm ci --legacy-peer-deps
 
-      - name: Run pnpm audit (backend)
+      - name: Run npm audit (backend)
         working-directory: ./backend
-        run: pnpm audit --audit-level=critical
+        run: npm audit --audit-level=critical
         continue-on-error: true
 
   # ==========================================================================
@@ -308,29 +294,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: backend/pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: pnpm install --frozen-lockfile
+        run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma client
         working-directory: ./backend
-        run: pnpm prisma generate
+        run: npx prisma generate
 
       - name: Run tests
         working-directory: ./backend
-        run: pnpm test
+        run: npx vitest run
         env:
           NODE_ENV: test
           REDIS_HOST: localhost

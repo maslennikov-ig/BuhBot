@@ -8,10 +8,11 @@
  * @module api/trpc/routers/alerts
  */
 
-import { router, managerProcedure } from '../trpc.js';
+import { router, managerProcedure, accountantProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
+import { getScopedChatIds } from '../helpers/scoping.js';
 
 /**
  * Alert type schema (matches Prisma AlertType enum)
@@ -32,7 +33,7 @@ export const alertsRouter = router({
    * @returns Array of unacknowledged alerts with request context
    * @authorization Admins and managers only (contains PII - client message text)
    */
-  listUnacknowledged: managerProcedure
+  listUnacknowledged: accountantProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).default(20),
@@ -54,10 +55,15 @@ export const alertsRouter = router({
       )
     )
     .query(async ({ ctx, input }) => {
+      // Role-based scoping
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+      const chatFilter = scopedChatIds !== null ? { chatId: { in: scopedChatIds } } : {};
+
       // Fetch unacknowledged alerts with related request data
       const alerts = await ctx.prisma.slaAlert.findMany({
         where: {
           acknowledgedAt: null,
+          request: chatFilter,
         },
         select: {
           id: true,

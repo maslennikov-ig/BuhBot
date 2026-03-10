@@ -304,7 +304,15 @@ const startServer = async (port: number) => {
 
       // Launch polling in background
       launchPolling().catch((err) => {
-        logger.error('Failed to launch polling', { error: err.message });
+        if (err.message?.includes('409') || err.message?.includes('terminated by other')) {
+          logger.warn(
+            'Telegram polling conflict detected (409). Another bot instance may be running. ' +
+              'Stop the other instance or set TELEGRAM_WEBHOOK_URL to use webhooks.',
+            { service: 'startup' }
+          );
+        } else {
+          logger.error('Failed to launch polling', { error: err.message });
+        }
       });
     }
   } catch (error) {

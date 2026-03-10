@@ -5,6 +5,56 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.1...buhbot-v0.24.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* **settings:** render sla manager form on settings page ([#213](https://github.com/maslennikov-ig/BuhBot/issues/213)) ([#251](https://github.com/maslennikov-ig/BuhBot/issues/251)) ([5013352](https://github.com/maslennikov-ig/BuhBot/commit/50133528dd46fd58458d564e905ad2342c4bf138))
+
+## [0.24.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.0...buhbot-v0.24.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* **db:** add accountant to users_role_check constraint ([98d5ddb](https://github.com/maslennikov-ig/BuhBot/commit/98d5ddbc624ade6e7646b590d5e1b64cab1cb804))
+
+## [0.24.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.23.1...buhbot-v0.24.0) (2026-03-06)
+
+
+### Features
+
+* **users:** overhaul users page and accountant role ([#248](https://github.com/maslennikov-ig/BuhBot/issues/248)) ([18b05bf](https://github.com/maslennikov-ig/BuhBot/commit/18b05bfb22794b000c8acebed8ec32da278ce97b))
+
+
+### Bug Fixes
+
+* **users:** use success-muted css var and clean up catch blocks ([5282a25](https://github.com/maslennikov-ig/BuhBot/commit/5282a25cfcbbe84983e2a534bad52242d3a73e45))
+
+## [0.23.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.23.0...buhbot-v0.23.1) (2026-03-05)
+
+
+### Bug Fixes
+
+* **ci:** switch backend jobs from pnpm to npm ([dc175f7](https://github.com/maslennikov-ig/BuhBot/commit/dc175f7fbbda7fe8040fa09bb0b25f79bb67e1a0))
+* **deploy:** move prisma to production dependencies ([#244](https://github.com/maslennikov-ig/BuhBot/issues/244)) ([0f1753d](https://github.com/maslennikov-ig/BuhBot/commit/0f1753da94ddf2cc92af83333694193fcf9a12bd))
+* **deps:** restore backend lockfile with compatible trpc version ([2c2547a](https://github.com/maslennikov-ig/BuhBot/commit/2c2547a81602f54ef89c0ceaac3c2f47da6b493d))
+* **docker:** add legacy-peer-deps to frontend dockerfile backend stage ([931585e](https://github.com/maslennikov-ig/BuhBot/commit/931585e6cd155387c655669cc4e609736ce6967a))
+* **docker:** include prisma.config.ts in backend image ([0c94493](https://github.com/maslennikov-ig/BuhBot/commit/0c9449378dd5103db1320ec6853f5d21fe6d005f))
+
+## [0.23.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.22.0...buhbot-v0.23.0) (2026-03-05)
+
+
+### Features
+
+* **auth:** add accountant role with rbac scoping and verification ([2841242](https://github.com/maslennikov-ig/BuhBot/commit/28412429e7363c0c6a86fe9d9cce38b80b62aef3))
+* **auth:** add accountant role with RBAC scoping and verification ([#241](https://github.com/maslennikov-ig/BuhBot/issues/241)) ([2841242](https://github.com/maslennikov-ig/BuhBot/commit/28412429e7363c0c6a86fe9d9cce38b80b62aef3))
+
+
+### Bug Fixes
+
+* resolve 5 GitHub issues and add keyboard navigation ([#240](https://github.com/maslennikov-ig/BuhBot/issues/240)) ([7122aea](https://github.com/maslennikov-ig/BuhBot/commit/7122aead683089534fb03388bd53f3f70528e80a))
+
 ## [0.22.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.21.4...buhbot-v0.22.0) (2026-03-03)
 
 

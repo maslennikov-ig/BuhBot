@@ -4,10 +4,10 @@ import * as React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { UserList } from '@/components/settings/users/UserList';
-import { UserRoleDialog } from '@/components/settings/users/UserRoleDialog';
 import { UserCreateDialog } from '@/components/settings/users/UserCreateDialog';
 import { UserDeleteDialog } from '@/components/settings/users/UserDeleteDialog';
 import { UserTelegramDialog } from '@/components/settings/users/UserTelegramDialog';
+import { UserEditDialog } from '@/components/settings/users/UserEditDialog';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { trpc } from '@/lib/trpc';
 
@@ -18,10 +18,10 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UserItem = RouterOutputs['auth']['listUsers'][number];
 
 export default function UsersPage() {
-  const [editingUser, setEditingUser] = React.useState<UserItem | null>(null);
+  const [editUser, setEditUser] = React.useState<UserItem | null>(null);
   const [telegramUser, setTelegramUser] = React.useState<UserItem | null>(null);
   const [deletingUser, setDeletingUser] = React.useState<UserItem | null>(null);
-  const [isRoleDialogOpen, setIsRoleDialogOpen] = React.useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [isTelegramDialogOpen, setIsTelegramDialogOpen] = React.useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -29,9 +29,9 @@ export default function UsersPage() {
   const { data: currentUser } = trpc.auth.me.useQuery();
   const isAdmin = currentUser?.role === 'admin';
 
-  const handleEditRole = (user: UserItem) => {
-    setEditingUser(user);
-    setIsRoleDialogOpen(true);
+  const handleEditUser = (user: UserItem) => {
+    setEditUser(user);
+    setIsEditDialogOpen(true);
   };
 
   const handleEditTelegramId = (user: UserItem) => {
@@ -48,9 +48,9 @@ export default function UsersPage() {
     setIsCreateDialogOpen(true);
   };
 
-  const handleCloseRoleDialog = () => {
-    setIsRoleDialogOpen(false);
-    setEditingUser(null);
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setEditUser(null);
   };
 
   const handleCloseTelegramDialog = () => {
@@ -77,19 +77,14 @@ export default function UsersPage() {
       />
 
       <UserList
-        onEditRole={handleEditRole}
+        onEditUser={handleEditUser}
         onEditTelegramId={handleEditTelegramId}
         onDeleteUser={handleDeleteUser}
         onAddUser={handleAddUser}
         isAdmin={isAdmin}
       />
 
-      <UserRoleDialog
-        user={editingUser}
-        open={isRoleDialogOpen}
-        onClose={handleCloseRoleDialog}
-        onSuccess={handleCloseRoleDialog}
-      />
+      <UserEditDialog user={editUser} open={isEditDialogOpen} onClose={handleCloseEditDialog} />
 
       <UserCreateDialog
         open={isCreateDialogOpen}

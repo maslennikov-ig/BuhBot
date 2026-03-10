@@ -76,25 +76,27 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # Get the SHA of the release PR branch for deployment
-      - name: Get Release PR SHA
-        id: sha
+      # Get the SHA of the release from release-please outputs
+      # This is the commit that was released (the merge commit of the Release PR)
+      - name: Get Release SHA
+        id: release_info
         if: steps.release.outputs.releases_created == 'true'
         run: |
-          # Get the SHA of the branch that Release Please created/updated
-          # This is typically the release branch (e.g., release-please--branches--main)
-          BRANCH_NAME="release-please--branches--main"
-          SHA=$(git rev-parse origin/$BRANCH_NAME 2>/dev/null || echo "${{ github.sha }}")
-          echo "release_sha=$SHA" >> $GITHUB_OUTPUT
-          echo "Using release SHA: $SHA"
+          # Use the sha output from release-please-action
+          # This is the commit that was tagged/released
+          RELEASE_SHA="${{ steps.release.outputs.sha }}"
+          echo "release_sha=$RELEASE_SHA" >> $GITHUB_OUTPUT
+          echo "Release SHA: $RELEASE_SHA"
+          echo "Tag name: ${{ steps.release.outputs.tag_name }}"
 
       - name: Trigger Production Deploy
         if: steps.release.outputs.releases_created == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            // Get the SHA to deploy - prefer the release PR branch SHA, fallback to context SHA
-            const releaseSha = '${{ steps.sha.outputs.release_sha }}' || context.payload.workflow_run?.head_sha || context.sha;
+            // Get the SHA to deploy - use the release-please output sha
+            // This is the commit that was actually released (merged Release PR)
+            const releaseSha = '${{ steps.release_info.outputs.release_sha }}';
             console.log('Triggering deploy for SHA:', releaseSha);
 
             await github.rest.actions.createWorkflowDispatch({
@@ -103,6 +105,7 @@ jobs:
               workflow_id: 'deploy.yml',
               ref: 'main',
               inputs: {
+                sha: releaseSha,
                 skip_approval: 'false'
               }
             });

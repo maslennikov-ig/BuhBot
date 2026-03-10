@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.1...buhbot-v0.24.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* **settings:** render sla manager form on settings page ([#213](https://github.com/maslennikov-ig/BuhBot/issues/213)) ([#251](https://github.com/maslennikov-ig/BuhBot/issues/251)) ([5013352](https://github.com/maslennikov-ig/BuhBot/commit/50133528dd46fd58458d564e905ad2342c4bf138))
+
 ## [0.24.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.0...buhbot-v0.24.1) (2026-03-06)
 
 

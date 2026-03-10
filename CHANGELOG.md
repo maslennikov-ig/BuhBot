@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.25.0...buhbot-v0.25.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* **ci:** resolve release-please action SHA handling errors ([#258](https://github.com/maslennikov-ig/BuhBot/issues/258)) ([fd638dd](https://github.com/maslennikov-ig/BuhBot/commit/fd638dd171c2cbb834d81e0c3bafd370e557f0a2))
+
 ## [0.25.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.24.2...buhbot-v0.25.0) (2026-03-10)
 
 

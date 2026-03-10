@@ -336,30 +336,52 @@ jobs:
           SHOULD_SKIP="${{ needs.detect-release-pr.outputs.should_skip_heavy }}"
 
           # For lint, format, type-check, security-scan - always require success
-          for job in lint format type-check security-scan; do
-            result="\${needs.${job}.result}"
-            if [ "$result" != "success" ]; then
-              echo "::error::$job job failed or was skipped"
-              FAILED="${FAILED}${job},"
-            fi
-          done
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "::error::lint job failed"
+            FAILED="${FAILED}lint,"
+          fi
+          if [ "${{ needs.format.result }}" != "success" ]; then
+            echo "::error::format job failed"
+            FAILED="${FAILED}format,"
+          fi
+          if [ "${{ needs.type-check.result }}" != "success" ]; then
+            echo "::error::type-check job failed"
+            FAILED="${FAILED}type-check,"
+          fi
+          if [ "${{ needs.security-scan.result }}" != "success" ]; then
+            echo "::error::security-scan job failed"
+            FAILED="${FAILED}security-scan,"
+          fi
 
           # For heavy jobs (build-docker, test) - allow skipped if it's a release PR
-          for job in build-docker test; do
-            result="\${needs.${job}.result}"
-            if [ "$result" == "failure" ]; then
-              echo "::error::$job job failed"
-              FAILED="${FAILED}${job},"
-            elif [ "$result" == "skipped" ]; then
-              if [ "$SHOULD_SKIP" == "true" ]; then
-                echo "::notice::$job skipped for release PR (expected)"
-                SKIPPED="${SKIPPED}${job},"
-              else
-                echo "::error::$job was unexpectedly skipped"
-                FAILED="${FAILED}${job},"
-              fi
+          BUILD_DOCKER_RESULT="${{ needs.build-docker.result }}"
+          TEST_RESULT="${{ needs.test.result }}"
+
+          if [ "$BUILD_DOCKER_RESULT" == "failure" ]; then
+            echo "::error::build-docker job failed"
+            FAILED="${FAILED}build-docker,"
+          elif [ "$BUILD_DOCKER_RESULT" == "skipped" ]; then
+            if [ "$SHOULD_SKIP" == "true" ]; then
+              echo "::notice::build-docker skipped for release PR (expected)"
+              SKIPPED="${SKIPPED}build-docker,"
+            else
+              echo "::error::build-docker was unexpectedly skipped"
+              FAILED="${FAILED}build-docker,"
             fi
-          done
+          fi
+
+          if [ "$TEST_RESULT" == "failure" ]; then
+            echo "::error::test job failed"
+            FAILED="${FAILED}test,"
+          elif [ "$TEST_RESULT" == "skipped" ]; then
+            if [ "$SHOULD_SKIP" == "true" ]; then
+              echo "::notice::test skipped for release PR (expected)"
+              SKIPPED="${SKIPPED}test,"
+            else
+              echo "::error::test was unexpectedly skipped"
+              FAILED="${FAILED}test,"
+            fi
+          fi
 
           if [ -n "$FAILED" ]; then
             echo "failed_jobs=${FAILED%,}" >> $GITHUB_OUTPUT

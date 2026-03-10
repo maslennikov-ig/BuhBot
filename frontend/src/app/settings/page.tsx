@@ -10,6 +10,7 @@ import { NotificationSettingsForm } from '@/components/settings/NotificationSett
 import { ProfileSettingsForm } from '@/components/settings/ProfileSettingsForm';
 import { ClassificationSettingsForm } from '@/components/settings/ClassificationSettingsForm';
 import { DataRetentionSettingsForm } from '@/components/settings/DataRetentionSettingsForm';
+import { SlaManagerSettingsForm } from '@/components/settings/SlaManagerSettingsForm';
 import { HelpButton } from '@/components/ui/HelpButton';
 
 export default function SettingsPage() {
@@ -44,6 +45,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-4">
+            <SlaManagerSettingsForm />
             <WorkingHoursForm />
             <HolidayCalendar />
           </TabsContent>

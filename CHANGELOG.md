@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.25.2...buhbot-v0.25.3) (2026-03-11)
+
+
+### Bug Fixes
+
+* **nginx:** add oauth.telegram.org to CSP frame-src ([#263](https://github.com/maslennikov-ig/BuhBot/issues/263)) ([18d6f41](https://github.com/maslennikov-ig/BuhBot/commit/18d6f4178397478a8fd4a18a8869d1463988dbec)), closes [#260](https://github.com/maslennikov-ig/BuhBot/issues/260)
+
 ## [0.25.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.25.1...buhbot-v0.25.2) (2026-03-11)
 
 

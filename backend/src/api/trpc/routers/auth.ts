@@ -653,6 +653,31 @@ export const authRouter = router({
         ctx.prisma.telegramAccount.deleteMany({
           where: { userId: input.userId },
         }),
+        // Set NULL for authored/assigned records (defense-in-depth for onDelete: SetNull)
+        ctx.prisma.chatInvitation.updateMany({
+          where: { createdBy: input.userId },
+          data: { createdBy: null },
+        }),
+        ctx.prisma.template.updateMany({
+          where: { createdBy: input.userId },
+          data: { createdBy: null },
+        }),
+        ctx.prisma.faqItem.updateMany({
+          where: { createdBy: input.userId },
+          data: { createdBy: null },
+        }),
+        ctx.prisma.classificationCorrection.updateMany({
+          where: { correctedBy: input.userId },
+          data: { correctedBy: null },
+        }),
+        ctx.prisma.feedbackSurvey.updateMany({
+          where: { closedBy: input.userId },
+          data: { closedBy: null },
+        }),
+        ctx.prisma.errorLog.updateMany({
+          where: { assignedTo: input.userId },
+          data: { assignedTo: null },
+        }),
       ]);
 
       // Delete user

@@ -372,12 +372,12 @@ model ClassificationCorrection {
   messageText       String                @map("message_text")
   originalClass     MessageClassification @map("original_class")
   correctedClass    MessageClassification @map("corrected_class")
-  correctedBy       String                @map("corrected_by") @db.Uuid
+  correctedBy       String?               @map("corrected_by") @db.Uuid
   correctedAt       DateTime              @default(now()) @map("corrected_at") @db.Timestamptz(6)
 
   // Relations
   request ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  corrector User        @relation(fields: [correctedBy], references: [id])
+  corrector User?       @relation(fields: [correctedBy], references: [id], onDelete: SetNull)
 
   @@index([originalClass, correctedClass])
   @@index([correctedAt])
@@ -465,7 +465,7 @@ model FeedbackSurvey {
   updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  closedByUser User?              @relation("SurveyClosedBy", fields: [closedBy], references: [id])
+  closedByUser User?              @relation("SurveyClosedBy", fields: [closedBy], references: [id], onDelete: SetNull)
   deliveries   SurveyDelivery[]
   responses    FeedbackResponse[]
 
@@ -530,13 +530,13 @@ model Template {
   title      String
   content    String
   category   TemplateCategory
-  createdBy  String           @map("created_by") @db.Uuid
+  createdBy  String?          @map("created_by") @db.Uuid
   usageCount Int              @default(0) @map("usage_count")
   createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  creator User @relation("TemplateCreator", fields: [createdBy], references: [id])
+  creator User? @relation("TemplateCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@index([category])
   @@index([usageCount(sort: Desc)])
@@ -553,12 +553,12 @@ model FaqItem {
   answer     String
   keywords   String[] @default([])
   usageCount Int      @default(0) @map("usage_count")
-  createdBy  String   @map("created_by") @db.Uuid
+  createdBy  String?  @map("created_by") @db.Uuid
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  creator User @relation("FaqCreator", fields: [createdBy], references: [id])
+  creator User? @relation("FaqCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   // Note: GIN index on keywords[] is created at DB level via migration
   // Prisma doesn't support GIN index syntax in schema
@@ -697,7 +697,7 @@ model ChatInvitation {
   token                String   @unique // The code used in /start or /connect
   initialTitle         String?  @map("initial_title") // Pre-defined title
   assignedAccountantId String?  @map("assigned_accountant_id") @db.Uuid
-  createdBy            String   @map("created_by") @db.Uuid
+  createdBy            String?  @map("created_by") @db.Uuid
   isUsed               Boolean  @default(false) @map("is_used")
   usedAt               DateTime? @map("used_at") @db.Timestamptz(6)
   createdChatId        BigInt?  @map("created_chat_id") @db.BigInt
@@ -705,7 +705,7 @@ model ChatInvitation {
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
-  creator User @relation("InvitationCreator", fields: [createdBy], references: [id])
+  creator User? @relation("InvitationCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@index([token])
   @@index([isUsed])
@@ -788,7 +788,7 @@ model ErrorLog {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  assignedUser User? @relation("ErrorLogAssignee", fields: [assignedTo], references: [id])
+  assignedUser User? @relation("ErrorLogAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
 
   @@index([fingerprint])
   @@index([status])

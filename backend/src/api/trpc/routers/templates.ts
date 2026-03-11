@@ -52,7 +52,7 @@ export const templatesRouter = router({
           title: z.string(),
           content: z.string(),
           category: TemplateCategorySchema,
-          createdBy: z.string().uuid(),
+          createdBy: z.string().uuid().nullable(),
           usageCount: z.number().int(),
           createdAt: z.date(),
           updatedAt: z.date(),
@@ -113,7 +113,7 @@ export const templatesRouter = router({
           title: z.string(),
           content: z.string(),
           category: TemplateCategorySchema,
-          createdBy: z.string().uuid(),
+          createdBy: z.string().uuid().nullable(),
           createdAt: z.date(),
         }),
       })

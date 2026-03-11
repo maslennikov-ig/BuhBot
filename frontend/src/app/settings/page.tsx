@@ -12,8 +12,27 @@ import { ClassificationSettingsForm } from '@/components/settings/Classification
 import { DataRetentionSettingsForm } from '@/components/settings/DataRetentionSettingsForm';
 import { SlaManagerSettingsForm } from '@/components/settings/SlaManagerSettingsForm';
 import { HelpButton } from '@/components/ui/HelpButton';
+import { trpc } from '@/lib/trpc';
 
 export default function SettingsPage() {
+  const { data: meData } = trpc.auth.me.useQuery();
+
+  if (meData?.role === 'accountant') {
+    return (
+      <AdminLayout>
+        <div className="space-y-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-medium">Настройки</h3>
+              <p className="text-sm text-muted-foreground">Управление профилем.</p>
+            </div>
+          </div>
+          <ProfileSettingsForm />
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6">

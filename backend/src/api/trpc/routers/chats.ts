@@ -564,12 +564,24 @@ export const chatsRouter = router({
           if (finalUsernames.length > 0) {
             const knownUsers = await tx.user.findMany({
               where: {
-                telegramUsername: { in: finalUsernames, mode: 'insensitive' },
+                OR: [
+                  { telegramUsername: { in: finalUsernames, mode: 'insensitive' } },
+                  { telegramAccount: { username: { in: finalUsernames, mode: 'insensitive' } } },
+                ],
               },
-              select: { telegramUsername: true, telegramId: true },
+              select: {
+                telegramUsername: true,
+                telegramId: true,
+                telegramAccount: { select: { username: true } },
+              },
             });
             const knownSet = new Set(
-              knownUsers.map((u) => u.telegramUsername?.toLowerCase()).filter(Boolean)
+              knownUsers
+                .flatMap((u) => [
+                  u.telegramUsername?.toLowerCase(),
+                  u.telegramAccount?.username?.toLowerCase(),
+                ])
+                .filter(Boolean)
             );
             const unverified = finalUsernames.filter((u) => !knownSet.has(u.toLowerCase()));
             if (unverified.length > 0) {

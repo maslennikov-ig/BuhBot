@@ -6,6 +6,7 @@ import { LogsHeader } from '@/components/logs/LogsHeader';
 import { LogsFilters } from '@/components/logs/LogsFilters';
 import { LogsTable } from '@/components/logs/LogsTable';
 import { trpc } from '@/lib/trpc';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 
 // ============================================
 // TYPES
@@ -21,6 +22,7 @@ type ErrorStatus = 'new' | 'in_progress' | 'resolved' | 'ignored';
 // ============================================
 
 export default function LogsPage() {
+  const { isAllowed, isLoading: isRoleLoading } = useRoleGuard(['accountant']);
   const [viewMode, setViewMode] = React.useState<ViewMode>('grouped');
   const [filters, setFilters] = React.useState<{
     level?: ErrorLevel;
@@ -63,6 +65,8 @@ export default function LogsPage() {
           level: err.level as ErrorLevel,
           status: err.status as ErrorStatus,
         })) || [];
+
+  if (isRoleLoading || isAllowed === false) return null;
 
   return (
     <AdminLayout>

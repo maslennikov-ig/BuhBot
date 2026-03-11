@@ -41,7 +41,7 @@ export const faqRouter = router({
           answer: z.string(),
           keywords: z.array(z.string()),
           usageCount: z.number().int(),
-          createdBy: z.string().uuid(),
+          createdBy: z.string().uuid().nullable(),
           createdAt: z.date(),
           updatedAt: z.date(),
         })
@@ -175,7 +175,7 @@ export const faqRouter = router({
           question: z.string(),
           answer: z.string(),
           keywords: z.array(z.string()),
-          createdBy: z.string().uuid(),
+          createdBy: z.string().uuid().nullable(),
           createdAt: z.date(),
         }),
       })

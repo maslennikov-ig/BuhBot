@@ -10,6 +10,7 @@ import { UserTelegramDialog } from '@/components/settings/users/UserTelegramDial
 import { UserEditDialog } from '@/components/settings/users/UserEditDialog';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { trpc } from '@/lib/trpc';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 
 import { inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '@/types/trpc';
@@ -18,6 +19,7 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type UserItem = RouterOutputs['auth']['listUsers'][number];
 
 export default function UsersPage() {
+  const { isAllowed, isLoading: isRoleLoading } = useRoleGuard(['accountant']);
   const [editUser, setEditUser] = React.useState<UserItem | null>(null);
   const [telegramUser, setTelegramUser] = React.useState<UserItem | null>(null);
   const [deletingUser, setDeletingUser] = React.useState<UserItem | null>(null);
@@ -66,6 +68,8 @@ export default function UsersPage() {
     setIsDeleteDialogOpen(false);
     setDeletingUser(null);
   };
+
+  if (isRoleLoading || isAllowed === false) return null;
 
   return (
     <AdminLayout>

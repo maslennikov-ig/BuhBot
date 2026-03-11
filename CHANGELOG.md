@@ -5,6 +5,18 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.25.3...buhbot-v0.26.0) (2026-03-11)
+
+
+### Features
+
+* **auth:** implement Telegram-first onboarding for accountant role ([#266](https://github.com/maslennikov-ig/BuhBot/issues/266)) ([b220d4b](https://github.com/maslennikov-ig/BuhBot/commit/b220d4b08ce21076420df18db7255a2d38c5c7af))
+
+
+### Bug Fixes
+
+* **auth:** resolve user deletion FK constraint violations on 6 tables ([#265](https://github.com/maslennikov-ig/BuhBot/issues/265)) ([a9abccc](https://github.com/maslennikov-ig/BuhBot/commit/a9abccc619c036c4a81036e21e25f2625a6fa4de))
+
 ## [0.25.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.25.2...buhbot-v0.25.3) (2026-03-11)
 
 

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { trpc } from '@/lib/trpc';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -276,6 +277,8 @@ function KPICard({
 // ============================================
 
 export default function AnalyticsPage() {
+  const { isAllowed, isLoading: isRoleLoading } = useRoleGuard(['accountant']);
+
   // ============================================
   // STATE
   // ============================================
@@ -366,6 +369,8 @@ export default function AnalyticsPage() {
   const summary = historyQuery.data?.summary;
   const isLoading =
     historyQuery.isLoading || distributionQuery.isLoading || accountantStatsQuery.isLoading;
+
+  if (isRoleLoading || isAllowed === false) return null;
 
   return (
     <AdminLayout>

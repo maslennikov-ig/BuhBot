@@ -15,6 +15,7 @@ import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
+import { supabase } from '../../lib/supabase.js';
 import { findUserByTelegramId } from '../utils/user.js';
 
 // ============================================================================
@@ -334,6 +335,93 @@ export function registerAccountantHandler(): void {
         service: 'accountant-handler',
       });
       await ctx.reply('Произошла ошибка при получении настроек уведомлений. Попробуйте позже.');
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // Callback: request_password_email — generate password setup link
+  // --------------------------------------------------------------------------
+  const passwordRequestCooldown = new Map<number, number>();
+  const PASSWORD_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+  bot.action('request_password_email', async (ctx: BotContext) => {
+    try {
+      if (!ctx.from) {
+        return;
+      }
+
+      // Rate limiting: one request per 5 minutes per user
+      const lastRequest = passwordRequestCooldown.get(ctx.from.id);
+      if (lastRequest && Date.now() - lastRequest < PASSWORD_COOLDOWN_MS) {
+        const remainingSec = Math.ceil((PASSWORD_COOLDOWN_MS - (Date.now() - lastRequest)) / 1000);
+        await ctx.answerCbQuery(
+          `Подождите ${Math.ceil(remainingSec / 60)} мин. перед повторным запросом.`
+        );
+        return;
+      }
+
+      const user = await findUserByTelegramId(ctx.from.id);
+
+      if (!user) {
+        await ctx.answerCbQuery('Вы не привязаны к системе BuhBot.');
+        return;
+      }
+
+      // Only accountants can use this feature
+      if (user.role !== 'accountant') {
+        await ctx.answerCbQuery('Эта функция доступна только для бухгалтеров.');
+        return;
+      }
+
+      logger.info('Processing password setup request', {
+        userId: user.id,
+        telegramId: ctx.from.id,
+        service: 'accountant-handler',
+      });
+
+      const { data, error } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: user.email,
+        options: {
+          redirectTo: `${env.FRONTEND_URL}/set-password`,
+        },
+      });
+
+      if (error || !data.properties?.action_link) {
+        logger.error('Failed to generate password link', {
+          error: error?.message,
+          userId: user.id,
+          service: 'accountant-handler',
+        });
+        await ctx.answerCbQuery('Ошибка при создании ссылки. Попробуйте позже.');
+        return;
+      }
+
+      passwordRequestCooldown.set(ctx.from.id, Date.now());
+
+      // Remove inline keyboard from original message after use
+      try {
+        await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+      } catch {
+        // Message may have been already edited or deleted
+      }
+
+      await ctx.answerCbQuery('Ссылка отправлена!');
+      await ctx.reply(
+        '🔑 *Установка пароля*\n\n' +
+          'Перейдите по ссылке ниже для установки пароля:\n\n' +
+          data.properties.action_link +
+          '\n\n⏰ Ссылка действительна 1 час. После использования она станет недействительной.',
+        { parse_mode: 'Markdown' }
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error handling password setup request', {
+        error: errorMessage,
+        telegramId: ctx.from?.id,
+        service: 'accountant-handler',
+      });
+      await ctx.answerCbQuery('Произошла ошибка. Попробуйте позже.');
     }
   });
 

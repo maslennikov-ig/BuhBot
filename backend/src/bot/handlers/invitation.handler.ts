@@ -11,6 +11,7 @@
 import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
+import env from '../../config/env.js';
 import { getBotInfo, privacyModeWarning } from '../utils/bot-info.js';
 
 // Token validation: alphanumeric, 8-64 characters
@@ -419,11 +420,24 @@ async function processVerification(ctx: BotContext, token: string): Promise<void
     });
 
     await ctx.reply(
-      '✅ Верификация успешна!\n\nВаш аккаунт Telegram привязан к BuhBot. ' +
-        'Теперь вы можете использовать команды:\n' +
+      '✅ Верификация успешна!\n\nВаш аккаунт Telegram привязан к BuhBot.\n\n' +
+        'Доступные команды:\n' +
         '/mystats — ваша статистика\n' +
         '/mychats — ваши чаты\n' +
-        '/newchat — создать приглашение для нового чата'
+        '/newchat — создать приглашение для нового чата',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🌐 Личный кабинет', url: `${env.FRONTEND_URL}/settings/profile` }],
+            [
+              {
+                text: '🔑 Установить пароль (по желанию)',
+                callback_data: 'request_password_email',
+              },
+            ],
+          ],
+        },
+      }
     );
 
     logger.info('Accountant verification successful', {

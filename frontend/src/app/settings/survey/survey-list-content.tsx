@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { trpc } from '@/lib/trpc';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { cn } from '@/lib/utils';
 import {
   ClipboardList,
@@ -301,6 +302,7 @@ function LoadingSkeleton() {
 // ============================================
 
 export function SurveyListContent() {
+  const { isAllowed, isLoading: isRoleLoading } = useRoleGuard(['accountant']);
   const [page, setPage] = React.useState(1);
   const [statusFilter, setStatusFilter] = React.useState<SurveyStatus | 'all'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
@@ -341,6 +343,8 @@ export function SurveyListContent() {
     setStatusFilter(newStatus);
     setPage(1);
   };
+
+  if (isRoleLoading || isAllowed === false) return null;
 
   if (isLoading) {
     return (

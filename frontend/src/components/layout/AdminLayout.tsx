@@ -160,6 +160,17 @@ const navigationItems: NavItem[] = [
   },
 ];
 
+const ACCOUNTANT_ALLOWED_NAV_IDS = new Set([
+  'dashboard',
+  'chats',
+  'requests',
+  'sla',
+  'alerts',
+  'violations',
+  'settings',
+  'help',
+]);
+
 // ============================================
 // SIDEBAR COMPONENT
 // ============================================
@@ -170,12 +181,14 @@ function Sidebar({
   mobileOpen,
   onCloseMobile,
   alertCount,
+  items,
 }: {
   collapsed: boolean;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
   alertCount?: number;
+  items: NavItem[];
 }) {
   const pathname = usePathname();
 
@@ -240,16 +253,14 @@ function Sidebar({
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 buh-scrollbar">
           <ul className="space-y-1">
-            {navigationItems.map((item, index) => {
+            {items.map((item, index) => {
               const Icon = item.icon;
               // Check if pathname exactly matches this item
               const isExactMatch = pathname === item.href;
               // Check if pathname starts with this item's href (child page)
               const isPartialMatch = pathname.startsWith(`${item.href}/`);
               // Check if pathname exactly matches ANY nav item (if so, don't highlight parents)
-              const pathnameMatchesAnyNavItem = navigationItems.some(
-                (nav) => nav.href === pathname
-              );
+              const pathnameMatchesAnyNavItem = items.some((nav) => nav.href === pathname);
               // Active if exact match, or partial match when pathname isn't its own nav item
               const isActive = isExactMatch || (isPartialMatch && !pathnameMatchesAnyNavItem);
 
@@ -461,6 +472,15 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     staleTime: 25000, // Keep data fresh between refetch intervals
   });
 
+  const { data: meData } = trpc.auth.me.useQuery();
+
+  const filteredNavItems = React.useMemo(() => {
+    if (meData?.role === 'accountant') {
+      return navigationItems.filter((item) => ACCOUNTANT_ALLOWED_NAV_IDS.has(item.id));
+    }
+    return navigationItems;
+  }, [meData?.role]);
+
   // Check authentication
   React.useEffect(() => {
     const checkAuth = async () => {
@@ -529,6 +549,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
         alertCount={alertCountData?.count}
+        items={filteredNavItems}
       />
 
       {/* Main content area */}

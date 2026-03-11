@@ -5,6 +5,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { ReportCard } from '@/components/reports/ReportCard';
 import { ReportGeneratorModal, ReportType } from '@/components/reports/ReportGeneratorModal';
 import { HelpButton } from '@/components/ui/HelpButton';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 import { motion } from 'framer-motion';
 import { Users, Clock, Star, BarChart3 } from 'lucide-react';
 
@@ -82,6 +83,7 @@ const reportTypes = [
 // ============================================
 
 export default function ReportsPage() {
+  const { isAllowed, isLoading: isRoleLoading } = useRoleGuard(['accountant']);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [selectedReport, setSelectedReport] = React.useState<{
     type: ReportType;
@@ -97,6 +99,8 @@ export default function ReportsPage() {
     setModalOpen(false);
     setSelectedReport(null);
   };
+
+  if (isRoleLoading || isAllowed === false) return null;
 
   return (
     <AdminLayout>

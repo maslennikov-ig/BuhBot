@@ -426,6 +426,7 @@ export const authRouter = router({
         fullName: z.string(),
         role: UserRoleSchema,
         inviteSent: z.boolean(),
+        verificationLink: z.string().url().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -437,22 +438,54 @@ export const authRouter = router({
         }
 
         const devUserId = crypto.randomUUID();
-        const newUser = await ctx.prisma.user.create({
-          data: {
-            id: devUserId,
-            email: input.email,
-            fullName: input.fullName,
-            role: input.role,
-            isOnboardingComplete: true,
-          },
+        const isAccountant = input.role === 'accountant';
+
+        const newUser = await ctx.prisma.$transaction(async (tx) => {
+          const user = await tx.user.create({
+            data: {
+              id: devUserId,
+              email: input.email,
+              fullName: input.fullName,
+              role: input.role,
+              isOnboardingComplete: !isAccountant,
+            },
+          });
+
+          if (isAccountant) {
+            if (input.managerIds && input.managerIds.length > 0) {
+              await tx.userManager.createMany({
+                data: input.managerIds.map((managerId) => ({
+                  managerId,
+                  accountantId: user.id,
+                })),
+              });
+            }
+
+            const tokenValue = randomBytes(16).toString('base64url');
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 7);
+
+            await tx.verificationToken.create({
+              data: { userId: user.id, token: tokenValue, expiresAt },
+            });
+
+            return { user, tokenValue };
+          }
+
+          return { user, tokenValue: undefined };
         });
 
+        const botUsername = env.BOT_USERNAME ?? 'dev_bot';
         return {
-          id: newUser.id,
-          email: newUser.email,
-          fullName: newUser.fullName,
-          role: asUserRole(newUser.role),
+          id: newUser.user.id,
+          email: newUser.user.email,
+          fullName: newUser.user.fullName,
+          role: asUserRole(newUser.user.role),
           inviteSent: false,
+          verificationLink:
+            isAccountant && newUser.tokenValue
+              ? `https://t.me/${botUsername}?start=verify_${newUser.tokenValue}`
+              : undefined,
         };
       }
 
@@ -491,50 +524,44 @@ export const authRouter = router({
         }
       }
 
-      // Invite user via Supabase Auth (sends email automatically)
-      const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
-        input.email,
-        {
-          redirectTo: `${env.FRONTEND_URL}/set-password`,
-          data: {
+      // For accountant: silent creation without invite email (Telegram-first onboarding)
+      if (input.role === 'accountant') {
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: input.email,
+          email_confirm: true,
+          user_metadata: {
             full_name: input.fullName,
             role: input.role,
           },
+        });
+
+        if (authError) {
+          if (authError.message.includes('already been registered')) {
+            throw new Error(
+              'Пользователь с таким email уже зарегистрирован в системе аутентификации'
+            );
+          }
+          throw new Error(`Ошибка создания пользователя: ${authError.message}`);
         }
-      );
 
-      if (authError) {
-        // If user already exists in Supabase Auth but not in our DB
-        if (authError.message.includes('already been registered')) {
-          throw new Error(
-            'Пользователь с таким email уже зарегистрирован в системе аутентификации'
-          );
+        if (!authData.user) {
+          throw new Error('Не удалось создать пользователя');
         }
-        throw new Error(`Ошибка отправки приглашения: ${authError.message}`);
-      }
 
-      if (!authData.user) {
-        throw new Error('Не удалось создать пользователя');
-      }
+        let newUser;
+        let verificationLink: string | undefined;
+        try {
+          const result = await ctx.prisma.$transaction(async (tx) => {
+            const user = await tx.user.create({
+              data: {
+                id: authData.user.id,
+                email: input.email,
+                fullName: input.fullName,
+                role: input.role,
+                isOnboardingComplete: false,
+              },
+            });
 
-      // Use transaction to create user + related records atomically
-      // If DB transaction fails, clean up Supabase Auth user to prevent split-brain state
-      let newUser;
-      try {
-        newUser = await ctx.prisma.$transaction(async (tx) => {
-          // Create user profile in our database with Supabase Auth ID
-          const user = await tx.user.create({
-            data: {
-              id: authData.user.id,
-              email: input.email,
-              fullName: input.fullName,
-              role: input.role,
-              isOnboardingComplete: input.role !== 'accountant', // Accountants need Telegram verification
-            },
-          });
-
-          // For accountant role: create manager assignments and verification token
-          if (input.role === 'accountant') {
             // Create UserManager records
             if (input.managerIds && input.managerIds.length > 0) {
               await tx.userManager.createMany({
@@ -557,12 +584,78 @@ export const authRouter = router({
                 expiresAt,
               },
             });
+
+            return { user, tokenValue };
+          });
+
+          newUser = result.user;
+          const botUsername = env.BOT_USERNAME;
+          if (botUsername) {
+            verificationLink = `https://t.me/${botUsername}?start=verify_${result.tokenValue}`;
           }
+        } catch (dbError) {
+          try {
+            await supabase.auth.admin.deleteUser(authData.user.id);
+          } catch (cleanupError) {
+            logger.error('Failed to clean up Supabase Auth user after DB transaction failure', {
+              supabaseUserId: authData.user.id,
+              error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+            });
+          }
+          throw dbError;
+        }
+
+        return {
+          id: newUser.id,
+          email: newUser.email,
+          fullName: newUser.fullName,
+          role: asUserRole(newUser.role),
+          inviteSent: false,
+          verificationLink,
+        };
+      }
+
+      // Non-accountant: Invite user via Supabase Auth (sends email automatically)
+      const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+        input.email,
+        {
+          redirectTo: `${env.FRONTEND_URL}/set-password`,
+          data: {
+            full_name: input.fullName,
+            role: input.role,
+          },
+        }
+      );
+
+      if (authError) {
+        if (authError.message.includes('already been registered')) {
+          throw new Error(
+            'Пользователь с таким email уже зарегистрирован в системе аутентификации'
+          );
+        }
+        throw new Error(`Ошибка отправки приглашения: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('Не удалось создать пользователя');
+      }
+
+      let newUser;
+      try {
+        newUser = await ctx.prisma.$transaction(async (tx) => {
+          const user = await tx.user.create({
+            data: {
+              id: authData.user.id,
+              email: input.email,
+              fullName: input.fullName,
+              role: input.role,
+              isOnboardingComplete: true,
+            },
+          });
 
           return user;
         });
       } catch (dbError) {
-        // Rollback Supabase Auth user to prevent split-brain state
         try {
           await supabase.auth.admin.deleteUser(authData.user.id);
         } catch (cleanupError) {

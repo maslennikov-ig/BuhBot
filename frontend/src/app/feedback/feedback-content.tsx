@@ -6,6 +6,7 @@ import { NPSWidget, FeedbackTable } from '@/components/feedback';
 import type { FeedbackEntry, FeedbackFilters } from '@/components/feedback';
 import { trpc } from '@/lib/trpc';
 import { HelpButton } from '@/components/ui/HelpButton';
+import { useRoleGuard } from '@/hooks/useRoleGuard';
 
 // ============================================
 // CONSTANTS
@@ -128,6 +129,7 @@ function LoadingSkeleton() {
 // ============================================
 
 export function FeedbackContent() {
+  const { isAllowed, isLoading: isRoleLoading } = useRoleGuard(['accountant']);
   // Local state for filters and pagination
   const [page, setPage] = React.useState(1);
   const [pageSize] = React.useState(20);
@@ -248,6 +250,8 @@ export function FeedbackContent() {
 
   // Check if user is manager (has access to feedback list)
   const isManager = !feedbackError || feedbackError.data?.code !== 'FORBIDDEN';
+
+  if (isRoleLoading || isAllowed === false) return null;
 
   // Loading state
   if (aggregatesLoading && feedbackLoading) {

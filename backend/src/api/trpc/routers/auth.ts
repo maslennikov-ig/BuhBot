@@ -23,12 +23,9 @@ import { supabase } from '../../../lib/supabase.js';
 import env, { isDevMode } from '../../../config/env.js';
 import logger from '../../../utils/logger.js';
 import { randomBytes } from 'crypto';
-import { prisma } from '../../../lib/prisma.js';
+import type { Prisma } from '@prisma/client';
 
-/**
- * Transaction client type derived from our PrismaClient instance
- */
-type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TransactionClient = Prisma.TransactionClient;
 
 /**
  * User role schema (matches Prisma UserRole enum)
@@ -517,7 +514,7 @@ export const authRouter = router({
               isOnboardingComplete: true,
             },
           });
-          return { user, tokenValue: undefined };
+          return { user, tokenValue: undefined as string | undefined };
         });
 
         const botUsername = env.BOT_USERNAME ?? 'dev_bot';

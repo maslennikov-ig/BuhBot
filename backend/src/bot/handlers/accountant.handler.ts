@@ -20,6 +20,12 @@ import { redis } from '../../lib/redis.js';
 import { findUserByTelegramId } from '../utils/user.js';
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+const COOLDOWN_TTL_SECONDS = 300; // Password request rate limit: 5 minutes
+
+// ============================================================================
 // Helpers
 // ============================================================================
 
@@ -342,24 +348,33 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // Callback: request_password_email — generate password setup link
   // --------------------------------------------------------------------------
-  const COOLDOWN_TTL = 300; // 5 minutes in seconds
-
   bot.action('request_password_email', async (ctx: BotContext) => {
     try {
       if (!ctx.from) {
         return;
       }
 
-      // Rate limiting: one request per 5 minutes per user
+      // Rate limiting: one request per 5 minutes per user (fail-open on Redis errors)
       const cooldownKey = `cooldown:password_request:${ctx.from.id}`;
-      const lastRequest = await redis.get(cooldownKey);
-      if (lastRequest) {
-        const elapsed = Date.now() - parseInt(lastRequest, 10);
-        const remainingSec = Math.max(0, COOLDOWN_TTL - Math.floor(elapsed / 1000));
-        const waitText =
-          remainingSec < 60 ? `${remainingSec} сек.` : `${Math.ceil(remainingSec / 60)} мин.`;
-        await ctx.answerCbQuery(`Подождите ${waitText} перед повторным запросом.`);
-        return;
+      try {
+        // Atomic: SET NX EX acquires lock or reveals one already held
+        const acquired = await redis.set(cooldownKey, '1', 'EX', COOLDOWN_TTL_SECONDS, 'NX');
+        if (acquired === null) {
+          // Key exists — show remaining time via TTL
+          const ttl = await redis.ttl(cooldownKey);
+          const remaining = ttl > 0 ? ttl : COOLDOWN_TTL_SECONDS;
+          const waitText =
+            remaining < 60 ? `${remaining} сек.` : `${Math.ceil(remaining / 60)} мин.`;
+          await ctx.answerCbQuery(`Подождите ${waitText} перед повторным запросом.`);
+          return;
+        }
+      } catch (redisErr) {
+        logger.warn('Redis cooldown check failed, proceeding without rate limit', {
+          telegramId: ctx.from.id,
+          error: redisErr instanceof Error ? redisErr.message : String(redisErr),
+          service: 'accountant-handler',
+        });
+        // Fail open: allow the request
       }
 
       const user = await findUserByTelegramId(ctx.from.id);
@@ -398,8 +413,6 @@ export function registerAccountantHandler(): void {
         await ctx.answerCbQuery('Ошибка при создании ссылки. Попробуйте позже.');
         return;
       }
-
-      await redis.set(cooldownKey, Date.now().toString(), 'EX', COOLDOWN_TTL);
 
       // Remove inline keyboard from original message after use
       try {

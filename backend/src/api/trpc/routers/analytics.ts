@@ -55,9 +55,9 @@ export const analyticsRouter = router({
    * @param endDate - End date (inclusive)
    * @param assignedTo - Optional filter by accountant UUID
    * @returns SLA compliance metrics
-   * @authorization All authenticated users (read-only)
+   * @authorization Managers and admins only
    */
-  slaCompliance: authedProcedure
+  slaCompliance: managerProcedure
     .input(
       z.object({
         startDate: z.coerce.date(),
@@ -188,9 +188,9 @@ export const analyticsRouter = router({
    * @param startDate - Start date (inclusive)
    * @param endDate - End date (inclusive)
    * @returns Feedback summary statistics
-   * @authorization All authenticated users (read-only)
+   * @authorization Managers and admins only
    */
-  feedbackSummary: authedProcedure
+  feedbackSummary: managerProcedure
     .input(
       z.object({
         startDate: z.coerce.date(),
@@ -1395,9 +1395,9 @@ export const analyticsRouter = router({
    * @param chatId - Optional filter by chat
    * @param accountantId - Optional filter by accountant
    * @returns Time series data with summary statistics
-   * @authorization All authenticated users (read-only)
+   * @authorization Managers and admins only
    */
-  getResponseTimeHistory: authedProcedure
+  getResponseTimeHistory: managerProcedure
     .input(
       z.object({
         periodStart: z.coerce.date(),
@@ -1598,9 +1598,9 @@ export const analyticsRouter = router({
    * @param chatId - Optional filter by chat
    * @param accountantId - Optional filter by accountant
    * @returns Bucket distribution data
-   * @authorization All authenticated users (read-only)
+   * @authorization Managers and admins only
    */
-  getResponseTimeDistribution: authedProcedure
+  getResponseTimeDistribution: managerProcedure
     .input(
       z.object({
         periodStart: z.coerce.date(),

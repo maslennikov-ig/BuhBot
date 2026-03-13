@@ -526,6 +526,13 @@ export const authRouter = router({
 
       // For accountant: silent creation without invite email (Telegram-first onboarding)
       if (input.role === 'accountant') {
+        if (!env.BOT_USERNAME) {
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: 'BOT_USERNAME не настроен. Невозможно создать ссылку для Telegram.',
+          });
+        }
+
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: input.email,
           email_confirm: true,

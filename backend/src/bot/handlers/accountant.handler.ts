@@ -407,12 +407,25 @@ export function registerAccountantHandler(): void {
       }
 
       await ctx.answerCbQuery('Ссылка отправлена!');
-      await ctx.reply(
+      const sentMsg = await ctx.reply(
         '🔑 *Установка пароля*\n\n' +
           'Перейдите по ссылке ниже для установки пароля:\n\n' +
           data.properties.action_link +
-          '\n\n⏰ Ссылка действительна 1 час. После использования она станет недействительной.',
+          '\n\n⏰ Ссылка действительна 1 час. После использования она станет недействительной.' +
+          '\n\n⚠️ _Это сообщение будет автоматически удалено через 5 минут._',
         { parse_mode: 'Markdown' }
+      );
+
+      // Auto-delete after 5 minutes to reduce security exposure
+      setTimeout(
+        async () => {
+          try {
+            await ctx.telegram.deleteMessage(sentMsg.chat.id, sentMsg.message_id);
+          } catch {
+            // Message may have been deleted by user already
+          }
+        },
+        5 * 60 * 1000
       );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -30,7 +30,7 @@
  * @module api/trpc/routers/feedback
  */
 
-import { router, authedProcedure, publicProcedure, managerProcedure } from '../trpc.js';
+import { router, publicProcedure, managerProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import type { Prisma } from '@prisma/client';
@@ -57,9 +57,9 @@ export const feedbackRouter = router({
    * Available to all authenticated users (managers, accountants, observers).
    * Returns anonymized data without client-identifying information.
    *
-   * @authorization All authenticated users
+   * @authorization Managers and admins only
    */
-  getAggregates: authedProcedure
+  getAggregates: managerProcedure
     .input(
       z
         .object({

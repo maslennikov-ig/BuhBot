@@ -418,12 +418,18 @@ export function registerAccountantHandler(): void {
 
       // Auto-delete after 5 minutes to reduce security exposure
       setTimeout(
-        async () => {
-          try {
-            await ctx.telegram.deleteMessage(sentMsg.chat.id, sentMsg.message_id);
-          } catch {
-            // Message may have been deleted by user already
-          }
+        () => {
+          ctx.telegram.deleteMessage(sentMsg.chat.id, sentMsg.message_id).catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (!msg.includes('message to delete not found')) {
+              logger.warn('Failed to auto-delete password recovery message', {
+                chatId: sentMsg.chat.id,
+                messageId: sentMsg.message_id,
+                error: msg,
+                service: 'accountant-handler',
+              });
+            }
+          });
         },
         5 * 60 * 1000
       );

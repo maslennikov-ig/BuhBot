@@ -406,7 +406,7 @@ export const authRouter = router({
    *
    * @param email - User email address
    * @param fullName - User's full name
-   * @param role - User role (admin, manager, observer)
+   * @param role - User role (admin, manager, observer, accountant)
    * @returns Created user info
    * @authorization Admin only
    */
@@ -596,10 +596,8 @@ export const authRouter = router({
           });
 
           newUser = result.user;
-          const botUsername = env.BOT_USERNAME;
-          if (botUsername) {
-            verificationLink = `https://t.me/${botUsername}?start=verify_${result.tokenValue}`;
-          }
+          // BOT_USERNAME is guaranteed to be set — guarded at the top of this block
+          verificationLink = `https://t.me/${env.BOT_USERNAME}?start=verify_${result.tokenValue}`;
         } catch (dbError) {
           try {
             await supabase.auth.admin.deleteUser(authData.user.id);

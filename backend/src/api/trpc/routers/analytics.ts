@@ -9,7 +9,7 @@
  * @module api/trpc/routers/analytics
  */
 
-import { router, authedProcedure, managerProcedure } from '../trpc.js';
+import { router, authedProcedure, managerProcedure, staffProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { redis } from '../../../lib/redis.js';
@@ -55,9 +55,9 @@ export const analyticsRouter = router({
    * @param endDate - End date (inclusive)
    * @param assignedTo - Optional filter by accountant UUID
    * @returns SLA compliance metrics
-   * @authorization Managers and admins only
+   * @authorization Staff only (admin, manager, observer)
    */
-  slaCompliance: managerProcedure
+  slaCompliance: staffProcedure
     .input(
       z.object({
         startDate: z.coerce.date(),
@@ -188,9 +188,9 @@ export const analyticsRouter = router({
    * @param startDate - Start date (inclusive)
    * @param endDate - End date (inclusive)
    * @returns Feedback summary statistics
-   * @authorization Managers and admins only
+   * @authorization Staff only (admin, manager, observer)
    */
-  feedbackSummary: managerProcedure
+  feedbackSummary: staffProcedure
     .input(
       z.object({
         startDate: z.coerce.date(),
@@ -1395,9 +1395,9 @@ export const analyticsRouter = router({
    * @param chatId - Optional filter by chat
    * @param accountantId - Optional filter by accountant
    * @returns Time series data with summary statistics
-   * @authorization Managers and admins only
+   * @authorization Staff only (admin, manager, observer)
    */
-  getResponseTimeHistory: managerProcedure
+  getResponseTimeHistory: staffProcedure
     .input(
       z.object({
         periodStart: z.coerce.date(),
@@ -1598,9 +1598,9 @@ export const analyticsRouter = router({
    * @param chatId - Optional filter by chat
    * @param accountantId - Optional filter by accountant
    * @returns Bucket distribution data
-   * @authorization Managers and admins only
+   * @authorization Staff only (admin, manager, observer)
    */
-  getResponseTimeDistribution: managerProcedure
+  getResponseTimeDistribution: staffProcedure
     .input(
       z.object({
         periodStart: z.coerce.date(),

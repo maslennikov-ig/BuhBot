@@ -23,6 +23,12 @@ import { supabase } from '../../../lib/supabase.js';
 import env, { isDevMode } from '../../../config/env.js';
 import logger from '../../../utils/logger.js';
 import { randomBytes } from 'crypto';
+import { prisma } from '../../../lib/prisma.js';
+
+/**
+ * Transaction client type derived from our PrismaClient instance
+ */
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 /**
  * User role schema (matches Prisma UserRole enum)
@@ -35,6 +41,56 @@ type UserRole = z.infer<typeof UserRoleSchema>;
  * Database stores role as string for compatibility, but we validate on read
  */
 const asUserRole = (role: string): UserRole => role as UserRole;
+
+/**
+ * Create an accountant user within a transaction.
+ *
+ * Handles: User creation → UserManager records → VerificationToken generation.
+ * Used by both DEV_MODE and production accountant creation paths.
+ */
+async function createAccountantInTransaction(
+  tx: TransactionClient,
+  params: {
+    userId: string;
+    email: string;
+    fullName: string;
+    role: string;
+    managerIds?: string[] | undefined;
+    isOnboardingComplete: boolean;
+  }
+): Promise<{
+  user: { id: string; email: string; fullName: string; role: string };
+  tokenValue: string;
+}> {
+  const user = await tx.user.create({
+    data: {
+      id: params.userId,
+      email: params.email,
+      fullName: params.fullName,
+      role: params.role,
+      isOnboardingComplete: params.isOnboardingComplete,
+    },
+  });
+
+  if (params.managerIds && params.managerIds.length > 0) {
+    await tx.userManager.createMany({
+      data: params.managerIds.map((managerId) => ({
+        managerId,
+        accountantId: user.id,
+      })),
+    });
+  }
+
+  const tokenValue = randomBytes(16).toString('base64url');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  await tx.verificationToken.create({
+    data: { userId: user.id, token: tokenValue, expiresAt },
+  });
+
+  return { user, tokenValue };
+}
 
 /**
  * Auth router for authentication and user management
@@ -441,37 +497,26 @@ export const authRouter = router({
         const isAccountant = input.role === 'accountant';
 
         const newUser = await ctx.prisma.$transaction(async (tx) => {
+          if (isAccountant) {
+            return createAccountantInTransaction(tx, {
+              userId: devUserId,
+              email: input.email,
+              fullName: input.fullName,
+              role: input.role,
+              managerIds: input.managerIds,
+              isOnboardingComplete: false,
+            });
+          }
+
           const user = await tx.user.create({
             data: {
               id: devUserId,
               email: input.email,
               fullName: input.fullName,
               role: input.role,
-              isOnboardingComplete: !isAccountant,
+              isOnboardingComplete: true,
             },
           });
-
-          if (isAccountant) {
-            if (input.managerIds && input.managerIds.length > 0) {
-              await tx.userManager.createMany({
-                data: input.managerIds.map((managerId) => ({
-                  managerId,
-                  accountantId: user.id,
-                })),
-              });
-            }
-
-            const tokenValue = randomBytes(16).toString('base64url');
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 7);
-
-            await tx.verificationToken.create({
-              data: { userId: user.id, token: tokenValue, expiresAt },
-            });
-
-            return { user, tokenValue };
-          }
-
           return { user, tokenValue: undefined };
         });
 
@@ -559,40 +604,14 @@ export const authRouter = router({
         let verificationLink: string | undefined;
         try {
           const result = await ctx.prisma.$transaction(async (tx) => {
-            const user = await tx.user.create({
-              data: {
-                id: authData.user.id,
-                email: input.email,
-                fullName: input.fullName,
-                role: input.role,
-                isOnboardingComplete: false,
-              },
+            return createAccountantInTransaction(tx, {
+              userId: authData.user.id,
+              email: input.email,
+              fullName: input.fullName,
+              role: input.role,
+              managerIds: input.managerIds,
+              isOnboardingComplete: false,
             });
-
-            // Create UserManager records
-            if (input.managerIds && input.managerIds.length > 0) {
-              await tx.userManager.createMany({
-                data: input.managerIds.map((managerId) => ({
-                  managerId,
-                  accountantId: user.id,
-                })),
-              });
-            }
-
-            // Create verification token for Telegram linking
-            const tokenValue = randomBytes(16).toString('base64url');
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
-
-            await tx.verificationToken.create({
-              data: {
-                userId: user.id,
-                token: tokenValue,
-                expiresAt,
-              },
-            });
-
-            return { user, tokenValue };
           });
 
           newUser = result.user;

@@ -16,6 +16,7 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
 import { supabase } from '../../lib/supabase.js';
+import { redis } from '../../lib/redis.js';
 import { findUserByTelegramId } from '../utils/user.js';
 
 // ============================================================================
@@ -341,8 +342,7 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // Callback: request_password_email — generate password setup link
   // --------------------------------------------------------------------------
-  const passwordRequestCooldown = new Map<number, number>();
-  const PASSWORD_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+  const COOLDOWN_TTL = 300; // 5 minutes in seconds
 
   bot.action('request_password_email', async (ctx: BotContext) => {
     try {
@@ -351,12 +351,14 @@ export function registerAccountantHandler(): void {
       }
 
       // Rate limiting: one request per 5 minutes per user
-      const lastRequest = passwordRequestCooldown.get(ctx.from.id);
-      if (lastRequest && Date.now() - lastRequest < PASSWORD_COOLDOWN_MS) {
-        const remainingSec = Math.ceil((PASSWORD_COOLDOWN_MS - (Date.now() - lastRequest)) / 1000);
-        await ctx.answerCbQuery(
-          `Подождите ${Math.ceil(remainingSec / 60)} мин. перед повторным запросом.`
-        );
+      const cooldownKey = `cooldown:password_request:${ctx.from.id}`;
+      const lastRequest = await redis.get(cooldownKey);
+      if (lastRequest) {
+        const elapsed = Date.now() - parseInt(lastRequest, 10);
+        const remainingSec = Math.max(0, COOLDOWN_TTL - Math.floor(elapsed / 1000));
+        const waitText =
+          remainingSec < 60 ? `${remainingSec} сек.` : `${Math.ceil(remainingSec / 60)} мин.`;
+        await ctx.answerCbQuery(`Подождите ${waitText} перед повторным запросом.`);
         return;
       }
 
@@ -397,7 +399,7 @@ export function registerAccountantHandler(): void {
         return;
       }
 
-      passwordRequestCooldown.set(ctx.from.id, Date.now());
+      await redis.set(cooldownKey, Date.now().toString(), 'EX', COOLDOWN_TTL);
 
       // Remove inline keyboard from original message after use
       try {

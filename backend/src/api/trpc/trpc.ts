@@ -196,15 +196,33 @@ export const authedProcedure = publicProcedure.use(isAuthed);
 export const managerProcedure = authedProcedure.use(isManager);
 
 /**
- * Admin procedure (requires admin role only)
+ * Staff procedure (requires admin, manager, or observer role)
  *
- * Available to: admin
+ * Available to: admin, manager, observer
  *
- * Use for destructive operations:
- * - Deleting templates
- * - Deleting FAQ items
- * - User management
+ * Use for read operations that accountants should NOT access:
+ * - SLA compliance analytics
+ * - Feedback summaries and aggregates
+ * - Response time analytics
  */
+const isStaff = t.middleware(({ ctx, next }) => {
+  if (!ctx.user || !['admin', 'manager', 'observer'].includes(ctx.user.role)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Access denied. This operation requires admin, manager, or observer role.',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+export const staffProcedure = authedProcedure.use(isStaff);
+
 /**
  * Accountant procedure (requires admin, manager, or accountant role)
  *

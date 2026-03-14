@@ -16,7 +16,14 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
 import { supabase } from '../../lib/supabase.js';
+import { redis } from '../../lib/redis.js';
 import { findUserByTelegramId } from '../utils/user.js';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const COOLDOWN_TTL_SECONDS = 300; // Password request rate limit: 5 minutes
 
 // ============================================================================
 // Helpers
@@ -341,23 +348,33 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // Callback: request_password_email — generate password setup link
   // --------------------------------------------------------------------------
-  const passwordRequestCooldown = new Map<number, number>();
-  const PASSWORD_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-
   bot.action('request_password_email', async (ctx: BotContext) => {
     try {
       if (!ctx.from) {
         return;
       }
 
-      // Rate limiting: one request per 5 minutes per user
-      const lastRequest = passwordRequestCooldown.get(ctx.from.id);
-      if (lastRequest && Date.now() - lastRequest < PASSWORD_COOLDOWN_MS) {
-        const remainingSec = Math.ceil((PASSWORD_COOLDOWN_MS - (Date.now() - lastRequest)) / 1000);
-        await ctx.answerCbQuery(
-          `Подождите ${Math.ceil(remainingSec / 60)} мин. перед повторным запросом.`
-        );
-        return;
+      // Rate limiting: one request per 5 minutes per user (fail-open on Redis errors)
+      const cooldownKey = `cooldown:password_request:${ctx.from.id}`;
+      try {
+        // Atomic: SET NX EX acquires lock or reveals one already held
+        const acquired = await redis.set(cooldownKey, '1', 'EX', COOLDOWN_TTL_SECONDS, 'NX');
+        if (acquired === null) {
+          // Key exists — show remaining time via TTL
+          const ttl = await redis.ttl(cooldownKey);
+          const remaining = ttl > 0 ? ttl : COOLDOWN_TTL_SECONDS;
+          const waitText =
+            remaining < 60 ? `${remaining} сек.` : `${Math.ceil(remaining / 60)} мин.`;
+          await ctx.answerCbQuery(`Подождите ${waitText} перед повторным запросом.`);
+          return;
+        }
+      } catch (redisErr) {
+        logger.warn('Redis cooldown check failed, proceeding without rate limit', {
+          telegramId: ctx.from.id,
+          error: redisErr instanceof Error ? redisErr.message : String(redisErr),
+          service: 'accountant-handler',
+        });
+        // Fail open: allow the request
       }
 
       const user = await findUserByTelegramId(ctx.from.id);
@@ -397,8 +414,6 @@ export function registerAccountantHandler(): void {
         return;
       }
 
-      passwordRequestCooldown.set(ctx.from.id, Date.now());
-
       // Remove inline keyboard from original message after use
       try {
         await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
@@ -407,12 +422,31 @@ export function registerAccountantHandler(): void {
       }
 
       await ctx.answerCbQuery('Ссылка отправлена!');
-      await ctx.reply(
+      const sentMsg = await ctx.reply(
         '🔑 *Установка пароля*\n\n' +
           'Перейдите по ссылке ниже для установки пароля:\n\n' +
           data.properties.action_link +
-          '\n\n⏰ Ссылка действительна 1 час. После использования она станет недействительной.',
+          '\n\n⏰ Ссылка действительна 1 час. После использования она станет недействительной.' +
+          '\n\n⚠️ _Это сообщение будет автоматически удалено через 5 минут._',
         { parse_mode: 'Markdown' }
+      );
+
+      // Auto-delete after 5 minutes to reduce security exposure
+      setTimeout(
+        () => {
+          ctx.telegram.deleteMessage(sentMsg.chat.id, sentMsg.message_id).catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (!msg.includes('message to delete not found')) {
+              logger.warn('Failed to auto-delete password recovery message', {
+                chatId: sentMsg.chat.id,
+                messageId: sentMsg.message_id,
+                error: msg,
+                service: 'accountant-handler',
+              });
+            }
+          });
+        },
+        5 * 60 * 1000
       );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

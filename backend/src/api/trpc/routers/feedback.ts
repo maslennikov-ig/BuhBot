@@ -13,7 +13,7 @@
  * ┌─────────────────────┬───────────┬─────────┬──────────┐
  * │ Procedure           │ Admin     │ Manager │ Accountant│
  * ├─────────────────────┼───────────┼─────────┼──────────┤
- * │ getAggregates       │ ✓         │ ✓       │ ✓        │
+ * │ getAggregates       │ ✓         │ ✓       │ ✗        │
  * │ getAll              │ ✓         │ ✓       │ ✗        │
  * │ getById             │ ✓         │ ✓       │ ✗        │
  * │ exportCsv           │ ✓         │ ✓       │ ✗        │
@@ -30,7 +30,7 @@
  * @module api/trpc/routers/feedback
  */
 
-import { router, authedProcedure, publicProcedure, managerProcedure } from '../trpc.js';
+import { router, publicProcedure, managerProcedure, staffProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import type { Prisma } from '@prisma/client';
@@ -54,12 +54,12 @@ export const feedbackRouter = router({
   /**
    * Get aggregate feedback statistics
    *
-   * Available to all authenticated users (managers, accountants, observers).
+   * Available to staff: admin, manager, observer (not accountant).
    * Returns anonymized data without client-identifying information.
    *
-   * @authorization All authenticated users
+   * @authorization Staff only (admin, manager, observer)
    */
-  getAggregates: authedProcedure
+  getAggregates: staffProcedure
     .input(
       z
         .object({

@@ -700,7 +700,13 @@ export const authRouter = router({
   /**
    * Delete a user from the system
    *
-   * Removes user and all associated data (telegram account, assigned chats reassigned to null).
+   * Atomically removes user and all associated data in a single transaction:
+   * - Reassigns chats to null
+   * - Deletes UserManager, VerificationToken, NotificationPreference, TelegramAccount records
+   * - Sets NULL on authored/assigned records (templates, FAQ items, invitations, corrections, surveys, alerts, error logs)
+   * - Deletes the user record
+   * - Cleans up Supabase Auth session (best-effort)
+   *
    * Cannot delete yourself or the last admin.
    *
    * @param userId - Target user ID to delete
@@ -716,7 +722,7 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Prevent self-deletion
       if (input.userId === ctx.user.id) {
-        throw new Error('Нельзя удалить самого себя');
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Нельзя удалить самого себя' });
       }
 
       // Check if user exists
@@ -725,7 +731,7 @@ export const authRouter = router({
       });
 
       if (!userToDelete) {
-        throw new Error('Пользователь не найден');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Пользователь не найден' });
       }
 
       // Prevent deletion of last admin
@@ -737,20 +743,21 @@ export const authRouter = router({
         const adminCount = Number(result[0].count);
 
         if (adminCount <= 1) {
-          throw new Error('Нельзя удалить последнего администратора');
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Нельзя удалить последнего администратора',
+          });
         }
       }
 
-      // Unassign chats from this user
-      await ctx.prisma.chat.updateMany({
-        where: { assignedAccountantId: input.userId },
-        data: { assignedAccountantId: null },
-      });
-
-      // Delete related records (UserManager, VerificationToken, NotificationPreference, TelegramAccount)
-      // Also clear overriddenBy references in other users' preferences (FK SET NULL handles DB level,
-      // but we explicitly clear to ensure consistency)
-      await Promise.all([
+      // Atomic cleanup + deletion in a single transaction
+      await ctx.prisma.$transaction([
+        // Unassign chats from this user
+        ctx.prisma.chat.updateMany({
+          where: { assignedAccountantId: input.userId },
+          data: { assignedAccountantId: null },
+        }),
+        // Delete owned records (Cascade relations — defense-in-depth)
         ctx.prisma.userManager.deleteMany({
           where: { OR: [{ managerId: input.userId }, { accountantId: input.userId }] },
         }),
@@ -760,18 +767,63 @@ export const authRouter = router({
         ctx.prisma.notificationPreference.deleteMany({
           where: { userId: input.userId },
         }),
+        ctx.prisma.telegramAccount.deleteMany({
+          where: { userId: input.userId },
+        }),
+        // Set NULL for referenced records (defense-in-depth for onDelete: SetNull)
         ctx.prisma.notificationPreference.updateMany({
           where: { overriddenBy: input.userId },
           data: { overriddenBy: null },
         }),
-        ctx.prisma.telegramAccount.deleteMany({
-          where: { userId: input.userId },
+        ctx.prisma.chatInvitation.updateMany({
+          where: { createdBy: input.userId },
+          data: { createdBy: null },
+        }),
+        ctx.prisma.template.updateMany({
+          where: { createdBy: input.userId },
+          data: { createdBy: null },
+        }),
+        ctx.prisma.faqItem.updateMany({
+          where: { createdBy: input.userId },
+          data: { createdBy: null },
+        }),
+        ctx.prisma.classificationCorrection.updateMany({
+          where: { correctedBy: input.userId },
+          data: { correctedBy: null },
+        }),
+        ctx.prisma.feedbackSurvey.updateMany({
+          where: { closedBy: input.userId },
+          data: { closedBy: null },
+        }),
+        ctx.prisma.errorLog.updateMany({
+          where: { assignedTo: input.userId },
+          data: { assignedTo: null },
+        }),
+        ctx.prisma.slaAlert.updateMany({
+          where: { acknowledgedBy: input.userId },
+          data: { acknowledgedBy: null },
+        }),
+        // Delete user record last
+        ctx.prisma.user.delete({
+          where: { id: input.userId },
         }),
       ]);
 
-      // Delete user
-      await ctx.prisma.user.delete({
-        where: { id: input.userId },
+      // Clean up Supabase Auth session (best-effort, DB record is already gone)
+      try {
+        await supabase.auth.admin.deleteUser(input.userId);
+      } catch (authError) {
+        logger.error('[deleteUser] Failed to delete Supabase Auth user', {
+          userId: input.userId,
+          error: authError instanceof Error ? authError.message : String(authError),
+        });
+      }
+
+      logger.info('[Audit] Admin deleted user', {
+        adminId: ctx.user.id,
+        targetUserId: input.userId,
+        targetEmail: userToDelete.email,
+        targetRole: userToDelete.role,
       });
 
       return { success: true };

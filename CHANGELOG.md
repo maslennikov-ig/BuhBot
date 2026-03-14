@@ -5,6 +5,23 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.26.0...buhbot-v0.27.0) (2026-03-14)
+
+
+### Features
+
+* **auth:** implement Telegram-first onboarding for accountant role ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+
+
+### Bug Fixes
+
+* **auth:** add server-side role guards and security hardening for accountant onboarding ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+* **auth:** add server-side role guards and security hardening for accountant onboarding ([#268](https://github.com/maslennikov-ig/BuhBot/issues/268)) ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+* **auth:** address code review findings for accountant security hardening ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+* **auth:** address code review findings for Redis cooldown and accountant helper ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+* createdBy nullable in faq.ts/templates.ts Zod output schemas. ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+* dev mode accountant flow with verificationLink support. ([c4bb37e](https://github.com/maslennikov-ig/BuhBot/commit/c4bb37e7c1de26045a67ae90229e2916a88011f0))
+
 ## [0.26.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.25.3...buhbot-v0.26.0) (2026-03-11)
 
 

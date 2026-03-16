@@ -68,7 +68,11 @@ const UpdateGlobalSettingsInput = z.object({
   dataRetentionYears: z.number().min(1).max(10).optional(),
 
   // Internal Chat for SLA notifications
-  internalChatId: z.string().nullable().optional(),
+  internalChatId: z
+    .string()
+    .regex(/^-?\d+$/, 'Telegram Chat ID должен быть числом')
+    .nullable()
+    .optional(),
 });
 
 /**

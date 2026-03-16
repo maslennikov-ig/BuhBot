@@ -53,7 +53,6 @@ type ChatSettingsFormProps = {
     slaThresholdMinutes: number;
     assignedAccountantId: string | null;
     accountantUsernames?: string[];
-    notifyInChatOnBreach?: boolean;
     managerTelegramIds?: string[];
   };
   accountantVerification?: AccountantVerification[];
@@ -75,7 +74,6 @@ const chatSettingsSchema = z.object({
     .union([z.string().uuid(), z.null(), z.literal('')])
     .transform((val) => (val === '' ? null : val)),
   accountantUsernames: z.array(z.string()).optional(),
-  notifyInChatOnBreach: z.boolean(),
   managerTelegramIds: z.array(z.string()).optional(),
 });
 
@@ -90,7 +88,6 @@ const DEFAULT_VALUES: ChatSettingsFormData = {
   slaThresholdMinutes: DEFAULT_SLA_THRESHOLD_MINUTES,
   assignedAccountantId: null,
   accountantUsernames: [],
-  notifyInChatOnBreach: false,
   managerTelegramIds: [],
 };
 
@@ -185,7 +182,6 @@ export function ChatSettingsForm({
       slaThresholdMinutes: data.slaThresholdMinutes,
       assignedAccountantId: data.assignedAccountantId,
       accountantUsernames: data.accountantUsernames ?? [],
-      notifyInChatOnBreach: data.notifyInChatOnBreach ?? false,
       managerTelegramIds: data.managerTelegramIds ?? [],
     });
   };

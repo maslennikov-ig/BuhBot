@@ -519,7 +519,7 @@ export function registerAlertCallbackHandler(): void {
       }
 
       const stars = '⭐'.repeat(feedback.rating);
-      const chatTitle = feedback.chat?.title ?? 'Неизвестный чат';
+      const chatTitle = escapeHtml(feedback.chat?.title ?? 'Неизвестный чат');
       const date = feedback.submittedAt.toLocaleDateString('ru-RU', {
         day: 'numeric',
         month: 'long',
@@ -528,12 +528,14 @@ export function registerAlertCallbackHandler(): void {
         minute: '2-digit',
       });
       const commentText = feedback.comment
-        ? `\n💬 Комментарий: ${feedback.comment}`
+        ? `\n💬 <b>Комментарий:</b> ${escapeHtml(feedback.comment)}`
         : '\n💬 Без комментария';
-      const clientText = feedback.clientUsername ? `\n👤 Клиент: @${feedback.clientUsername}` : '';
+      const clientText = feedback.clientUsername
+        ? `\n👤 Клиент: @${escapeHtml(feedback.clientUsername)}`
+        : '';
 
       const message =
-        `📋 *Детали отзыва*\n\n` +
+        `📋 <b>Детали отзыва</b>\n\n` +
         `${stars} (${feedback.rating}/5)\n` +
         `💬 Чат: ${chatTitle}` +
         clientText +
@@ -541,7 +543,7 @@ export function registerAlertCallbackHandler(): void {
         `\n📅 Дата: ${date}`;
 
       await ctx.answerCbQuery();
-      await ctx.reply(message, { parse_mode: 'Markdown' });
+      await ctx.reply(message, { parse_mode: 'HTML' });
 
       logger.info('Feedback details sent', {
         feedbackId,

@@ -359,7 +359,6 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                       slaThresholdMinutes: chat.slaThresholdMinutes,
                       assignedAccountantId: chat.assignedAccountantId,
                       accountantUsernames: chat.accountantUsernames ?? [],
-                      notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
                       managerTelegramIds: chat.managerTelegramIds ?? [],
                     }}
                     accountantVerification={chat.accountantVerification}

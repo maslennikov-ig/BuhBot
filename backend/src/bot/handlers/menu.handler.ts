@@ -157,19 +157,33 @@ export function registerMenuHandler(): void {
           ? { reply_markup: { inline_keyboard: [[{ text: '💬 Открыть чат', url: chatUrl }]] } }
           : {};
 
-        await bot.telegram.sendMessage(
-          String(accountantTgId),
-          `📩 Клиент просит связаться!\n💬 Чат: ${chatTitle}`,
-          keyboard
-        );
+        try {
+          await bot.telegram.sendMessage(
+            String(accountantTgId),
+            `📩 Клиент просит связаться!\n💬 Чат: ${chatTitle}`,
+            keyboard
+          );
 
-        await ctx.reply('✅ Запрос отправлен бухгалтеру. Ожидайте ответа.');
+          await ctx.reply('✅ Запрос отправлен бухгалтеру. Ожидайте ответа.');
 
-        logger.info('Contact request sent to accountant', {
-          chatId,
-          accountantTgId: String(accountantTgId),
-          service: 'menu-handler',
-        });
+          logger.info('Contact request sent to accountant', {
+            chatId,
+            accountantTgId: String(accountantTgId),
+            service: 'menu-handler',
+          });
+        } catch (sendError) {
+          const errMsg = sendError instanceof Error ? sendError.message : '';
+          if (errMsg.includes('bot was blocked') || errMsg.includes('user is deactivated')) {
+            await ctx.reply('⚠️ Бухгалтер временно недоступен. Попробуйте позже.');
+            logger.warn('Accountant blocked bot or deactivated', {
+              chatId,
+              accountantTgId: String(accountantTgId),
+              service: 'menu-handler',
+            });
+          } else {
+            throw sendError;
+          }
+        }
       } else {
         await ctx.reply('⚠️ Ответственный бухгалтер не назначен для этого чата.');
 

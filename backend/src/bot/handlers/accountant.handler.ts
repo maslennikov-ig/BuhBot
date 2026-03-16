@@ -331,6 +331,20 @@ export function registerAccountantHandler(): void {
         return;
       }
 
+      // Auth check FIRST — before consuming rate-limit key (CR-2026-03-16 #2)
+      const user = await findUserByTelegramId(ctx.from.id);
+
+      if (!user) {
+        await ctx.answerCbQuery('Вы не привязаны к системе BuhBot.');
+        return;
+      }
+
+      // Only accountants can use this feature
+      if (user.role !== 'accountant') {
+        await ctx.answerCbQuery('Эта функция доступна только для бухгалтеров.');
+        return;
+      }
+
       // Rate limiting: one request per 5 minutes per user (fail-open on Redis errors)
       const cooldownKey = `cooldown:password_request:${ctx.from.id}`;
       try {
@@ -352,19 +366,6 @@ export function registerAccountantHandler(): void {
           service: 'accountant-handler',
         });
         // Fail open: allow the request
-      }
-
-      const user = await findUserByTelegramId(ctx.from.id);
-
-      if (!user) {
-        await ctx.answerCbQuery('Вы не привязаны к системе BuhBot.');
-        return;
-      }
-
-      // Only accountants can use this feature
-      if (user.role !== 'accountant') {
-        await ctx.answerCbQuery('Эта функция доступна только для бухгалтеров.');
-        return;
       }
 
       logger.info('Processing password setup request', {

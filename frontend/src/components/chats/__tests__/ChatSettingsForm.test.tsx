@@ -79,6 +79,31 @@ vi.mock('@/components/layout/GlassCard', () => ({
   ),
 }));
 
+vi.mock('@/components/chats/ManagerMultiSelect', () => ({
+  ManagerMultiSelect: ({
+    value,
+    onChange,
+    disabled,
+  }: {
+    value: string[];
+    onChange: (v: string[]) => void;
+    disabled?: boolean;
+    onSelectUserWithoutTelegram?: (user: { id: string; name: string }) => void;
+  }) => (
+    <input
+      data-testid="manager-multi-select"
+      placeholder="123456789, 987654321"
+      value={value.join(', ')}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value.split(', ').filter(Boolean))}
+    />
+  ),
+}));
+
+vi.mock('@/components/chats/TelegramAuthModal', () => ({
+  TelegramAuthModal: () => null,
+}));
+
 // ============================================
 // TEST HELPERS
 // ============================================
@@ -136,7 +161,6 @@ const DEFAULT_INITIAL_DATA = {
   slaThresholdMinutes: 60,
   assignedAccountantId: null,
   accountantUsernames: [] as string[],
-  notifyInChatOnBreach: false,
 };
 
 // ============================================
@@ -168,10 +192,9 @@ describe('ChatSettingsForm', () => {
       expect(screen.getByText('Настройки чата')).toBeInTheDocument();
       expect(screen.getByText('SLA и назначение ответственного')).toBeInTheDocument();
       expect(screen.getByText('Мониторинг SLA')).toBeInTheDocument();
-      expect(screen.getByText('Уведомления в чат')).toBeInTheDocument();
       expect(screen.getByText('Порог SLA (минуты)')).toBeInTheDocument();
-      expect(screen.getByText('Ответственный бухгалтер')).toBeInTheDocument();
-      expect(screen.getByText('Бухгалтеры (@username)')).toBeInTheDocument();
+      expect(screen.getByText(/Ответственный бухгалтер/i)).toBeInTheDocument();
+      expect(screen.getByText(/Ответственные бухгалтеры \(@username\)/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Сохранить/i })).toBeInTheDocument();
     });
 
@@ -190,7 +213,7 @@ describe('ChatSettingsForm', () => {
       expect(container.firstChild).toHaveClass('custom-test-class');
     });
 
-    it('should show warning when SLA enabled but no managers configured', () => {
+    it('should show Level 2+ warning when SLA enabled but no managers configured', () => {
       createMockMutation();
 
       render(
@@ -202,11 +225,12 @@ describe('ChatSettingsForm', () => {
         />
       );
 
-      expect(screen.getByText('Менеджеры для уведомлений не настроены')).toBeInTheDocument();
-      expect(screen.getByText(/SLA уведомления не будут доставлены/i)).toBeInTheDocument();
+      expect(
+        screen.getByText('Не назначены менеджеры для эскалации (Level 2+)')
+      ).toBeInTheDocument();
     });
 
-    it('should NOT show warning when SLA disabled even if no managers', () => {
+    it('should NOT show Level 2+ warning when SLA disabled even if no managers', () => {
       createMockMutation();
 
       render(
@@ -218,10 +242,12 @@ describe('ChatSettingsForm', () => {
         />
       );
 
-      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Не назначены менеджеры для эскалации (Level 2+)')
+      ).not.toBeInTheDocument();
     });
 
-    it('should NOT show warning when SLA enabled and managers configured', () => {
+    it('should NOT show Level 2+ warning when SLA enabled and managers configured', () => {
       createMockMutation();
 
       render(
@@ -233,10 +259,12 @@ describe('ChatSettingsForm', () => {
         />
       );
 
-      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Не назначены менеджеры для эскалации (Level 2+)')
+      ).not.toBeInTheDocument();
     });
 
-    it('should NOT show warning when SLA enabled and accountants configured', () => {
+    it('should NOT show Level 1 warning when SLA enabled and accountants are configured', () => {
       createMockMutation();
 
       render(
@@ -248,15 +276,16 @@ describe('ChatSettingsForm', () => {
             slaEnabled: true,
             slaThresholdMinutes: 60,
             assignedAccountantId: null,
-            notifyInChatOnBreach: false,
           }}
         />
       );
 
-      expect(screen.queryByText('Менеджеры для уведомлений не настроены')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Не назначен ответственный бухгалтер (Level 1)')
+      ).not.toBeInTheDocument();
     });
 
-    it('should hide warning when user types a manager ID into the form field', async () => {
+    it('should hide Level 2+ warning when user types a manager ID into the form field', async () => {
       createMockMutation();
       const user = userEvent.setup({ delay: null });
 
@@ -269,23 +298,57 @@ describe('ChatSettingsForm', () => {
             slaEnabled: true,
             slaThresholdMinutes: 60,
             assignedAccountantId: null,
-            notifyInChatOnBreach: false,
           }}
         />
       );
 
-      // Warning should be visible initially
-      expect(screen.getByText('Менеджеры для уведомлений не настроены')).toBeInTheDocument();
+      // Level 2+ warning should be visible initially
+      expect(
+        screen.getByText('Не назначены менеджеры для эскалации (Level 2+)')
+      ).toBeInTheDocument();
 
-      // Type a valid manager ID
+      // Type a valid manager ID into the mock input
       await user.type(screen.getByPlaceholderText('123456789, 987654321'), '111222333');
 
       // Warning should disappear
       await waitFor(() => {
         expect(
-          screen.queryByText('Менеджеры для уведомлений не настроены')
+          screen.queryByText('Не назначены менеджеры для эскалации (Level 2+)')
         ).not.toBeInTheDocument();
       });
+    });
+
+    it('should show Level 1 warning when SLA enabled and no accountant telegram IDs', () => {
+      createMockMutation();
+
+      render(
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={['12345']}
+          accountantTelegramIds={[]}
+          initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
+        />
+      );
+
+      expect(screen.getByText('Не назначен ответственный бухгалтер (Level 1)')).toBeInTheDocument();
+    });
+
+    it('should show Level 2+ warning when SLA enabled, no managers, and no global managers', () => {
+      createMockMutation();
+      // globalManagerCount defaults to 0 in the mock
+
+      render(
+        <ChatSettingsForm
+          chatId={123}
+          managerTelegramIds={[]}
+          accountantTelegramIds={[123456789]}
+          initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
+        />
+      );
+
+      expect(
+        screen.getByText('Не назначены менеджеры для эскалации (Level 2+)')
+      ).toBeInTheDocument();
     });
   });
 
@@ -304,9 +367,6 @@ describe('ChatSettingsForm', () => {
       const slaToggle = screen.getByRole('switch', { name: /Мониторинг SLA/i });
       expect(slaToggle).toHaveAttribute('aria-checked', 'false');
 
-      const notifyToggle = screen.getByRole('switch', { name: /Уведомления в чат/i });
-      expect(notifyToggle).toHaveAttribute('aria-checked', 'false');
-
       const thresholdInput = screen.getByRole('spinbutton', { name: /Порог SLA/i });
       expect(thresholdInput).toHaveValue(60);
     });
@@ -324,7 +384,6 @@ describe('ChatSettingsForm', () => {
             slaThresholdMinutes: 120,
             assignedAccountantId: '550e8400-e29b-41d4-a716-446655440000',
             accountantUsernames: ['user1', 'user2'],
-            notifyInChatOnBreach: true,
           }}
         />
       );
@@ -332,27 +391,8 @@ describe('ChatSettingsForm', () => {
       const slaToggle = screen.getByRole('switch', { name: /Мониторинг SLA/i });
       expect(slaToggle).toHaveAttribute('aria-checked', 'true');
 
-      const notifyToggle = screen.getByRole('switch', { name: /Уведомления в чат/i });
-      expect(notifyToggle).toHaveAttribute('aria-checked', 'true');
-
       const thresholdInput = screen.getByRole('spinbutton', { name: /Порог SLA/i });
       expect(thresholdInput).toHaveValue(120);
-    });
-
-    it('should fallback notifyInChatOnBreach to false when not provided in initialData', () => {
-      createMockMutation();
-
-      render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={['12345']}
-          accountantTelegramIds={[]}
-          initialData={DEFAULT_INITIAL_DATA}
-        />
-      );
-
-      const notifyToggle = screen.getByRole('switch', { name: /Уведомления в чат/i });
-      expect(notifyToggle).toHaveAttribute('aria-checked', 'false');
     });
   });
 
@@ -375,7 +415,6 @@ describe('ChatSettingsForm', () => {
             slaThresholdMinutes: 90,
             assignedAccountantId: '550e8400-e29b-41d4-a716-446655440000',
             accountantUsernames: ['user1'],
-            notifyInChatOnBreach: true,
           }}
         />
       );
@@ -390,65 +429,8 @@ describe('ChatSettingsForm', () => {
           slaThresholdMinutes: 90,
           assignedAccountantId: '550e8400-e29b-41d4-a716-446655440000',
           accountantUsernames: ['user1'],
-          notifyInChatOnBreach: true,
           managerTelegramIds: [],
         });
-      });
-    });
-
-    it('should include notifyInChatOnBreach in mutation payload', async () => {
-      const { mockMutate } = createMockMutation();
-      const user = userEvent.setup({ delay: null });
-
-      render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={['12345']}
-          accountantTelegramIds={[]}
-          initialData={{
-            slaEnabled: true,
-            slaThresholdMinutes: 60,
-            assignedAccountantId: null,
-            accountantUsernames: [],
-            notifyInChatOnBreach: true,
-          }}
-        />
-      );
-
-      const submitButton = screen.getByRole('button', { name: /Сохранить/i });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockMutate).toHaveBeenCalledWith(
-          expect.objectContaining({
-            notifyInChatOnBreach: true,
-          })
-        );
-      });
-    });
-
-    it('should default notifyInChatOnBreach to false in mutation when not set', async () => {
-      const { mockMutate } = createMockMutation();
-      const user = userEvent.setup({ delay: null });
-
-      render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={['12345']}
-          accountantTelegramIds={[]}
-          initialData={DEFAULT_INITIAL_DATA}
-        />
-      );
-
-      const submitButton = screen.getByRole('button', { name: /Сохранить/i });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockMutate).toHaveBeenCalledWith(
-          expect.objectContaining({
-            notifyInChatOnBreach: false,
-          })
-        );
       });
     });
 
@@ -690,49 +672,6 @@ describe('ChatSettingsForm', () => {
       });
     });
 
-    it('should toggle notifyInChatOnBreach field', async () => {
-      createMockMutation();
-      const user = userEvent.setup({ delay: null });
-
-      render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={['12345']}
-          accountantTelegramIds={[]}
-          initialData={{ ...DEFAULT_INITIAL_DATA, slaEnabled: true }}
-        />
-      );
-
-      const notifyToggle = screen.getByRole('switch', { name: /Уведомления в чат/i });
-      expect(notifyToggle).toHaveAttribute('aria-checked', 'false');
-
-      await user.click(notifyToggle);
-      await waitFor(() => {
-        expect(notifyToggle).toHaveAttribute('aria-checked', 'true');
-      });
-
-      await user.click(notifyToggle);
-      await waitFor(() => {
-        expect(notifyToggle).toHaveAttribute('aria-checked', 'false');
-      });
-    });
-
-    it('should disable notifyInChatOnBreach toggle when SLA disabled', () => {
-      createMockMutation();
-
-      render(
-        <ChatSettingsForm
-          chatId={123}
-          managerTelegramIds={['12345']}
-          accountantTelegramIds={[]}
-          initialData={DEFAULT_INITIAL_DATA}
-        />
-      );
-
-      const notifyToggle = screen.getByRole('switch', { name: /Уведомления в чат/i });
-      expect(notifyToggle).toBeDisabled();
-    });
-
     it('should disable SLA threshold input when SLA disabled', () => {
       createMockMutation();
 
@@ -819,7 +758,6 @@ describe('ChatSettingsForm', () => {
             slaThresholdMinutes: 120,
             assignedAccountantId: null,
             accountantUsernames: [],
-            notifyInChatOnBreach: true,
           }}
         />
       );
@@ -894,7 +832,6 @@ describe('ChatSettingsForm', () => {
             slaThresholdMinutes: 90,
             assignedAccountantId: '550e8400-e29b-41d4-a716-446655440001',
             accountantUsernames: ['user1', 'user2', 'user3'],
-            notifyInChatOnBreach: true,
           }}
         />
       );
@@ -909,7 +846,6 @@ describe('ChatSettingsForm', () => {
           slaThresholdMinutes: 90,
           assignedAccountantId: '550e8400-e29b-41d4-a716-446655440001',
           accountantUsernames: ['user1', 'user2', 'user3'],
-          notifyInChatOnBreach: true,
           managerTelegramIds: [],
         });
       });

@@ -450,6 +450,7 @@ import { supabase } from '@/lib/supabase';
 import { isDevMode, devMockUser } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
+import { UserRoleContext } from '@/contexts/UserRoleContext';
 
 // ============================================
 // MAIN LAYOUT COMPONENT
@@ -472,7 +473,15 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     staleTime: 25000, // Keep data fresh between refetch intervals
   });
 
-  const { data: meData } = trpc.auth.me.useQuery();
+  const { data: meData, isLoading: meLoading } = trpc.auth.me.useQuery();
+
+  const roleContextValue = React.useMemo(
+    () => ({
+      role: meData?.role as 'admin' | 'manager' | 'observer' | 'accountant' | undefined,
+      isLoading: meLoading,
+    }),
+    [meData?.role, meLoading]
+  );
 
   const filteredNavItems = React.useMemo(() => {
     if (meData?.role === 'accountant') {
@@ -538,49 +547,51 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--buh-background)]">
-      {/* Aurora background effect */}
-      <div className="buh-aurora fixed inset-0 pointer-events-none" aria-hidden="true" />
+    <UserRoleContext.Provider value={roleContextValue}>
+      <div className="min-h-screen bg-[var(--buh-background)]">
+        {/* Aurora background effect */}
+        <div className="buh-aurora fixed inset-0 pointer-events-none" aria-hidden="true" />
 
-      {/* Sidebar */}
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
-        alertCount={alertCountData?.count}
-        items={filteredNavItems}
-      />
-
-      {/* Main content area */}
-      <div
-        className={cn(
-          'flex min-h-screen flex-col',
-          'transition-[margin] duration-300',
-          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
-        )}
-      >
-        {/* Header */}
-        <Header
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
-          userEmail={userEmail}
+        {/* Sidebar */}
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+          alertCount={alertCountData?.count}
+          items={filteredNavItems}
         />
 
-        {/* Main content */}
-        <main className="flex-1 p-4 lg:p-6">
-          <div className="mx-auto max-w-7xl">{children}</div>
-        </main>
+        {/* Main content area */}
+        <div
+          className={cn(
+            'flex min-h-screen flex-col',
+            'transition-[margin] duration-300',
+            sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+          )}
+        >
+          {/* Header */}
+          <Header
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
+            userEmail={userEmail}
+          />
 
-        {/* Footer */}
-        <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-3 lg:px-6">
-          <p className="text-center text-sm text-[var(--buh-foreground-subtle)]">
-            &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v
-            {process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0'}
-          </p>
-        </footer>
+          {/* Main content */}
+          <main className="flex-1 p-4 lg:p-6">
+            <div className="mx-auto max-w-7xl">{children}</div>
+          </main>
+
+          {/* Footer */}
+          <footer className="border-t border-[var(--buh-border)] bg-[var(--buh-surface)] px-4 py-3 lg:px-6">
+            <p className="text-center text-sm text-[var(--buh-foreground-subtle)]">
+              &copy; {new Date().getFullYear()} BuhBot. Все права защищены. &middot; v
+              {process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0'}
+            </p>
+          </footer>
+        </div>
       </div>
-    </div>
+    </UserRoleContext.Provider>
   );
 }
 

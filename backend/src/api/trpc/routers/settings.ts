@@ -66,6 +66,13 @@ const UpdateGlobalSettingsInput = z.object({
 
   // Data Retention
   dataRetentionYears: z.number().min(1).max(10).optional(),
+
+  // Internal Chat for SLA notifications
+  internalChatId: z
+    .string()
+    .regex(/^-?\d+$/, 'Telegram Chat ID должен быть числом')
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -147,6 +154,9 @@ const GlobalSettingsOutput = z.object({
 
   // Data Retention
   dataRetentionYears: z.number(),
+
+  // Internal Chat
+  internalChatId: z.string().nullable(),
 
   // Meta
   updatedAt: z.date(),
@@ -285,6 +295,7 @@ export const settingsRouter = router({
         : null,
       openrouterModel: settings.openrouterModel,
       dataRetentionYears: settings.dataRetentionYears,
+      internalChatId: settings.internalChatId ? String(settings.internalChatId) : null,
       updatedAt: settings.updatedAt,
     };
   }),
@@ -344,9 +355,16 @@ export const settingsRouter = router({
     .output(GlobalSettingsOutput)
     .mutation(async ({ ctx, input }) => {
       // Filter out undefined values from input for Prisma compatibility
-      const updateData = Object.fromEntries(
-        Object.entries(input).filter(([, value]) => value !== undefined)
+      // Separate internalChatId for BigInt conversion
+      const { internalChatId: rawInternalChatId, ...rest } = input;
+      const updateData: Record<string, unknown> = Object.fromEntries(
+        Object.entries(rest).filter(([, value]) => value !== undefined)
       );
+
+      // Convert internalChatId string to BigInt for Prisma
+      if (rawInternalChatId !== undefined) {
+        updateData['internalChatId'] = rawInternalChatId ? BigInt(rawInternalChatId) : null;
+      }
 
       // Upsert settings (create if not exists, update if exists)
       const settings = await ctx.prisma.globalSettings.upsert({
@@ -382,6 +400,7 @@ export const settingsRouter = router({
           : null,
         openrouterModel: settings.openrouterModel,
         dataRetentionYears: settings.dataRetentionYears,
+        internalChatId: settings.internalChatId ? String(settings.internalChatId) : null,
         updatedAt: settings.updatedAt,
       };
     }),

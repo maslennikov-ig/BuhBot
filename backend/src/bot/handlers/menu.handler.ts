@@ -13,6 +13,7 @@
  */
 
 import { bot } from '../bot.js';
+import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import {
   buildClientMenuKeyboard,
@@ -106,7 +107,7 @@ export function registerMenuHandler(): void {
     }
   });
 
-  // Handle contact accountant callback
+  // Handle contact accountant callback — notify the assigned accountant
   bot.action(MENU_CALLBACKS.CONTACT, async (ctx) => {
     const chatId = ctx.chat?.id;
     const userId = ctx.from?.id;
@@ -119,13 +120,78 @@ export function registerMenuHandler(): void {
 
     try {
       await ctx.answerCbQuery();
-      await ctx.reply(MENU_MESSAGES.CONTACT_RESPONSE);
 
-      logger.debug('Contact response sent', {
-        chatId,
-        userId,
-        service: 'menu-handler',
+      if (!chatId) {
+        await ctx.reply('Не удалось определить чат.');
+        return;
+      }
+
+      // Find the chat and its primary accountant
+      const chat = await prisma.chat.findFirst({
+        where: { id: BigInt(chatId) },
+        select: {
+          title: true,
+          accountantTelegramIds: true,
+          inviteLink: true,
+          chatType: true,
+        },
       });
+
+      const accountantTgId = chat?.accountantTelegramIds?.[0];
+
+      if (accountantTgId) {
+        const chatTitle = chat?.title ?? `Чат ${chatId}`;
+
+        // Build chat link
+        let chatUrl: string | undefined;
+        if (chat?.inviteLink) {
+          chatUrl = chat.inviteLink;
+        } else if (chat?.chatType === 'supergroup') {
+          const formattedId = String(chatId).startsWith('-100')
+            ? String(chatId).slice(4)
+            : String(chatId).replace('-', '');
+          chatUrl = `https://t.me/c/${formattedId}`;
+        }
+
+        const keyboard = chatUrl
+          ? { reply_markup: { inline_keyboard: [[{ text: '💬 Открыть чат', url: chatUrl }]] } }
+          : {};
+
+        try {
+          await bot.telegram.sendMessage(
+            String(accountantTgId),
+            `📩 Клиент просит связаться!\n💬 Чат: ${chatTitle}`,
+            keyboard
+          );
+
+          await ctx.reply('✅ Запрос отправлен бухгалтеру. Ожидайте ответа.');
+
+          logger.info('Contact request sent to accountant', {
+            chatId,
+            accountantTgId: String(accountantTgId),
+            service: 'menu-handler',
+          });
+        } catch (sendError) {
+          const errMsg = sendError instanceof Error ? sendError.message : '';
+          if (errMsg.includes('bot was blocked') || errMsg.includes('user is deactivated')) {
+            await ctx.reply('⚠️ Бухгалтер временно недоступен. Попробуйте позже.');
+            logger.warn('Accountant blocked bot or deactivated', {
+              chatId,
+              accountantTgId: String(accountantTgId),
+              service: 'menu-handler',
+            });
+          } else {
+            throw sendError;
+          }
+        }
+      } else {
+        await ctx.reply('⚠️ Ответственный бухгалтер не назначен для этого чата.');
+
+        logger.warn('No accountant assigned for contact request', {
+          chatId,
+          service: 'menu-handler',
+        });
+      }
     } catch (error) {
       logger.error('Failed to handle contact callback', {
         chatId,
@@ -133,7 +199,7 @@ export function registerMenuHandler(): void {
         error: error instanceof Error ? error.message : String(error),
         service: 'menu-handler',
       });
-      await ctx.answerCbQuery('Error processing request').catch(() => {});
+      await ctx.reply('Произошла ошибка при отправке запроса.').catch(() => {});
     }
   });
 

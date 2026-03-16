@@ -615,6 +615,9 @@ model GlobalSettings {
   lowRatingThreshold Int @default(3) @map("low_rating_threshold")
   surveyQuarterDay   Int @default(1) @map("survey_quarter_day")
 
+  // Internal Chat for SLA notifications (instead of client chat)
+  internalChatId BigInt? @map("internal_chat_id") @db.BigInt
+
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("global_settings")

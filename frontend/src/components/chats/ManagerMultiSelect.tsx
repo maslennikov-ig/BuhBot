@@ -170,12 +170,14 @@ export function ManagerMultiSelect({
     if (user.telegramId != null) {
       // User has telegramId -- add to value
       onChange([...value, String(user.telegramId)]);
+      setSearchQuery('');
+      // Don't close - allow adding multiple managers without reopening
     } else {
       // User has no telegramId -- notify parent for TelegramAuthModal
       onSelectUserWithoutTelegram?.({ id: user.id, name: user.fullName });
+      setIsOpen(false);
+      setSearchQuery('');
     }
-    setIsOpen(false);
-    setSearchQuery('');
   };
 
   // Remove chip by telegramId string

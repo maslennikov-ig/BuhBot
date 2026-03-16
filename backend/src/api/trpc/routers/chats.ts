@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import logger from '../../../utils/logger.js';
-import env, { isProduction } from '../../../config/env.js';
+import env from '../../../config/env.js';
 import { randomBytes } from 'crypto';
 import { safeNumberFromBigInt } from '../../../utils/bigint.js';
 
@@ -390,7 +390,6 @@ export const chatsRouter = router({
           .array(z.string().regex(/^\d+$/, 'Telegram ID должен быть числом'))
           .max(20, 'Максимум 20 менеджеров')
           .optional(),
-        notifyInChatOnBreach: z.boolean().optional(),
       })
     )
     .output(
@@ -402,7 +401,6 @@ export const chatsRouter = router({
           slaEnabled: z.boolean(),
           slaThresholdMinutes: z.number().int(),
           clientTier: z.enum(['basic', 'standard', 'vip', 'premium']),
-          notifyInChatOnBreach: z.boolean(),
           updatedAt: z.date(),
         }),
         warnings: z.array(z.string()).default([]),
@@ -520,19 +518,6 @@ export const chatsRouter = router({
           if (input.managerTelegramIds !== undefined) {
             data.managerTelegramIds = input.managerTelegramIds;
           }
-          if (input.notifyInChatOnBreach !== undefined) {
-            // Security: Block enabling in-chat breach notifications in production
-            // This setting leaks internal SLA data (breach time, accountant info) to client-facing chats
-            if (input.notifyInChatOnBreach === true && isProduction()) {
-              throw new TRPCError({
-                code: 'FORBIDDEN',
-                message:
-                  'Уведомления о нарушениях SLA в чат запрещены в production-режиме. Эта функция предназначена только для тестирования.',
-              });
-            }
-            data.notifyInChatOnBreach = input.notifyInChatOnBreach;
-          }
-
           // Start with input usernames
           const finalUsernames = [...input.accountantUsernames];
 
@@ -631,7 +616,6 @@ export const chatsRouter = router({
               slaEnabled: true,
               slaThresholdMinutes: true,
               clientTier: true,
-              notifyInChatOnBreach: true,
               updatedAt: true,
             },
           });

@@ -57,6 +57,7 @@ vi.mock('../setup.js', () => ({
 vi.mock('../../config/config.service.js', () => ({
   getManagerIds: mockGetManagerIds,
   getRecipientsByLevel: mockGetRecipientsByLevel,
+  getGlobalSettings: vi.fn().mockResolvedValue({ internalChatId: null }),
 }));
 
 vi.mock('../../lib/redis.js', () => ({
@@ -224,7 +225,7 @@ describe('SLA Timer Worker - Warning Path', () => {
       expect(mockQueueAlert).toHaveBeenCalledWith({
         requestId: REQUEST_ID,
         alertType: 'warning',
-        managerIds: ['222', '333'], // accountant IDs
+        managerIds: ['222'], // only primary accountant
         escalationLevel: 0,
       });
     });

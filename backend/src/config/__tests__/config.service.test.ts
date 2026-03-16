@@ -2,8 +2,8 @@
  * Config Service Tests - getRecipientsByLevel
  *
  * Tests two-tier recipient resolution logic:
- * - Level 1: accountants (fallback to managers)
- * - Level 2+: managers + accountants (deduplicated)
+ * - Level 1: only the FIRST (primary) accountant (fallback to managers)
+ * - Level 2+: only managers (NOT including accountant again)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -53,11 +53,11 @@ describe('getRecipientsByLevel', () => {
   });
 
   describe('level 1 (initial alert)', () => {
-    it('should return accountants when available', async () => {
+    it('should return only the first accountant when available', async () => {
       const result = await getRecipientsByLevel(['mgr_111'], [BigInt(222), BigInt(333)], 1);
 
       expect(result.tier).toBe('accountant');
-      expect(result.recipients).toEqual(['222', '333']);
+      expect(result.recipients).toEqual(['222']);
     });
 
     it('should fallback to chat managers when no accountants', async () => {
@@ -106,25 +106,21 @@ describe('getRecipientsByLevel', () => {
   });
 
   describe('level 2+ (escalation)', () => {
-    it('should return both managers and accountants', async () => {
+    it('should return only managers at level 2 (not accountants)', async () => {
       const result = await getRecipientsByLevel(['mgr_111'], [BigInt(222)], 2);
 
-      expect(result.tier).toBe('both');
-      expect(result.recipients).toContain('mgr_111');
-      expect(result.recipients).toContain('222');
+      expect(result.tier).toBe('manager');
+      expect(result.recipients).toEqual(['mgr_111']);
     });
 
-    it('should deduplicate when manager ID is also accountant ID', async () => {
+    it('should not include accountants at level 2 even with overlapping IDs', async () => {
       const result = await getRecipientsByLevel(['111'], [BigInt(111), BigInt(222)], 2);
 
-      expect(result.tier).toBe('both');
-      // '111' appears in both lists but should only be once
-      const count111 = result.recipients.filter((r) => r === '111').length;
-      expect(count111).toBe(1);
-      expect(result.recipients).toContain('222');
+      expect(result.tier).toBe('manager');
+      expect(result.recipients).toEqual(['111']);
     });
 
-    it('should return only accountants at level 2 when no managers', async () => {
+    it('should return empty with fallback tier at level 2 when no managers', async () => {
       mockPrisma.globalSettings.findUnique.mockResolvedValue({
         defaultTimezone: 'Europe/Moscow',
         defaultWorkingDays: [1, 2, 3, 4, 5],
@@ -143,16 +139,15 @@ describe('getRecipientsByLevel', () => {
 
       const result = await getRecipientsByLevel([], [BigInt(222)], 2);
 
-      expect(result.tier).toBe('accountant');
-      expect(result.recipients).toEqual(['222']);
+      expect(result.tier).toBe('fallback');
+      expect(result.recipients).toEqual([]);
     });
 
-    it('should include global managers at level 2+ when no chat managers', async () => {
+    it('should return global managers at level 2+ when no chat managers', async () => {
       const result = await getRecipientsByLevel(null, [BigInt(222)], 3);
 
-      expect(result.tier).toBe('both');
-      expect(result.recipients).toContain('999');
-      expect(result.recipients).toContain('222');
+      expect(result.tier).toBe('manager');
+      expect(result.recipients).toEqual(['999']);
     });
   });
 

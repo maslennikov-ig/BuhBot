@@ -39,8 +39,7 @@ export const MENU_MESSAGES = {
   /** Menu title */
   MENU_TITLE: 'Выберите действие:',
   /** Document status placeholder */
-  DOC_STATUS_RESPONSE:
-    'Функция в разработке. Статус ваших документов будет доступен в ближайшее время.',
+  DOC_STATUS_RESPONSE: '🔧 Функция в разработке.',
   /** Contact accountant confirmation */
   CONTACT_RESPONSE: 'Ваш запрос передан бухгалтеру. Ожидайте ответа.',
   /** Request service prompt */

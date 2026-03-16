@@ -256,6 +256,10 @@ export async function getRecipientsByLevel(
   if (managerIds.length > 0) {
     return { recipients: managerIds, tier: 'manager' };
   }
+  logger.warn('L2+ escalation has no manager recipients configured', {
+    escalationLevel,
+    service: 'config-service',
+  });
   return { recipients: [], tier: 'fallback' };
 }
 

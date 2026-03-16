@@ -51,12 +51,12 @@ async function createAccountantInTransaction(
     userId: string;
     email: string;
     fullName: string;
-    role: string;
+    role: UserRole;
     managerIds?: string[] | undefined;
     isOnboardingComplete: boolean;
   }
 ): Promise<{
-  user: { id: string; email: string; fullName: string; role: string };
+  user: { id: string; email: string; fullName: string; role: UserRole };
   tokenValue: string;
 }> {
   const user = await tx.user.create({
@@ -86,7 +86,15 @@ async function createAccountantInTransaction(
     data: { userId: user.id, token: tokenValue, expiresAt },
   });
 
-  return { user, tokenValue };
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: asUserRole(user.role),
+    },
+    tokenValue,
+  };
 }
 
 /**

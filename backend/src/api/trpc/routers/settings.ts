@@ -363,7 +363,7 @@ export const settingsRouter = router({
 
       // Convert internalChatId string to BigInt for Prisma
       if (rawInternalChatId !== undefined) {
-        updateData.internalChatId = rawInternalChatId ? BigInt(rawInternalChatId) : null;
+        updateData['internalChatId'] = rawInternalChatId ? BigInt(rawInternalChatId) : null;
       }
 
       // Upsert settings (create if not exists, update if exists)

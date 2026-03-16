@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.27.0...buhbot-v0.28.0) (2026-03-16)
+
+
+### Features
+
+* **bot:** RBAC hierarchy, menus, notifications, and chat settings fixes ([#270](https://github.com/maslennikov-ig/BuhBot/issues/270)) ([0b874b2](https://github.com/maslennikov-ig/BuhBot/commit/0b874b2dbcd0dc4d35ede53999df33c9b169e2eb))
+
 ## [0.27.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.26.0...buhbot-v0.27.0) (2026-03-14)
 
 

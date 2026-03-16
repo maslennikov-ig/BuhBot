@@ -360,6 +360,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
                       assignedAccountantId: chat.assignedAccountantId,
                       accountantUsernames: chat.accountantUsernames ?? [],
                       notifyInChatOnBreach: chat.notifyInChatOnBreach ?? false,
+                      managerTelegramIds: chat.managerTelegramIds ?? [],
                     }}
                     accountantVerification={chat.accountantVerification}
                   />

@@ -13,6 +13,8 @@ import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import env from '../../config/env.js';
 import { getBotInfo, privacyModeWarning } from '../utils/bot-info.js';
+import { findUserByTelegramId } from '../utils/user.js';
+import { hasMinRole } from '../utils/roles.js';
 
 // Token validation: alphanumeric, 8-64 characters
 const TOKEN_REGEX = /^[a-zA-Z0-9_-]{8,64}$/;
@@ -124,28 +126,62 @@ export function registerInvitationHandler(): void {
     }
   });
 
-  // Handle /help command
+  // Handle /help command — contextual by role
   bot.help(async (ctx: BotContext) => {
     try {
-      const helpMessage = `📋 *Справка по боту*
+      const lines: string[] = [
+        '📋 *Справка по боту*',
+        '',
+        '🔹 /start — начать работу с ботом',
+        '🔹 /menu — открыть меню самообслуживания',
+        '🔹 /help — показать эту справку',
+        '🔹 /connect <код> — подключить групповой чат',
+      ];
 
-🔹 /start — начать работу с ботом
-🔹 /menu — открыть меню самообслуживания
-🔹 /help — показать эту справку
-🔹 /connect <код> — подключить групповой чат
-🔹 /diagnose — диагностика получения сообщений
+      // Check if user is registered and add role-specific commands
+      let userRole: string | null = null;
+      if (ctx.from) {
+        const user = await findUserByTelegramId(ctx.from.id);
+        if (user) {
+          userRole = user.role;
+        }
+      }
 
-*Как это работает:*
-Бот помогает отслеживать время ответа на ваши сообщения. Когда вы пишете сообщение, бухгалтер получает уведомление и должен ответить в установленный срок.
+      if (userRole && hasMinRole(userRole, 'accountant')) {
+        lines.push(
+          '',
+          '*Команды бухгалтера:*',
+          '🔹 /mystats — ваша статистика',
+          '🔹 /mychats — ваши чаты',
+          '🔹 /newchat — создать приглашение для нового чата',
+          '🔹 /notifications — настройки уведомлений',
+          '🔹 /account — управление аккаунтом'
+        );
+      }
 
-*Нужна помощь?*
-Обратитесь к вашему бухгалтеру или администратору системы.`;
+      if (userRole && hasMinRole(userRole, 'manager')) {
+        lines.push('', '*Команды менеджера:*', '🔹 /diagnose — диагностика получения сообщений');
+      }
 
-      await ctx.reply(helpMessage, { parse_mode: 'Markdown' });
+      if (userRole && hasMinRole(userRole, 'admin')) {
+        lines.push('', '*Команды администратора:*', '🔹 /info — информация о боте');
+      }
+
+      lines.push(
+        '',
+        '*Как это работает:*',
+        'Бот помогает отслеживать время ответа на ваши сообщения. Когда вы пишете сообщение, бухгалтер получает уведомление и должен ответить в установленный срок.',
+        '',
+        '*Нужна помощь?*',
+        'Обратитесь к вашему бухгалтеру или администратору системы.'
+      );
+
+      await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
 
       logger.info('Help command processed', {
         chatId: ctx.chat?.id,
         userId: ctx.from?.id,
+        userRole,
         service: 'invitation-handler',
       });
     } catch (error) {
@@ -424,7 +460,8 @@ async function processVerification(ctx: BotContext, token: string): Promise<void
         'Доступные команды:\n' +
         '/mystats — ваша статистика\n' +
         '/mychats — ваши чаты\n' +
-        '/newchat — создать приглашение для нового чата',
+        '/newchat — создать приглашение для нового чата\n' +
+        '/account — управление аккаунтом и пароль',
       {
         reply_markup: {
           inline_keyboard: [

@@ -490,6 +490,74 @@ export function registerAlertCallbackHandler(): void {
     }
   });
 
+  // Handle "View feedback" button (low-rating alert)
+  bot.action(/^view_feedback_(.+)$/, async (ctx) => {
+    const feedbackId = ctx.match[1];
+
+    if (!feedbackId) {
+      await ctx.answerCbQuery('Некорректные данные');
+      return;
+    }
+
+    logger.info('View feedback callback received', {
+      feedbackId,
+      userId: ctx.from?.id?.toString(),
+      service: 'alert-callback',
+    });
+
+    try {
+      const feedback = await prisma.feedbackResponse.findUnique({
+        where: { id: feedbackId },
+        include: {
+          chat: { select: { title: true } },
+        },
+      });
+
+      if (!feedback) {
+        await ctx.answerCbQuery('Отзыв не найден');
+        return;
+      }
+
+      const stars = '⭐'.repeat(feedback.rating);
+      const chatTitle = feedback.chat?.title ?? 'Неизвестный чат';
+      const date = feedback.submittedAt.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const commentText = feedback.comment
+        ? `\n💬 Комментарий: ${feedback.comment}`
+        : '\n💬 Без комментария';
+      const clientText = feedback.clientUsername ? `\n👤 Клиент: @${feedback.clientUsername}` : '';
+
+      const message =
+        `📋 *Детали отзыва*\n\n` +
+        `${stars} (${feedback.rating}/5)\n` +
+        `💬 Чат: ${chatTitle}` +
+        clientText +
+        commentText +
+        `\n📅 Дата: ${date}`;
+
+      await ctx.answerCbQuery();
+      await ctx.reply(message, { parse_mode: 'Markdown' });
+
+      logger.info('Feedback details sent', {
+        feedbackId,
+        rating: feedback.rating,
+        service: 'alert-callback',
+      });
+    } catch (error) {
+      logger.error('View feedback callback error', {
+        error: error instanceof Error ? error.message : String(error),
+        feedbackId,
+        service: 'alert-callback',
+      });
+      await ctx.answerCbQuery('Ошибка при загрузке отзыва');
+    }
+  });
+
   logger.info('Alert callback handlers registered', { service: 'bot' });
 }
 

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Loader2, Save, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { ManagerMultiSelect } from '@/components/chats/ManagerMultiSelect';
@@ -14,6 +16,7 @@ import { TelegramAuthModal } from '@/components/chats/TelegramAuthModal';
 
 const formSchema = z.object({
   ids: z.array(z.string()),
+  internalChatId: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -36,6 +39,7 @@ export function SlaManagerSettingsForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ids: [],
+      internalChatId: '',
     },
   });
 
@@ -44,6 +48,7 @@ export function SlaManagerSettingsForm() {
     if (settings) {
       form.reset({
         ids: settings.globalManagerIds,
+        internalChatId: settings.internalChatId ?? '',
       });
     }
   }, [settings, form]);
@@ -51,6 +56,7 @@ export function SlaManagerSettingsForm() {
   const onSubmit = (data: FormValues) => {
     updateSettings.mutate({
       globalManagerIds: data.ids,
+      internalChatId: data.internalChatId?.trim() || null,
     });
   };
 
@@ -99,6 +105,21 @@ export function SlaManagerSettingsForm() {
               </div>
             )}
           />
+
+          <div className="space-y-2">
+            <Label htmlFor="internalChatId">
+              Служебный чат для SLA-уведомлений (Telegram Chat ID)
+            </Label>
+            <Input
+              id="internalChatId"
+              placeholder="-1001234567890"
+              {...form.register('internalChatId')}
+            />
+            <p className="text-sm text-[var(--buh-foreground-muted)]">
+              Telegram Chat ID служебного чата, куда будут отправляться уведомления о нарушениях
+              SLA. Оставьте пустым, чтобы отключить.
+            </p>
+          </div>
 
           <div className="flex justify-end pt-4">
             <Button

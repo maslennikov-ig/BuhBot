@@ -18,6 +18,7 @@ import env from '../../config/env.js';
 import { supabase } from '../../lib/supabase.js';
 import { redis } from '../../lib/redis.js';
 import { findUserByTelegramId } from '../utils/user.js';
+import { requireRole } from '../middleware/require-role.js';
 
 // ============================================================================
 // Constants
@@ -48,27 +49,13 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // /mystats — personal statistics
   // --------------------------------------------------------------------------
-  bot.command('mystats', async (ctx: BotContext) => {
+  bot.command('mystats', requireRole('accountant'), async (ctx: BotContext) => {
     try {
-      if (!ctx.from) {
-        return;
-      }
-
-      const user = await findUserByTelegramId(ctx.from.id);
-
-      if (!user) {
-        await ctx.reply('Вы не привязаны к системе BuhBot.');
-        return;
-      }
-
-      if (user.role !== 'accountant') {
-        await ctx.reply('Эта команда доступна только для бухгалтеров.');
-        return;
-      }
+      const user = ctx.state['user']!;
 
       logger.info('Processing /mystats', {
         userId: user.id,
-        telegramId: ctx.from.id,
+        telegramId: ctx.from!.id,
         service: 'accountant-handler',
       });
 
@@ -139,27 +126,13 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // /mychats — list assigned chats
   // --------------------------------------------------------------------------
-  bot.command('mychats', async (ctx: BotContext) => {
+  bot.command('mychats', requireRole('accountant'), async (ctx: BotContext) => {
     try {
-      if (!ctx.from) {
-        return;
-      }
-
-      const user = await findUserByTelegramId(ctx.from.id);
-
-      if (!user) {
-        await ctx.reply('Вы не привязаны к системе BuhBot.');
-        return;
-      }
-
-      if (user.role !== 'accountant') {
-        await ctx.reply('Эта команда доступна только для бухгалтеров.');
-        return;
-      }
+      const user = ctx.state['user']!;
 
       logger.info('Processing /mychats', {
         userId: user.id,
-        telegramId: ctx.from.id,
+        telegramId: ctx.from!.id,
         service: 'accountant-handler',
       });
 
@@ -211,27 +184,13 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // /newchat — self-service chat invitation
   // --------------------------------------------------------------------------
-  bot.command('newchat', async (ctx: BotContext) => {
+  bot.command('newchat', requireRole('accountant'), async (ctx: BotContext) => {
     try {
-      if (!ctx.from) {
-        return;
-      }
-
-      const user = await findUserByTelegramId(ctx.from.id);
-
-      if (!user) {
-        await ctx.reply('Вы не привязаны к системе BuhBot.');
-        return;
-      }
-
-      if (user.role !== 'accountant') {
-        await ctx.reply('Эта команда доступна только для бухгалтеров.');
-        return;
-      }
+      const user = ctx.state['user']!;
 
       logger.info('Processing /newchat', {
         userId: user.id,
-        telegramId: ctx.from.id,
+        telegramId: ctx.from!.id,
         service: 'accountant-handler',
       });
 
@@ -275,27 +234,13 @@ export function registerAccountantHandler(): void {
   // --------------------------------------------------------------------------
   // /notifications — view notification preferences
   // --------------------------------------------------------------------------
-  bot.command('notifications', async (ctx: BotContext) => {
+  bot.command('notifications', requireRole('accountant'), async (ctx: BotContext) => {
     try {
-      if (!ctx.from) {
-        return;
-      }
-
-      const user = await findUserByTelegramId(ctx.from.id);
-
-      if (!user) {
-        await ctx.reply('Вы не привязаны к системе BuhBot.');
-        return;
-      }
-
-      if (user.role !== 'accountant') {
-        await ctx.reply('Эта команда доступна только для бухгалтеров.');
-        return;
-      }
+      const user = ctx.state['user']!;
 
       logger.info('Processing /notifications', {
         userId: user.id,
-        telegramId: ctx.from.id,
+        telegramId: ctx.from!.id,
         service: 'accountant-handler',
       });
 
@@ -346,6 +291,38 @@ export function registerAccountantHandler(): void {
   });
 
   // --------------------------------------------------------------------------
+  // /account — re-access account management buttons
+  // --------------------------------------------------------------------------
+  bot.command('account', requireRole('accountant'), async (ctx: BotContext) => {
+    try {
+      const user = ctx.state['user']!;
+
+      logger.info('Processing /account', {
+        userId: user.id,
+        telegramId: ctx.from!.id,
+        service: 'accountant-handler',
+      });
+
+      await ctx.reply('Управление аккаунтом', {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🌐 Личный кабинет', url: `${env.FRONTEND_URL}/settings/profile` }],
+            [{ text: '🔑 Установить/сменить пароль', callback_data: 'request_password_email' }],
+          ],
+        },
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error handling /account', {
+        error: errorMessage,
+        telegramId: ctx.from?.id,
+        service: 'accountant-handler',
+      });
+      await ctx.reply('Произошла ошибка. Попробуйте позже.');
+    }
+  });
+
+  // --------------------------------------------------------------------------
   // Callback: request_password_email — generate password setup link
   // --------------------------------------------------------------------------
   bot.action('request_password_email', async (ctx: BotContext) => {
@@ -370,7 +347,7 @@ export function registerAccountantHandler(): void {
         }
       } catch (redisErr) {
         logger.warn('Redis cooldown check failed, proceeding without rate limit', {
-          telegramId: ctx.from.id,
+          telegramId: ctx.from!.id,
           error: redisErr instanceof Error ? redisErr.message : String(redisErr),
           service: 'accountant-handler',
         });
@@ -392,7 +369,7 @@ export function registerAccountantHandler(): void {
 
       logger.info('Processing password setup request', {
         userId: user.id,
-        telegramId: ctx.from.id,
+        telegramId: ctx.from!.id,
         service: 'accountant-handler',
       });
 

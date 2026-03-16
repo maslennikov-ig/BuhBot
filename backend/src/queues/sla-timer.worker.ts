@@ -22,7 +22,11 @@ import { QUEUE_NAMES, registerWorker, queueAlert, type SlaTimerJobData } from '.
 import { queueConfig } from '../config/queue.config.js';
 import { bot } from '../bot/bot.js';
 import { formatBreachChatNotification } from '../services/alerts/format.service.js';
-import { getManagerIds, getRecipientsByLevel } from '../config/config.service.js';
+import {
+  getManagerIds,
+  getRecipientsByLevel,
+  getGlobalSettings,
+} from '../config/config.service.js';
 
 /**
  * Process SLA breach check job
@@ -129,7 +133,7 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       const accountantIds = request.chat?.accountantTelegramIds ?? [];
       const recipientIds =
         accountantIds.length > 0
-          ? accountantIds.map((id) => String(id))
+          ? [String(accountantIds[0])] // only the primary accountant
           : await getManagerIds(request.chat?.managerTelegramIds);
 
       if (recipientIds.length > 0) {
@@ -199,15 +203,9 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       return alert;
     });
 
-    /**
-     * @test-only
-     * SECURITY WARNING: This sends SLA breach details into the CLIENT-FACING chat.
-     * Disabled by default (notifyInChatOnBreach=false) to prevent leaking internal
-     * operational alerts to clients. Only enable for test/demo chats, NEVER for production.
-     * Production alerts go to managers via private messages (step 7 below).
-     */
-    // 5. Send breach notification to group chat (if enabled — TEST ONLY)
-    if (request.chat?.notifyInChatOnBreach) {
+    // 5. Send breach notification to internal chat (if configured)
+    const globalSettings = await getGlobalSettings();
+    if (globalSettings.internalChatId) {
       try {
         const chatNotificationMessage = formatBreachChatNotification({
           clientUsername: request.clientUsername,
@@ -216,20 +214,23 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
           minutesElapsed: threshold,
         });
 
-        await bot.telegram.sendMessage(String(chatId), chatNotificationMessage, {
-          parse_mode: 'HTML',
-        });
+        await bot.telegram.sendMessage(
+          String(globalSettings.internalChatId),
+          chatNotificationMessage,
+          {
+            parse_mode: 'HTML',
+          }
+        );
 
-        logger.info('Breach notification sent to group chat', {
+        logger.info('Breach notification sent to internal chat', {
           requestId,
-          chatId,
+          internalChatId: String(globalSettings.internalChatId),
           service: 'sla-timer-worker',
         });
       } catch (chatNotifyError) {
-        // Don't fail the job if chat notification fails (bot might not have permissions)
-        logger.warn('Failed to send breach notification to group chat', {
+        logger.warn('Failed to send breach notification to internal chat', {
           requestId,
-          chatId,
+          internalChatId: String(globalSettings.internalChatId),
           error:
             chatNotifyError instanceof Error ? chatNotifyError.message : String(chatNotifyError),
           service: 'sla-timer-worker',

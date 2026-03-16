@@ -10,24 +10,30 @@
 
 import { bot, BotContext } from '../bot.js';
 import logger from '../../utils/logger.js';
-import env from '../../config/env.js';
 import { prisma } from '../../lib/prisma.js';
 import { getBotInfo } from '../utils/bot-info.js';
+import { requireAuth } from '../middleware/require-role.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-// Read version from package.json at startup (works in production builds)
+// Read version from root package.json at startup (fallback to backend package.json)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const packageJsonPath = path.join(__dirname, '../../../package.json');
 
 let BOT_VERSION = '1.0.0';
-try {
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  BOT_VERSION = packageJson.version || '1.0.0';
-} catch {
-  // Fallback to hardcoded version if package.json is not accessible
+for (const relPath of ['../../../../package.json', '../../../package.json']) {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(__dirname, relPath), 'utf-8'));
+    if (pkg.version) {
+      BOT_VERSION = pkg.version;
+      break;
+    }
+  } catch {
+    // Try next path
+  }
+}
+if (BOT_VERSION === '1.0.0') {
   logger.warn('Could not read package.json version, using fallback', {
     service: 'system-handler',
   });
@@ -37,10 +43,11 @@ try {
  * Register system handlers
  */
 export function registerSystemHandler(): void {
-  // Handle /info command
-  bot.command('info', async (ctx: BotContext) => {
+  // Handle /info command (authorized users only)
+  bot.command('info', requireAuth(), async (ctx: BotContext) => {
     try {
-      const infoMessage = `🤖 *BuhBot Info*\n\n🔹 *Версия:* ${BOT_VERSION}\n🔹 *Среда:* ${env.NODE_ENV}\n🔹 *Тип чата:* ${ctx.chat?.type}\n\nСистема работает в штатном режиме.`;
+      const user = ctx.state['user']!;
+      const infoMessage = `🤖 *BuhBot Info*\n\n🔹 *Версия:* ${BOT_VERSION}\n🔹 *Ваша роль:* ${user.role}\n\nСистема работает в штатном режиме.`;
 
       await ctx.reply(infoMessage, { parse_mode: 'Markdown' });
 

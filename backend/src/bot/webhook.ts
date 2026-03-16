@@ -18,13 +18,32 @@ import logger from '../utils/logger.js';
 import env from '../config/env.js';
 import { initBotInfo } from './utils/bot-info.js';
 
-/** CR-14: Shared bot command list for both webhook and polling modes */
-const BOT_COMMANDS = [
+/** Default (public) commands shown in bot menu */
+const DEFAULT_COMMANDS = [
   { command: 'start', description: 'Начать работу с ботом' },
   { command: 'menu', description: 'Открыть меню' },
   { command: 'help', description: 'Помощь' },
   { command: 'connect', description: 'Подключить чат (код)' },
-  { command: 'diagnose', description: 'Диагностика получения сообщений' },
+];
+
+/** Private chat commands (includes accountant features) */
+const PRIVATE_CHAT_COMMANDS = [
+  { command: 'start', description: 'Начать работу с ботом' },
+  { command: 'menu', description: 'Открыть меню' },
+  { command: 'help', description: 'Помощь' },
+  { command: 'mystats', description: 'Моя статистика' },
+  { command: 'mychats', description: 'Мои чаты' },
+  { command: 'newchat', description: 'Создать приглашение' },
+  { command: 'notifications', description: 'Настройки уведомлений' },
+  { command: 'account', description: 'Управление аккаунтом' },
+  { command: 'info', description: 'Информация о боте' },
+];
+
+/** Group chat commands */
+const GROUP_CHAT_COMMANDS = [
+  { command: 'connect', description: 'Подключить чат (код)' },
+  { command: 'diagnose', description: 'Диагностика' },
+  { command: 'help', description: 'Помощь' },
 ];
 
 /**
@@ -32,8 +51,21 @@ const BOT_COMMANDS = [
  * Sets bot commands, default admin rights, and initializes bot info cache.
  */
 async function configureBotDefaults(): Promise<void> {
-  // Set bot commands for menu button
-  await bot.telegram.setMyCommands(BOT_COMMANDS);
+  // Set bot commands with scoped menus
+  await bot.telegram.setMyCommands(DEFAULT_COMMANDS);
+  try {
+    await bot.telegram.setMyCommands(PRIVATE_CHAT_COMMANDS, {
+      scope: { type: 'all_private_chats' },
+    });
+    await bot.telegram.setMyCommands(GROUP_CHAT_COMMANDS, {
+      scope: { type: 'all_group_chats' },
+    });
+  } catch (scopeError) {
+    logger.warn('Failed to set scoped bot commands, using defaults only', {
+      error: scopeError instanceof Error ? scopeError.message : String(scopeError),
+      service: 'webhook',
+    });
+  }
   logger.debug('Bot commands set successfully', { service: 'webhook' });
 
   // CR-2: Set suggested admin rights for groups. These are shown to users when

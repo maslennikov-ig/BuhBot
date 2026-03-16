@@ -50,6 +50,9 @@ export interface CachedGlobalSettings {
   botToken: string | null;
   botUsername: string | null;
   botId: bigint | null;
+
+  // Internal Chat
+  internalChatId: bigint | null;
 }
 
 /** Hardcoded defaults matching Prisma schema defaults */
@@ -76,6 +79,7 @@ const DEFAULTS: CachedGlobalSettings = {
   botToken: null,
   botUsername: null,
   botId: null,
+  internalChatId: null,
 };
 
 /** Cache TTL in milliseconds (5 minutes) */
@@ -130,6 +134,7 @@ export async function getGlobalSettings(): Promise<CachedGlobalSettings> {
         botToken: settings.botToken,
         botUsername: settings.botUsername,
         botId: settings.botId,
+        internalChatId: settings.internalChatId,
       };
     }
 
@@ -220,8 +225,8 @@ export async function getManagerIds(
 
 /**
  * Two-tier recipient resolution.
- * Level 1: accountants (falls back to managers if no accountants)
- * Level 2+: managers + accountants (both)
+ * Level 1: only the FIRST (primary) accountant (falls back to managers if none)
+ * Level 2+: only managers (NOT including accountant again)
  *
  * @param chatManagerIds - Chat-specific manager Telegram IDs (or null to use global)
  * @param accountantTelegramIds - Accountant Telegram IDs for this chat
@@ -231,32 +236,25 @@ export async function getRecipientsByLevel(
   chatManagerIds?: string[] | null,
   accountantTelegramIds?: bigint[] | null,
   escalationLevel: number = 1
-): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'both' | 'fallback' }> {
-  const accountantIds = (accountantTelegramIds ?? []).map((id) => String(id));
+): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'fallback' }> {
   const managerIds = await getManagerIds(chatManagerIds);
 
   if (escalationLevel <= 1) {
-    // Level 1: prefer accountants
-    if (accountantIds.length > 0) {
-      return { recipients: accountantIds, tier: 'accountant' };
+    // Level 1: only the FIRST (primary) accountant
+    const primaryAccountant = (accountantTelegramIds ?? [])[0];
+    if (primaryAccountant) {
+      return { recipients: [String(primaryAccountant)], tier: 'accountant' };
     }
-    // No accountants — fallback to managers
+    // Fallback to managers if no accountant assigned
     if (managerIds.length > 0) {
       return { recipients: managerIds, tier: 'fallback' };
     }
     return { recipients: [], tier: 'fallback' };
   }
 
-  // Level 2+: both managers and accountants
-  const allRecipients = [...new Set([...managerIds, ...accountantIds])];
-  if (allRecipients.length > 0) {
-    const tier =
-      accountantIds.length > 0 && managerIds.length > 0
-        ? 'both'
-        : accountantIds.length > 0
-          ? 'accountant'
-          : 'manager';
-    return { recipients: allRecipients, tier };
+  // Level 2+: only managers (NOT including accountant again)
+  if (managerIds.length > 0) {
+    return { recipients: managerIds, tier: 'manager' };
   }
   return { recipients: [], tier: 'fallback' };
 }

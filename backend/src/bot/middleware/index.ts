@@ -28,3 +28,5 @@
 export { rateLimitMiddleware, type RateLimitOptions } from './rate-limit.js';
 
 export { errorMiddleware } from './error.js';
+
+export { requireRole, requireAuth } from './require-role.js';

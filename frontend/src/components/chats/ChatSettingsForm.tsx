@@ -247,76 +247,40 @@ export function ChatSettingsForm({
             )}
           />
 
-          {/* Warning Banner: SLA enabled but no notification recipients configured */}
+          {/* Warning: No accountant for Level 1 */}
+          {slaEnabled && (!accountantTelegramIds || accountantTelegramIds.length === 0) && (
+            <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-[var(--buh-warning)]">
+                  Не назначен ответственный бухгалтер (Level 1)
+                </p>
+                <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
+                  SLA включен, но нет ответственного бухгалтера для первичных уведомлений. Назначьте
+                  бухгалтера ниже.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Warning: No managers for Level 2+ escalation */}
           {slaEnabled &&
             (!formManagerIds || formManagerIds.length === 0) &&
             (!managerTelegramIds || managerTelegramIds.length === 0) &&
-            (!accountantTelegramIds || accountantTelegramIds.length === 0) &&
             !hasGlobalManagers && (
               <div className="rounded-lg border border-[var(--buh-warning)] bg-[var(--buh-warning)]/10 p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-[var(--buh-warning)] mt-0.5 shrink-0" />
                 <div>
                   <p className="font-medium text-[var(--buh-warning)]">
-                    Менеджеры для уведомлений не настроены
+                    Не назначены менеджеры для эскалации (Level 2+)
                   </p>
                   <p className="text-sm text-[var(--buh-foreground-muted)] mt-1">
-                    Для этого чата не настроены получатели SLA-уведомлений. Назначьте бухгалтера
-                    через @username ниже, добавьте менеджеров для этого чата или настройте
-                    глобальных менеджеров в Настройках системы.
+                    SLA включен, но нет менеджеров для эскалации. Добавьте менеджеров ниже или
+                    настройте глобальных менеджеров в Настройках системы.
                   </p>
                 </div>
               </div>
             )}
-
-          {/* Notify in Chat on Breach */}
-          <FormField
-            control={form.control}
-            name="notifyInChatOnBreach"
-            render={({ field }) => (
-              <FormItem
-                className={cn(
-                  'flex items-center justify-between rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-overlay)] p-4',
-                  'transition-opacity duration-200',
-                  !slaEnabled && 'opacity-50 pointer-events-none'
-                )}
-              >
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base font-medium text-[var(--buh-foreground)]">
-                    Уведомления в чат
-                  </FormLabel>
-                  <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                    Отправлять предупреждение о нарушении SLA прямо в групповой чат
-                    <span className="block mt-1 text-[var(--buh-warning)] font-medium">
-                      Только для тестовых чатов. Клиенты увидят внутренние данные SLA.
-                    </span>
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={field.value}
-                    disabled={!slaEnabled}
-                    onClick={() => field.onChange(!field.value)}
-                    className={cn(
-                      'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200',
-                      'focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent)] focus:ring-offset-2',
-                      field.value
-                        ? 'bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)]'
-                        : 'bg-[var(--buh-surface-elevated)]'
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200',
-                        field.value ? 'translate-x-6' : 'translate-x-1'
-                      )}
-                    />
-                  </button>
-                </FormControl>
-              </FormItem>
-            )}
-          />
 
           {/* SLA Response Time */}
           <FormField
@@ -359,7 +323,7 @@ export function ChatSettingsForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-[var(--buh-foreground)]">
-                  Ответственный бухгалтер
+                  Ответственный бухгалтер (получает первичные уведомления)
                 </FormLabel>
                 <FormControl>
                   <AccountantSelect
@@ -369,7 +333,7 @@ export function ChatSettingsForm({
                   />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                  Бухгалтер, ответственный за этот чат
+                  Получает уведомления Level 1 (первичное нарушение SLA)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -412,7 +376,7 @@ export function ChatSettingsForm({
                 )}
               >
                 <FormLabel className="text-[var(--buh-foreground)]">
-                  Менеджеры для SLA уведомлений
+                  Менеджеры для эскалации (получают при отсутствии ответа)
                 </FormLabel>
                 <FormControl>
                   <ManagerMultiSelect
@@ -423,8 +387,8 @@ export function ChatSettingsForm({
                   />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                  Переопределяет получателей SLA-уведомлений для этого чата. Если не заданы,
-                  уведомления идут бухгалтерам чата, затем глобальным менеджерам.
+                  Получают уведомления Level 2+ (эскалация). Если не заданы, используются глобальные
+                  менеджеры из настроек системы.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

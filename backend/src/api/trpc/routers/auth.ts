@@ -24,6 +24,7 @@ import env, { isDevMode } from '../../../config/env.js';
 import logger from '../../../utils/logger.js';
 import { randomBytes } from 'crypto';
 import type { Prisma } from '@prisma/client';
+import type { UserRole } from '../../../bot/utils/roles.js';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -31,7 +32,6 @@ type TransactionClient = Prisma.TransactionClient;
  * User role schema (matches Prisma UserRole enum)
  */
 const UserRoleSchema = z.enum(['admin', 'manager', 'observer', 'accountant']);
-type UserRole = z.infer<typeof UserRoleSchema>;
 
 /**
  * Cast database role string to UserRole type

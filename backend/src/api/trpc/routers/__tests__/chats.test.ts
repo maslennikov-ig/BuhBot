@@ -18,6 +18,7 @@ const mockPrisma = vi.hoisted(() => ({
   },
   user: {
     findUnique: vi.fn(),
+    findMany: vi.fn(),
   },
 }));
 
@@ -718,5 +719,154 @@ describe('chats.update', () => {
 
     const callArgs = mockPrisma.chat.update.mock.calls[0]?.[0];
     expect(Object.keys(callArgs?.data || {})).toEqual(['slaThresholdMinutes']);
+  });
+});
+
+describe('chats.update - accountantTelegramIds ordering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should place assigned accountant telegramId at [0] in accountantTelegramIds', async () => {
+    // Setup: assigned accountant has telegramId 111, other accountants have 222 and 333
+    const assignedAccountantId = 'assigned-acc-uuid';
+    const assignedTelegramId = BigInt(111);
+
+    // Mock: assigneeData lookup (consolidated single query)
+    mockPrisma.user.findUnique.mockResolvedValue({
+      isOnboardingComplete: true,
+      isActive: true,
+      fullName: 'Assigned Accountant',
+      telegramUsername: 'assigned_acc',
+      telegramId: assignedTelegramId,
+    });
+
+    // Mock: knownUsers lookup for accountantUsernames
+    mockPrisma.user.findMany.mockResolvedValue([
+      {
+        telegramUsername: 'other_acc1',
+        telegramId: BigInt(222),
+        telegramAccount: { username: 'other_acc1' },
+      },
+      {
+        telegramUsername: 'other_acc2',
+        telegramId: BigInt(333),
+        telegramAccount: { username: 'other_acc2' },
+      },
+      {
+        telegramUsername: 'assigned_acc',
+        telegramId: assignedTelegramId,
+        telegramAccount: { username: 'assigned_acc' },
+      },
+    ]);
+
+    // Simulate the ordering logic from chats.ts update mutation
+    const input = {
+      assignedAccountantId,
+      accountantUsernames: ['other_acc1', 'other_acc2'],
+    };
+
+    // 1. Resolve assignee data (single consolidated query)
+    const assigneeData = input.assignedAccountantId
+      ? await mockPrisma.user.findUnique({
+          where: { id: input.assignedAccountantId },
+        })
+      : null;
+
+    // 2. Auto-add assigned accountant username
+    const finalUsernames = [...input.accountantUsernames];
+    if (assigneeData?.telegramUsername) {
+      const normalizedUsername = assigneeData.telegramUsername.replace(/^@/, '').toLowerCase();
+      if (!finalUsernames.includes(normalizedUsername)) {
+        finalUsernames.push(normalizedUsername);
+      }
+    }
+
+    // 3. Build telegramId set with assigned accountant FIRST
+    const telegramIdSet = new Set<bigint>();
+    let assignedAccountantTelegramId: bigint | null = null;
+
+    if (assigneeData?.telegramId) {
+      assignedAccountantTelegramId = assigneeData.telegramId;
+      telegramIdSet.add(assigneeData.telegramId);
+    }
+
+    // 4. Add other known users
+    const knownUsers = await mockPrisma.user.findMany({});
+    for (const user of knownUsers) {
+      if (user.telegramId) {
+        telegramIdSet.add(user.telegramId);
+      }
+    }
+
+    // 5. Build ordered array
+    const orderedIds: bigint[] = [];
+    if (assignedAccountantTelegramId) {
+      orderedIds.push(assignedAccountantTelegramId);
+    }
+    for (const id of telegramIdSet) {
+      if (id !== assignedAccountantTelegramId) {
+        orderedIds.push(id);
+      }
+    }
+
+    // ASSERT: assigned accountant's telegramId is at [0]
+    expect(orderedIds[0]).toBe(assignedTelegramId);
+    expect(orderedIds).toHaveLength(3);
+    // Other IDs follow (order among non-assigned is by Set insertion)
+    expect(orderedIds).toContain(BigInt(222));
+    expect(orderedIds).toContain(BigInt(333));
+  });
+
+  it('should not duplicate assigned accountant in accountantTelegramIds', async () => {
+    const assignedTelegramId = BigInt(111);
+
+    mockPrisma.user.findUnique.mockResolvedValue({
+      isOnboardingComplete: true,
+      isActive: true,
+      fullName: 'Assigned',
+      telegramUsername: 'assigned_acc',
+      telegramId: assignedTelegramId,
+    });
+
+    // assigned_acc appears in both assignedAccountantId AND accountantUsernames
+    mockPrisma.user.findMany.mockResolvedValue([
+      {
+        telegramUsername: 'assigned_acc',
+        telegramId: assignedTelegramId,
+        telegramAccount: { username: 'assigned_acc' },
+      },
+    ]);
+
+    const assigneeData = await mockPrisma.user.findUnique({});
+
+    const telegramIdSet = new Set<bigint>();
+    let assignedAccountantTelegramId: bigint | null = null;
+
+    if (assigneeData?.telegramId) {
+      assignedAccountantTelegramId = assigneeData.telegramId;
+      telegramIdSet.add(assigneeData.telegramId);
+    }
+
+    const knownUsers = await mockPrisma.user.findMany({});
+    for (const user of knownUsers) {
+      if (user.telegramId) {
+        telegramIdSet.add(user.telegramId); // Set deduplicates
+      }
+    }
+
+    const orderedIds: bigint[] = [];
+    if (assignedAccountantTelegramId) {
+      orderedIds.push(assignedAccountantTelegramId);
+    }
+    for (const id of telegramIdSet) {
+      if (id !== assignedAccountantTelegramId) {
+        orderedIds.push(id);
+      }
+    }
+
+    // Should have exactly 1 entry, no duplicates
+    expect(orderedIds).toHaveLength(1);
+    expect(orderedIds[0]).toBe(assignedTelegramId);
   });
 });

@@ -400,6 +400,7 @@ export function registerMessageHandler(): void {
         chatId,
         messageId,
         classification: classification.classification,
+        assignedTo: chat.assignedAccountantId ?? null,
         service: 'message-handler',
       });
 

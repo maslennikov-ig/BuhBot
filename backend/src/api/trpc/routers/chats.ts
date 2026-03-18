@@ -476,31 +476,41 @@ export const chatsRouter = router({
             }
           }
 
+          // Resolve assigned accountant data once (validation + username + telegramId)
+          const assigneeData = input.assignedAccountantId
+            ? await tx.user.findUnique({
+                where: { id: input.assignedAccountantId },
+                select: {
+                  isOnboardingComplete: true,
+                  isActive: true,
+                  fullName: true,
+                  telegramUsername: true,
+                  telegramId: true,
+                },
+              })
+            : null;
+
           // Build update data from optional fields
           const data: Prisma.ChatUncheckedUpdateInput = {};
           if (input.assignedAccountantId !== undefined) {
             // Validate accountant has completed onboarding (Telegram linked)
             if (input.assignedAccountantId !== null) {
-              const assignee = await tx.user.findUnique({
-                where: { id: input.assignedAccountantId },
-                select: { isOnboardingComplete: true, isActive: true, fullName: true },
-              });
-              if (!assignee) {
+              if (!assigneeData) {
                 throw new TRPCError({
                   code: 'NOT_FOUND',
                   message: 'Назначаемый пользователь не найден',
                 });
               }
-              if (!assignee.isActive) {
+              if (!assigneeData.isActive) {
                 throw new TRPCError({
                   code: 'BAD_REQUEST',
-                  message: `Пользователь "${assignee.fullName}" деактивирован`,
+                  message: `Пользователь "${assigneeData.fullName}" деактивирован`,
                 });
               }
-              if (!assignee.isOnboardingComplete) {
+              if (!assigneeData.isOnboardingComplete) {
                 throw new TRPCError({
                   code: 'BAD_REQUEST',
-                  message: `Пользователь "${assignee.fullName}" не завершил онбординг (не привязан Telegram)`,
+                  message: `Пользователь "${assigneeData.fullName}" не завершил онбординг (не привязан Telegram)`,
                 });
               }
             }
@@ -522,21 +532,14 @@ export const chatsRouter = router({
           const finalUsernames = [...input.accountantUsernames];
 
           // AUTO-ADD: If assignedAccountantId is set, add their telegramUsername to list
-          if (input.assignedAccountantId) {
-            const assignedUser = await tx.user.findUnique({
-              where: { id: input.assignedAccountantId },
-              select: { telegramUsername: true },
-            });
+          if (assigneeData?.telegramUsername) {
+            const normalizedUsername = assigneeData.telegramUsername
+              .replace(/^@/, '')
+              .toLowerCase();
 
-            if (assignedUser?.telegramUsername) {
-              const normalizedUsername = assignedUser.telegramUsername
-                .replace(/^@/, '')
-                .toLowerCase();
-
-              // Add to list if not already present
-              if (!finalUsernames.includes(normalizedUsername)) {
-                finalUsernames.push(normalizedUsername);
-              }
+            // Add to list if not already present
+            if (!finalUsernames.includes(normalizedUsername)) {
+              finalUsernames.push(normalizedUsername);
             }
           }
 
@@ -548,15 +551,9 @@ export const chatsRouter = router({
           let assignedAccountantTelegramId: bigint | null = null;
 
           // Resolve assigned accountant FIRST (ensures [0] position)
-          if (input.assignedAccountantId) {
-            const assignedUser = await tx.user.findUnique({
-              where: { id: input.assignedAccountantId },
-              select: { telegramId: true },
-            });
-            if (assignedUser?.telegramId) {
-              assignedAccountantTelegramId = assignedUser.telegramId;
-              telegramIdSet.add(assignedUser.telegramId);
-            }
+          if (assigneeData?.telegramId) {
+            assignedAccountantTelegramId = assigneeData.telegramId;
+            telegramIdSet.add(assigneeData.telegramId);
           }
 
           if (finalUsernames.length > 0) {

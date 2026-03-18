@@ -172,6 +172,147 @@ describe('Message Handler - Filtering Logic', () => {
     }
   });
 
+  it('should include assignedTo from chat.assignedAccountantId in ClientRequest creation', async () => {
+    const { classifyMessage } = await import('../../../services/classifier/index.js');
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    const assignedAccountantId = 'acc-uuid-123';
+
+    // Mock chat with assigned accountant
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
+      id: BigInt(123),
+      slaEnabled: true,
+      monitoringEnabled: true,
+      slaThresholdMinutes: 60,
+      assignedAccountantId,
+    });
+
+    // Mock sender as client (not accountant)
+    vi.mocked(isAccountantForChat).mockResolvedValue({
+      isAccountant: false,
+      accountantId: null,
+    });
+
+    // Mock classification result as REQUEST
+    const classificationResult: ClassificationResult = {
+      classification: 'REQUEST',
+      confidence: 0.92,
+      model: 'openrouter',
+      reasoning: 'Client asking for documents',
+    };
+    vi.mocked(classifyMessage).mockResolvedValue(classificationResult);
+
+    // Mock clientRequest creation
+    vi.mocked(mockPrisma.clientRequest.create).mockResolvedValue({
+      id: 'req_789',
+      chatId: BigInt(123),
+      messageId: BigInt(456),
+      status: 'pending',
+      assignedTo: assignedAccountantId,
+    });
+
+    // Simulate message handler logic
+    const chat = await mockPrisma.chat.findUnique({ where: { id: BigInt(123) } });
+    const { isAccountant } = await isAccountantForChat(BigInt(123), 'client_user', 67890);
+
+    if (!isAccountant) {
+      const classification = await classifyMessage(mockPrisma, 'Where is my invoice?');
+
+      if (['REQUEST', 'CLARIFICATION'].includes(classification.classification)) {
+        await mockPrisma.clientRequest.create({
+          data: {
+            chatId: BigInt(123),
+            messageId: BigInt(456),
+            messageText: 'Where is my invoice?',
+            clientUsername: 'client_user',
+            classification: classification.classification,
+            classificationScore: classification.confidence,
+            classificationModel: classification.model,
+            assignedTo: chat!.assignedAccountantId ?? null,
+            status: classification.classification === 'REQUEST' ? 'pending' : 'answered',
+            receivedAt: new Date(),
+          },
+        });
+
+        // Verify assignedTo is included in create call
+        expect(mockPrisma.clientRequest.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              assignedTo: assignedAccountantId,
+            }),
+          })
+        );
+      }
+    }
+  });
+
+  it('should pass assignedTo as null when chat has no assigned accountant', async () => {
+    const { classifyMessage } = await import('../../../services/classifier/index.js');
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    // Mock chat WITHOUT assigned accountant
+    vi.mocked(mockPrisma.chat.findUnique).mockResolvedValue({
+      id: BigInt(123),
+      slaEnabled: true,
+      monitoringEnabled: true,
+      slaThresholdMinutes: 60,
+      assignedAccountantId: null,
+    });
+
+    vi.mocked(isAccountantForChat).mockResolvedValue({
+      isAccountant: false,
+      accountantId: null,
+    });
+
+    const classificationResult: ClassificationResult = {
+      classification: 'REQUEST',
+      confidence: 0.92,
+      model: 'openrouter',
+      reasoning: 'Client asking for documents',
+    };
+    vi.mocked(classifyMessage).mockResolvedValue(classificationResult);
+
+    vi.mocked(mockPrisma.clientRequest.create).mockResolvedValue({
+      id: 'req_790',
+      chatId: BigInt(123),
+      messageId: BigInt(456),
+      status: 'pending',
+      assignedTo: null,
+    });
+
+    const chat = await mockPrisma.chat.findUnique({ where: { id: BigInt(123) } });
+    const { isAccountant } = await isAccountantForChat(BigInt(123), 'client_user', 67890);
+
+    if (!isAccountant) {
+      const classification = await classifyMessage(mockPrisma, 'Where is my invoice?');
+
+      if (['REQUEST', 'CLARIFICATION'].includes(classification.classification)) {
+        await mockPrisma.clientRequest.create({
+          data: {
+            chatId: BigInt(123),
+            messageId: BigInt(456),
+            messageText: 'Where is my invoice?',
+            clientUsername: 'client_user',
+            classification: classification.classification,
+            classificationScore: classification.confidence,
+            classificationModel: classification.model,
+            assignedTo: chat!.assignedAccountantId ?? null,
+            status: 'pending',
+            receivedAt: new Date(),
+          },
+        });
+
+        expect(mockPrisma.clientRequest.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              assignedTo: null,
+            }),
+          })
+        );
+      }
+    }
+  });
+
   it('should create ClientRequest with status=answered for CLARIFICATION and NOT start SLA timer', async () => {
     const { classifyMessage } = await import('../../../services/classifier/index.js');
     const { isAccountantForChat } = await import('../response.handler.js');

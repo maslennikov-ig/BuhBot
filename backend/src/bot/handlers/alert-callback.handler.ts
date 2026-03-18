@@ -395,18 +395,36 @@ export function registerAlertCallbackHandler(): void {
 
       // Authorization: verify the user is a manager or accountant (gh-88)
       const telegramUserId = ctx.from?.id;
-      if (
-        !request ||
-        !telegramUserId ||
-        !(await isAuthorizedForAlertAction(request.chatId, telegramUserId))
-      ) {
+      let isAuthorized = false;
+      try {
+        isAuthorized =
+          !!request &&
+          !!telegramUserId &&
+          (await isAuthorizedForAlertAction(request.chatId, telegramUserId));
+      } catch (authError) {
+        logger.error('Authorization check failed for resolve', {
+          alertId,
+          error: authError instanceof Error ? authError.message : String(authError),
+          service: 'alert-callback',
+        });
+      }
+      if (!request) {
+        await ctx.answerCbQuery('Нет прав для этого действия');
+        return;
+      }
+      if (!isAuthorized) {
         logger.warn('Unauthorized alert resolve attempt', {
           alertId,
           userId,
-          chatId: request ? String(request.chatId) : 'unknown',
+          chatId: String(request.chatId),
           service: 'alert-callback',
         });
         await ctx.answerCbQuery('Нет прав для этого действия');
+        return;
+      }
+
+      if (request.status === 'answered') {
+        await ctx.answerCbQuery('Запрос уже отмечен как решённый');
         return;
       }
 
@@ -484,9 +502,14 @@ export function registerAlertCallbackHandler(): void {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         alertId,
+        userId,
         service: 'alert-callback',
       });
-      await ctx.answerCbQuery('Ошибка при обработке');
+      const msg = error instanceof Error ? error.message : '';
+      const userMsg = msg.includes('Record to update not found')
+        ? 'Запрос не найден, возможно уже удалён'
+        : 'Ошибка при обработке. Попробуйте снова.';
+      await ctx.answerCbQuery(userMsg);
     }
   });
 

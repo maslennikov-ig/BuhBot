@@ -338,6 +338,7 @@ model ClientRequest {
   @@index([classification])
   @@index([slaBreached])
   @@index([slaTimerStartedAt])
+  @@unique([chatId, messageId], name: "unique_request_per_message")
   @@index([chatId, contentHash, receivedAt]) // Dedup lookup (gh-66)
   @@index([threadId]) // Thread lookup (gh-75)
   @@map("client_requests")

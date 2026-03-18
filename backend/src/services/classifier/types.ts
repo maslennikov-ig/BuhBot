@@ -16,7 +16,7 @@ export type MessageCategory = 'REQUEST' | 'SPAM' | 'GRATITUDE' | 'CLARIFICATION'
 /**
  * Classification source indicator
  */
-export type ClassificationSource = 'openrouter' | 'keyword-fallback' | 'cache';
+export type ClassificationSource = 'openrouter' | 'keyword-fallback' | 'cache' | 'error-fallback';
 
 /**
  * Result of message classification

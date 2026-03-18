@@ -25,6 +25,7 @@ import { startSlaTimer } from '../../services/sla/timer.service.js';
 import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
 import { getTracer } from '../../lib/tracing.js';
+import { classifierFallbackTotal } from '../../utils/metrics.js';
 
 /** Time window for deduplication: 5 minutes (gh-66) */
 const DEDUP_WINDOW_MS = 5 * 60 * 1000;
@@ -268,6 +269,7 @@ export function registerMessageHandler(): void {
         classifySpan.setAttribute('classification.model', classification.model);
       } catch (classifyError) {
         classifySpan.setStatus({ code: 2, message: 'Classification failed' });
+        classifierFallbackTotal.inc();
         logger.error('Classification failed, defaulting to REQUEST for SLA safety', {
           chatId,
           messageId,

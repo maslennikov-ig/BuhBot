@@ -210,6 +210,17 @@ export const classifierCacheMissesTotal = new Counter({
   registers: [register],
 });
 
+/**
+ * Counter: Classification error-fallback events
+ * Incremented when classifyMessage throws and fallback to REQUEST is used.
+ * High rate indicates classifier service degradation.
+ */
+export const classifierFallbackTotal = new Counter({
+  name: 'classifier_fallback_total',
+  help: 'Total classification error-fallback events (classifier service down)',
+  registers: [register],
+});
+
 // ============================================================================
 // CIRCUIT BREAKER METRICS
 // ============================================================================

@@ -5,6 +5,20 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.28.1...buhbot-v0.29.0) (2026-03-18)
+
+
+### Features
+
+* **ci:** add E2E testing workflow and comprehensive testing guide ([fc17744](https://github.com/maslennikov-ig/BuhBot/commit/fc17744b8e51623af3146ce4b2625bcac0c10eca))
+* **e2e:** set up Playwright E2E testing infrastructure ([fc17744](https://github.com/maslennikov-ig/BuhBot/commit/fc17744b8e51623af3146ce4b2625bcac0c10eca))
+* **e2e:** set up Playwright E2E testing infrastructure ([#275](https://github.com/maslennikov-ig/BuhBot/issues/275)) ([fc17744](https://github.com/maslennikov-ig/BuhBot/commit/fc17744b8e51623af3146ce4b2625bcac0c10eca))
+
+
+### Bug Fixes
+
+* **e2e:** format code and disable broken workflows ([fc17744](https://github.com/maslennikov-ig/BuhBot/commit/fc17744b8e51623af3146ce4b2625bcac0c10eca))
+
 ## [0.28.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.28.0...buhbot-v0.28.1) (2026-03-18)
 
 

@@ -1,0 +1,19 @@
+{
+  "name": "@buhbot/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end tests for BuhBot",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:install": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0"
+  }
+}

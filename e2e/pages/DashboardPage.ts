@@ -3,10 +3,10 @@ import { BasePage } from './BasePage';
 
 /**
  * DashboardPage - Page object for the dashboard page
- * 
+ *
  * URL: /dashboard
  * Purpose: Main dashboard showing SLA metrics and recent activity
- * 
+ *
  * Dashboard Widgets:
  * 1. SlaComplianceWidget - Shows compliance percentage, compliant count, violated count
  * 2. ActiveAlertsWidget - Shows total, critical, warning, info alerts
@@ -20,20 +20,20 @@ export class DashboardPage extends BasePage {
     // Page elements
     pageTitle: 'h1:has-text("Панель управления")',
     widgetsContainer: '.grid.grid-cols-1.md\\:grid-cols-2',
-    
+
     // Widgets
     slaComplianceWidget: 'text=Соответствие SLA',
     activeAlertsWidget: 'text=Активные алерты',
     responseTimeWidget: 'text=Среднее время ответа',
     violationsWidget: 'text=Нарушения сегодня',
     recentRequestsTable: 'table:has-text("Последние запросы")',
-    
+
     // Widget values (dynamic content)
     compliancePercent: '[class*="text"] >> text=%',
     alertCount: '[class*="alert"] >> text=\\d+',
     responseTime: '[class*="time"] >> text=\\d+',
     violationsCount: '[class*="violation"] >> text=\\d+',
-    
+
     // Recent requests table columns
     requestsTable: 'table',
     requestRow: (chatName: string) => `tr:has-text("${chatName}")`,
@@ -42,14 +42,14 @@ export class DashboardPage extends BasePage {
     messageColumn: 'td:nth-child(3)',
     statusColumn: 'td:nth-child(4)',
     slaColumn: 'td:nth-child(5)',
-    
+
     // Help button
     helpButton: 'button:has-text("?")',
-    
+
     // Real-time indicators
     lastUpdated: 'text=Обновлено',
     loadingState: '.animate-spin',
-    
+
     // Sidebar (for navigation)
     sidebar: 'aside',
     dashboardMenuItem: 'nav >> text=Панель',
@@ -247,7 +247,7 @@ export class DashboardPage extends BasePage {
     const sidebar = this.page.locator(this.selectors.sidebar);
     const menuItems = sidebar.locator('a, button');
     const count = await menuItems.count();
-    
+
     const items: string[] = [];
     for (let i = 0; i < count; i++) {
       const text = await menuItems.nth(i).textContent();

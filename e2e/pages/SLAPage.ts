@@ -3,16 +3,16 @@ import { BasePage } from './BasePage';
 
 /**
  * SLAPage - Page object for the SLA monitoring page
- * 
+ *
  * URL: /sla
  * Purpose: Detailed SLA compliance monitoring and analytics
- * 
+ *
  * KPI Cards:
  * 1. Соответствие SLA - Compliance percentage
  * 2. Запросов за период - Total requests
  * 3. В норме - Answered within SLA
  * 4. Нарушений - Breached SLA count
- * 
+ *
  * Table Columns:
  * - Чат (Chat)
  * - Клиент (Client)
@@ -26,41 +26,41 @@ export class SLAPage extends BasePage {
   private readonly selectors = {
     // Page elements
     pageTitle: 'h1:has-text("SLA")',
-    
+
     // KPI cards container
     kpiCards: '.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4',
-    
+
     // KPI cards
     complianceKpi: 'text=Соответствие SLA',
     totalRequestsKpi: 'text=Запросов за период',
     withinSlaKpi: 'text=В норме',
     violationsKpi: 'text=Нарушений',
-    
+
     // KPI values
     kpiValue: '[class*="text"] >> text=%',
     kpiNumber: '[class*="text"] >> text=\\d+',
-    
+
     // Charts
     complianceChart: '[aria-label*="SLA"], [aria-label*="соответствие"]',
     responseTimeChart: 'text=Время ответа',
-    
+
     // Filters
     filtersButton: 'button:has-text("Фильтры")',
     filtersPanel: '[class*="filters"]',
     statusFilter: 'select:has-text("SLA Статус")',
     dateRangeFilter: 'input[type="date"]',
-    
+
     // Status filter options
     statusAll: 'option:value("")',
     statusOk: 'option:has-text("В норме")',
     statusBreached: 'option:has-text("Нарушен")',
     statusPending: 'option:has-text("Ожидает")',
-    
+
     // Requests table
     requestsTable: 'table:has-text("Чат")',
     tableHeader: 'thead th',
     tableRow: 'tbody tr',
-    
+
     // Table columns
     chatColumn: 'td:nth-child(1)',
     clientColumn: 'td:nth-child(2)',
@@ -68,20 +68,20 @@ export class SLAPage extends BasePage {
     responseColumn: 'td:nth-child(4)',
     statusColumn: 'td:nth-child(5)',
     accountantColumn: 'td:nth-child(6)',
-    
+
     // Status badges
     statusBadge: (status: string) => `text=${status}`,
     okBadge: 'text=В норме',
     breachedBadge: 'text=Нарушен',
     pendingBadge: 'text=Ожидает',
     unassignedBadge: 'text=Не назначен',
-    
+
     // Pagination
     pagination: '[class*="pagination"]',
     prevButton: 'button:has-text("Назад")',
     nextButton: 'button:has-text("Вперёд")',
     pageInfo: 'text=Страница',
-    
+
     // Export
     exportButton: 'button:has-text("Экспорт")',
     exportCsv: 'button:has-text("CSV")',
@@ -156,14 +156,14 @@ export class SLAPage extends BasePage {
   // Apply status filter
   async applyStatusFilter(status: 'all' | 'ok' | 'breached' | 'pending'): Promise<void> {
     await this.clickFilters();
-    
+
     const filterMap = {
       all: this.selectors.statusAll,
       ok: this.selectors.statusOk,
       breached: this.selectors.statusBreached,
       pending: this.selectors.statusPending,
     };
-    
+
     await this.page.selectOption(this.selectors.statusFilter, filterMap[status]);
     await this.waitForPageLoad();
   }
@@ -176,17 +176,19 @@ export class SLAPage extends BasePage {
   }
 
   // Get all table data
-  async getTableData(): Promise<Array<{
-    chat: string;
-    client: string;
-    received: string;
-    response: string | null;
-    status: string;
-    accountant: string | null;
-  }>> {
+  async getTableData(): Promise<
+    Array<{
+      chat: string;
+      client: string;
+      received: string;
+      response: string | null;
+      status: string;
+      accountant: string | null;
+    }>
+  > {
     const rows = this.page.locator(`${this.selectors.requestsTable} tbody tr`);
     const rowCount = await rows.count();
-    
+
     const data: Array<{
       chat: string;
       client: string;
@@ -195,18 +197,18 @@ export class SLAPage extends BasePage {
       status: string;
       accountant: string | null;
     }> = [];
-    
+
     for (let i = 0; i < rowCount; i++) {
       const row = rows.nth(i);
       const cells = row.locator('td');
-      
-      const chat = await cells.nth(0).textContent() ?? '';
-      const client = await cells.nth(1).textContent() ?? '';
-      const received = await cells.nth(2).textContent() ?? '';
+
+      const chat = (await cells.nth(0).textContent()) ?? '';
+      const client = (await cells.nth(1).textContent()) ?? '';
+      const received = (await cells.nth(2).textContent()) ?? '';
       const response = await cells.nth(3).textContent();
-      const status = await cells.nth(4).textContent() ?? '';
+      const status = (await cells.nth(4).textContent()) ?? '';
       const accountant = await cells.nth(5).textContent();
-      
+
       data.push({
         chat: chat.trim(),
         client: client.trim(),
@@ -216,7 +218,7 @@ export class SLAPage extends BasePage {
         accountant: accountant?.trim() ?? null,
       });
     }
-    
+
     return data;
   }
 
@@ -240,7 +242,7 @@ export class SLAPage extends BasePage {
   // Get current page number
   async getCurrentPage(): Promise<number> {
     const pageInfo = this.page.locator(this.selectors.pageInfo);
-    const text = await pageInfo.textContent() ?? '';
+    const text = (await pageInfo.textContent()) ?? '';
     const match = text.match(/Страница (\d+)/);
     return match ? parseInt(match[1], 10) : 1;
   }
@@ -271,7 +273,7 @@ export class SLAPage extends BasePage {
   async getRequestsByStatus(status: string): Promise<string[]> {
     const statusCells = this.page.locator(`${this.selectors.statusColumn}:has-text("${status}")`);
     const count = await statusCells.count();
-    
+
     const requests: string[] = [];
     for (let i = 0; i < count; i++) {
       const row = statusCells.nth(i).locator('..');
@@ -279,7 +281,7 @@ export class SLAPage extends BasePage {
       const chat = await chatCell.textContent();
       if (chat) requests.push(chat.trim());
     }
-    
+
     return requests;
   }
 
@@ -287,7 +289,7 @@ export class SLAPage extends BasePage {
   async getUnassignedRequests(): Promise<string[]> {
     const unassignedCells = this.page.locator(this.selectors.unassignedBadge);
     const count = await unassignedCells.count();
-    
+
     const requests: string[] = [];
     for (let i = 0; i < count; i++) {
       const row = unassignedCells.nth(i).locator('..');
@@ -295,7 +297,7 @@ export class SLAPage extends BasePage {
       const chat = await chatCell.textContent();
       if (chat) requests.push(chat.trim());
     }
-    
+
     return requests;
   }
 
@@ -320,15 +322,17 @@ export class SLAPage extends BasePage {
 
   // Get table headers
   async getTableHeaders(): Promise<string[]> {
-    const headers = this.page.locator(`${this.selectors.requestsTable} ${this.selectors.tableHeader}`);
+    const headers = this.page.locator(
+      `${this.selectors.requestsTable} ${this.selectors.tableHeader}`
+    );
     const count = await headers.count();
-    
+
     const headerTexts: string[] = [];
     for (let i = 0; i < count; i++) {
       const text = await headers.nth(i).textContent();
       if (text) headerTexts.push(text.trim());
     }
-    
+
     return headerTexts;
   }
 }

@@ -3,10 +3,10 @@ import { BasePage } from './BasePage';
 
 /**
  * LoginPage - Page object for the login page
- * 
+ *
  * URL: /login
  * Purpose: User authentication gateway
- * 
+ *
  * Components:
  * - LoginForm component (@/components/auth/LoginForm)
  * - Telegram OAuth button
@@ -20,18 +20,18 @@ export class LoginPage extends BasePage {
     emailInput: 'input[name="email"]',
     passwordInput: 'input[name="password"]',
     submitButton: 'button[type="submit"]',
-    
+
     // Telegram OAuth
     telegramButton: 'button:has-text("Telegram")',
     telegramIcon: '[class*="telegram"]',
-    
+
     // Error messages
     errorMessage: '[role="alert"], .text-red',
     errorText: (text: string) => `text=${text}`,
-    
+
     // Success/redirect indicators
     loadingState: '.animate-spin',
-    
+
     // Links
     forgotPasswordLink: 'a:has-text("Забыли пароль")',
     registerLink: 'a:has-text("Регистрация")',
@@ -123,13 +123,12 @@ export class LoginPage extends BasePage {
 
   // Get validation error for specific field
   async getFieldError(field: 'email' | 'password'): Promise<string> {
-    const fieldSelector = field === 'email' 
-      ? this.selectors.emailInput 
-      : this.selectors.passwordInput;
-    
+    const fieldSelector =
+      field === 'email' ? this.selectors.emailInput : this.selectors.passwordInput;
+
     const fieldLocator = this.page.locator(fieldSelector);
     const errorLocator = fieldLocator.locator('..').locator('[role="alert"], .text-red, .error');
-    
+
     if (await errorLocator.isVisible()) {
       return errorLocator.textContent() ?? '';
     }

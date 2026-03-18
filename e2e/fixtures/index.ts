@@ -2,7 +2,7 @@ import { test as base, Page, Locator } from '@playwright/test';
 
 /**
  * Custom test fixtures for BuhBot E2E tests
- * 
+ *
  * This file provides:
  * - Test user accounts (admin, manager, accountant)
  * - Test chat configurations
@@ -93,14 +93,14 @@ export const uiText = {
   analytics: 'Аналитика',
   alerts: 'Оповещения',
   settings: 'Настройки',
-  
+
   // Dashboard widgets
   slaCompliance: 'Соответствие SLA',
   activeAlerts: 'Активные алерты',
   responseTime: 'Среднее время ответа',
   violationsToday: 'Нарушения сегодня',
   recentRequests: 'Последние запросы',
-  
+
   // Settings tabs
   profileTab: 'Профиль',
   generalTab: 'Основные',
@@ -108,13 +108,13 @@ export const uiText = {
   notificationsTab: 'Уведомления',
   aiTab: 'AI',
   retentionTab: 'Хранение',
-  
+
   // Buttons
   save: 'Сохранить',
   cancel: 'Отмена',
   login: 'Войти',
   logout: 'Выйти',
-  
+
   // Status
   statusOk: 'В норме',
   statusBreached: 'Нарушен',
@@ -136,10 +136,10 @@ export function getEnv(key: string, defaultValue: string): string {
 async function authenticateUser(page: Page, user: TestUser): Promise<void> {
   // Navigate to login page
   await page.goto(paths.login);
-  
+
   // Click Telegram login button (this would redirect to OAuth in real flow)
   const telegramButton = page.locator('button:has-text("Telegram")');
-  
+
   if (await telegramButton.isVisible()) {
     await telegramButton.click();
     // In a real scenario, this would handle the OAuth flow
@@ -150,29 +150,29 @@ async function authenticateUser(page: Page, user: TestUser): Promise<void> {
 // Create authenticated page fixture
 export const test = base.extend<CustomFixtures>({
   testUser: [testUsers.admin, { option: true }],
-  
+
   authenticatedPage: async ({ page, testUser }, use) => {
     // Navigate to login
     await page.goto(paths.login);
-    
+
     // Check if already authenticated (session exists)
     const currentUrl = page.url();
-    
+
     if (!currentUrl.includes('/login')) {
       // User is already authenticated
       await use(page);
       return;
     }
-    
+
     // Try to authenticate
     await authenticateUser(page, testUser);
-    
+
     // Wait for navigation to dashboard or home
     await page.waitForURL(/(\/dashboard|\/)$/, { timeout: 10000 }).catch(() => {
       // If authentication fails, continue anyway for non-auth tests
       console.log('Authentication may have failed, continuing...');
     });
-    
+
     await use(page);
   },
 });
@@ -183,24 +183,24 @@ export function createPageLocators(page: Page) {
     // Navigation
     sidebar: page.locator('aside, nav'),
     menuItem: (text: string) => page.locator(`nav >> text=${text}`),
-    
+
     // Common elements
     h1: page.locator('h1'),
     h2: page.locator('h2'),
     button: (text: string) => page.locator(`button:has-text("${text}")`),
     link: (text: string) => page.locator(`a:has-text("${text}")`),
-    
+
     // Forms
     input: (name: string) => page.locator(`input[name="${name}"]`),
     select: (name: string) => page.locator(`select[name="${name}"]`),
     checkbox: (name: string) => page.locator(`input[type="checkbox"][name="${name}"]`),
-    
+
     // Toast notifications
     toast: page.locator('[role="alert"], .toast'),
-    
+
     // Loading states
     loadingSpinner: page.locator('.animate-spin, .loader'),
-    
+
     // Tables
     table: page.locator('table'),
     tableRow: (text: string) => page.locator(`tr:has-text("${text}")`),

@@ -4,7 +4,7 @@ import { paths, uiText } from '../fixtures';
 
 /**
  * Settings E2E Tests
- * 
+ *
  * Test Cases:
  * - SET-001: Settings page loads
  * - SET-002: Profile tab
@@ -30,7 +30,7 @@ test.describe('Settings', () => {
   test('SET-001: Settings page loads', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Should either show settings or redirect to login
     const url = page.url();
     expect(url).toMatch(/(\/settings|\/login)/);
@@ -45,11 +45,11 @@ test.describe('Settings', () => {
   test('SET-002: Settings page has tab navigation', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Check for tabs
     const tabs = page.locator('[role="tablist"], [class*="tab"]');
     const hasTabs = await tabs.count();
-    
+
     // URL should contain settings
     const url = page.url();
     if (url.includes('/settings')) {
@@ -66,11 +66,11 @@ test.describe('Settings', () => {
   test('SET-003: Settings page has form elements', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Look for form inputs
     const inputs = page.locator('input, select, textarea');
     const hasInputs = await inputs.count();
-    
+
     const url = page.url();
     if (url.includes('/settings')) {
       expect(hasInputs).toBeGreaterThanOrEqual(0);
@@ -85,26 +85,27 @@ test.describe('Settings', () => {
    */
   test('SET-004: Settings page loads without critical errors', async ({ page }) => {
     const errors: string[] = [];
-    
+
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
         errors.push(msg.text());
       }
     });
-    
+
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Wait for delayed errors
     await page.waitForTimeout(2000);
-    
+
     // Filter out network errors
-    const criticalErrors = errors.filter(err => 
-      !err.includes('favicon') && 
-      !err.includes('Failed to load resource') &&
-      !err.includes('net::ERR')
+    const criticalErrors = errors.filter(
+      (err) =>
+        !err.includes('favicon') &&
+        !err.includes('Failed to load resource') &&
+        !err.includes('net::ERR')
     );
-    
+
     // Should have minimal critical errors
     expect(criticalErrors.length).toBeLessThanOrEqual(1);
   });
@@ -119,11 +120,11 @@ test.describe('Settings', () => {
   test('SET-005: Settings page can be refreshed', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Refresh page
     await page.reload();
     await page.waitForLoadState('networkidle');
-    
+
     // Should still be on settings or redirected to login
     const url = page.url();
     expect(url).toMatch(/(\/settings|\/login)/);
@@ -138,11 +139,11 @@ test.describe('Settings', () => {
   test('SET-006: Settings page has title', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Check for heading
     const heading = page.locator('h1');
     const hasHeading = await heading.count();
-    
+
     const url = page.url();
     if (url.includes('/settings')) {
       expect(hasHeading).toBeGreaterThanOrEqual(1);
@@ -158,7 +159,7 @@ test.describe('Settings', () => {
   test('SET-007: Direct navigation to settings works', async ({ page }) => {
     await page.goto(paths.settings);
     await page.waitForLoadState('networkidle');
-    
+
     // Verify URL
     const url = page.url();
     expect(url).toContain('/settings');
@@ -173,11 +174,11 @@ test.describe('Settings', () => {
   test('SET-008: Settings page has save button', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Look for save button
     const saveButton = page.locator(`button:has-text("${uiText.save}")`);
     const hasSaveButton = await saveButton.count();
-    
+
     const url = page.url();
     if (url.includes('/settings')) {
       expect(hasSaveButton).toBeGreaterThanOrEqual(0);
@@ -193,11 +194,11 @@ test.describe('Settings', () => {
   test('SET-009: Settings page has proper structure', async ({ page }) => {
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Check for main content
     const main = page.locator('main, [class*="main"], [class*="container"]');
     const hasMain = await main.count();
-    
+
     const url = page.url();
     if (url.includes('/settings')) {
       expect(hasMain).toBeGreaterThanOrEqual(0);
@@ -212,10 +213,10 @@ test.describe('Settings', () => {
    */
   test('SET-010: Settings page renders in standard viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
-    
+
     await settingsPage.goto();
     await page.waitForLoadState('networkidle');
-    
+
     // Page should render
     const url = page.url();
     expect(url).toMatch(/(\/settings|\/login)/);

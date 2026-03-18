@@ -2,7 +2,7 @@ import { Page, Locator, expect } from '@playwright/test';
 
 /**
  * BasePage - Base class for all page objects
- * 
+ *
  * Provides common functionality shared across all pages:
  * - Navigation helpers
  * - Element locators
@@ -12,35 +12,35 @@ import { Page, Locator, expect } from '@playwright/test';
 export abstract class BasePage {
   protected page: Page;
   protected baseURL: string;
-  
+
   // Common selectors (from E2E testing findings)
   protected readonly selectors = {
     // Navigation
     sidebar: 'aside, nav',
     menuItem: (text: string) => `nav >> text=${text}`,
-    
+
     // Page elements
     h1: 'h1',
     h2: 'h2',
     h3: 'h3',
-    
+
     // Buttons
     primaryButton: (text: string) => `button:has-text("${text}")`,
     secondaryButton: (text: string) => `button:has-text("${text}")`,
     link: (text: string) => `a:has-text("${text}")`,
-    
+
     // Forms
     input: (name: string) => `input[name="${name}"]`,
     select: (name: string) => `select[name="${name}"]`,
     checkbox: (name: string) => `input[type="checkbox"][name="${name}"]`,
     textArea: (name: string) => `textarea[name="${name}"]`,
-    
+
     // Toast notifications
     toast: '[role="alert"], .toast',
-    
+
     // Loading states
     loadingSpinner: '.animate-spin, .loader',
-    
+
     // Tables
     table: 'table',
     tableRow: (text: string) => `tr:has-text("${text}")`,
@@ -61,7 +61,7 @@ export abstract class BasePage {
   async waitForPageLoad(): Promise<void> {
     // Wait for network to be idle
     await this.page.waitForLoadState('networkidle');
-    
+
     // Wait for any loading spinners to disappear
     const spinner = this.page.locator(this.selectors.loadingSpinner);
     await spinner.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {
@@ -98,7 +98,7 @@ export abstract class BasePage {
   async toggleCheckbox(name: string, checked: boolean = true): Promise<void> {
     const checkbox = this.page.locator(this.selectors.checkbox(name));
     const isChecked = await checkbox.isChecked();
-    
+
     if ((!isChecked && checked) || (isChecked && !checked)) {
       await checkbox.click();
     }
@@ -159,10 +159,7 @@ export abstract class BasePage {
 
   // Wait for navigation after action
   async waitForNavigation(callback: () => Promise<void>): Promise<void> {
-    await Promise.all([
-      this.page.waitForNavigation(),
-      callback(),
-    ]);
+    await Promise.all([this.page.waitForNavigation(), callback()]);
   }
 
   // Click and wait for navigation

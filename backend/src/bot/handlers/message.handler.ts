@@ -386,6 +386,7 @@ export function registerMessageHandler(): void {
           contentHash,
           threadId,
           parentMessageId,
+          assignedTo: chat.assignedAccountantId ?? null,
           // Set status based on classification
           // REQUEST: pending (needs response)
           // CLARIFICATION: answered (no SLA tracking for follow-ups)

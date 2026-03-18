@@ -353,7 +353,8 @@ export function ChatSettingsForm({
                   />
                 </FormControl>
                 <FormDescription className="text-[var(--buh-foreground-subtle)]">
-                  Получают первичные SLA-уведомления. Если не ответят — эскалация до менеджеров.
+                  Дополнительные бухгалтеры для уведомлений. Выбранный выше ответственный бухгалтер
+                  добавляется автоматически.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

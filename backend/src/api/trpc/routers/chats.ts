@@ -545,6 +545,19 @@ export const chatsRouter = router({
           // Validate usernames and auto-populate Telegram IDs (gh-68)
           const warnings: string[] = [];
           const telegramIdSet = new Set<bigint>(); // Use Set to prevent duplicates (CR finding #5)
+          let assignedAccountantTelegramId: bigint | null = null;
+
+          // Resolve assigned accountant FIRST (ensures [0] position)
+          if (input.assignedAccountantId) {
+            const assignedUser = await tx.user.findUnique({
+              where: { id: input.assignedAccountantId },
+              select: { telegramId: true },
+            });
+            if (assignedUser?.telegramId) {
+              assignedAccountantTelegramId = assignedUser.telegramId;
+              telegramIdSet.add(assignedUser.telegramId);
+            }
+          }
 
           if (finalUsernames.length > 0) {
             const knownUsers = await tx.user.findMany({
@@ -593,18 +606,16 @@ export const chatsRouter = router({
             }
           }
 
-          // Also add assigned accountant's Telegram ID if available
-          if (input.assignedAccountantId) {
-            const assignedUser = await tx.user.findUnique({
-              where: { id: input.assignedAccountantId },
-              select: { telegramId: true },
-            });
-            if (assignedUser?.telegramId) {
-              telegramIdSet.add(assignedUser.telegramId);
+          const orderedIds: bigint[] = [];
+          if (assignedAccountantTelegramId) {
+            orderedIds.push(assignedAccountantTelegramId);
+          }
+          for (const id of telegramIdSet) {
+            if (id !== assignedAccountantTelegramId) {
+              orderedIds.push(id);
             }
           }
-
-          data.accountantTelegramIds = [...telegramIdSet];
+          data.accountantTelegramIds = orderedIds;
 
           // Update chat (within same transaction, row is already locked)
           const updatedChat = await tx.chat.update({

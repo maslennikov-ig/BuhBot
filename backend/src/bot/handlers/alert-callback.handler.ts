@@ -409,7 +409,7 @@ export function registerAlertCallbackHandler(): void {
         });
       }
       if (!request) {
-        await ctx.answerCbQuery('Нет прав для этого действия');
+        await ctx.answerCbQuery('Запрос не найден');
         return;
       }
       if (!isAuthorized) {
@@ -509,7 +509,11 @@ export function registerAlertCallbackHandler(): void {
       const userMsg = msg.includes('Record to update not found')
         ? 'Запрос не найден, возможно уже удалён'
         : 'Ошибка при обработке. Попробуйте снова.';
-      await ctx.answerCbQuery(userMsg);
+      try {
+        await ctx.answerCbQuery(userMsg);
+      } catch {
+        // Callback query may have expired (30s limit) — nothing to do
+      }
     }
   });
 

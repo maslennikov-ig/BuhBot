@@ -306,8 +306,13 @@ export function registerMessageHandler(): void {
       }
 
       // 11b. Webhook retry dedup: same Telegram messageId = same message
-      const existingByMessageId = await prisma.clientRequest.findFirst({
-        where: { chatId: BigInt(chatId), messageId: BigInt(messageId) },
+      const existingByMessageId = await prisma.clientRequest.findUnique({
+        where: {
+          unique_request_per_message: {
+            chatId: BigInt(chatId),
+            messageId: BigInt(messageId),
+          },
+        },
         select: { id: true },
       });
       if (existingByMessageId) {
@@ -463,6 +468,12 @@ export function registerMessageHandler(): void {
         });
         try {
           await startSlaTimer(request.id, String(chatId), thresholdMinutes);
+          logger.info('SLA timer started for request', {
+            requestId: request.id,
+            chatId,
+            thresholdMinutes,
+            service: 'message-handler',
+          });
         } catch (timerError) {
           slaSpan.setStatus({ code: 2, message: 'SLA timer failed' });
           logger.error('Failed to start SLA timer - SLA monitoring degraded', {
@@ -475,13 +486,6 @@ export function registerMessageHandler(): void {
         } finally {
           slaSpan.end(); // Always end span (gh-168)
         }
-
-        logger.info('SLA timer started for request', {
-          requestId: request.id,
-          chatId,
-          thresholdMinutes,
-          service: 'message-handler',
-        });
       } else {
         logger.debug('Non-REQUEST message, SLA timer not started', {
           requestId: request.id,

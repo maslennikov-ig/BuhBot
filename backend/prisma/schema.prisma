@@ -300,7 +300,7 @@ model ClientRequest {
   // AI Classification (T008) - replaces isSpam field
   classification      MessageClassification @default(REQUEST)
   classificationScore Float?                @map("classification_score") // 0.0-1.0 confidence
-  classificationModel String?               @map("classification_model") // 'openrouter', 'keyword-fallback'
+  classificationModel String?               @map("classification_model") // 'openrouter', 'keyword-fallback', 'cache', 'error-fallback'
 
   // SLA Timer details (T008)
   slaTimerStartedAt DateTime? @map("sla_timer_started_at") @db.Timestamptz(6) // When timer started

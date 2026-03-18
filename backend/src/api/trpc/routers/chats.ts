@@ -603,6 +603,9 @@ export const chatsRouter = router({
             }
           }
 
+          // Build ordered array: assigned accountant at [0] for L1 notifications.
+          // Set iterates in insertion order (ECMA-262 §23.2.3.8),
+          // but we build explicitly to make the guarantee obvious.
           const orderedIds: bigint[] = [];
           if (assignedAccountantTelegramId) {
             orderedIds.push(assignedAccountantTelegramId);

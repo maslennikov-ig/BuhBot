@@ -1,12 +1,12 @@
 ---
 name: process-logs
-description: 'Process production error logs: fetch from Supabase, auto-mute known patterns, create Beads tasks, fix by priority. Use when user says "process logs", "check errors", "обработай логи", or "проверь ошибки".'
-version: 1.0.0
+description: 'Process production monitoring: check Prometheus alerts & metrics, fetch error_logs from Supabase, auto-mute known patterns, create Beads tasks, fix by priority. Use when user says "process logs", "check errors", "обработай логи", or "проверь ошибки".'
+version: 1.1.0
 ---
 
 # Process Error Logs
 
-End-to-end workflow: fetch new errors from `error_logs` → auto-ignore known patterns → analyze & prioritize → create Beads tasks → fix by priority order.
+End-to-end workflow: check Prometheus alerts & metrics → fetch new errors from `error_logs` → auto-ignore known patterns → analyze & prioritize → create Beads tasks → fix by priority order.
 
 ## CRITICAL REQUIREMENTS
 
@@ -68,6 +68,96 @@ Optional arguments:
 ---
 
 ## Workflow
+
+### Step 0: Production Health Snapshot
+
+Before diving into error_logs, get the full picture from the monitoring stack via SSH to VDS.
+
+**Access:** `ssh buhbot@185.200.177.180` (key-based auth, working dir: `/home/buhbot/BuhBot`)
+
+#### 0a. Container health
+
+```bash
+ssh buhbot@185.200.177.180 "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.RunningFor}}'"
+```
+
+**Check for:** containers in `Restarting`, `Exited`, or unhealthy state. If `bot-backend` is down — this is P0, stop and fix immediately.
+
+#### 0b. Prometheus firing alerts
+
+```bash
+ssh buhbot@185.200.177.180 "curl -s http://localhost:9090/api/v1/alerts | python3 -m json.tool"
+```
+
+**Parse the response.** Look for alerts with `state: "firing"`:
+
+| Alert Name                     | Severity | What It Means          | Immediate Action                 |
+| ------------------------------ | -------- | ---------------------- | -------------------------------- |
+| `BotDown`                      | critical | Backend не отвечает    | P0 — перезапуск / расследование  |
+| `HighCPU`                      | warning  | CPU >80% более 5 мин   | Проверить top processes          |
+| `HighMemory`                   | warning  | RAM >80% более 5 мин   | Проверить memory leaks           |
+| `HighDisk`                     | critical | Disk >85%              | Очистить логи / расширить        |
+| `HighMessageLatency`           | warning  | P95 latency >5s        | Проверить DB / external APIs     |
+| `SupabaseErrors`               | warning  | >10 DB ошибок за 5 мин | Проверить сеть / Supabase status |
+| `HighSupabaseLatency`          | warning  | P95 query >0.5s        | Медленные запросы / индексы      |
+| `RedisHighMemory`              | warning  | Redis RAM >80%         | Проверить eviction policy        |
+| `RedisConnectionPoolSaturated` | warning  | Connections >80%       | Утечки соединений                |
+
+**If any alert is firing:**
+
+- Create a Beads task with P0/P1 priority immediately
+- Note the alert in the task description — it provides context for error_logs later
+- Firing alerts take precedence over error_logs analysis
+
+#### 0c. Key application metrics (anomaly check)
+
+```bash
+# Circuit breaker state (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
+ssh buhbot@185.200.177.180 "curl -s http://localhost:3000/metrics | grep -E 'classifier_circuit_breaker_state|classifier_errors_total|classifier_fallback_total|http_errors_total|redis_connection_errors|supabase_connection_errors'"
+```
+
+**Red flags to look for:**
+
+| Metric                                       | Red Flag                       | Meaning                     |
+| -------------------------------------------- | ------------------------------ | --------------------------- |
+| `classifier_circuit_breaker_state` = 1 or 2  | Circuit breaker OPEN/HALF_OPEN | Classifier service degraded |
+| `classifier_errors_total` rapidly increasing | API errors piling up           | OpenRouter/OpenAI issues    |
+| `classifier_fallback_total` > 0              | Fallback to REQUEST active     | Classifier completely down  |
+| `http_errors_total` increasing               | HTTP 500s                      | Backend errors              |
+| `redis_connection_errors` increasing         | Redis connectivity             | Container/network issues    |
+| `supabase_connection_errors` increasing      | DB connectivity                | Supabase/network issues     |
+
+**If anomalies found:** note them as context — they help correlate with specific error_logs entries.
+
+#### 0d. Uptime Kuma check (optional, if SSH available)
+
+```bash
+# Check recent downtime events from Uptime Kuma API
+ssh buhbot@185.200.177.180 "curl -s http://localhost:3001/api/status-page/heartbeat/buhbot-status 2>/dev/null | python3 -c 'import sys,json; d=json.load(sys.stdin); [print(f\"{k}: {len([h for h in v if h[\"status\"]==0])} down events\") for k,v in d.get(\"heartbeatList\",{}).items()]' 2>/dev/null || echo 'Uptime Kuma API not available'"
+```
+
+If Uptime Kuma shows downtime events — correlate timestamps with error_logs.
+
+#### 0e. Present health snapshot
+
+```markdown
+### Step 0: Production Health Snapshot
+
+**Containers:** All healthy / <N> unhealthy
+**Prometheus Alerts:** None firing / <list of firing alerts>
+**Metric Anomalies:** None / <list of anomalies>
+**Uptime Kuma:** All up / <downtime events>
+
+**Critical findings (carry forward to Step 2 prioritization):**
+
+- <finding 1>
+- <finding 2>
+```
+
+**If critical alerts are firing (BotDown, HighDisk):** skip to Step 3 immediately, create P0 task, fix first.
+**Otherwise:** proceed to Step 1 with this context.
+
+---
 
 ### Step 1: Fetch New Errors
 
@@ -318,6 +408,13 @@ bd ready
 
 ```markdown
 ## Error Log Processing Complete
+
+### Production Health (Step 0)
+
+- Containers: All healthy / <N> issues
+- Prometheus Alerts: None firing / <list>
+- Metric Anomalies: None / <list>
+- Uptime Kuma: All up / <downtime events>
 
 ### Auto-Ignored (known patterns)
 

@@ -5,6 +5,26 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.29.0...buhbot-v0.30.0) (2026-03-20)
+
+
+### Features
+
+* **skills:** add process-logs skill for production error log processing ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **skills:** add Step 0 production health snapshot to process-logs ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** add E2E SLA diagnostic script for production debugging ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** SLA notification fixes, E2E diagnostics, real-logic tests ([#277](https://github.com/maslennikov-ig/BuhBot/issues/277)) ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+
+
+### Bug Fixes
+
+* **infra:** enhance Docker cleanup cron with image and build cache pruning ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** add assignedTo, deterministic accountant ordering, timezone ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** address code review findings for SLA fixes ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** handle classification/timer failures, webhook dedup, resolve errors ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** resolve Prisma 7 enum bugs and add UUID validation in alert callbacks ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+* **sla:** use raw SQL for warning alert idempotency check (Prisma 7 enum bug) ([c0f9d80](https://github.com/maslennikov-ig/BuhBot/commit/c0f9d80b11756e6913e7ac519c67995d7f4b709d))
+
 ## [0.29.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.28.1...buhbot-v0.29.0) (2026-03-18)
 
 

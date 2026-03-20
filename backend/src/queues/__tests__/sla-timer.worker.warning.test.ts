@@ -28,6 +28,7 @@ const mockPrisma = vi.hoisted(() => ({
     findUnique: vi.fn(),
   },
   $transaction: vi.fn(),
+  $queryRaw: vi.fn(),
 }));
 
 const mockBot = vi.hoisted(() => ({
@@ -168,7 +169,7 @@ describe('SLA Timer Worker - Warning Path', () => {
     it('should create SlaAlert with alertType=warning and escalationLevel=0', async () => {
       const mockRequest = createMockRequest();
       mockPrisma.clientRequest.findUnique.mockResolvedValue(mockRequest);
-      mockPrisma.slaAlert.findFirst.mockResolvedValue(null); // No existing warning
+      mockPrisma.$queryRaw.mockResolvedValue([]); // No existing warning
       mockPrisma.slaAlert.create.mockResolvedValue({
         id: 'alert-uuid',
         requestId: REQUEST_ID,
@@ -206,7 +207,7 @@ describe('SLA Timer Worker - Warning Path', () => {
     it('should queue alert to accountants (primary recipients)', async () => {
       const mockRequest = createMockRequest();
       mockPrisma.clientRequest.findUnique.mockResolvedValue(mockRequest);
-      mockPrisma.slaAlert.findFirst.mockResolvedValue(null);
+      mockPrisma.$queryRaw.mockResolvedValue([]);
       mockPrisma.slaAlert.create.mockResolvedValue({
         id: 'alert-uuid',
         alertType: 'warning',
@@ -242,7 +243,7 @@ describe('SLA Timer Worker - Warning Path', () => {
         },
       });
       mockPrisma.clientRequest.findUnique.mockResolvedValue(mockRequest);
-      mockPrisma.slaAlert.findFirst.mockResolvedValue(null);
+      mockPrisma.$queryRaw.mockResolvedValue([]);
       mockPrisma.slaAlert.create.mockResolvedValue({
         id: 'alert-uuid',
         alertType: 'warning',
@@ -340,11 +341,8 @@ describe('SLA Timer Worker - Warning Path', () => {
   describe('idempotency guard (CR-002)', () => {
     it('should skip when warning alert already exists', async () => {
       mockPrisma.clientRequest.findUnique.mockResolvedValue(createMockRequest());
-      mockPrisma.slaAlert.findFirst.mockResolvedValue({
-        id: 'existing-alert-uuid',
-        alertType: 'warning',
-        escalationLevel: 0,
-      });
+      // $queryRaw returns array with existing alert (idempotency guard)
+      mockPrisma.$queryRaw.mockResolvedValue([{ id: 'existing-alert-uuid' }]);
 
       const job = createMockJob({
         requestId: REQUEST_ID,
@@ -355,15 +353,8 @@ describe('SLA Timer Worker - Warning Path', () => {
 
       await capturedHandler!(job);
 
-      // Should check for existing warning
-      expect(mockPrisma.slaAlert.findFirst).toHaveBeenCalledWith({
-        where: {
-          requestId: REQUEST_ID,
-          alertType: 'warning',
-          escalationLevel: 0,
-          resolvedAction: null,
-        },
-      });
+      // Should check for existing warning via $queryRaw
+      expect(mockPrisma.$queryRaw).toHaveBeenCalled();
 
       // Should NOT create duplicate
       expect(mockPrisma.slaAlert.create).not.toHaveBeenCalled();

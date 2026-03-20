@@ -13,7 +13,7 @@
 # 2. Supabase backup - Daily at 4:00 AM Moscow time
 # 3. Backup verification - Daily at 6:00 AM Moscow time
 # 4. Log rotation - Weekly on Monday at 2:00 AM
-# 5. Docker cleanup - Weekly on Saturday at 5:00 AM
+# 5. Docker cleanup - Weekly on Saturday at 5:00-5:30 AM (system prune + image prune + builder prune)
 #
 # Requirements:
 # - Root privileges or user with crontab access
@@ -125,7 +125,7 @@ Cron Jobs Configured:
   - Supabase backup:  Daily at 4:00 AM (Moscow time)
   - Backup verify:    Daily at 6:00 AM (Moscow time)
   - Log rotation:     Weekly on Monday at 2:00 AM
-  - Docker cleanup:   Weekly on Saturday at 5:00 AM
+  - Docker cleanup:   Weekly on Saturday at 5:00-5:30 AM
 
 Log Files:
   - VDS backup:       $LOG_DIR/buhbot-backup.log
@@ -229,8 +229,16 @@ get_cron_jobs() {
 30 2 * * 1 find $LOG_DIR -name 'buhbot-*.log.gz' -mtime +90 -delete $CRON_MARKER
 
 # Docker Cleanup - Weekly on Saturday at 5:00 AM
-# Removes unused Docker images and containers
+# Removes stopped containers, dangling images, unused networks, and build cache (>7 days old)
 0 5 * * 6 docker system prune -f --filter "until=168h" >> $LOG_DIR/buhbot-docker-cleanup.log 2>&1 $CRON_MARKER
+
+# Docker Image Cleanup - Weekly on Saturday at 5:15 AM
+# Removes unused images not referenced by any container (>7 days old)
+15 5 * * 6 docker image prune -a -f --filter "until=168h" >> $LOG_DIR/buhbot-docker-cleanup.log 2>&1 $CRON_MARKER
+
+# Docker Build Cache Cleanup - Weekly on Saturday at 5:30 AM
+# Removes build cache older than 7 days
+30 5 * * 6 docker builder prune -a -f --filter "until=168h" >> $LOG_DIR/buhbot-docker-cleanup.log 2>&1 $CRON_MARKER
 EOF
 }
 
@@ -322,7 +330,7 @@ show_summary() {
     log_info "  - Supabase Backup:  Daily 4:00 AM"
     log_info "  - Backup Verify:    Daily 6:00 AM"
     log_info "  - Log Rotation:     Monday 2:00 AM"
-    log_info "  - Docker Cleanup:   Saturday 5:00 AM"
+    log_info "  - Docker Cleanup:   Saturday 5:00-5:30 AM (system + images + build cache)"
     log_info ""
     log_info "Log Files:"
     log_info "  - $LOG_DIR/buhbot-backup.log"

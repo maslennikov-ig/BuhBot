@@ -93,24 +93,31 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
 
   try {
     // Idempotency: check for existing unresolved alert at same level (gh-99)
-    const existingAlert = await prisma.slaAlert.findFirst({
-      where: {
-        requestId,
-        alertType,
-        escalationLevel,
-        resolvedAction: null,
-      },
-    });
+    // Use $queryRaw because Prisma 7 driver adapter sends enum values as text,
+    // causing "operator does not exist: text = AlertType" with findFirst.
+    const existingAlertIds = await prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT "id" FROM "public"."sla_alerts"
+      WHERE "request_id" = ${requestId}
+        AND "alert_type" = ${alertType}::"AlertType"
+        AND "escalation_level" = ${escalationLevel}
+        AND "resolved_action" IS NULL
+      LIMIT 1
+    `;
 
-    if (existingAlert) {
-      logger.info('Duplicate alert skipped (already exists)', {
-        existingAlertId: existingAlert.id,
-        requestId,
-        alertType,
-        escalationLevel,
-        service: 'alert',
+    if (existingAlertIds.length > 0) {
+      const existingAlert = await prisma.slaAlert.findUnique({
+        where: { id: existingAlertIds[0]!.id },
       });
-      return existingAlert;
+      if (existingAlert) {
+        logger.info('Duplicate alert skipped (already exists)', {
+          existingAlertId: existingAlert.id,
+          requestId,
+          alertType,
+          escalationLevel,
+          service: 'alert',
+        });
+        return existingAlert;
+      }
     }
 
     // Get request with chat and manager info

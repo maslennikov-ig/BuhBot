@@ -25,6 +25,7 @@ import { startSlaTimer } from '../../services/sla/timer.service.js';
 import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
 import { getTracer } from '../../lib/tracing.js';
+import { classifierFallbackTotal } from '../../utils/metrics.js';
 
 /** Time window for deduplication: 5 minutes (gh-66) */
 const DEDUP_WINDOW_MS = 5 * 60 * 1000;
@@ -266,6 +267,22 @@ export function registerMessageHandler(): void {
         classifySpan.setAttribute('classification.result', classification.classification);
         classifySpan.setAttribute('classification.confidence', classification.confidence);
         classifySpan.setAttribute('classification.model', classification.model);
+      } catch (classifyError) {
+        classifySpan.setStatus({ code: 2, message: 'Classification failed' });
+        classifierFallbackTotal.inc();
+        logger.error('Classification failed, defaulting to REQUEST for SLA safety', {
+          chatId,
+          messageId,
+          error: classifyError instanceof Error ? classifyError.message : String(classifyError),
+          service: 'message-handler',
+        });
+        // Default to REQUEST so SLA timer starts — false positive is safer than missed breach
+        classification = {
+          classification: 'REQUEST' as const,
+          confidence: 0,
+          model: 'error-fallback' as const,
+          reasoning: 'Classification service unavailable, defaulting to REQUEST',
+        };
       } finally {
         classifySpan.end(); // Always end span, even on error (gh-168)
       }
@@ -285,6 +302,26 @@ export function registerMessageHandler(): void {
           chatId,
           messageId,
           classification: classification.classification,
+          service: 'message-handler',
+        });
+        return;
+      }
+
+      // 11b. Webhook retry dedup: same Telegram messageId = same message
+      const existingByMessageId = await prisma.clientRequest.findUnique({
+        where: {
+          unique_request_per_message: {
+            chatId: BigInt(chatId),
+            messageId: BigInt(messageId),
+          },
+        },
+        select: { id: true },
+      });
+      if (existingByMessageId) {
+        logger.info('Webhook retry detected (same messageId), skipping', {
+          chatId,
+          messageId,
+          existingRequestId: existingByMessageId.id,
           service: 'message-handler',
         });
         return;
@@ -374,26 +411,42 @@ export function registerMessageHandler(): void {
       }
 
       // 14. Create ClientRequest record (only for REQUEST/CLARIFICATION)
-      const request = await prisma.clientRequest.create({
-        data: {
-          chatId: BigInt(chatId),
-          messageId: BigInt(messageId),
-          messageText: text,
-          clientUsername: username ?? null,
-          classification: classification.classification,
-          classificationScore: classification.confidence,
-          classificationModel: classification.model,
-          contentHash,
-          threadId,
-          parentMessageId,
-          assignedTo: chat.assignedAccountantId ?? null,
-          // Set status based on classification
-          // REQUEST: pending (needs response)
-          // CLARIFICATION: answered (no SLA tracking for follow-ups)
-          status: classification.classification === 'REQUEST' ? 'pending' : 'answered',
-          receivedAt: new Date(ctx.message.date * 1000),
-        },
-      });
+      let request;
+      try {
+        request = await prisma.clientRequest.create({
+          data: {
+            chatId: BigInt(chatId),
+            messageId: BigInt(messageId),
+            messageText: text,
+            clientUsername: username ?? null,
+            classification: classification.classification,
+            classificationScore: classification.confidence,
+            classificationModel: classification.model,
+            contentHash,
+            threadId,
+            parentMessageId,
+            assignedTo: chat.assignedAccountantId ?? null,
+            // Set status based on classification
+            // REQUEST: pending (needs response)
+            // CLARIFICATION: answered (no SLA tracking for follow-ups)
+            status: classification.classification === 'REQUEST' ? 'pending' : 'answered',
+            receivedAt: new Date(ctx.message.date * 1000),
+          },
+        });
+      } catch (createError) {
+        if (
+          createError instanceof Prisma.PrismaClientKnownRequestError &&
+          createError.code === 'P2002'
+        ) {
+          logger.info('Duplicate request caught by unique constraint', {
+            chatId,
+            messageId,
+            service: 'message-handler',
+          });
+          return;
+        }
+        throw createError;
+      }
 
       logger.info('ClientRequest created', {
         requestId: request.id,
@@ -417,16 +470,24 @@ export function registerMessageHandler(): void {
         });
         try {
           await startSlaTimer(request.id, String(chatId), thresholdMinutes);
+          logger.info('SLA timer started for request', {
+            requestId: request.id,
+            chatId,
+            thresholdMinutes,
+            service: 'message-handler',
+          });
+        } catch (timerError) {
+          slaSpan.setStatus({ code: 2, message: 'SLA timer failed' });
+          logger.error('Failed to start SLA timer - SLA monitoring degraded', {
+            requestId: request.id,
+            chatId,
+            error: timerError instanceof Error ? timerError.message : String(timerError),
+            service: 'message-handler',
+          });
+          // ClientRequest already created, timer will need manual retry
         } finally {
           slaSpan.end(); // Always end span (gh-168)
         }
-
-        logger.info('SLA timer started for request', {
-          requestId: request.id,
-          chatId,
-          thresholdMinutes,
-          service: 'message-handler',
-        });
       } else {
         logger.debug('Non-REQUEST message, SLA timer not started', {
           requestId: request.id,

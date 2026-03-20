@@ -97,13 +97,20 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       const remainingMinutes = Math.max(0, threshold - minutesElapsed);
 
       // Idempotency guard: skip if warning alert already exists for this request (CR-002)
-      const existingWarning = await prisma.slaAlert.findFirst({
-        where: { requestId, alertType: 'warning', escalationLevel: 0, resolvedAction: null },
-      });
-      if (existingWarning) {
+      // Use $queryRaw because Prisma 7 driver adapter sends enum values as text,
+      // causing "operator does not exist: text = AlertType" with findFirst.
+      const existingWarnings = await prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "public"."sla_alerts"
+        WHERE "request_id" = ${requestId}
+          AND "alert_type" = 'warning'::"AlertType"
+          AND "escalation_level" = 0
+          AND "resolved_action" IS NULL
+        LIMIT 1
+      `;
+      if (existingWarnings.length > 0) {
         logger.info('Warning alert already exists, skipping duplicate', {
           requestId,
-          alertId: existingWarning.id,
+          alertId: existingWarnings[0]!.id,
           service: 'sla-timer-worker',
         });
         return;

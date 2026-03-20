@@ -354,7 +354,10 @@ export const slaRouter = router({
       return {
         classification: result.classification,
         confidence: result.confidence,
-        model: result.model === 'cache' ? 'openrouter' : result.model,
+        model:
+          result.model === 'cache' || result.model === 'error-fallback'
+            ? 'keyword-fallback'
+            : result.model,
         reasoning: result.reasoning,
       };
     }),

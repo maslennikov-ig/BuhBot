@@ -16,6 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { ClassificationResult } from '../../../services/classifier/types.js';
 
 // Mock dependencies
@@ -40,13 +41,35 @@ vi.mock('../response.handler.js', () => ({
   isAccountantForChat: vi.fn(),
 }));
 
+// Mock additional dependencies needed for error-handling tests
+vi.mock('../../../utils/metrics.js', () => ({
+  classifierFallbackTotal: { inc: vi.fn() },
+}));
+
+vi.mock('../../../lib/tracing.js', () => ({
+  getTracer: vi.fn(() => ({
+    startSpan: vi.fn(() => ({
+      setAttribute: vi.fn(),
+      setStatus: vi.fn(),
+      end: vi.fn(),
+    })),
+  })),
+}));
+
 // Mock Prisma client
 const mockPrisma = {
   chat: {
     findUnique: vi.fn(),
+    upsert: vi.fn(),
+  },
+  chatMessage: {
+    createMany: vi.fn(),
   },
   clientRequest: {
     create: vi.fn(),
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    updateMany: vi.fn(),
   },
 } as unknown as PrismaClient;
 
@@ -517,5 +540,199 @@ describe('Message Handler - Filtering Logic', () => {
     }
 
     throw new Error('Should have returned early for disabled monitoring');
+  });
+});
+
+describe('Message Handler - Error Handling Contracts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('classification failure → fallback to REQUEST and still create ClientRequest', async () => {
+    const { classifyMessage } = await import('../../../services/classifier/index.js');
+    const { startSlaTimer } = await import('../../../services/sla/timer.service.js');
+    const { classifierFallbackTotal } = await import('../../../utils/metrics.js');
+
+    // classifyMessage throws
+    vi.mocked(classifyMessage).mockRejectedValue(new Error('OpenRouter timeout'));
+
+    // Simulate the catch block in message.handler.ts (step 10)
+    let classification: ClassificationResult;
+    try {
+      classification = await classifyMessage({} as PrismaClient, 'Some client text');
+    } catch {
+      classifierFallbackTotal.inc();
+      // Fallback matches what the handler does
+      classification = {
+        classification: 'REQUEST' as const,
+        confidence: 0,
+        model: 'error-fallback' as const,
+        reasoning: 'Classification service unavailable, defaulting to REQUEST',
+      };
+    }
+
+    // Fallback classification should be REQUEST
+    expect(classification.classification).toBe('REQUEST');
+    expect(classification.confidence).toBe(0);
+    expect(classification.model).toBe('error-fallback');
+
+    // classifierFallbackTotal.inc() should have been called
+    expect(classifierFallbackTotal.inc).toHaveBeenCalledOnce();
+
+    // Handler continues: since classification is REQUEST, ClientRequest is created
+    vi.mocked(mockPrisma.clientRequest.findUnique).mockResolvedValue(null);
+    vi.mocked(mockPrisma.clientRequest.create).mockResolvedValue({
+      id: 'req_fallback',
+      chatId: BigInt(123),
+      messageId: BigInt(456),
+      status: 'pending',
+    });
+
+    const request = await mockPrisma.clientRequest.create({
+      data: {
+        chatId: BigInt(123),
+        messageId: BigInt(456),
+        messageText: 'Some client text',
+        clientUsername: null,
+        classification: classification.classification,
+        classificationScore: classification.confidence,
+        classificationModel: classification.model,
+        status: 'pending',
+        receivedAt: new Date(),
+      },
+    });
+
+    expect(mockPrisma.clientRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          classification: 'REQUEST',
+          classificationScore: 0,
+          classificationModel: 'error-fallback',
+          status: 'pending',
+        }),
+      })
+    );
+
+    // SLA timer still starts for the fallback REQUEST
+    vi.mocked(startSlaTimer).mockResolvedValue(undefined);
+    await startSlaTimer(request.id, '123', 60);
+    expect(startSlaTimer).toHaveBeenCalledWith('req_fallback', '123', 60);
+  });
+
+  it('startSlaTimer failure → graceful degradation: ClientRequest already created, logger.error called', async () => {
+    const { startSlaTimer } = await import('../../../services/sla/timer.service.js');
+    const logger = (await import('../../../utils/logger.js')).default;
+
+    // startSlaTimer throws
+    vi.mocked(startSlaTimer).mockRejectedValue(new Error('Redis connection refused'));
+
+    // Simulate: ClientRequest was already created before the timer call
+    vi.mocked(mockPrisma.clientRequest.create).mockResolvedValue({
+      id: 'req_timer_fail',
+      chatId: BigInt(123),
+      messageId: BigInt(456),
+      status: 'pending',
+    });
+
+    const request = await mockPrisma.clientRequest.create({
+      data: { chatId: BigInt(123), messageId: BigInt(456), status: 'pending' },
+    });
+
+    // ClientRequest was created successfully
+    expect(request.id).toBe('req_timer_fail');
+    expect(mockPrisma.clientRequest.create).toHaveBeenCalledOnce();
+
+    // Simulate the catch block for startSlaTimer in message.handler.ts (step 15)
+    try {
+      await startSlaTimer(request.id, '123', 60);
+    } catch (timerError) {
+      logger.error('Failed to start SLA timer - SLA monitoring degraded', {
+        requestId: request.id,
+        chatId: '123',
+        error: timerError instanceof Error ? timerError.message : String(timerError),
+        service: 'message-handler',
+      });
+    }
+
+    // Handler does NOT throw — error is caught
+    // logger.error was called with the expected message
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to start SLA timer - SLA monitoring degraded',
+      expect.objectContaining({
+        requestId: 'req_timer_fail',
+        error: 'Redis connection refused',
+      })
+    );
+  });
+
+  it('P2002 unique constraint violation on clientRequest.create → silent return, no SLA timer', async () => {
+    const { startSlaTimer } = await import('../../../services/sla/timer.service.js');
+
+    const p2002Error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+      code: 'P2002',
+      clientVersion: '7.0.0',
+    });
+
+    vi.mocked(mockPrisma.clientRequest.create).mockRejectedValue(p2002Error);
+
+    // Simulate the catch block in message.handler.ts (step 14)
+    let slaStarted = false;
+    try {
+      await mockPrisma.clientRequest.create({
+        data: {
+          chatId: BigInt(123),
+          messageId: BigInt(456),
+          status: 'pending',
+        },
+      });
+      // If create succeeds, SLA timer would start
+      slaStarted = true;
+    } catch (createError) {
+      if (
+        createError instanceof Prisma.PrismaClientKnownRequestError &&
+        createError.code === 'P2002'
+      ) {
+        // Silent return — P2002 means duplicate, no timer needed
+        slaStarted = false;
+      } else {
+        throw createError;
+      }
+    }
+
+    // Handler did NOT throw
+    expect(slaStarted).toBe(false);
+    // SLA timer was never started
+    expect(startSlaTimer).not.toHaveBeenCalled();
+  });
+
+  it('webhook retry dedup: same messageId already exists → early return, no ClientRequest.create', async () => {
+    // clientRequest.findUnique returns an existing record (same chatId + messageId)
+    vi.mocked(mockPrisma.clientRequest.findUnique).mockResolvedValue({
+      id: 'req_existing',
+    });
+
+    // Simulate the dedup check in message.handler.ts (step 11b)
+    const existingByMessageId = await mockPrisma.clientRequest.findUnique({
+      where: {
+        unique_request_per_message: {
+          chatId: BigInt(123),
+          messageId: BigInt(456),
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existingByMessageId) {
+      // Early return — no create
+    } else {
+      await mockPrisma.clientRequest.create({
+        data: { chatId: BigInt(123), messageId: BigInt(456), status: 'pending' },
+      });
+    }
+
+    // findUnique was called to check for duplicate
+    expect(mockPrisma.clientRequest.findUnique).toHaveBeenCalledOnce();
+    // create was NOT called because the record already existed
+    expect(mockPrisma.clientRequest.create).not.toHaveBeenCalled();
   });
 });

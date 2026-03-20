@@ -65,6 +65,12 @@ coverage/
 .nyc_output/
 *.lcov
 
+# Playwright E2E Testing
+test-results/
+playwright-report/
+playwright/.cache/
+e2e/.env
+
 # ===================================================================
 # OS Files
 # ===================================================================

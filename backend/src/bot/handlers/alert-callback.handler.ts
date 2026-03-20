@@ -26,6 +26,8 @@ import {
   buildAccountantNotificationKeyboard,
 } from '../keyboards/alert.keyboard.js';
 import { isAccountantForChat } from './response.handler.js';
+import { findUserByTelegramId } from '../utils/user.js';
+import { hasMinRole } from '../utils/roles.js';
 import logger from '../../utils/logger.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -528,9 +530,20 @@ export function registerAlertCallbackHandler(): void {
       return;
     }
 
+    // Authorization: only managers can view feedback details (defense-in-depth)
+    if (!ctx.from) {
+      return;
+    }
+
+    const user = await findUserByTelegramId(ctx.from.id);
+    if (!user || !hasMinRole(user.role, 'manager')) {
+      await ctx.answerCbQuery('Нет прав для этого действия');
+      return;
+    }
+
     logger.info('View feedback callback received', {
       feedbackId,
-      userId: ctx.from?.id?.toString(),
+      userId: ctx.from.id.toString(),
       service: 'alert-callback',
     });
 

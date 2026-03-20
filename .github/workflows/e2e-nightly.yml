@@ -1,0 +1,421 @@
+name: E2E Nightly Tests
+
+# DISABLED - Requires fixes before enabling
+# TODO: Fix working directory and playwright config path
+# Scheduled to run every night at 2:00 AM UTC to catch regressions
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        type: choice
+        options:
+          - full
+          - auth
+          - dashboard
+          - chats
+          - sla
+          - settings
+      browser:
+        description: 'Browser to use'
+        required: false
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - all
+
+concurrency:
+  group: e2e-nightly-${{ github.run_id }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+  BACKEND_PORT: 3001
+  FRONTEND_PORT: 3000
+
+jobs:
+  # ==========================================================================
+  # Nightly E2E Test Job
+  # ==========================================================================
+  e2e-nightly:
+    name: E2E Nightly Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Disabled - needs fixes
+    if: false
+
+    services:
+      # PostgreSQL database service
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: buhbot
+          POSTGRES_PASSWORD: buhbot_test
+          POSTGRES_DB: buhbot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U buhbot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      # Redis service for queues
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # -------------------------------------------------------------------------
+      # Checkout code
+      # -------------------------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # -------------------------------------------------------------------------
+      # Setup Node.js and pnpm
+      # -------------------------------------------------------------------------
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      # -------------------------------------------------------------------------
+      # Install root dependencies
+      # -------------------------------------------------------------------------
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      # -------------------------------------------------------------------------
+      # Install Playwright browsers
+      # -------------------------------------------------------------------------
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install --with-deps chromium firefox webkit
+
+      # -------------------------------------------------------------------------
+      # Setup Backend
+      # -------------------------------------------------------------------------
+      - name: Setup Backend
+        working-directory: ./backend
+        run: |
+          # Create .env file for testing
+          cat > .env << EOF
+          NODE_ENV=development
+          PORT=${{ env.BACKEND_PORT }}
+
+          # DEV MODE - bypass Supabase auth
+          DEV_MODE=true
+          DEV_USER_EMAIL=admin@buhbot.local
+
+          # Database
+          DATABASE_URL=postgresql://buhbot:buhbot_test@localhost:5432/buhbot_test
+          DIRECT_URL=postgresql://buhbot:buhbot_test@localhost:5432/buhbot_test
+
+          # Redis
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+
+          # Supabase (required for client initialization)
+          SUPABASE_URL=https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY=placeholder
+
+          # Telegram (optional for E2E)
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
+          BOT_USERNAME=test_bot
+          TELEGRAM_WEBHOOK_SECRET=test_secret
+
+          # Security (required)
+          JWT_SECRET=test_jwt_secret_for_e2e_tests
+          ENCRYPTION_SECRET=test_encryption_secret_for_e2e
+
+          # Logging
+          LOG_LEVEL=error
+          EOF
+
+      # -------------------------------------------------------------------------
+      # Install Backend dependencies
+      # -------------------------------------------------------------------------
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: pnpm install --frozen-lockfile
+
+      # -------------------------------------------------------------------------
+      # Generate Prisma client and setup database
+      # -------------------------------------------------------------------------
+      - name: Generate Prisma client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Run Prisma migrations
+        working-directory: ./backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://buhbot:buhbot_test@localhost:5432/buhbot_test
+          DIRECT_URL: postgresql://buhbot:buhbot_test@localhost:5432/buhbot_test
+
+      - name: Seed database
+        working-directory: ./backend
+        run: npx prisma db seed || true
+        env:
+          DATABASE_URL: postgresql://buhbot:buhbot_test@localhost:5432/buhbot_test
+
+      # -------------------------------------------------------------------------
+      # Setup Frontend
+      # -------------------------------------------------------------------------
+      - name: Setup Frontend
+        working-directory: ./frontend
+        run: |
+          # Create .env.local file for testing
+          cat > .env.local << EOF
+          # Development mode
+          DEV_MODE=true
+
+          # Supabase (placeholder for E2E with DEV_MODE)
+          NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder
+
+          # API URL - point to backend
+          NEXT_PUBLIC_API_URL=http://localhost:${{ env.BACKEND_PORT }}
+
+          # Site URL
+          NEXT_PUBLIC_SITE_URL=http://localhost:${{ env.FRONTEND_PORT }}
+          EOF
+
+      # -------------------------------------------------------------------------
+      # Install Frontend dependencies
+      # -------------------------------------------------------------------------
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      # -------------------------------------------------------------------------
+      # Start Backend server
+      # -------------------------------------------------------------------------
+      - name: Start Backend
+        working-directory: ./backend
+        run: |
+          # Run backend in background
+          nohup pnpm dev > backend.log 2>&1 &
+          echo $! > backend.pid
+
+          # Wait for backend to start
+          echo "Waiting for backend to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:${{ env.BACKEND_PORT }}/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/60)"
+            sleep 2
+          done
+
+          # Check if backend started
+          curl -s http://localhost:${{ env.BACKEND_PORT }}/health || cat backend.log
+
+      # -------------------------------------------------------------------------
+      # Start Frontend server
+      # -------------------------------------------------------------------------
+      - name: Start Frontend
+        working-directory: ./frontend
+        run: |
+          # Run frontend in background
+          nohup pnpm dev > frontend.log 2>&1 &
+          echo $! > frontend.pid
+
+          # Wait for frontend to start
+          echo "Waiting for frontend to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:${{ env.FRONTEND_PORT }} > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/60)"
+            sleep 2
+          done
+
+          # Check if frontend started
+          curl -s http://localhost:${{ env.FRONTEND_PORT }} || cat frontend.log
+
+      # -------------------------------------------------------------------------
+      # Run Nightly E2E Tests
+      # -------------------------------------------------------------------------
+      - name: Run Nightly E2E Tests
+        working-directory: .
+        run: |
+          # Install e2e dependencies
+          cd e2e
+          pnpm install
+          cd ..
+
+          # Build test command based on inputs
+          TEST_CMD="npx playwright test --config=./e2e/playwright.config.ts"
+
+          # Add browser specification if provided
+          if [ "${{ github.event.inputs.browser }}" == "all" ]; then
+            TEST_CMD="$TEST_CMD --browser=chromium --browser=firefox --browser=webkit"
+          elif [ -n "${{ github.event.inputs.browser }}" ]; then
+            TEST_CMD="$TEST_CMD --browser=${{ github.event.inputs.browser }}"
+          else
+            # Default to chromium for nightly
+            TEST_CMD="$TEST_CMD --browser=chromium"
+          fi
+
+          # Add test suite filter if provided
+          if [ -n "${{ github.event.inputs.test_suite }}" ]; then
+            case "${{ github.event.inputs.test_suite }}" in
+              auth)
+                TEST_CMD="$TEST_CMD --grep=@auth"
+                ;;
+              dashboard)
+                TEST_CMD="$TEST_CMD --grep=@dashboard"
+                ;;
+              chats)
+                TEST_CMD="$TEST_CMD --grep=@chats"
+                ;;
+              sla)
+                TEST_CMD="$TEST_CMD --grep=@sla"
+                ;;
+              settings)
+                TEST_CMD="$TEST_CMD --grep=@settings"
+                ;;
+              full|*)
+                # Full suite
+                ;;
+            esac
+          fi
+
+          # Add retries for nightly (more resilient)
+          TEST_CMD="$TEST_CMD --retries=2"
+
+          # Add reporter for CI
+          TEST_CMD="$TEST_CMD --reporter=html,line"
+
+          echo "Running: $TEST_CMD"
+          eval $TEST_CMD
+        env:
+          # Test environment variables
+          BASE_URL: http://localhost:${{ env.FRONTEND_PORT }}
+          API_URL: http://localhost:${{ env.BACKEND_PORT }}
+          DEV_MODE: 'true'
+          TEST_USER_EMAIL: admin@buhbot.local
+
+      # -------------------------------------------------------------------------
+      # Upload test results (always)
+      # -------------------------------------------------------------------------
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-nightly-test-results-${{ github.run_id }}
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+            backend.log
+            frontend.log
+          retention-days: 30
+
+      # -------------------------------------------------------------------------
+      # Upload screenshots on failure
+      # -------------------------------------------------------------------------
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-nightly-failure-screenshots-${{ github.run_id }}
+          path: e2e/test-results/**/*.png
+          retention-days: 30
+
+      # -------------------------------------------------------------------------
+      # Cleanup
+      # -------------------------------------------------------------------------
+      - name: Cleanup
+        if: always()
+        run: |
+          # Kill background processes
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) 2>/dev/null || true
+          fi
+          if [ -f frontend.pid ]; then
+            kill $(cat frontend.pid) 2>/dev/null || true
+          fi
+          # Also kill any remaining node processes on ports
+          fuser -k ${{ env.BACKEND_PORT }}/tcp 2>/dev/null || true
+          fuser -k ${{ env.FRONTEND_PORT }}/tcp 2>/dev/null || true
+
+  # ==========================================================================
+  # Nightly Test Report Summary
+  # ==========================================================================
+  nightly-summary:
+    name: Nightly Summary
+    runs-on: ubuntu-latest
+    needs: e2e-nightly
+    if: always() && false
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🌙 E2E Nightly Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.e2e-nightly.result }}" == "success" ]; then
+            echo "✅ **All E2E tests passed!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No regressions detected in the nightly run." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.e2e-nightly.result }}" == "failure" ]; then
+            echo "❌ **E2E tests failed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the test results and screenshots." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Action Required" >> $GITHUB_STEP_SUMMARY
+            echo "- Review the failing tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Check the uploaded screenshots for visual issues" >> $GITHUB_STEP_SUMMARY
+            echo "- Create issues for any new bugs found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Nightly tests were cancelled or skipped**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send Telegram notification on failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram credentials not configured, skipping notification"
+            exit 0
+          fi
+          MESSAGE="🌙 *BuhBot Nightly E2E Failed*%0A%0A❌ Regression detected in nightly tests%0A%0A🔗 [View results]($RUN_URL)"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "parse_mode=Markdown" \
+            -d "disable_web_page_preview=true" \
+            -d "text=${MESSAGE}"

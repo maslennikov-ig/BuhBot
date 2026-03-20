@@ -550,12 +550,24 @@ export const alertRouter = router({
         where.requestId = input.requestId;
       }
 
-      if (input.alertType) {
-        where.alertType = input.alertType;
-      }
-
-      if (input.deliveryStatus) {
-        where.deliveryStatus = input.deliveryStatus;
+      // Prisma 7 driver adapter bug: enum values sent as text,
+      // causing "operator does not exist: text = AlertType/AlertDeliveryStatus".
+      // Pre-filter IDs via raw SQL for enum conditions.
+      if (input.alertType || input.deliveryStatus) {
+        const enumConditions: Prisma.Sql[] = [];
+        if (input.alertType) {
+          enumConditions.push(Prisma.sql`"alert_type" = ${input.alertType}::"AlertType"`);
+        }
+        if (input.deliveryStatus) {
+          enumConditions.push(
+            Prisma.sql`"delivery_status" = ${input.deliveryStatus}::"AlertDeliveryStatus"`
+          );
+        }
+        const combinedCondition = Prisma.join(enumConditions, ' AND ');
+        const matchingIds = await ctx.prisma.$queryRaw<Array<{ id: string }>>(
+          Prisma.sql`SELECT "id" FROM "public"."sla_alerts" WHERE ${combinedCondition}`
+        );
+        where.id = { in: matchingIds.map((a) => a.id) };
       }
 
       if (input.resolved !== undefined) {

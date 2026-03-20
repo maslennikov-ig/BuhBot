@@ -28,6 +28,8 @@ import {
 import { isAccountantForChat } from './response.handler.js';
 import logger from '../../utils/logger.js';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Check if a Telegram user is authorized to manage alert actions
  * for a given chat. Authorized users: managers or accountants.
@@ -93,7 +95,7 @@ export function registerAlertCallbackHandler(): void {
     const alertId = ctx.match[1];
     const userId = ctx.from?.id?.toString();
 
-    if (!alertId) {
+    if (!alertId || !UUID_REGEX.test(alertId)) {
       await ctx.answerCbQuery('Некорректные данные');
       return;
     }
@@ -353,7 +355,7 @@ export function registerAlertCallbackHandler(): void {
     const alertId = ctx.match[1];
     const userId = ctx.from?.id?.toString();
 
-    if (!alertId) {
+    if (!alertId || !UUID_REGEX.test(alertId)) {
       await ctx.answerCbQuery('Некорректные данные');
       return;
     }

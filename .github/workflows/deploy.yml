@@ -84,20 +84,24 @@ jobs:
             "${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}"
           )
 
+          MAX_ATTEMPTS=30
+          INTERVAL=10
           for IMAGE in "${IMAGES[@]}"; do
             echo "Checking: $IMAGE"
-            for attempt in $(seq 1 30); do
+            FOUND=false
+            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
               if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
                 echo "  Verified: $IMAGE"
+                FOUND=true
                 break
               fi
-              if [ "$attempt" -eq 30 ]; then
-                echo "ERROR: Image not found after 5 minutes: $IMAGE"
-                exit 1
-              fi
-              echo "  Waiting for image to be published... ($attempt/30)"
-              sleep 10
+              echo "  Waiting for image to be published... ($attempt/$MAX_ATTEMPTS)"
+              sleep "$INTERVAL"
             done
+            if [ "$FOUND" != "true" ]; then
+              echo "ERROR: Image not found after $((MAX_ATTEMPTS * INTERVAL))s: $IMAGE"
+              exit 1
+            fi
           done
           echo "All images verified in registry"
 

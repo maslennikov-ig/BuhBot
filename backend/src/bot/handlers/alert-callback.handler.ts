@@ -405,7 +405,7 @@ export function registerAlertCallbackHandler(): void {
         include: { chat: true },
       });
 
-      // Authorization: verify the user is a manager or accountant (gh-88)
+      // Authorization: resolve is manager-or-accountant (gh-88)
       const telegramUserId = ctx.from?.id;
       let isAuthorized = false;
       try {

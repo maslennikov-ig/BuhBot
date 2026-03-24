@@ -450,10 +450,11 @@ export function registerResponseHandler(): void {
         const resolvedCount = await resolveAlertsForRequest(
           requestToResolve.id,
           'accountant_responded',
-          accountantId ?? undefined
+          telegramUserId ? String(telegramUserId) : undefined
         );
+        // Always cancel escalations — BullMQ jobs may exist even when no DB alerts remain
+        await cancelAllEscalations(requestToResolve.id);
         if (resolvedCount > 0) {
-          await cancelAllEscalations(requestToResolve.id);
           logger.info('SLA alerts resolved on accountant response', {
             chatId,
             requestId: requestToResolve.id,

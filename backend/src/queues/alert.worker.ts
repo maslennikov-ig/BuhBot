@@ -168,15 +168,14 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
     }
     const chatId = String(request.chatId);
 
+    const globalSettings = await prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+    });
+
     // Format message if not pre-formatted
     let formattedMessage = job.data.formattedMessage;
 
     if (!formattedMessage) {
-      // Get global settings for message preview length
-      const globalSettings = await prisma.globalSettings.findUnique({
-        where: { id: 'default' },
-      });
-
       const messagePreviewLength = globalSettings?.messagePreviewLength ?? 500;
 
       const messageData: AlertMessageData = {
@@ -209,41 +208,56 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
           : formatAlertMessage(messageData);
     }
 
-    // Build keyboard (include invite link if available)
-    const keyboard = alertId
-      ? buildAlertKeyboard({
-          alertId,
-          chatId,
-          requestId,
-          inviteLink: request.chat?.inviteLink,
-          chatType: request.chat?.chatType,
-        })
-      : undefined;
-
     // Send to each manager
     let successCount = 0;
     let failCount = 0;
     const deliveredMessageIds: bigint[] = [];
+    const accountantRecipientIds = new Set(
+      (request.chat?.accountantTelegramIds ?? []).map((id) => id.toString())
+    );
+    const managerRecipientIds = new Set([
+      ...(request.chat?.managerTelegramIds ?? []),
+      ...(globalSettings?.globalManagerIds ?? []),
+    ]);
 
-    for (const managerId of managerIds) {
+    for (const recipientId of managerIds) {
       try {
-        const message = await bot.telegram.sendMessage(managerId, formattedMessage, {
+        const showNotifyButton = !(
+          accountantRecipientIds.has(recipientId) && !managerRecipientIds.has(recipientId)
+        );
+        const keyboard = alertId
+          ? buildAlertKeyboard(
+              {
+                alertId,
+                chatId,
+                requestId,
+                inviteLink: request.chat?.inviteLink,
+                chatType: request.chat?.chatType,
+              },
+              {
+                showNotifyButton,
+              }
+            )
+          : undefined;
+
+        const message = await bot.telegram.sendMessage(recipientId, formattedMessage, {
           parse_mode: 'HTML',
           ...(keyboard ?? {}),
         });
 
-        logger.debug('Alert sent to manager', {
-          managerId,
+        logger.debug('Alert sent to recipient', {
+          recipientId,
           messageId: message.message_id,
           alertId,
+          showNotifyButton,
           service: 'alert-worker',
         });
 
         successCount++;
         deliveredMessageIds.push(BigInt(message.message_id));
       } catch (error) {
-        logger.error('Failed to send alert to manager', {
-          managerId,
+        logger.error('Failed to send alert to recipient', {
+          recipientId,
           alertId,
           error: error instanceof Error ? error.message : String(error),
           service: 'alert-worker',

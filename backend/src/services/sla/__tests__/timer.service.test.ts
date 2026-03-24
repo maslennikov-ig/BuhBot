@@ -27,6 +27,7 @@ const mockPrisma = vi.hoisted(() => ({
   clientRequest: {
     findUnique: vi.fn(),
     update: vi.fn(),
+    findMany: vi.fn(),
   },
 }));
 
@@ -59,11 +60,13 @@ vi.mock('../../../queues/setup.js', () => ({
 // Mock config service (startSlaTimer calls getGlobalSettings for slaWarningPercent)
 vi.mock('../../../config/config.service.js', () => ({
   getGlobalSettings: vi.fn().mockResolvedValue({ slaWarningPercent: 80 }),
+  getRecipientsByLevel: vi.fn(),
 }));
 
 // Import after mocks are set up
-import { startSlaTimer } from '../timer.service.js';
-import { scheduleSlaCheck } from '../../../queues/setup.js';
+import { startSlaTimer, recoverPendingSlaTimers } from '../timer.service.js';
+import { scheduleSlaCheck, queueAlert, slaTimerQueue } from '../../../queues/setup.js';
+import { getRecipientsByLevel } from '../../../config/config.service.js';
 
 describe('SLA Timer Service - Schedule Resolution', () => {
   beforeEach(() => {
@@ -252,6 +255,42 @@ describe('SLA Timer Service - Schedule Resolution', () => {
       // Should NOT call globalSettings since chat has custom schedule
       expect(mockPrisma.globalSettings.findUnique).not.toHaveBeenCalled();
       expect(scheduleSlaCheck).toHaveBeenCalled();
+    });
+  });
+
+  describe('recoverPendingSlaTimers', () => {
+    it('should queue recovery breach alerts to managers and accountants', async () => {
+      mockPrisma.clientRequest.findMany.mockResolvedValue([
+        {
+          id: 'recovery-request-id',
+          chatId: BigInt(-1001234567890),
+          receivedAt: new Date('2025-01-29T05:00:00.000Z'),
+          chat: {
+            slaThresholdMinutes: 60,
+          },
+        },
+      ]);
+      (slaTimerQueue.getJob as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      mockPrisma.clientRequest.update.mockResolvedValue({});
+      mockPrisma.chat.findFirst.mockResolvedValue({
+        managerTelegramIds: ['mgr_111'],
+        accountantTelegramIds: [BigInt(222)],
+      });
+      (getRecipientsByLevel as ReturnType<typeof vi.fn>).mockResolvedValue({
+        recipients: ['mgr_111', '222'],
+        tier: 'both',
+      });
+
+      const result = await recoverPendingSlaTimers();
+
+      expect(getRecipientsByLevel).toHaveBeenCalledWith(['mgr_111'], [BigInt(222)], 1);
+      expect(queueAlert).toHaveBeenCalledWith({
+        requestId: 'recovery-request-id',
+        alertType: 'breach',
+        managerIds: ['mgr_111', '222'],
+        escalationLevel: 1,
+      });
+      expect(result.breached).toBe(1);
     });
   });
 });

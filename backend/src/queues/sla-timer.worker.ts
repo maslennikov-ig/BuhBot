@@ -15,6 +15,7 @@
  */
 
 import { Worker, Job } from 'bullmq';
+import { Prisma } from '@prisma/client';
 import { redis } from '../lib/redis.js';
 import { prisma } from '../lib/prisma.js';
 import logger from '../utils/logger.js';
@@ -99,14 +100,16 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       // Idempotency guard: skip if warning alert already exists for this request (CR-002)
       // Use $queryRaw because Prisma 7 driver adapter sends enum values as text,
       // causing "operator does not exist: text = AlertType" with findFirst.
-      const existingWarnings = await prisma.$queryRaw<Array<{ id: string }>>`
-        SELECT "id" FROM "public"."sla_alerts"
-        WHERE "request_id" = ${requestId}
-          AND "alert_type" = 'warning'::"AlertType"
-          AND "escalation_level" = 0
-          AND "resolved_action" IS NULL
-        LIMIT 1
-      `;
+      const existingWarnings = await prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`
+          SELECT "id" FROM "public"."sla_alerts"
+          WHERE "request_id" = ${requestId}
+            AND "alert_type" = 'warning'::"AlertType"
+            AND "escalation_level" = 0
+            AND "resolved_action" IS NULL
+          LIMIT 1
+        `
+      );
       if (existingWarnings.length > 0) {
         logger.info('Warning alert already exists, skipping duplicate', {
           requestId,
@@ -245,7 +248,7 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
       }
     }
 
-    // 6. Get recipients for alert delivery (level 1 = accountants, fallback to managers)
+    // 6. Get recipients for alert delivery (initial breach = managers + accountants)
     const { recipients: alertManagerIds, tier } = await getRecipientsByLevel(
       request.chat?.managerTelegramIds,
       request.chat?.accountantTelegramIds,

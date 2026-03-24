@@ -13,9 +13,10 @@
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import { queueAlert, scheduleEscalation } from '../../queues/setup.js';
+import { Prisma } from '@prisma/client';
 import type { SlaAlert, AlertType, AlertAction, AlertDeliveryStatus } from '@prisma/client';
 import { appNotificationService } from '../notification/app-notification.service.js';
-import { getRecipientsByLevel } from '../../config/config.service.js';
+import { getManagerIds, getRecipientsByLevel } from '../../config/config.service.js';
 
 /** UUID v4 format validation (gh-121) */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -93,16 +94,18 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
 
   try {
     // Idempotency: check for existing unresolved alert at same level (gh-99)
-    // Use $queryRaw because Prisma 7 driver adapter sends enum values as text,
-    // causing "operator does not exist: text = AlertType" with findFirst.
-    const existingAlertIds = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT "id" FROM "public"."sla_alerts"
-      WHERE "request_id" = ${requestId}
-        AND "alert_type" = ${alertType}::"AlertType"
-        AND "escalation_level" = ${escalationLevel}
-        AND "resolved_action" IS NULL
-      LIMIT 1
-    `;
+    // Use Prisma.sql instead of tagged template interpolation so the enum cast
+    // stays on the SQL side and Prisma 7 does not send a plain text comparison.
+    const existingAlertIds = await prisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT "id" FROM "public"."sla_alerts"
+        WHERE "request_id" = ${requestId}
+          AND "alert_type" = ${alertType}::"AlertType"
+          AND "escalation_level" = ${escalationLevel}
+          AND "resolved_action" IS NULL
+        LIMIT 1
+      `
+    );
 
     if (existingAlertIds.length > 0) {
       const existingAlert = await prisma.slaAlert.findUnique({
@@ -170,7 +173,7 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
     });
 
     // Get level-aware recipients to notify
-    const managerIds = await getManagerIdsForChat(request.chatId, escalationLevel);
+    const managerIds = await getManagerIdsForChat(request.chatId, alertType, escalationLevel);
 
     if (managerIds.length === 0) {
       logger.warn('No managers found to notify for alert', {
@@ -495,15 +498,17 @@ export async function updateDeliveryStatus(
 /**
  * Get recipient Telegram IDs for a chat (level-aware)
  *
- * Level 1: accountants (fallback to managers if none)
- * Level 2+: managers + accountants (both)
+ * Warning alerts go to accountants first with manager fallback.
+ * Breach alerts go to managers + accountants for every escalation level.
  *
  * @param chatId - Telegram chat ID as bigint
+ * @param alertType - Alert type that determines recipient routing
  * @param escalationLevel - Escalation level (default: 1)
  * @returns Array of recipient Telegram user IDs
  */
 async function getManagerIdsForChat(
   chatId: bigint,
+  alertType: 'warning' | 'breach',
   escalationLevel: number = 1
 ): Promise<string[]> {
   try {
@@ -512,6 +517,14 @@ async function getManagerIdsForChat(
       where: { id: chatId, deletedAt: null },
       select: { managerTelegramIds: true, accountantTelegramIds: true },
     });
+
+    if (alertType === 'warning') {
+      const primaryAccountant = chat?.accountantTelegramIds?.[0];
+      if (primaryAccountant) {
+        return [String(primaryAccountant)];
+      }
+      return getManagerIds(chat?.managerTelegramIds);
+    }
 
     const { recipients } = await getRecipientsByLevel(
       chat?.managerTelegramIds,

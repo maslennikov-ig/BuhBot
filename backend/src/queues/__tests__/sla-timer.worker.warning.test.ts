@@ -189,6 +189,9 @@ describe('SLA Timer Worker - Warning Path', () => {
 
       await capturedHandler!(job);
 
+      // Prisma 7 enum bug regression: worker should call $queryRaw with a Prisma.sql object
+      expect(mockPrisma.$queryRaw.mock.calls[0]).toHaveLength(1);
+
       // Verify SlaAlert created with warning type
       expect(mockPrisma.slaAlert.create).toHaveBeenCalledWith({
         data: expect.objectContaining({

@@ -56,6 +56,15 @@ vi.mock('../../../services/sla/request.service.js', () => ({
   findLatestPendingRequest: vi.fn(),
 }));
 
+// Mock alert services added for buh-q605 (alert resolution on accountant response)
+vi.mock('../../../services/alerts/alert.service.js', () => ({
+  resolveAlertsForRequest: vi.fn(),
+}));
+
+vi.mock('../../../queues/alert.queue.js', () => ({
+  cancelAllEscalations: vi.fn(),
+}));
+
 // Now import the function under test
 import { isAccountantForChat } from '../response.handler.js';
 

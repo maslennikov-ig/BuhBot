@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.DEPLOY_SHA }}
 
@@ -70,13 +70,36 @@ jobs:
           fi
           echo "Trigger source: ${{ steps.trigger_info.outputs.source }}"
 
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Verify images exist in registry
+        env:
+          IMAGE_PREFIX: ${{ steps.repo.outputs.prefix }}
         run: |
           echo "Verifying images exist in ghcr.io..."
-          # Images were pushed by CI workflow, just verify they exist
-          echo "Backend: ${{ steps.repo.outputs.prefix }}/backend:${{ env.DEPLOY_SHA }}"
-          echo "Frontend: ${{ steps.repo.outputs.prefix }}/frontend:${{ env.DEPLOY_SHA }}"
-          echo "Monitoring: ${{ steps.repo.outputs.prefix }}/monitoring:${{ env.DEPLOY_SHA }}"
+          IMAGES=(
+            "${IMAGE_PREFIX}/backend:${{ env.DEPLOY_SHA }}"
+            "${IMAGE_PREFIX}/frontend:${{ env.DEPLOY_SHA }}"
+            "${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}"
+          )
+
+          for IMAGE in "${IMAGES[@]}"; do
+            echo "Checking: $IMAGE"
+            for attempt in $(seq 1 30); do
+              if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+                echo "  Verified: $IMAGE"
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "ERROR: Image not found after 5 minutes: $IMAGE"
+                exit 1
+              fi
+              echo "  Waiting for image to be published... ($attempt/30)"
+              sleep 10
+            done
+          done
+          echo "All images verified in registry"
 
   # ==========================================================================
   # Manual Approval Gate
@@ -111,7 +134,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.DEPLOY_SHA }}
 
@@ -267,7 +290,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Send Telegram notification
         env:

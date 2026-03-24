@@ -193,7 +193,9 @@ describe('ChatSettingsForm', () => {
       expect(screen.getByText('SLA и назначение ответственного')).toBeInTheDocument();
       expect(screen.getByText('Мониторинг SLA')).toBeInTheDocument();
       expect(screen.getByText('Порог SLA (минуты)')).toBeInTheDocument();
-      expect(screen.getByText(/Ответственный бухгалтер/i)).toBeInTheDocument();
+      expect(
+        screen.getByText('Ответственный бухгалтер (получает первичные уведомления)')
+      ).toBeInTheDocument();
       expect(screen.getByText(/Ответственные бухгалтеры \(@username\)/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Сохранить/i })).toBeInTheDocument();
     });

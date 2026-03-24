@@ -22,7 +22,7 @@ import {
   scheduleSlaWarning,
   cancelSlaWarning,
 } from '../../queues/setup.js';
-import { getGlobalSettings } from '../../config/config.service.js';
+import { getGlobalSettings, getRecipientsByLevel } from '../../config/config.service.js';
 import {
   calculateDelayUntilBreach,
   calculateWorkingMinutes,
@@ -724,24 +724,8 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
             },
           });
 
-          // Queue breach alert
-          // Get manager IDs from chat for escalation
-          const managers = await getManagersForChat(chatId);
-
-          let alertManagerIds = managers;
-          if (alertManagerIds.length === 0) {
-            const globalSettings = await prisma.globalSettings.findUnique({
-              where: { id: 'default' },
-            });
-            alertManagerIds = globalSettings?.globalManagerIds ?? [];
-
-            logger.warn('Using global managers for recovery breach alert', {
-              requestId: request.id,
-              chatId,
-              managerCount: alertManagerIds.length,
-              service: 'sla-timer-recovery',
-            });
-          }
+          // Queue breach alert using the same recipient routing as the live worker.
+          const alertManagerIds = await getBreachRecipientsForChat(chatId);
 
           if (alertManagerIds.length > 0) {
             await queueAlert({
@@ -751,7 +735,7 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
               escalationLevel: 1,
             });
           } else {
-            logger.error('CRITICAL: No managers for recovery breach alert', {
+            logger.error('CRITICAL: No recipients for recovery breach alert', {
               requestId: request.id,
               chatId,
             });
@@ -805,34 +789,41 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
 }
 
 /**
- * Get manager Telegram user IDs for alert escalation
+ * Get SLA breach recipients for recovery alerts.
  *
- * Uses the managerTelegramIds field from Chat which stores
- * Telegram IDs of managers to notify on SLA breach.
+ * Recovery must mirror the live SLA worker: managers + accountants for breaches,
+ * with fallback to whichever audience is configured.
  *
  * @param chatId - Telegram chat ID
- * @returns Array of manager Telegram user IDs as strings
+ * @returns Array of Telegram user IDs as strings
  */
-async function getManagersForChat(chatId: string): Promise<string[]> {
+async function getBreachRecipientsForChat(chatId: string): Promise<string[]> {
   try {
     const chat = await prisma.chat.findFirst({
       where: { id: BigInt(chatId), deletedAt: null },
       select: {
         managerTelegramIds: true,
+        accountantTelegramIds: true,
       },
     });
 
-    if (!chat?.managerTelegramIds || chat.managerTelegramIds.length === 0) {
-      logger.debug('No managers configured for chat', {
+    if (!chat) {
+      logger.debug('No chat found for recovery breach recipients', {
         chatId,
         service: 'sla-timer-recovery',
       });
       return [];
     }
 
-    return chat.managerTelegramIds;
+    const { recipients } = await getRecipientsByLevel(
+      chat.managerTelegramIds,
+      chat.accountantTelegramIds,
+      1
+    );
+
+    return recipients;
   } catch (error) {
-    logger.error('Failed to get managers for chat', {
+    logger.error('Failed to get breach recipients for chat', {
       chatId,
       error: error instanceof Error ? error.message : String(error),
       service: 'sla-timer-recovery',

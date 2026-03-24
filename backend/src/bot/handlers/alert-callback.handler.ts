@@ -32,6 +32,10 @@ import logger from '../../utils/logger.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function normalizeTelegramUsername(username: string): string {
+  return username.replace(/^@/, '').trim();
+}
+
 /**
  * Check if a Telegram user is authorized to manage alert actions
  * for a given chat. Authorized users: managers or accountants.
@@ -167,29 +171,31 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
-      // Get accountant to notify - check multiple sources in priority order:
-      // 1. assignedAccountant relation (primary method)
-      // 2. accountantUsernames array (multiple accountants)
-      let accountantUsername: string | null = null;
+      const accountantTelegramIds = new Set<string>(
+        (request.chat.accountantTelegramIds ?? []).map((id) => id.toString())
+      );
+      const accountantUsernames = new Set<string>();
 
+      if (request.chat.assignedAccountant?.telegramId) {
+        accountantTelegramIds.add(request.chat.assignedAccountant.telegramId.toString());
+      }
       if (request.chat.assignedAccountant?.telegramUsername) {
-        accountantUsername = request.chat.assignedAccountant.telegramUsername;
-        logger.debug('Using assignedAccountant.telegramUsername', {
-          accountantUsername,
-          service: 'alert-callback',
-        });
-      } else if (request.chat.accountantUsernames && request.chat.accountantUsernames.length > 0) {
-        accountantUsername = request.chat.accountantUsernames[0] ?? null;
-        logger.debug('Using accountantUsernames[0]', {
-          accountantUsername,
-          service: 'alert-callback',
-        });
+        accountantUsernames.add(
+          normalizeTelegramUsername(request.chat.assignedAccountant.telegramUsername)
+        );
+      }
+      for (const username of request.chat.accountantUsernames ?? []) {
+        const normalized = normalizeTelegramUsername(username);
+        if (normalized) {
+          accountantUsernames.add(normalized);
+        }
       }
 
-      if (!accountantUsername) {
+      if (accountantTelegramIds.size === 0 && accountantUsernames.size === 0) {
         logger.warn('No accountant assigned to chat', {
           chatId: String(request.chatId),
           assignedAccountantId: request.chat.assignedAccountantId,
+          accountantTelegramIds: request.chat.accountantTelegramIds?.map((id) => id.toString()),
           accountantUsernames: request.chat.accountantUsernames,
           service: 'alert-callback',
         });
@@ -215,20 +221,9 @@ export function registerAlertCallbackHandler(): void {
       let notificationSent = false;
 
       // Priority 1: Send to all accountants' DMs
-      // Collect all unique accountant telegram IDs
-      const accountantTelegramIds = new Set<string>();
-
-      // Add assigned accountant if exists
-      if (request.chat.assignedAccountant?.telegramId) {
-        accountantTelegramIds.add(request.chat.assignedAccountant.telegramId.toString());
-      }
-
-      // Add accountants from accountantUsernames array
-      if (request.chat.accountantUsernames && request.chat.accountantUsernames.length > 0) {
+      if (accountantUsernames.size > 0) {
         // Query users by telegram username
-        const normalizedUsernames = request.chat.accountantUsernames.map((u) =>
-          u.replace(/^@/, '')
-        );
+        const normalizedUsernames = Array.from(accountantUsernames);
 
         try {
           const accountantUsers = await prisma.user.findMany({
@@ -310,9 +305,12 @@ export function registerAlertCallbackHandler(): void {
       }
 
       // Priority 2: Fallback to group mention if DM failed or no telegram_id
-      if (!notificationSent) {
+      if (!notificationSent && accountantUsernames.size > 0) {
         try {
-          const mentionMessage = notificationMessage + `\n\n@${escapeHtml(accountantUsername)}`;
+          const mentions = Array.from(accountantUsernames)
+            .map((username) => `@${escapeHtml(username)}`)
+            .join(' ');
+          const mentionMessage = notificationMessage + `\n\n${mentions}`;
 
           await bot.telegram.sendMessage(String(request.chatId), mentionMessage, {
             parse_mode: 'HTML',
@@ -323,7 +321,7 @@ export function registerAlertCallbackHandler(): void {
           logger.info('Accountant notified via group mention', {
             alertId,
             chatId: String(request.chatId),
-            accountantUsername,
+            accountantUsernames: Array.from(accountantUsernames),
             service: 'alert-callback',
           });
         } catch (error) {
@@ -431,10 +429,29 @@ export function registerAlertCallbackHandler(): void {
         await ctx.answerCbQuery('Запрос уже отмечен как решённый');
         return;
       }
+      if (request.status === 'closed') {
+        await ctx.answerCbQuery('Запрос уже закрыт');
+        return;
+      }
 
-      // Atomically resolve alert + update request status (gh-92)
-      await prisma.$transaction([
-        prisma.slaAlert.update({
+      // Atomically resolve the alert and close the request without fabricating reply metrics.
+      const resolutionResult = await prisma.$transaction(async (tx) => {
+        const currentRequest = await tx.clientRequest.findUnique({
+          where: { id: request.id },
+          select: { status: true },
+        });
+
+        if (!currentRequest) {
+          return { outcome: 'missing' as const };
+        }
+        if (currentRequest.status === 'answered') {
+          return { outcome: 'already_answered' as const };
+        }
+        if (currentRequest.status === 'closed') {
+          return { outcome: 'already_closed' as const };
+        }
+
+        await tx.slaAlert.update({
           where: { id: alertId },
           data: {
             resolvedAction: 'mark_resolved',
@@ -442,15 +459,29 @@ export function registerAlertCallbackHandler(): void {
             acknowledgedBy: userId ?? null,
             nextEscalationAt: null,
           },
-        }),
-        prisma.clientRequest.update({
+        });
+        await tx.clientRequest.update({
           where: { id: request.id },
           data: {
-            status: 'answered',
-            responseAt: new Date(),
+            status: 'closed',
           },
-        }),
-      ]);
+        });
+
+        return { outcome: 'resolved' as const };
+      });
+
+      if (resolutionResult.outcome === 'missing') {
+        await ctx.answerCbQuery('Запрос не найден, возможно уже удалён');
+        return;
+      }
+      if (resolutionResult.outcome === 'already_answered') {
+        await ctx.answerCbQuery('Запрос уже отмечен как решённый');
+        return;
+      }
+      if (resolutionResult.outcome === 'already_closed') {
+        await ctx.answerCbQuery('Запрос уже закрыт');
+        return;
+      }
 
       // Cancel pending escalations (best-effort, BullMQ operations)
       try {

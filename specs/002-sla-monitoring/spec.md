@@ -53,15 +53,15 @@ An accountant sends a reply to a client request. The system detects the response
 
 ### User Story 3 - Manager Receives SLA Alert (Priority: P1)
 
-When a client request goes unanswered beyond the SLA threshold (default 60 minutes working time), the manager receives an immediate Telegram alert with request details and action buttons.
+When a client request goes unanswered beyond the SLA threshold (default 60 minutes working time), the manager and assigned accountant receive an immediate Telegram alert with request details and action buttons.
 
-**Independent Test**: Create a request and wait 60+ minutes working time - verify manager receives alert with correct information and working buttons.
+**Independent Test**: Create a request and wait 60+ minutes working time - verify manager and assigned accountant receive the alert within 60 seconds.
 
 **Acceptance Scenarios**:
 
-1. **Given** an unanswered request for 60 minutes working time, **When** SLA threshold is breached, **Then** manager receives Telegram alert within 60 seconds
+1. **Given** an unanswered request for 60 minutes working time, **When** SLA threshold is breached, **Then** manager and assigned accountant receive Telegram alerts within 60 seconds
 2. **Given** an SLA violation alert, **When** manager clicks "Notify Accountant", **Then** accountant receives a ping message
-3. **Given** an escalated request, **When** no response after 30 more minutes, **Then** manager receives follow-up alert (max 5 escalations)
+3. **Given** an escalated request, **When** no response after 30 more minutes, **Then** manager and assigned accountant receive a follow-up alert (max 5 escalations)
 4. **Given** an SLA violation, **When** manager clicks "Mark Resolved", **Then** escalation chain stops
 
 ---

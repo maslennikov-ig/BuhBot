@@ -224,9 +224,9 @@ export async function getManagerIds(
 }
 
 /**
- * Two-tier recipient resolution.
- * Level 1: only the FIRST (primary) accountant (falls back to managers if none)
- * Level 2+: only managers (NOT including accountant again)
+ * Resolve SLA breach recipients.
+ * All breach levels notify both managers and accountants when both are configured.
+ * If one audience is missing, notify the configured audience instead of dropping the alert.
  *
  * @param chatManagerIds - Chat-specific manager Telegram IDs (or null to use global)
  * @param accountantTelegramIds - Accountant Telegram IDs for this chat
@@ -236,27 +236,29 @@ export async function getRecipientsByLevel(
   chatManagerIds?: string[] | null,
   accountantTelegramIds?: bigint[] | null,
   escalationLevel: number = 1
-): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'fallback' }> {
-  const managerIds = await getManagerIds(chatManagerIds);
+): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'both' | 'fallback' }> {
+  const settings = await getGlobalSettings();
+  const managerIds = (
+    chatManagerIds && chatManagerIds.length > 0 ? chatManagerIds : settings.globalManagerIds
+  ).filter(Boolean);
+  const accountantIds = (accountantTelegramIds ?? []).map((id) => id.toString());
 
-  if (escalationLevel <= 1) {
-    // Level 1: only the FIRST (primary) accountant
-    const primaryAccountant = (accountantTelegramIds ?? [])[0];
-    if (primaryAccountant) {
-      return { recipients: [String(primaryAccountant)], tier: 'accountant' };
-    }
-    // Fallback to managers if no accountant assigned
-    if (managerIds.length > 0) {
-      return { recipients: managerIds, tier: 'fallback' };
-    }
-    return { recipients: [], tier: 'fallback' };
+  if (managerIds.length > 0 && accountantIds.length > 0) {
+    return {
+      recipients: [...new Set([...managerIds, ...accountantIds])],
+      tier: 'both',
+    };
   }
 
-  // Level 2+: only managers (NOT including accountant again)
   if (managerIds.length > 0) {
-    return { recipients: managerIds, tier: 'manager' };
+    return { recipients: [...new Set(managerIds)], tier: 'manager' };
   }
-  logger.warn('L2+ escalation has no manager recipients configured', {
+
+  if (accountantIds.length > 0) {
+    return { recipients: [...new Set(accountantIds)], tier: 'accountant' };
+  }
+
+  logger.warn('SLA breach has no recipients configured', {
     escalationLevel,
     service: 'config-service',
   });

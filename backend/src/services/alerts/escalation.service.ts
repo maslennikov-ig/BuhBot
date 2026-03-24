@@ -44,13 +44,12 @@ async function getEscalationConfig(): Promise<EscalationConfig> {
 /**
  * Get level-aware recipients for a chat
  *
- * Level 1: only the FIRST (primary) accountant (fallback to managers)
- * Level 2+: only managers (NOT including accountant again)
+ * All breach escalations notify managers and accountants when configured.
  */
 async function getRecipientsForChat(
   chatId: bigint,
   escalationLevel: number
-): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'fallback' }> {
+): Promise<{ recipients: string[]; tier: 'accountant' | 'manager' | 'both' | 'fallback' }> {
   try {
     const chat = await prisma.chat.findFirst({
       where: { id: chatId, deletedAt: null },

@@ -60,16 +60,17 @@ assignedAccountantId String? @map("assigned_accountant_id") @db.Uuid
   - Выпадающего списка назначения в UI.
 - При установке username назначенного бухгалтера автоматически попадает в `accountantUsernames`.
 
-### Двухуровневая эскалация уведомлений
+### Маршрутизация SLA-уведомлений
 
 Функция `getRecipientsByLevel()` реализует каскад:
 
 | Уровень | Получатели | Fallback |
 |---------|-----------|----------|
-| Level 1 (первичный breach) | `accountantTelegramIds` | → `managerTelegramIds` → `globalManagerIds` |
-| Level 2+ (эскалация) | `managerTelegramIds` + `accountantTelegramIds` (дедупликация) | → `globalManagerIds` |
+| SLA warning | `accountantTelegramIds` | → `managerTelegramIds` → `globalManagerIds` |
+| Level 1 (первичный breach) | `managerTelegramIds` + `accountantTelegramIds` (дедупликация) | → whichever audience is configured |
+| Level 2+ (эскалация) | `managerTelegramIds` + `accountantTelegramIds` (дедупликация) | → whichever audience is configured |
 
-Разделение полей обеспечивает этот паттерн: сначала уведомляем бухгалтеров, затем подключаем менеджеров.
+Разделение полей обеспечивает этот паттерн: warning сначала идёт бухгалтеру, а breach и дальнейшие эскалации сразу дублируются менеджерам и бухгалтерам.
 
 ## Рассмотренные альтернативы
 
@@ -120,7 +121,7 @@ assignedAccountantId String? @map("assigned_accountant_id") @db.Uuid
 - **Производительность уведомлений**: telegramId готовы к использованию без дополнительных запросов.
 - **Удобство UI**: администратор работает с @username, не с числовыми ID.
 - **Целостность авторизации**: UUID-ссылка обеспечивает FK и индексирование.
-- **Поддержка эскалации**: разделение accountant/manager ID включает двухуровневую маршрутизацию.
+- **Поддержка эскалации**: разделение accountant/manager ID позволяет отдельно маршрутизировать warning и дублировать breach/escalation на обе аудитории.
 - **Идемпотентность**: `accountantTelegramIds` пересчитывается при каждом обновлении — данные не рассинхронизируются.
 
 ### Негативные

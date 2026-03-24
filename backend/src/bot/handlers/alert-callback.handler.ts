@@ -14,7 +14,6 @@
 import { bot } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import { getAlertById } from '../../services/alerts/alert.service.js';
-import { cancelEscalation } from '../../services/alerts/escalation.service.js';
 import { cancelAllEscalations } from '../../queues/alert.queue.js';
 import {
   formatAccountantNotification,
@@ -46,7 +45,8 @@ function normalizeTelegramUsername(username: string): string {
  */
 async function isAuthorizedForAlertAction(
   chatId: bigint,
-  telegramUserId: number
+  telegramUserId: number,
+  { allowAccountants = true }: { allowAccountants?: boolean } = {}
 ): Promise<boolean> {
   const userIdStr = String(telegramUserId);
 
@@ -70,9 +70,13 @@ async function isAuthorizedForAlertAction(
     return true;
   }
 
-  // Check 3: accountant for this chat
-  const { isAccountant } = await isAccountantForChat(chatId, undefined, telegramUserId);
-  return isAccountant;
+  // Check 3: accountant for this chat (only when allowed)
+  if (allowAccountants) {
+    const { isAccountant } = await isAccountantForChat(chatId, undefined, telegramUserId);
+    return isAccountant;
+  }
+
+  return false;
 }
 
 /**
@@ -158,9 +162,14 @@ export function registerAlertCallbackHandler(): void {
         return;
       }
 
-      // Authorization: verify the user is a manager or accountant (gh-88)
+      // Authorization: notify is manager-only (matches tRPC notifyAccountant)
       const telegramUserId = ctx.from?.id;
-      if (!telegramUserId || !(await isAuthorizedForAlertAction(request.chatId, telegramUserId))) {
+      if (
+        !telegramUserId ||
+        !(await isAuthorizedForAlertAction(request.chatId, telegramUserId, {
+          allowAccountants: false,
+        }))
+      ) {
         logger.warn('Unauthorized alert notify attempt', {
           alertId,
           userId,
@@ -395,26 +404,14 @@ export function registerAlertCallbackHandler(): void {
         include: { chat: true },
       });
 
-      // Authorization: verify the user is a manager or accountant (gh-88)
-      const telegramUserId = ctx.from?.id;
-      let isAuthorized = false;
-      try {
-        isAuthorized =
-          !!request &&
-          !!telegramUserId &&
-          (await isAuthorizedForAlertAction(request.chatId, telegramUserId));
-      } catch (authError) {
-        logger.error('Authorization check failed for resolve', {
-          alertId,
-          error: authError instanceof Error ? authError.message : String(authError),
-          service: 'alert-callback',
-        });
-      }
       if (!request) {
         await ctx.answerCbQuery('Запрос не найден');
         return;
       }
-      if (!isAuthorized) {
+
+      // Authorization: resolve is manager-or-accountant (gh-88)
+      const telegramUserId = ctx.from?.id;
+      if (!telegramUserId || !(await isAuthorizedForAlertAction(request.chatId, telegramUserId))) {
         logger.warn('Unauthorized alert resolve attempt', {
           alertId,
           userId,
@@ -485,7 +482,6 @@ export function registerAlertCallbackHandler(): void {
 
       // Cancel pending escalations (best-effort, BullMQ operations)
       try {
-        await cancelEscalation(alertId);
         await cancelAllEscalations(alert.requestId);
       } catch (cancelError) {
         logger.warn('Failed to cancel escalations (non-critical)', {

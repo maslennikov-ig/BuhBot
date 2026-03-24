@@ -23,6 +23,8 @@ import { message } from 'telegraf/filters';
 import { bot, BotContext } from '../bot.js';
 import { prisma } from '../../lib/prisma.js';
 import { stopSlaTimer } from '../../services/sla/timer.service.js';
+import { resolveAlertsForRequest } from '../../services/alerts/alert.service.js';
+import { cancelAllEscalations } from '../../queues/alert.queue.js';
 import {
   getRequestByMessage,
   findLatestPendingRequest,
@@ -442,6 +444,32 @@ export function registerResponseHandler(): void {
         breached: result.breached,
         service: 'response-handler',
       });
+
+      // 7. Resolve active SLA alerts and cancel pending escalations (buh-q605)
+      try {
+        const resolvedCount = await resolveAlertsForRequest(
+          requestToResolve.id,
+          'accountant_responded',
+          telegramUserId ? String(telegramUserId) : undefined
+        );
+        // Always cancel escalations — BullMQ jobs may exist even when no DB alerts remain
+        await cancelAllEscalations(requestToResolve.id);
+        if (resolvedCount > 0) {
+          logger.info('SLA alerts resolved on accountant response', {
+            chatId,
+            requestId: requestToResolve.id,
+            resolvedCount,
+            service: 'response-handler',
+          });
+        }
+      } catch (alertError) {
+        logger.warn('Failed to resolve SLA alerts (non-critical)', {
+          chatId,
+          requestId: requestToResolve.id,
+          error: alertError instanceof Error ? alertError.message : String(alertError),
+          service: 'response-handler',
+        });
+      }
     } catch (error) {
       logger.error('Error in response handler', {
         error: error instanceof Error ? error.message : String(error),

@@ -348,3 +348,216 @@ describe('alert-callback handler registered actions', () => {
     expect(ctx.answerCbQuery).toHaveBeenCalledWith('Запрос уже отмечен как решённый');
   });
 });
+
+// ---------------------------------------------------------------------------
+// allowAccountants: false — notify_* is manager-only
+// ---------------------------------------------------------------------------
+// isAccountantForChat is already imported at the top of this file via:
+//   const { isAccountantForChat } = await import('../response.handler.js');
+// and vi.mock('../response.handler.js', ...) makes it a spy we can control.
+
+describe('isAuthorizedForAlertAction — allowAccountants: false (notify_* handler)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registeredActions.length = 0;
+    mockBot.telegram.sendMessage.mockResolvedValue({ message_id: 123 });
+    mockPrisma.user.findMany.mockResolvedValue([]);
+    vi.mocked(cancelEscalation).mockResolvedValue(undefined);
+    vi.mocked(cancelAllEscalations).mockResolvedValue(undefined);
+    registerAlertCallbackHandler();
+  });
+
+  function setupAlertAndRequest(chatId: bigint) {
+    vi.mocked(getAlertById).mockResolvedValue({
+      id: ALERT_ID,
+      requestId: 'request-uuid',
+      resolvedAction: null,
+      minutesElapsed: 45,
+    } as unknown as Awaited<ReturnType<typeof getAlertById>>);
+
+    mockPrisma.clientRequest.findUnique.mockResolvedValue({
+      id: 'request-uuid',
+      chatId,
+      messageText: 'Срочный вопрос',
+      status: 'pending',
+      chat: {
+        id: chatId,
+        title: 'Test Chat',
+        inviteLink: null,
+        chatType: 'supergroup',
+        assignedAccountantId: null,
+        assignedAccountant: null,
+        accountantTelegramIds: [BigInt(555)],
+        accountantUsernames: ['acc_user'],
+      },
+    });
+  }
+
+  it('notify_*: manager in chat.managerTelegramIds is allowed (no "Нет прав" response)', async () => {
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    const chatId = BigInt(-1001111111111);
+    setupAlertAndRequest(chatId);
+
+    // User 77777 is a chat-specific manager
+    mockPrisma.chat.findUnique.mockResolvedValue({
+      managerTelegramIds: ['77777'],
+    });
+
+    const ctx = buildMockCtx([`notify_${ALERT_ID}`, ALERT_ID], { fromId: 77777 });
+    const notifyHandler = getRegisteredAction('^notify_(.+)$');
+
+    await notifyHandler(ctx);
+
+    expect(ctx.answerCbQuery).not.toHaveBeenCalledWith('Нет прав для этого действия');
+    // isAccountantForChat must NOT be called — allowAccountants: false short-circuits
+    expect(isAccountantForChat).not.toHaveBeenCalled();
+  });
+
+  it('notify_*: global manager in globalSettings.globalManagerIds is allowed', async () => {
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    const chatId = BigInt(-1002222222222);
+    setupAlertAndRequest(chatId);
+
+    // User 88888 is not a chat manager but is a global manager
+    mockPrisma.chat.findUnique.mockResolvedValue({
+      managerTelegramIds: [],
+    });
+    mockPrisma.globalSettings.findUnique.mockResolvedValue({
+      globalManagerIds: ['88888'],
+    });
+
+    const ctx = buildMockCtx([`notify_${ALERT_ID}`, ALERT_ID], { fromId: 88888 });
+    const notifyHandler = getRegisteredAction('^notify_(.+)$');
+
+    await notifyHandler(ctx);
+
+    expect(ctx.answerCbQuery).not.toHaveBeenCalledWith('Нет прав для этого действия');
+    expect(isAccountantForChat).not.toHaveBeenCalled();
+  });
+
+  it('notify_*: accountant (not a manager) is rejected with "Нет прав для этого действия"', async () => {
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    const chatId = BigInt(-1003333333333);
+    setupAlertAndRequest(chatId);
+
+    // User 55555 is not in any manager list
+    mockPrisma.chat.findUnique.mockResolvedValue({
+      managerTelegramIds: [],
+    });
+    mockPrisma.globalSettings.findUnique.mockResolvedValue({
+      globalManagerIds: [],
+    });
+    // Even if isAccountantForChat would say "yes", allowAccountants: false must block it
+    vi.mocked(isAccountantForChat).mockResolvedValue({
+      isAccountant: true,
+      accountantId: 'acc-uuid',
+    });
+
+    const ctx = buildMockCtx([`notify_${ALERT_ID}`, ALERT_ID], { fromId: 55555 });
+    const notifyHandler = getRegisteredAction('^notify_(.+)$');
+
+    await notifyHandler(ctx);
+
+    expect(ctx.answerCbQuery).toHaveBeenCalledWith('Нет прав для этого действия');
+    // The handler must NOT have reached the accountant check at all
+    expect(isAccountantForChat).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// allowAccountants: true (default) — resolve_* allows accountants
+// ---------------------------------------------------------------------------
+
+describe('isAuthorizedForAlertAction — allowAccountants: true (resolve_* handler)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registeredActions.length = 0;
+    mockBot.telegram.sendMessage.mockResolvedValue({ message_id: 123 });
+    mockPrisma.$transaction.mockImplementation(async (input: unknown) => {
+      if (typeof input === 'function') {
+        return input(mockPrisma);
+      }
+      return Promise.all(input as Promise<unknown>[]);
+    });
+    mockPrisma.slaAlert.update.mockResolvedValue({ id: ALERT_ID });
+    mockPrisma.clientRequest.update.mockResolvedValue({ id: 'request-uuid' });
+    vi.mocked(cancelEscalation).mockResolvedValue(undefined);
+    vi.mocked(cancelAllEscalations).mockResolvedValue(undefined);
+    registerAlertCallbackHandler();
+  });
+
+  it('resolve_*: accountant (isAccountantForChat returns true) is allowed', async () => {
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    vi.mocked(getAlertById).mockResolvedValue({
+      id: ALERT_ID,
+      requestId: 'request-uuid',
+      resolvedAction: null,
+      minutesElapsed: 20,
+    } as unknown as Awaited<ReturnType<typeof getAlertById>>);
+
+    // Not in any manager list — falls through to accountant check
+    mockPrisma.chat.findUnique.mockResolvedValue({ managerTelegramIds: [] });
+    mockPrisma.globalSettings.findUnique.mockResolvedValue({ globalManagerIds: [] });
+
+    vi.mocked(isAccountantForChat).mockResolvedValue({
+      isAccountant: true,
+      accountantId: 'acc-uuid',
+    });
+
+    // First findUnique returns the request (outer check), second for in-transaction re-check
+    mockPrisma.clientRequest.findUnique
+      .mockResolvedValueOnce({
+        id: 'request-uuid',
+        chatId: BigInt(-1004444444444),
+        status: 'pending',
+        chat: { inviteLink: null, chatType: 'supergroup' },
+      })
+      .mockResolvedValueOnce({ status: 'pending' });
+
+    const ctx = buildMockCtx([`resolve_${ALERT_ID}`, ALERT_ID], { fromId: 44444 });
+    const resolveHandler = getRegisteredAction('^resolve_(.+)$');
+
+    await resolveHandler(ctx);
+
+    expect(ctx.answerCbQuery).not.toHaveBeenCalledWith('Нет прав для этого действия');
+    expect(isAccountantForChat).toHaveBeenCalledWith(BigInt(-1004444444444), undefined, 44444);
+  });
+
+  it('resolve_*: unknown user (not manager, not accountant) is rejected', async () => {
+    const { isAccountantForChat } = await import('../response.handler.js');
+
+    vi.mocked(getAlertById).mockResolvedValue({
+      id: ALERT_ID,
+      requestId: 'request-uuid',
+      resolvedAction: null,
+      minutesElapsed: 10,
+    } as unknown as Awaited<ReturnType<typeof getAlertById>>);
+
+    mockPrisma.clientRequest.findUnique.mockResolvedValue({
+      id: 'request-uuid',
+      chatId: BigInt(-1005555555555),
+      status: 'pending',
+      chat: { inviteLink: null, chatType: 'supergroup' },
+    });
+
+    mockPrisma.chat.findUnique.mockResolvedValue({ managerTelegramIds: [] });
+    mockPrisma.globalSettings.findUnique.mockResolvedValue({ globalManagerIds: [] });
+
+    vi.mocked(isAccountantForChat).mockResolvedValue({
+      isAccountant: false,
+      accountantId: null,
+    });
+
+    const ctx = buildMockCtx([`resolve_${ALERT_ID}`, ALERT_ID], { fromId: 11111 });
+    const resolveHandler = getRegisteredAction('^resolve_(.+)$');
+
+    await resolveHandler(ctx);
+
+    expect(ctx.answerCbQuery).toHaveBeenCalledWith('Нет прав для этого действия');
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
+});

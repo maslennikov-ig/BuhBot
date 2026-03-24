@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Use vi.hoisted to create mock implementations that are available during hoisting
-const { mockPrisma, mockLogger } = vi.hoisted(() => {
+const { mockPrisma, mockLogger, mockBot } = vi.hoisted(() => {
   const mockPrismaChat = {
     findUnique: vi.fn(),
   };
@@ -21,12 +21,24 @@ const { mockPrisma, mockLogger } = vi.hoisted(() => {
   return {
     mockPrisma: {
       chat: mockPrismaChat,
+      chatMessage: {
+        updateMany: vi.fn(),
+      },
+      clientRequest: {
+        updateMany: vi.fn(),
+      },
     },
     mockLogger: {
       debug: vi.fn(),
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
+    },
+    mockBot: {
+      on: vi.fn(),
+      use: vi.fn(),
+      command: vi.fn(),
+      hears: vi.fn(),
     },
   };
 });
@@ -42,7 +54,7 @@ vi.mock('../../../utils/logger.js', () => ({
 
 // Mock bot module to prevent env.ts validation side-effect (bot.ts → env.ts)
 vi.mock('../../bot.js', () => ({
-  bot: { on: vi.fn(), use: vi.fn(), command: vi.fn(), hears: vi.fn() },
+  bot: mockBot,
   BotContext: {},
 }));
 
@@ -65,8 +77,8 @@ vi.mock('../../../queues/alert.queue.js', () => ({
   cancelAllEscalations: vi.fn(),
 }));
 
-// Now import the function under test
-import { isAccountantForChat } from '../response.handler.js';
+// Now import the function under test and the registration function
+import { isAccountantForChat, registerResponseHandler } from '../response.handler.js';
 
 describe('isAccountantForChat', () => {
   beforeEach(() => {
@@ -662,5 +674,153 @@ describe('isAccountantForChat', () => {
         include: { assignedAccountant: true },
       });
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 7: resolveAlertsForRequest + cancelAllEscalations on accountant response
+// ---------------------------------------------------------------------------
+
+import { resolveAlertsForRequest } from '../../../services/alerts/alert.service.js';
+import { cancelAllEscalations } from '../../../queues/alert.queue.js';
+import {
+  getRequestByMessage,
+  findLatestPendingRequest,
+} from '../../../services/sla/request.service.js';
+import { stopSlaTimer } from '../../../services/sla/timer.service.js';
+
+describe('Response handler - alert resolution (step 7)', () => {
+  // Capture the handler registered via bot.on(message('text'), handler)
+  let responseHandler: (ctx: unknown) => Promise<void>;
+
+  /**
+   * Build a minimal Telegraf-like context for a text message from an accountant.
+   * isAccountantForChat runs against prisma.chat.findUnique, so we control its
+   * outcome by configuring mockPrisma.chat.findUnique in each test's beforeEach.
+   */
+  function buildResponseCtx(
+    overrides: {
+      chatId?: number;
+      messageId?: number;
+      telegramUserId?: number;
+      username?: string;
+      text?: string;
+      chatType?: string;
+    } = {}
+  ) {
+    const {
+      chatId = -1009999999999,
+      messageId = 1001,
+      telegramUserId = 44444,
+      username = 'accountant_user',
+      text = 'Ответил клиенту',
+      chatType = 'supergroup',
+    } = overrides;
+
+    return {
+      chat: { id: chatId, type: chatType },
+      message: {
+        message_id: messageId,
+        text,
+        reply_to_message: undefined,
+      },
+      from: { id: telegramUserId, username, first_name: 'Test', last_name: 'User' },
+    };
+  }
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    // Capture the handler from bot.on() — second argument is the handler function
+    mockBot.on.mockImplementation((_filter: unknown, handler: (ctx: unknown) => Promise<void>) => {
+      responseHandler = handler;
+    });
+
+    // Make isAccountantForChat return true by default:
+    // accountantTelegramIds contains the sender's Telegram ID (44444 → BigInt(44444))
+    mockPrisma.chat.findUnique.mockResolvedValue({
+      id: BigInt(-1009999999999),
+      accountantTelegramIds: [BigInt(44444)],
+      accountantUsernames: [],
+      assignedAccountantId: 'acc-uuid-123',
+      assignedAccountant: null,
+    });
+
+    // No direct reply to a tracked message
+    vi.mocked(getRequestByMessage).mockResolvedValue(null);
+
+    // LIFO: one pending request
+    vi.mocked(findLatestPendingRequest).mockResolvedValue({
+      id: 'req-uuid-step7',
+      status: 'pending',
+      chatId: String(-1009999999999),
+    } as unknown as Awaited<ReturnType<typeof findLatestPendingRequest>>);
+
+    // chatMessage link write (step 4) — non-critical
+    mockPrisma.chatMessage.updateMany.mockResolvedValue({ count: 1 });
+
+    // Successful atomic claim (step 5)
+    mockPrisma.clientRequest.updateMany.mockResolvedValue({ count: 1 });
+
+    // SLA timer stop (step 6)
+    vi.mocked(stopSlaTimer).mockResolvedValue({
+      workingMinutes: 15,
+      breached: false,
+      requestId: 'req-uuid-step7',
+    } as unknown as Awaited<ReturnType<typeof stopSlaTimer>>);
+
+    // Step 7 defaults
+    vi.mocked(resolveAlertsForRequest).mockResolvedValue(1);
+    vi.mocked(cancelAllEscalations).mockResolvedValue(undefined);
+
+    registerResponseHandler();
+  });
+
+  it('resolveAlertsForRequest is called with (requestId, "accountant_responded", telegramUserId as string)', async () => {
+    const ctx = buildResponseCtx({ telegramUserId: 44444 });
+
+    await responseHandler(ctx);
+
+    expect(resolveAlertsForRequest).toHaveBeenCalledWith(
+      'req-uuid-step7',
+      'accountant_responded',
+      '44444'
+    );
+  });
+
+  it('cancelAllEscalations is called unconditionally after resolveAlertsForRequest (even when resolvedCount is 0)', async () => {
+    vi.mocked(resolveAlertsForRequest).mockResolvedValue(0);
+
+    const ctx = buildResponseCtx();
+
+    await responseHandler(ctx);
+
+    expect(cancelAllEscalations).toHaveBeenCalledWith('req-uuid-step7');
+    expect(cancelAllEscalations).toHaveBeenCalledTimes(1);
+  });
+
+  it('step 7 failure does not propagate — handler completes without throwing', async () => {
+    vi.mocked(resolveAlertsForRequest).mockRejectedValue(new Error('Alert DB error'));
+
+    const ctx = buildResponseCtx();
+
+    // Must not throw or reject
+    await expect(responseHandler(ctx)).resolves.toBeUndefined();
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      'Failed to resolve SLA alerts (non-critical)',
+      expect.objectContaining({ error: 'Alert DB error' })
+    );
+  });
+
+  it('step 7 is NOT called when claim fails (count=0 means request already resolved by another handler)', async () => {
+    mockPrisma.clientRequest.updateMany.mockResolvedValue({ count: 0 });
+
+    const ctx = buildResponseCtx();
+
+    await responseHandler(ctx);
+
+    expect(resolveAlertsForRequest).not.toHaveBeenCalled();
+    expect(cancelAllEscalations).not.toHaveBeenCalled();
   });
 });

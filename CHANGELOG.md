@@ -5,6 +5,17 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.0...buhbot-v0.30.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* **alerts:** harden callback resolution flow ([b4a5de8](https://github.com/maslennikov-ig/BuhBot/commit/b4a5de895507734d5c6aa58d584acde7bb2886a1))
+* **alerts:** tailor keyboard for accountant recipients ([0a45e44](https://github.com/maslennikov-ig/BuhBot/commit/0a45e44a3b593c20c4cf07c4a4a0596b7071e957))
+* resolve 4 open issues (deploy race, SLA alerts, callback auth, GH Actions) ([#280](https://github.com/maslennikov-ig/BuhBot/issues/280)) ([9f224d0](https://github.com/maslennikov-ig/BuhBot/commit/9f224d023831f01a60a6d2c41b656d5482a236c7))
+* **sla:** align recovery breach recipients ([3b48495](https://github.com/maslennikov-ig/BuhBot/commit/3b4849582bee64075ba64190a6e880ee8201fc04))
+* **sla:** restore breach alert delivery ([2b7be75](https://github.com/maslennikov-ig/BuhBot/commit/2b7be7550687a8aee191cc5b393c159bb35827d1))
+
 ## [0.30.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.29.0...buhbot-v0.30.0) (2026-03-20)
 
 

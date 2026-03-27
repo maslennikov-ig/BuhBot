@@ -364,16 +364,6 @@ export function registerAlertCallbackHandler(): void {
     const alertId = ctx.match[1];
     const telegramUserId = ctx.from?.id;
 
-    // Resolve Telegram ID → user UUID for acknowledgedBy FK
-    let userId: string | undefined;
-    if (telegramUserId) {
-      const user = await prisma.user.findFirst({
-        where: { telegramId: BigInt(telegramUserId) },
-        select: { id: true },
-      });
-      userId = user?.id;
-    }
-
     if (!alertId || !UUID_REGEX.test(alertId)) {
       await ctx.answerCbQuery('Некорректные данные');
       return;
@@ -381,7 +371,6 @@ export function registerAlertCallbackHandler(): void {
 
     logger.info('Resolve alert callback received', {
       alertId,
-      userId,
       telegramUserId,
       service: 'alert-callback',
     });
@@ -421,16 +410,25 @@ export function registerAlertCallbackHandler(): void {
       }
 
       // Authorization: resolve is manager-or-accountant (gh-88)
-      const telegramUserId = ctx.from?.id;
       if (!telegramUserId || !(await isAuthorizedForAlertAction(request.chatId, telegramUserId))) {
         logger.warn('Unauthorized alert resolve attempt', {
           alertId,
-          userId,
+          telegramUserId,
           chatId: String(request.chatId),
           service: 'alert-callback',
         });
         await ctx.answerCbQuery('Нет прав для этого действия');
         return;
+      }
+
+      // Resolve Telegram ID → user UUID for acknowledgedBy FK (after all validation)
+      let userId: string | undefined;
+      if (telegramUserId) {
+        const user = await prisma.user.findFirst({
+          where: { telegramId: BigInt(telegramUserId) },
+          select: { id: true },
+        });
+        userId = user?.id;
       }
 
       if (request.status === 'answered') {
@@ -544,7 +542,7 @@ export function registerAlertCallbackHandler(): void {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         alertId,
-        userId,
+        telegramUserId,
         service: 'alert-callback',
       });
       const msg = error instanceof Error ? error.message : '';

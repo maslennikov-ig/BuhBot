@@ -357,7 +357,9 @@ export const slaRouter = router({
         model:
           result.model === 'cache' || result.model === 'error-fallback'
             ? 'keyword-fallback'
-            : result.model,
+            : result.model === 'openrouter-fallback'
+              ? 'openrouter'
+              : result.model,
         reasoning: result.reasoning,
       };
     }),

@@ -322,15 +322,18 @@ class OpenRouterClient {
         }
 
         logger.error('AI classification failed', errorInfo);
-        throw lastError;
+        // Break instead of throw so fallback model can be attempted below
+        break;
       }
     }
 
     // Fallback model attempt: try once with a different model before giving up
+    // Only attempt if circuit breaker allows requests (H-3)
     if (
       this.config.fallbackModel &&
       this.config.fallbackModel !== this.config.openRouterModel &&
-      lastError
+      lastError &&
+      this.circuitBreaker.canRequest()
     ) {
       try {
         logger.warn('Attempting fallback model classification', {
@@ -368,7 +371,7 @@ class OpenRouterClient {
         return {
           classification: parsed.classification,
           confidence: parsed.confidence,
-          model: 'openrouter',
+          model: 'openrouter-fallback',
           reasoning: `[fallback: ${this.config.fallbackModel}] ${parsed.reasoning}`,
         };
       } catch (fallbackError) {

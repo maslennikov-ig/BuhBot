@@ -59,8 +59,25 @@ vi.mock('../cache.service.js', () => ({
   getCacheStats: vi.fn(),
 }));
 
+// Mock bot (used by sendClassifierFailureAlert via dynamic import in classifier.service.ts)
+// Path is relative to THIS test file: __tests__/ → ../../../bot/bot.ts
+const mockSendMessage = vi.fn();
+vi.mock('../../../bot/bot.js', () => ({
+  bot: { telegram: { sendMessage: mockSendMessage } },
+}));
+
+// Mock escapeHtml from format service
+// Path relative to this file: __tests__/ → ../alerts/format.service.ts
+vi.mock('../alerts/format.service.js', () => ({
+  escapeHtml: (s: string) => s,
+}));
+
 // Mock Prisma client
-const mockPrisma = {} as PrismaClient;
+const mockPrisma = {
+  globalSettings: {
+    findUnique: vi.fn(),
+  },
+} as unknown as PrismaClient;
 
 describe('ClassifierService - Error Categorization (T3)', () => {
   let service: ClassifierService;
@@ -68,6 +85,7 @@ describe('ClassifierService - Error Categorization (T3)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetClassifierService();
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     service = new ClassifierService(mockPrisma);
   });
 
@@ -183,6 +201,7 @@ describe('ClassifierService - Metrics Recording (T4)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetClassifierService();
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     service = new ClassifierService(mockPrisma);
   });
 
@@ -394,6 +413,8 @@ describe('ClassifierService - Safety Net Integration (gh-131)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetClassifierService();
+    // Reset prisma mock for tests that don't need it
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     service = new ClassifierService(mockPrisma);
   });
 
@@ -527,5 +548,155 @@ describe('ClassifierService - Safety Net Integration (gh-131)', () => {
     expect(result.confidence).toBe(0.55);
     expect(result.model).toBe('openrouter'); // Note: service might wrap this, check actual implementation
     expect(result.reasoning).toContain('AI (low confidence: 0.55)');
+  });
+});
+
+describe('ClassifierService - Failure Alerting (H-2)', () => {
+  let service: ClassifierService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset implementations so that Once queues from previous tests don't leak
+    mockSendMessage.mockReset();
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>).mockReset();
+    resetClassifierService();
+    // Default: no DB settings returned (settings cache miss)
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    service = new ClassifierService(mockPrisma);
+  });
+
+  it('should send alert when AI fails and cooldown has elapsed', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    // Mock cache miss
+    (getCached as any).mockResolvedValue(null);
+
+    // Mock AI failure
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service down'));
+
+    // Mock keyword fallback
+    (classifyByKeywords as any).mockReturnValue({
+      classification: 'REQUEST',
+      confidence: 0.6,
+      model: 'keyword-fallback',
+    });
+
+    // On the second findUnique call (inside sendClassifierFailureAlert) return recipients
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // getDbSettings call
+      .mockResolvedValueOnce({ leadNotificationIds: [111, 222] }); // sendClassifierFailureAlert call
+
+    // mockSendMessage is already set up via vi.mock at module level
+    mockSendMessage.mockResolvedValue(undefined);
+
+    // Classify — this triggers sendClassifierFailureAlert internally
+    await service.classifyMessage('test message');
+
+    // Alert should have been sent to both recipients
+    expect(mockSendMessage).toHaveBeenCalledTimes(2);
+    expect(mockSendMessage).toHaveBeenCalledWith(111, expect.stringContaining('BuhBot'), {
+      parse_mode: 'HTML',
+    });
+    expect(mockSendMessage).toHaveBeenCalledWith(222, expect.stringContaining('BuhBot'), {
+      parse_mode: 'HTML',
+    });
+  });
+
+  it('should NOT send alert when called within 5-minute cooldown window', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    mockSendMessage.mockResolvedValue(undefined);
+
+    (getCached as any).mockResolvedValue(null);
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service down'));
+    (classifyByKeywords as any).mockReturnValue({
+      classification: 'REQUEST',
+      confidence: 0.6,
+      model: 'keyword-fallback',
+    });
+
+    // Both getDbSettings and sendClassifierFailureAlert calls return recipients
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // getDbSettings (first classifyMessage)
+      .mockResolvedValueOnce({ leadNotificationIds: [111] }) // sendClassifierFailureAlert (first)
+      .mockResolvedValueOnce(null); // getDbSettings (second classifyMessage) — alert body not reached due to cooldown
+
+    // First call — alert should be sent
+    await service.classifyMessage('first message');
+    const callsAfterFirst = mockSendMessage.mock.calls.length;
+
+    // Second call immediately (within 5-minute window) — alert rate-limited
+    (getCached as any).mockResolvedValue(null);
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service down'));
+    (classifyByKeywords as any).mockReturnValue({
+      classification: 'REQUEST',
+      confidence: 0.6,
+      model: 'keyword-fallback',
+    });
+    await service.classifyMessage('second message');
+
+    // No additional sendMessage calls from second classify
+    expect(mockSendMessage.mock.calls.length).toBe(callsAfterFirst);
+  });
+
+  it('should silently skip when no recipients are configured', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+
+    mockSendMessage.mockResolvedValue(undefined);
+
+    (getCached as any).mockResolvedValue(null);
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service down'));
+    (classifyByKeywords as any).mockReturnValue({
+      classification: 'REQUEST',
+      confidence: 0.6,
+      model: 'keyword-fallback',
+    });
+
+    // sendClassifierFailureAlert gets empty recipients list
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // getDbSettings
+      .mockResolvedValueOnce({ leadNotificationIds: [] }); // sendClassifierFailureAlert
+
+    // Should complete without error and without sending messages
+    await expect(service.classifyMessage('test message')).resolves.toBeDefined();
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+
+  it('should catch and log error when Telegram sendMessage throws', async () => {
+    const { getCached } = await import('../cache.service.js');
+    const { classifyWithAI } = await import('../openrouter-client.js');
+    const { classifyByKeywords } = await import('../keyword-classifier.js');
+    const logger = await import('../../../utils/logger.js');
+
+    // Make sendMessage throw a Telegram error
+    mockSendMessage.mockRejectedValue(new Error('Telegram API error'));
+
+    (getCached as any).mockResolvedValue(null);
+    (classifyWithAI as any).mockRejectedValue(new Error('AI service down'));
+    (classifyByKeywords as any).mockReturnValue({
+      classification: 'REQUEST',
+      confidence: 0.6,
+      model: 'keyword-fallback',
+    });
+
+    // Recipients configured so sendMessage gets called
+    (mockPrisma.globalSettings.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // getDbSettings
+      .mockResolvedValueOnce({ leadNotificationIds: [111] }); // sendClassifierFailureAlert
+
+    // Should NOT propagate Telegram error — classifyMessage must still return a result
+    await expect(service.classifyMessage('test message')).resolves.toBeDefined();
+
+    // Error should have been logged
+    expect(logger.default.error as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+      'Failed to send classifier failure alert',
+      expect.objectContaining({ error: 'Telegram API error' })
+    );
   });
 });

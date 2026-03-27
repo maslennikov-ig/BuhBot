@@ -362,7 +362,17 @@ export function registerAlertCallbackHandler(): void {
   // Handle "Mark resolved" button
   bot.action(/^resolve_(.+)$/, async (ctx) => {
     const alertId = ctx.match[1];
-    const userId = ctx.from?.id?.toString();
+    const telegramUserId = ctx.from?.id;
+
+    // Resolve Telegram ID → user UUID for acknowledgedBy FK
+    let userId: string | undefined;
+    if (telegramUserId) {
+      const user = await prisma.user.findFirst({
+        where: { telegramId: BigInt(telegramUserId) },
+        select: { id: true },
+      });
+      userId = user?.id;
+    }
 
     if (!alertId || !UUID_REGEX.test(alertId)) {
       await ctx.answerCbQuery('Некорректные данные');
@@ -372,6 +382,7 @@ export function registerAlertCallbackHandler(): void {
     logger.info('Resolve alert callback received', {
       alertId,
       userId,
+      telegramUserId,
       service: 'alert-callback',
     });
 

@@ -29,6 +29,7 @@ const {
       },
       user: {
         findMany: vi.fn(),
+        findFirst: vi.fn(),
       },
       slaAlert: {
         update: vi.fn(),
@@ -143,6 +144,7 @@ describe('alert-callback handler registered actions', () => {
     });
     mockPrisma.slaAlert.update.mockResolvedValue({ id: ALERT_ID });
     mockPrisma.clientRequest.update.mockResolvedValue({ id: 'request-uuid' });
+    mockPrisma.user.findFirst.mockResolvedValue({ id: 'user-uuid-resolved' });
     vi.mocked(cancelEscalation).mockResolvedValue(undefined);
     vi.mocked(cancelAllEscalations).mockResolvedValue(undefined);
     registerAlertCallbackHandler();
@@ -362,6 +364,7 @@ describe('isAuthorizedForAlertAction — allowAccountants: false (notify_* handl
     registeredActions.length = 0;
     mockBot.telegram.sendMessage.mockResolvedValue({ message_id: 123 });
     mockPrisma.user.findMany.mockResolvedValue([]);
+    mockPrisma.user.findFirst.mockResolvedValue({ id: 'user-uuid-resolved' });
     vi.mocked(cancelEscalation).mockResolvedValue(undefined);
     vi.mocked(cancelAllEscalations).mockResolvedValue(undefined);
     registerAlertCallbackHandler();
@@ -484,6 +487,7 @@ describe('isAuthorizedForAlertAction — allowAccountants: true (resolve_* handl
     });
     mockPrisma.slaAlert.update.mockResolvedValue({ id: ALERT_ID });
     mockPrisma.clientRequest.update.mockResolvedValue({ id: 'request-uuid' });
+    mockPrisma.user.findFirst.mockResolvedValue({ id: 'user-uuid-resolved' });
     vi.mocked(cancelEscalation).mockResolvedValue(undefined);
     vi.mocked(cancelAllEscalations).mockResolvedValue(undefined);
     registerAlertCallbackHandler();

@@ -326,6 +326,61 @@ class OpenRouterClient {
       }
     }
 
+    // Fallback model attempt: try once with a different model before giving up
+    if (
+      this.config.fallbackModel &&
+      this.config.fallbackModel !== this.config.openRouterModel &&
+      lastError
+    ) {
+      try {
+        logger.warn('Attempting fallback model classification', {
+          fallbackModel: this.config.fallbackModel,
+          primaryModel: this.config.openRouterModel,
+          service: 'classifier',
+        });
+
+        const fallbackResponse = await this.client.chat.completions.create({
+          model: this.config.fallbackModel,
+          messages: [
+            { role: 'system', content: CLASSIFICATION_PROMPT },
+            { role: 'user', content: text },
+          ],
+          temperature: 0.1,
+          max_tokens: 150,
+        });
+
+        const fallbackContent = fallbackResponse.choices[0]?.message?.content;
+        if (!fallbackContent) {
+          throw new EmptyResponseError('Empty response from fallback model');
+        }
+
+        const parsed = parseAIResponse(fallbackContent);
+
+        logger.warn('Fallback model classification successful', {
+          classification: parsed.classification,
+          confidence: parsed.confidence,
+          fallbackModel: this.config.fallbackModel,
+          service: 'classifier',
+        });
+
+        this.circuitBreaker.recordSuccess();
+
+        return {
+          classification: parsed.classification,
+          confidence: parsed.confidence,
+          model: 'openrouter',
+          reasoning: `[fallback: ${this.config.fallbackModel}] ${parsed.reasoning}`,
+        };
+      } catch (fallbackError) {
+        logger.error('Fallback model classification also failed', {
+          fallbackModel: this.config.fallbackModel,
+          error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+          service: 'classifier',
+        });
+        // Fall through to throw original lastError
+      }
+    }
+
     // Should not reach here, but TypeScript needs the throw
     throw lastError ?? new Error('Classification failed after max retries');
   }

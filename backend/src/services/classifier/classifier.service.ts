@@ -39,6 +39,8 @@ import {
 export class ClassifierService {
   private prisma: PrismaClient;
   private config: ClassifierConfig;
+  private lastAlertTimestamp = 0;
+  private readonly ALERT_COOLDOWN_MS = 5 * 60 * 1000; // 5 min cooldown
   private settingsCache: {
     apiKey?: string;
     model?: string;
@@ -260,9 +262,15 @@ export class ClassifierService {
       const errorType = this.categorizeError(error);
       classifierErrorsTotal.inc({ error_type: errorType });
 
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const modelName = dbSettings.model ?? this.config.openRouterModel;
+
+      // Send alert to lead notification recipients (rate-limited)
+      await this.sendClassifierFailureAlert(errorMsg, modelName);
+
       // AI classification failed, use fallback
       logger.warn('AI classification failed, using keyword fallback', {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMsg,
         service: 'classifier',
       });
     }
@@ -288,12 +296,12 @@ export class ClassifierService {
       finalResult.model === 'keyword-fallback' &&
       finalResult.confidence < this.config.keywordConfidenceThreshold
     ) {
-      // Very low confidence - default to CLARIFICATION (logged but no SLA timer)
+      // Very low confidence - default to REQUEST (starts SLA timer, false positive safer than missed breach)
       finalResult = {
-        classification: 'CLARIFICATION',
+        classification: 'REQUEST',
         confidence: this.config.keywordConfidenceThreshold,
         model: 'keyword-fallback',
-        reasoning: 'Low confidence classification, defaulting to CLARIFICATION for manual review',
+        reasoning: 'Low confidence classification, defaulting to REQUEST for SLA safety',
       };
     }
 
@@ -317,6 +325,50 @@ export class ClassifierService {
     });
 
     return finalResult;
+  }
+
+  /**
+   * Send alert to lead notification recipients when AI classification is down
+   * Rate-limited to one alert per ALERT_COOLDOWN_MS (5 minutes)
+   */
+  private async sendClassifierFailureAlert(errorMsg: string, model: string): Promise<void> {
+    const now = Date.now();
+    if (now - this.lastAlertTimestamp < this.ALERT_COOLDOWN_MS) return;
+    this.lastAlertTimestamp = now;
+
+    try {
+      const settings = await this.prisma.globalSettings.findUnique({
+        where: { id: 'default' },
+        select: { leadNotificationIds: true },
+      });
+      const recipients = settings?.leadNotificationIds ?? [];
+      if (recipients.length === 0) return;
+
+      const { bot } = await import('../../bot/bot.js');
+      const { escapeHtml } = await import('../../services/alerts/format.service.js');
+
+      const alertText =
+        `⚠️ <b>BuhBot: AI-классификатор недоступен</b>\n\n` +
+        `Модель: <code>${escapeHtml(model)}</code>\n` +
+        `Ошибка: <code>${escapeHtml(errorMsg.slice(0, 200))}</code>\n` +
+        `Используется keyword fallback (дефолт: REQUEST).\n\n` +
+        `Время: ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}`;
+
+      for (const recipientId of recipients) {
+        await bot.telegram.sendMessage(recipientId, alertText, { parse_mode: 'HTML' });
+      }
+
+      logger.warn('Classifier failure alert sent', {
+        recipients: recipients.length,
+        model,
+        service: 'classifier',
+      });
+    } catch (alertErr) {
+      logger.error('Failed to send classifier failure alert', {
+        error: alertErr instanceof Error ? alertErr.message : String(alertErr),
+        service: 'classifier',
+      });
+    }
   }
 
   /**

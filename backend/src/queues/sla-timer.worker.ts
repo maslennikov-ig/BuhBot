@@ -104,7 +104,7 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
         Prisma.sql`
           SELECT "id" FROM "public"."sla_alerts"
           WHERE "request_id" = ${requestId}
-            AND "alert_type" = 'warning'::"AlertType"
+            AND "alert_type"::text = 'warning'
             AND "escalation_level" = 0
             AND "resolved_action" IS NULL
           LIMIT 1

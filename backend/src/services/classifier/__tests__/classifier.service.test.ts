@@ -397,7 +397,7 @@ describe('ClassifierService - Safety Net Integration (gh-131)', () => {
     service = new ClassifierService(mockPrisma);
   });
 
-  it('should default to CLARIFICATION when keyword result has confidence < 0.5 (threshold)', async () => {
+  it('should default to REQUEST when keyword result has confidence < 0.5 (threshold)', async () => {
     const { getCached } = await import('../cache.service.js');
     const { classifyWithAI } = await import('../openrouter-client.js');
     const { classifyByKeywords } = await import('../keyword-classifier.js');
@@ -413,19 +413,19 @@ describe('ClassifierService - Safety Net Integration (gh-131)', () => {
       classification: 'REQUEST',
       confidence: 0.3, // Below default keywordConfidenceThreshold (0.5)
       model: 'keyword-fallback',
-      reasoning: 'No patterns matched, requires human review',
+      reasoning: 'No patterns matched, defaulting to REQUEST for SLA safety',
     };
     (classifyByKeywords as any).mockReturnValue(lowConfidenceKeyword);
 
     // Classify message
     const result = await service.classifyMessage('test message');
 
-    // Should default to CLARIFICATION with threshold confidence (0.5)
+    // Should default to REQUEST with threshold confidence (0.5)
     expect(result).toMatchObject({
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.5,
       model: 'keyword-fallback',
-      reasoning: 'Low confidence classification, defaulting to CLARIFICATION for manual review',
+      reasoning: 'Low confidence classification, defaulting to REQUEST for SLA safety',
     });
   });
 
@@ -474,10 +474,10 @@ describe('ClassifierService - Safety Net Integration (gh-131)', () => {
 
     // Mock keyword result with default no-match confidence (0.3)
     const noMatchKeyword: ClassificationResult = {
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.3,
       model: 'keyword-fallback',
-      reasoning: 'No patterns matched, requires human review',
+      reasoning: 'No patterns matched, defaulting to REQUEST for SLA safety',
     };
     (classifyByKeywords as any).mockReturnValue(noMatchKeyword);
 
@@ -486,10 +486,10 @@ describe('ClassifierService - Safety Net Integration (gh-131)', () => {
 
     // Should apply safety net and boost confidence to threshold
     expect(result).toMatchObject({
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.5, // Boosted to keywordConfidenceThreshold
       model: 'keyword-fallback',
-      reasoning: 'Low confidence classification, defaulting to CLARIFICATION for manual review',
+      reasoning: 'Low confidence classification, defaulting to REQUEST for SLA safety',
     });
   });
 

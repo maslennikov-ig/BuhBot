@@ -5,10 +5,10 @@
  * 1. Filters for group/supergroup messages only
  * 2. Checks if SLA monitoring is enabled for the chat
  * 3. Classifies messages using AI/keyword classifier
- * 4. Creates ClientRequest records for REQUEST messages
+ * 4. Creates ClientRequest records for REQUEST and CLARIFICATION messages
  * 5. Starts SLA timer for tracking response time
  *
- * Non-REQUEST classifications (SPAM, GRATITUDE, CLARIFICATION) are logged
+ * Non-REQUEST classifications (SPAM, GRATITUDE) are logged
  * but do not trigger SLA tracking.
  *
  * @module bot/handlers/message.handler

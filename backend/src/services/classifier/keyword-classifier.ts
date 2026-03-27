@@ -213,18 +213,18 @@ export function classifyByKeywords(text: string): ClassificationResult {
     }
   }
 
-  // No matches - default to CLARIFICATION (safe default requiring human review)
+  // No matches - default to REQUEST (safe default: starts SLA timer, false positive safer than missed breach)
   if (categoryScores.size === 0) {
-    logger.debug('No keyword patterns matched, defaulting to CLARIFICATION', {
+    logger.debug('No keyword patterns matched, defaulting to REQUEST', {
       text: text.substring(0, 50),
       service: 'classifier',
     });
 
     return {
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.3,
       model: 'keyword-fallback',
-      reasoning: 'No patterns matched, requires human review',
+      reasoning: 'No patterns matched, defaulting to REQUEST for SLA safety',
     };
   }
 

@@ -332,44 +332,44 @@ describe('classifyByKeywords - Priority system', () => {
   });
 });
 
-describe('classifyByKeywords - Safety net (default CLARIFICATION)', () => {
-  it('should return CLARIFICATION with confidence 0.3 when no patterns match', () => {
+describe('classifyByKeywords - Safety net (default REQUEST)', () => {
+  it('should return REQUEST with confidence 0.3 when no patterns match', () => {
     // Message with no matching patterns
     const result = classifyByKeywords('Просто обычное сообщение без триггеров');
 
     expect(result).toMatchObject({
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.3,
       model: 'keyword-fallback',
-      reasoning: 'No patterns matched, requires human review',
+      reasoning: 'No patterns matched, defaulting to REQUEST for SLA safety',
     });
   });
 
-  it('should return CLARIFICATION for random text', () => {
+  it('should return REQUEST for random text', () => {
     const result = classifyByKeywords('Lorem ipsum dolor sit amet');
 
     expect(result).toMatchObject({
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.3,
       model: 'keyword-fallback',
     });
   });
 
-  it('should return CLARIFICATION for empty-looking message', () => {
+  it('should return REQUEST for empty-looking message', () => {
     const result = classifyByKeywords('   ');
 
     expect(result).toMatchObject({
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.3,
       model: 'keyword-fallback',
     });
   });
 
-  it('should return CLARIFICATION for message with no clear intent', () => {
+  it('should return REQUEST for message with no clear intent', () => {
     const result = classifyByKeywords('Текст без ясного намерения');
 
     expect(result).toMatchObject({
-      classification: 'CLARIFICATION',
+      classification: 'REQUEST',
       confidence: 0.3,
       model: 'keyword-fallback',
     });

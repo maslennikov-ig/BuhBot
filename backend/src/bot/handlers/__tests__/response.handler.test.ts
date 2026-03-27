@@ -776,7 +776,7 @@ describe('Response handler - alert resolution (step 7)', () => {
     registerResponseHandler();
   });
 
-  it('resolveAlertsForRequest is called with (requestId, "accountant_responded", telegramUserId as string)', async () => {
+  it('resolveAlertsForRequest is called with (requestId, "accountant_responded", accountantId UUID)', async () => {
     const ctx = buildResponseCtx({ telegramUserId: 44444 });
 
     await responseHandler(ctx);
@@ -784,7 +784,7 @@ describe('Response handler - alert resolution (step 7)', () => {
     expect(resolveAlertsForRequest).toHaveBeenCalledWith(
       'req-uuid-step7',
       'accountant_responded',
-      '44444'
+      'acc-uuid-123'
     );
   });
 

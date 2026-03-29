@@ -220,6 +220,28 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
       ...(globalSettings?.globalManagerIds ?? []),
     ]);
 
+    // Auto-generate invite link if missing (bot must be admin)
+    let inviteLink = request.chat?.inviteLink ?? null;
+    if (!inviteLink && request.chat?.id) {
+      try {
+        inviteLink = await bot.telegram.exportChatInviteLink(String(request.chat.id));
+        await prisma.chat.update({
+          where: { id: request.chat.id },
+          data: { inviteLink },
+        });
+        logger.info('Auto-generated invite link for chat', {
+          chatId: String(request.chat.id),
+          service: 'alert-worker',
+        });
+      } catch (linkErr) {
+        logger.debug('Could not generate invite link (bot may lack permissions)', {
+          chatId: String(request.chat.id),
+          error: linkErr instanceof Error ? linkErr.message : String(linkErr),
+          service: 'alert-worker',
+        });
+      }
+    }
+
     for (const recipientId of managerIds) {
       try {
         const showNotifyButton = !(
@@ -231,7 +253,7 @@ async function processSlaAlertJob(job: Job<ExtendedAlertJobData>): Promise<void>
                 alertId,
                 chatId,
                 requestId,
-                inviteLink: request.chat?.inviteLink,
+                inviteLink,
                 chatType: request.chat?.chatType,
               },
               {

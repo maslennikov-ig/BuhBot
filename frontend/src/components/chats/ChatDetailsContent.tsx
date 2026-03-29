@@ -172,7 +172,14 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
 
 export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
   const [activeTab, setActiveTab] = React.useState<Tab>('messages');
-  const { data: chat, isLoading, error } = trpc.chats.getById.useQuery({ id: chatId });
+  const {
+    data: chat,
+    isLoading,
+    error,
+  } = trpc.chats.getById.useQuery(
+    { id: chatId },
+    { refetchInterval: 10_000, refetchIntervalInBackground: false }
+  );
   const utils = trpc.useUtils();
 
   // Restore mutation (gh-209)

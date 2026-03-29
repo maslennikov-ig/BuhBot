@@ -100,7 +100,7 @@ export async function createAlert(params: CreateAlertParams): Promise<SlaAlert> 
       Prisma.sql`
         SELECT "id" FROM "public"."sla_alerts"
         WHERE "request_id" = ${requestId}
-          AND "alert_type" = ${alertType}::"AlertType"
+          AND "alert_type"::text = ${alertType}
           AND "escalation_level" = ${escalationLevel}
           AND "resolved_action" IS NULL
         LIMIT 1

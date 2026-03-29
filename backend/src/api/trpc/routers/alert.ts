@@ -556,12 +556,10 @@ export const alertRouter = router({
       if (input.alertType || input.deliveryStatus) {
         const enumConditions: Prisma.Sql[] = [];
         if (input.alertType) {
-          enumConditions.push(Prisma.sql`"alert_type" = ${input.alertType}::"AlertType"`);
+          enumConditions.push(Prisma.sql`"alert_type"::text = ${input.alertType}`);
         }
         if (input.deliveryStatus) {
-          enumConditions.push(
-            Prisma.sql`"delivery_status" = ${input.deliveryStatus}::"AlertDeliveryStatus"`
-          );
+          enumConditions.push(Prisma.sql`"delivery_status"::text = ${input.deliveryStatus}`);
         }
         const combinedCondition = Prisma.join(enumConditions, ' AND ');
         const matchingIds = await ctx.prisma.$queryRaw<Array<{ id: string }>>(

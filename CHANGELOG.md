@@ -5,6 +5,17 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.1...buhbot-v0.30.2) (2026-03-30)
+
+
+### Bug Fixes
+
+* **alerts:** auto-generate invite link + add chat details polling ([#286](https://github.com/maslennikov-ig/BuhBot/issues/286)) ([10e0ac0](https://github.com/maslennikov-ig/BuhBot/commit/10e0ac027068a23f4bbf28181c7d0ff6391be9a9))
+* **alerts:** fix remaining Prisma 7 enum casts in alert queries ([#285](https://github.com/maslennikov-ig/BuhBot/issues/285)) ([a29fefe](https://github.com/maslennikov-ig/BuhBot/commit/a29fefe000a2e1842cbfbb2eb458e519edeec6eb))
+* **alerts:** resolve Telegram ID to UUID in alert callback handler ([#283](https://github.com/maslennikov-ig/BuhBot/issues/283)) ([603950c](https://github.com/maslennikov-ig/BuhBot/commit/603950ccc6835ee704ffbee4695fdeb833da40d5))
+* **classifier:** code review findings — shadowing, circuit breaker, metrics, tests ([#284](https://github.com/maslennikov-ig/BuhBot/issues/284)) ([4b007dd](https://github.com/maslennikov-ig/BuhBot/commit/4b007ddd784d69199a3d28a9276cb2627767455b))
+* **classifier:** restore AI model, add fallback cascade and failure alerting ([#281](https://github.com/maslennikov-ig/BuhBot/issues/281)) ([fe0a118](https://github.com/maslennikov-ig/BuhBot/commit/fe0a118b5eb1def8b18aa8df8fe6b5f1e17b24c5))
+
 ## [0.30.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.0...buhbot-v0.30.1) (2026-03-24)
 
 

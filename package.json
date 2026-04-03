@@ -24,6 +24,9 @@
     "knip": "npm run knip:backend && npm run knip:frontend",
     "knip:backend": "cd backend && npx knip",
     "knip:frontend": "cd frontend && npx knip",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm run test",
+    "test:frontend": "cd frontend && npm run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

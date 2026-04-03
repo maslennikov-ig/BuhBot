@@ -11,7 +11,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   MessageSquare,
   Users,
@@ -171,7 +171,24 @@ function ChatInfoCard({ chat }: ChatInfoCardProps) {
 // ============================================
 
 export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
-  const [activeTab, setActiveTab] = React.useState<Tab>('messages');
+  const searchParams = useSearchParams();
+  const initialTab = (['messages', 'settings', 'schedule'] as Tab[]).includes(
+    searchParams.get('tab') as Tab
+  )
+    ? (searchParams.get('tab') as Tab)
+    : 'messages';
+  const [activeTab, setActiveTab] = React.useState<Tab>(initialTab);
+
+  const router = useRouter();
+  const handleTabChange = React.useCallback(
+    (tab: Tab) => {
+      setActiveTab(tab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', tab);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
   const {
     data: chat,
     isLoading,
@@ -316,7 +333,7 @@ export function ChatDetailsContent({ chatId }: ChatDetailsContentProps) {
 
         {/* Tab Navigation */}
         <section className="buh-animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <ChatTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <ChatTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </section>
 
         {/* Tab Content */}

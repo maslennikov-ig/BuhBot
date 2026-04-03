@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { ChatDetailsContent } from '@/components/chats/ChatDetailsContent';
 
 /**
@@ -42,5 +44,15 @@ export default async function ChatDetailsPage({ params }: PageProps) {
     );
   }
 
-  return <ChatDetailsContent chatId={chatId} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-full min-h-[500px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <ChatDetailsContent chatId={chatId} />
+    </Suspense>
+  );
 }

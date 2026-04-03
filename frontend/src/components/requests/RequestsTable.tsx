@@ -53,6 +53,7 @@ type Request = {
   message: string;
   status: RequestStatus;
   time: string;
+  receivedAt: string;
   slaRemaining?: string; // for pending/in_progress
   responseTimeMinutes?: number | null; // response time in minutes
   responseMessage?: string | null; // accountant's response text
@@ -292,7 +293,7 @@ function ActionMenu({ requestId, currentStatus, onRefresh }: ActionMenuProps) {
 
 export function RequestsTable({ requests, className, onRefresh }: RequestsTableProps) {
   // Initialize table sorting (default: sort by time descending)
-  const { sortedData, requestSort, getSortIcon } = useTableSort(requests, 'time', 'desc');
+  const { sortedData, requestSort, getSortIcon } = useTableSort(requests, 'receivedAt', 'desc');
 
   return (
     <GlassCard variant="elevated" padding="none" className={cn('relative group', className)}>
@@ -347,9 +348,9 @@ export function RequestsTable({ requests, className, onRefresh }: RequestsTableP
                 Ответ
               </th>
               <SortableHeader
-                label="Время"
-                sortDirection={getSortIcon('time')}
-                onClick={() => requestSort('time')}
+                label="Дата/Время"
+                sortDirection={getSortIcon('receivedAt')}
+                onClick={() => requestSort('receivedAt')}
                 className="px-6 py-3"
               />
               <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">

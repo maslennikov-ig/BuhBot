@@ -65,21 +65,14 @@ export const MENU_MESSAGES = {
  */
 export function buildClientMenuKeyboard(): Markup.Markup<InlineKeyboardMarkup> {
   return Markup.inlineKeyboard([
-    // Row 1: Document status
-    [
-      Markup.button.callback(
-        '\uD83D\uDCC4 Статус документов', // Page facing up emoji
-        MENU_CALLBACKS.DOC_STATUS
-      ),
-    ],
-    // Row 2: Contact accountant
+    // Row 1: Contact accountant
     [
       Markup.button.callback(
         '\uD83D\uDC64 Связаться с бухгалтером', // Bust in silhouette emoji
         MENU_CALLBACKS.CONTACT
       ),
     ],
-    // Row 3: Request service
+    // Row 2: Request service
     [
       Markup.button.callback(
         '\uD83D\uDCDD Запросить услугу', // Memo emoji

@@ -113,6 +113,9 @@ export const chatsRouter = router({
             title: true,
             accountantUsernames: true,
             assignedAccountantId: true,
+            assignedAccountant: {
+              select: { telegramUsername: true },
+            },
             slaEnabled: true,
             monitoringEnabled: true,
             slaThresholdMinutes: true,
@@ -129,24 +132,12 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats: chats.map(
-          (chat: {
-            id: bigint;
-            chatType: 'private' | 'group' | 'supergroup';
-            title: string | null;
-            accountantUsernames: string[];
-            assignedAccountantId: string | null;
-            slaEnabled: boolean;
-            monitoringEnabled: boolean;
-            slaThresholdMinutes: number;
-            clientTier: 'basic' | 'standard' | 'vip' | 'premium';
-            createdAt: Date;
-          }) => ({
-            ...chat,
-            id: safeNumberFromBigInt(chat.id),
-            accountantUsername: chat.accountantUsernames[0] ?? null,
-          })
-        ),
+        chats: chats.map(({ assignedAccountant, ...chat }) => ({
+          ...chat,
+          id: safeNumberFromBigInt(chat.id),
+          accountantUsername:
+            assignedAccountant?.telegramUsername ?? chat.accountantUsernames[0] ?? null,
+        })),
         total,
       };
     }),

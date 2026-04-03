@@ -16,6 +16,10 @@ import logger from '../../utils/logger.js';
 
 const SERVICE = 'contact-accountant';
 
+/** Rate limiting: 60s cooldown per user */
+const COOLDOWN_MS = 60_000;
+const lastContactMap = new Map<number, number>();
+
 export interface ContactRequest {
   userId: number;
   chatId: number;
@@ -121,6 +125,27 @@ export async function handleContactAccountant(req: ContactRequest): Promise<Cont
     username: req.username,
     service: SERVICE,
   });
+
+  // Rate limiting: 60s cooldown per user
+  const lastContact = lastContactMap.get(req.userId);
+  const now = Date.now();
+  if (lastContact && now - lastContact < COOLDOWN_MS) {
+    const remainingSec = Math.ceil((COOLDOWN_MS - (now - lastContact)) / 1000);
+    logger.info('Contact request throttled', {
+      userId: req.userId,
+      remainingSec,
+      service: SERVICE,
+    });
+    return {
+      success: false,
+      notifiedRole: 'none',
+      notifiedIds: [],
+      failedIds: [],
+      userMessage: `⏳ Подождите ${remainingSec} сек. перед повторным запросом.`,
+    };
+  }
+  // Set timestamp BEFORE processing (so even failed attempts count)
+  lastContactMap.set(req.userId, now);
 
   // Step 1: Resolve group chat
   const chatSelect = {
@@ -256,7 +281,7 @@ export async function handleContactAccountant(req: ContactRequest): Promise<Cont
     });
 
     const msg = chat
-      ? `\ud83d\udce9 \u041a\u043b\u0438\u0435\u043d\u0442 \u043f\u0440\u043e\u0441\u0438\u0442 \u0441\u0432\u044f\u0437\u0430\u0442\u044c\u0441\u044f!\n\ud83d\udc64 ${userLabel}\n\u26a0\ufe0f \u0411\u0443\u0445\u0433\u0430\u043b\u0442\u0435\u0440 \u0438 \u043c\u0435\u043d\u0435\u0434\u0436\u0435\u0440 \u043d\u0435 \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u044b.\n\ud83d\udcac \u0427\u0430\u0442: ${chatTitle}`
+      ? `\ud83d\udce9 \u041a\u043b\u0438\u0435\u043d\u0442 \u043f\u0440\u043e\u0441\u0438\u0442 \u0441\u0432\u044f\u0437\u0430\u0442\u044c\u0441\u044f!\n\ud83d\udc64 ${userLabel}\n\u26a0\ufe0f \u0411\u0443\u0445\u0433\u0430\u043b\u0442\u0435\u0440 \u0438 \u043c\u0435\u043d\u0435\u0434\u0436\u0435\u0440 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b.\n\ud83d\udcac \u0427\u0430\u0442: ${chatTitle}`
       : `\ud83d\udce9 \u041a\u043b\u0438\u0435\u043d\u0442 \u043f\u0440\u043e\u0441\u0438\u0442 \u0441\u0432\u044f\u0437\u0430\u0442\u044c\u0441\u044f!\n\ud83d\udc64 ${userLabel}\n\u26a0\ufe0f \u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0447\u0430\u0442 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d.`;
     const { sent, failed } = await sendToRecipients(globalIds, msg, keyboard);
 

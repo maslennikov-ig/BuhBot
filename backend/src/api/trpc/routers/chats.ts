@@ -132,11 +132,11 @@ export const chatsRouter = router({
       ]);
 
       return {
-        chats: chats.map((chat) => ({
+        chats: chats.map(({ assignedAccountant, ...chat }) => ({
           ...chat,
           id: safeNumberFromBigInt(chat.id),
           accountantUsername:
-            chat.assignedAccountant?.telegramUsername ?? chat.accountantUsernames[0] ?? null,
+            assignedAccountant?.telegramUsername ?? chat.accountantUsernames[0] ?? null,
         })),
         total,
       };

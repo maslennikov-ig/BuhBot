@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { ChatDetailsContent } from '@/components/chats/ChatDetailsContent';
 
 /**
@@ -42,5 +43,9 @@ export default async function ChatDetailsPage({ params }: PageProps) {
     );
   }
 
-  return <ChatDetailsContent chatId={chatId} />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChatDetailsContent chatId={chatId} />
+    </Suspense>
+  );
 }

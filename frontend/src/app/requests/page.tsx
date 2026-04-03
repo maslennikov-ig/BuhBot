@@ -31,7 +31,10 @@ export default function RequestsPage() {
         clientName: req.clientUsername || 'Неизвестный',
         message: req.messageText,
         status,
-        time: new Date(req.receivedAt).toLocaleTimeString('ru-RU', {
+        receivedAt: req.receivedAt,
+        time: new Date(req.receivedAt).toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
           hour: '2-digit',
           minute: '2-digit',
         }),

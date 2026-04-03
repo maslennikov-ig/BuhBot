@@ -586,7 +586,7 @@ export function ChatsListContent() {
                         {/* Actions */}
                         <td className="px-4 py-4 text-right">
                           <Link
-                            href={`/chats/${chat.id}`}
+                            href={`/chats/${chat.id}?tab=settings`}
                             className={cn(
                               'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium',
                               'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-muted)]',

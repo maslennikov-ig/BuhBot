@@ -13,13 +13,13 @@
  */
 
 import { bot } from '../bot.js';
-import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
 import {
   buildClientMenuKeyboard,
   MENU_CALLBACKS,
   MENU_MESSAGES,
 } from '../keyboards/client-menu.keyboard.js';
+import { handleContactAccountant } from '../../services/contact/contact-accountant.service.js';
 
 /**
  * Register menu command and callback handlers
@@ -107,95 +107,59 @@ export function registerMenuHandler(): void {
     }
   });
 
-  // Handle contact accountant callback — notify the assigned accountant
+  // Handle contact accountant callback — escalation: accountant -> manager -> global
   bot.action(MENU_CALLBACKS.CONTACT, async (ctx) => {
     const chatId = ctx.chat?.id;
     const userId = ctx.from?.id;
+    const chatType = ctx.chat?.type;
+    const username = ctx.from?.username;
 
     logger.info('Contact accountant callback received', {
       chatId,
       userId,
+      chatType,
+      username,
       service: 'menu-handler',
     });
 
     try {
       await ctx.answerCbQuery();
 
-      if (!chatId) {
+      if (!chatId || !userId || !chatType) {
+        logger.warn('Missing context for contact request', {
+          chatId,
+          userId,
+          chatType,
+          service: 'menu-handler',
+        });
         await ctx.reply('Не удалось определить чат.');
         return;
       }
 
-      // Find the chat and its primary accountant
-      const chat = await prisma.chat.findFirst({
-        where: { id: BigInt(chatId) },
-        select: {
-          title: true,
-          accountantTelegramIds: true,
-          inviteLink: true,
-          chatType: true,
-        },
+      const result = await handleContactAccountant({
+        userId,
+        chatId,
+        chatType,
+        username,
       });
 
-      const accountantTgId = chat?.accountantTelegramIds?.[0];
+      logger.info('Contact accountant completed', {
+        chatId,
+        userId,
+        success: result.success,
+        notifiedRole: result.notifiedRole,
+        notifiedCount: result.notifiedIds.length,
+        failedCount: result.failedIds.length,
+        groupChatId: result.groupChatId,
+        service: 'menu-handler',
+      });
 
-      if (accountantTgId) {
-        const chatTitle = chat?.title ?? `Чат ${chatId}`;
-
-        // Build chat link
-        let chatUrl: string | undefined;
-        if (chat?.inviteLink) {
-          chatUrl = chat.inviteLink;
-        } else if (chat?.chatType === 'supergroup') {
-          const formattedId = String(chatId).startsWith('-100')
-            ? String(chatId).slice(4)
-            : String(chatId).replace('-', '');
-          chatUrl = `https://t.me/c/${formattedId}`;
-        }
-
-        const keyboard = chatUrl
-          ? { reply_markup: { inline_keyboard: [[{ text: '💬 Открыть чат', url: chatUrl }]] } }
-          : {};
-
-        try {
-          await bot.telegram.sendMessage(
-            String(accountantTgId),
-            `📩 Клиент просит связаться!\n💬 Чат: ${chatTitle}`,
-            keyboard
-          );
-
-          await ctx.reply('✅ Запрос отправлен бухгалтеру. Ожидайте ответа.');
-
-          logger.info('Contact request sent to accountant', {
-            chatId,
-            accountantTgId: String(accountantTgId),
-            service: 'menu-handler',
-          });
-        } catch (sendError) {
-          const errMsg = sendError instanceof Error ? sendError.message : '';
-          if (errMsg.includes('bot was blocked') || errMsg.includes('user is deactivated')) {
-            await ctx.reply('⚠️ Бухгалтер временно недоступен. Попробуйте позже.');
-            logger.warn('Accountant blocked bot or deactivated', {
-              chatId,
-              accountantTgId: String(accountantTgId),
-              service: 'menu-handler',
-            });
-          } else {
-            throw sendError;
-          }
-        }
-      } else {
-        await ctx.reply('⚠️ Ответственный бухгалтер не назначен для этого чата.');
-
-        logger.warn('No accountant assigned for contact request', {
-          chatId,
-          service: 'menu-handler',
-        });
-      }
+      await ctx.reply(result.userMessage);
     } catch (error) {
       logger.error('Failed to handle contact callback', {
         chatId,
         userId,
+        chatType,
         error: error instanceof Error ? error.message : String(error),
         service: 'menu-handler',
       });

@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.2...buhbot-v0.30.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* tester report fixes — contact button, sorting, UI, version ([#287](https://github.com/maslennikov-ig/BuhBot/issues/287)) ([b8bfe6d](https://github.com/maslennikov-ig/BuhBot/commit/b8bfe6d23adf52c8b1874be0445a74a8ede8985c))
+
 ## [0.30.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.1...buhbot-v0.30.2) (2026-03-30)
 
 

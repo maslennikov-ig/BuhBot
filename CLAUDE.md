@@ -164,18 +164,24 @@ All issues use `buh-` prefix: `buh-abc123`
 ```bash
 git status              # 1. What changed?
 git add <files>         # 2. Stage the right files (match lint-staged patterns if unsure)
-bd sync                 # 3. Sync beads
-git commit -m "... (buh-xxx)"  # 4. Commit with issue ID
+# 3. If the local Beads DB looks empty or broken after clone/upgrade:
+bd bootstrap --yes
+# 4. If .beads/issues.jsonl has data but the local DB is empty:
+bd import
+# 5. If this repo commits .beads/issues.jsonl, refresh it before commit:
+bd export -o .beads/issues.jsonl
+git commit -m "... (buh-xxx)"  # 6. Commit with issue ID
 # If step 4 fails: read the command output. Pre-commit runs ESLint+Prettier on staged files;
 # commit-msg runs commitlint. Fix the reported issues (code or message), then re-run from step 2.
-bd sync                 # 5. Sync any new changes
-git push -u origin HEAD # 6. Push feature branch to remote
-gh pr create || gh pr view  # 7. Create PR to main (or view existing)
+# 7. If git hooks still point at old subcommands after a bd upgrade:
+bd hooks install
+git push -u origin HEAD # 8. Push feature branch to remote
+gh pr create || gh pr view  # 9. Create PR to main (or view existing)
 ```
 
 **Work is NOT done until PR is created!**
 
-**Commit failures:** Always check the **exit code and full output** of `git commit`. On failure, the output shows either lint/format errors (fix code and re-stage) or commitlint errors (fix the message and retry). Retry until `git commit` succeeds, then continue with `bd sync` and `git push`.
+**Commit failures:** Always check the **exit code and full output** of `git commit`. On failure, the output shows either lint/format errors (fix code and re-stage) or commitlint errors (fix the message and retry). Retry until `git commit` succeeds, then continue with the export/hooks checks above and `git push`.
 
 **Git hooks (Husky):** Pre-commit runs `lint-staged` (ESLint + Prettier on staged files). Commit-msg runs `commitlint`. Both print to the **same terminal** as `git commit`. There are no separate log files. To "see" hook errors, always capture and check the **output and exit code** of `git commit`.
 

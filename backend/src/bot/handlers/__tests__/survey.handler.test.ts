@@ -58,7 +58,7 @@ vi.mock('../../../lib/prisma.js', () => ({
 vi.mock('../../../services/feedback/survey.service.js', () => mockSurveyService);
 
 import { registerSurveyHandler } from '../survey.handler.js';
-import { THANK_YOU_MESSAGE } from '../../keyboards/survey.keyboard.js';
+import { THANK_YOU_MESSAGE, SURVEY_EXPIRED_MESSAGE } from '../../keyboards/survey.keyboard.js';
 
 type ActionHandler = (ctx: unknown) => Promise<void>;
 
@@ -142,7 +142,7 @@ describe('registerSurveyHandler — rating callback', () => {
     expect(ctx.answerCbQuery).toHaveBeenCalledWith('Thank you! You rated 3 stars');
   });
 
-  it('uses SURVEY_EXPIRED_MESSAGE (without stars) when delivery not found', async () => {
+  it('uses SURVEY_EXPIRED_MESSAGE when delivery not found (code-review F7)', async () => {
     mockSurveyService.getDeliveryById.mockResolvedValue(null);
 
     const handler = getRatingActionHandler();
@@ -151,7 +151,12 @@ describe('registerSurveyHandler — rating callback', () => {
     await handler(ctx);
 
     expect(mockSurveyService.recordResponse).not.toHaveBeenCalled();
-    const [text] = ctx.editMessageText.mock.calls[0]!;
-    expect(text).not.toContain('\u2B50');
+    // F7: assert exact SURVEY_EXPIRED_MESSAGE (not just absence of stars) so
+    // we catch a regression where the expired branch accidentally sends
+    // ALREADY_RESPONDED_MESSAGE or any other wrong-but-starless message.
+    const [text, options] = ctx.editMessageText.mock.calls[0]!;
+    expect(text).toBe(SURVEY_EXPIRED_MESSAGE);
+    expect(options).toEqual({ parse_mode: 'Markdown' });
+    expect(ctx.answerCbQuery).toHaveBeenCalledWith('Survey not found');
   });
 });

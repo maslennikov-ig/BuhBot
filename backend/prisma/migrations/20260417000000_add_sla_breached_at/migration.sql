@@ -4,7 +4,10 @@
 
 -- 1. Nullable timestamp column. Nullable because not every ClientRequest
 -- is breached; only breached rows receive a value when slaBreached flips
--- to true (see timer.service, sla-timer.worker, accountant.handler).
+-- to true. The two real write-paths are
+--   * backend/src/queues/sla-timer.worker.ts (processSlaTimer transaction)
+--   * backend/src/services/sla/timer.service.ts (recoverPendingSlaTimers).
+-- accountant.handler.ts only READS slaBreached in a findMany select clause.
 ALTER TABLE "public"."client_requests"
   ADD COLUMN "sla_breached_at" TIMESTAMPTZ(6);
 

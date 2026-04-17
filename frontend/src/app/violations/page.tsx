@@ -443,8 +443,17 @@ export default function ViolationsPage() {
                       </td>
 
                       <td className="px-4 py-4">
-                        {/* gh-290: live-ticking excess, louder style at 2× SLA */}
+                        {/* gh-290: live-ticking excess, louder style at 2× SLA.
+                            ARIA: role="timer" + descriptive aria-label so
+                            screen readers announce state + value without
+                            relying on the visual dot or title attribute. */}
                         <span
+                          role="timer"
+                          aria-label={
+                            violation.isOpenBreach
+                              ? `Превышение SLA: +${formatDuration(violation.excessMinutes)}, ответа пока нет`
+                              : `Превышение SLA: +${formatDuration(violation.excessMinutes)}`
+                          }
                           className={
                             violation.excessSevere
                               ? 'inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/20 px-2.5 py-1 text-xs font-semibold text-[var(--buh-error)] ring-1 ring-[var(--buh-error)]/30'
@@ -456,8 +465,8 @@ export default function ViolationsPage() {
                               : 'Превышение SLA зафиксировано по времени ответа'
                           }
                         >
-                          <AlertTriangle className="h-3 w-3" />
-                          <span>+{formatDuration(violation.excessMinutes)}</span>
+                          <AlertTriangle className="h-3 w-3" aria-hidden />
+                          <span aria-hidden>+{formatDuration(violation.excessMinutes)}</span>
                           {violation.isOpenBreach && (
                             <span aria-hidden className="text-[10px] opacity-70">
                               •

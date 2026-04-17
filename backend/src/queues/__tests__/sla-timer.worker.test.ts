@@ -1,12 +1,13 @@
 /**
- * SLA Timer Worker Tests - Internal Chat Notifications
+ * SLA Timer Worker Tests
  *
- * Tests for breach notifications sent to the global internal chat
- * configured via GlobalSettings.internalChatId (replaces per-chat
- * notifyInChatOnBreach field, gh-17).
+ * - Internal chat notifications (gh-17): verify behavior when GlobalSettings.internalChatId is set/missing.
+ * - processSlaTimer write contract (gh-290 code-review F1): verify that when a pending request's
+ *   timer fires, the handler writes slaBreached:true AND slaBreachedAt inside the same transaction.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Job } from 'bullmq';
 
 // Use vi.hoisted to define mocks before vi.mock is hoisted
 const mockPrisma = vi.hoisted(() => ({
@@ -79,13 +80,19 @@ vi.mock('../../config/config.service.js', () => ({
   getRecipientsByLevel: vi.fn(),
 }));
 
-// Mock BullMQ Worker to prevent actual worker creation
+// Mock BullMQ Worker to prevent actual worker creation. Must be a constructable
+// class because sla-timer.worker.ts has `new Worker(...)` at module top-level.
 vi.mock('bullmq', () => ({
-  Worker: vi.fn().mockImplementation(() => ({
-    on: vi.fn(),
-  })),
-  Job: vi.fn(),
+  Worker: class {
+    on() {
+      return this;
+    }
+  },
+  Job: class {},
 }));
+
+// Import after mocks — processSlaTimer is exported for unit testing (gh-290 F1).
+import { processSlaTimer } from '../sla-timer.worker.js';
 
 describe('SLA Timer Worker - Internal Chat Notifications', () => {
   beforeEach(() => {
@@ -178,6 +185,101 @@ describe('SLA Timer Worker - Internal Chat Notifications', () => {
           service: 'sla-timer-worker',
         })
       );
+    });
+  });
+
+  describe('processSlaTimer — breach write contract (gh-290 F1)', () => {
+    function buildBreachJob(): Job<{
+      requestId: string;
+      chatId: string;
+      threshold: number;
+      type?: 'breach' | 'warning';
+    }> {
+      return {
+        id: 'job-test',
+        data: {
+          requestId: 'req-1',
+          chatId: '-100123',
+          threshold: 60,
+          type: 'breach',
+        },
+      } as unknown as Job<{
+        requestId: string;
+        chatId: string;
+        threshold: number;
+        type?: 'breach' | 'warning';
+      }>;
+    }
+
+    it('persists slaBreachedAt alongside slaBreached:true inside the breach transaction', async () => {
+      mockPrisma.clientRequest.findUnique.mockResolvedValue({
+        id: 'req-1',
+        chatId: BigInt(-100123),
+        status: 'pending',
+        receivedAt: new Date('2026-04-17T10:00:00.000Z'),
+        clientUsername: 'client',
+        messageText: 'hi',
+        chat: {
+          managerTelegramIds: ['mgr-1'],
+          accountantTelegramIds: [BigInt(222)],
+        },
+      });
+      mockGetGlobalSettings.mockResolvedValue({ internalChatId: null });
+
+      // $transaction(callback) — invoke the callback with the tx proxy that
+      // exposes clientRequest.update + slaAlert.create, then return the alert
+      // the callback produces (matching real Prisma behavior).
+      mockPrisma.$transaction.mockImplementation(async (cb: (tx: typeof mockPrisma) => unknown) =>
+        cb(mockPrisma)
+      );
+      mockPrisma.clientRequest.update.mockResolvedValue({ id: 'req-1' });
+      mockPrisma.slaAlert.create.mockResolvedValue({
+        id: 'alert-1',
+        requestId: 'req-1',
+      });
+
+      // getRecipientsByLevel lives under config.service mock; provide a minimal
+      // return shape so the downstream queueAlert branch is exercised.
+      const { getRecipientsByLevel } = await import('../../config/config.service.js');
+      (getRecipientsByLevel as ReturnType<typeof vi.fn>).mockResolvedValue({
+        recipients: ['mgr-1', '222'],
+        tier: 'both',
+      });
+
+      await processSlaTimer(buildBreachJob());
+
+      // Core regression guard: slaBreachedAt is written with slaBreached:true.
+      expect(mockPrisma.clientRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'req-1' },
+          data: expect.objectContaining({
+            slaBreached: true,
+            slaBreachedAt: expect.any(Date),
+            status: 'escalated',
+          }),
+        })
+      );
+      expect(mockPrisma.slaAlert.create).toHaveBeenCalled();
+      expect(mockQueueAlert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestId: 'req-1',
+          alertType: 'breach',
+          escalationLevel: 1,
+        })
+      );
+    });
+
+    it('skips breach write entirely when request is already in a terminal state', async () => {
+      mockPrisma.clientRequest.findUnique.mockResolvedValue({
+        id: 'req-1',
+        status: 'answered',
+        chat: { managerTelegramIds: [], accountantTelegramIds: [] },
+      });
+
+      await processSlaTimer(buildBreachJob());
+
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(mockPrisma.clientRequest.update).not.toHaveBeenCalled();
     });
   });
 });

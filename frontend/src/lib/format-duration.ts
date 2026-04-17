@@ -81,6 +81,12 @@ export function computeSlaExcessMinutes(params: {
 /**
  * True when the SLA excess has crossed twice the configured threshold —
  * signals a long-running unanswered breach that deserves visual escalation.
+ *
+ * Defensive `slaMinutes <= 0` branch: the violations page coerces
+ * `slaWorkingMinutes || 60` so in practice this branch is unreachable from
+ * the main call site. It exists to prevent a nonsense `2 × 0 = 0` result
+ * (which would flag every positive excess as severe) if a future caller
+ * forgets the coercion. 1 h matches the default global SLA.
  */
 export function isSlaExcessSevere(excessMinutes: number | null, slaMinutes: number): boolean {
   if (excessMinutes === null) return false;

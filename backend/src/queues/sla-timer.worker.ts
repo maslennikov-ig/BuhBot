@@ -35,9 +35,13 @@ import {
  * Called when the SLA threshold timer fires.
  * Checks if the request is still pending and creates breach alert if so.
  *
+ * Exported for unit testing (gh-290 / code-review F1) so specs can invoke the
+ * handler directly and assert the shape of the write transaction — in
+ * particular that `slaBreachedAt` is populated alongside `slaBreached: true`.
+ *
  * @param job - BullMQ job with SLA timer data
  */
-async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
+export async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
   const { requestId, chatId, threshold } = job.data;
   const jobType = job.data.type ?? 'breach';
 

@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { HelpButton } from '@/components/ui/HelpButton';
+import { formatDuration, computeSlaExcessMinutes, isSlaExcessSevere } from '@/lib/format-duration';
 
 // ============================================
 // TYPES
@@ -33,9 +34,14 @@ type ViolatedRequest = {
   messagePreview: string;
   receivedAt: Date;
   respondedAt: Date | null;
+  slaBreachedAt: Date | null;
   responseMinutes: number | null;
   slaMinutes: number;
   excessMinutes: number;
+  /** gh-290: true when excess crosses 2× SLA — triggers louder visual state */
+  excessSevere: boolean;
+  /** gh-290: true when the breach is still open (no response yet) — ticking value */
+  isOpenBreach: boolean;
   accountantName: string;
 };
 
@@ -53,13 +59,8 @@ const formatDate = (date: Date | string) => {
   }).format(new Date(date));
 };
 
-const formatDuration = (minutes: number | null) => {
-  if (minutes === null) return '-';
-  const h = Math.floor(minutes / 60);
-  const m = Math.floor(minutes % 60);
-  if (h > 0) return `${h}ч ${m}м`;
-  return `${m}м`;
-};
+// gh-290: formatDuration now lives in '@/lib/format-duration' with adaptive
+// units (m / h m / d h / w d) so long-running breaches render readably.
 
 // ============================================
 // CHART CONFIG
@@ -86,6 +87,15 @@ export default function ViolationsPage() {
       startDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
       endDate: now,
     };
+  }, []);
+
+  // gh-290: Tick "now" every 30 s so unanswered SLA breaches keep ticking up
+  // on the /violations page without requiring a manual reload. Answered
+  // breaches are stable (use responseAt) and re-render without effect.
+  const [nowTick, setNowTick] = React.useState<Date>(() => new Date());
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => setNowTick(new Date()), 30_000);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   // Fetch violations (requests where SLA was breached)
@@ -179,10 +189,18 @@ export default function ViolationsPage() {
       // Use slaWorkingMinutes from request, default to 60 if not set
       const slaMinutes = req.slaWorkingMinutes || 60;
 
-      // Calculate excess minutes (only positive values)
-      const excessMinutes = req.responseTimeMinutes
-        ? Math.max(0, req.responseTimeMinutes - slaMinutes)
-        : 0;
+      // gh-290: Excess = (x − receivedAt) − slaMinutes, where
+      // x = responseAt || slaBreachedAt || now. This keeps the counter
+      // ticking for unanswered breaches (previously always showed +0m when
+      // responseTimeMinutes was null) and stays stable after a response.
+      const excessMinutes =
+        computeSlaExcessMinutes({
+          receivedAt: req.receivedAt,
+          responseAt: req.responseAt,
+          slaBreachedAt: req.slaBreachedAt,
+          slaMinutes,
+          now: nowTick,
+        }) ?? 0;
 
       return {
         id: req.id,
@@ -191,13 +209,16 @@ export default function ViolationsPage() {
         messagePreview,
         receivedAt: new Date(req.receivedAt),
         respondedAt: req.responseAt ? new Date(req.responseAt) : null,
+        slaBreachedAt: req.slaBreachedAt ? new Date(req.slaBreachedAt) : null,
         responseMinutes: req.responseTimeMinutes,
         slaMinutes,
         excessMinutes,
+        excessSevere: isSlaExcessSevere(excessMinutes, slaMinutes),
+        isOpenBreach: req.responseAt === null,
         accountantName: req.assignedAccountantName || 'Не назначен',
       };
     });
-  }, [violationsQuery.data]);
+  }, [violationsQuery.data, nowTick]);
 
   const { sortedData, requestSort, getSortIcon } = useTableSort<ViolatedRequest>(
     sortableViolations,
@@ -422,9 +443,35 @@ export default function ViolationsPage() {
                       </td>
 
                       <td className="px-4 py-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-error)]">
-                          <AlertTriangle className="h-3 w-3" />+
-                          {formatDuration(violation.excessMinutes)}
+                        {/* gh-290: live-ticking excess, louder style at 2× SLA.
+                            ARIA: role="timer" + descriptive aria-label so
+                            screen readers announce state + value without
+                            relying on the visual dot or title attribute. */}
+                        <span
+                          role="timer"
+                          aria-label={
+                            violation.isOpenBreach
+                              ? `Превышение SLA: +${formatDuration(violation.excessMinutes)}, ответа пока нет`
+                              : `Превышение SLA: +${formatDuration(violation.excessMinutes)}`
+                          }
+                          className={
+                            violation.excessSevere
+                              ? 'inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/20 px-2.5 py-1 text-xs font-semibold text-[var(--buh-error)] ring-1 ring-[var(--buh-error)]/30'
+                              : 'inline-flex items-center gap-1.5 rounded-full bg-[var(--buh-error)]/10 px-2.5 py-1 text-xs font-medium text-[var(--buh-error)]'
+                          }
+                          title={
+                            violation.isOpenBreach
+                              ? 'Ответа нет — таймер идёт от времени получения'
+                              : 'Превышение SLA зафиксировано по времени ответа'
+                          }
+                        >
+                          <AlertTriangle className="h-3 w-3" aria-hidden />
+                          <span aria-hidden>+{formatDuration(violation.excessMinutes)}</span>
+                          {violation.isOpenBreach && (
+                            <span aria-hidden className="text-[10px] opacity-70">
+                              •
+                            </span>
+                          )}
                         </span>
                       </td>
 

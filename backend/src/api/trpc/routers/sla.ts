@@ -156,6 +156,7 @@ const RequestOutput = z.object({
   slaTimerStartedAt: z.date().nullable(),
   slaWorkingMinutes: z.number().nullable(),
   slaBreached: z.boolean(),
+  slaBreachedAt: z.date().nullable(), // gh-290: when breach was recorded
 
   // Response
   responseAt: z.date().nullable(),
@@ -227,6 +228,7 @@ function formatRequestOutput(
     slaTimerStartedAt: request.slaTimerStartedAt,
     slaWorkingMinutes: request.slaWorkingMinutes,
     slaBreached: request.slaBreached,
+    slaBreachedAt: request.slaBreachedAt,
     responseAt: request.responseAt,
     responseTimeMinutes: request.responseTimeMinutes,
     respondedBy: request.respondedBy,

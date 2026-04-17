@@ -715,11 +715,13 @@ export async function recoverPendingSlaTimers(): Promise<RecoveryResult> {
             service: 'sla-timer-recovery',
           });
 
-          // Update request as breached
+          // Update request as breached (gh-290: record breach timestamp for
+          // accurate /violations excess calculation when there is no response)
           await prisma.clientRequest.update({
             where: { id: request.id },
             data: {
               slaBreached: true,
+              slaBreachedAt: new Date(),
               status: 'escalated',
             },
           });

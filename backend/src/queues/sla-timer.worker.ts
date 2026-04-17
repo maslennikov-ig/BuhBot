@@ -35,9 +35,13 @@ import {
  * Called when the SLA threshold timer fires.
  * Checks if the request is still pending and creates breach alert if so.
  *
+ * Exported for unit testing (gh-290 / code-review F1) so specs can invoke the
+ * handler directly and assert the shape of the write transaction — in
+ * particular that `slaBreachedAt` is populated alongside `slaBreached: true`.
+ *
  * @param job - BullMQ job with SLA timer data
  */
-async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
+export async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
   const { requestId, chatId, threshold } = job.data;
   const jobType = job.data.type ?? 'breach';
 
@@ -177,10 +181,13 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
     // - Either both succeed or both fail together
     const alert = await prisma.$transaction(async (tx) => {
       // Step 1: Update request status (using tx, not prisma)
+      // gh-290: persist slaBreachedAt so /violations can compute excess
+      // without waiting on responseAt for still-pending requests.
       await tx.clientRequest.update({
         where: { id: requestId },
         data: {
           slaBreached: true,
+          slaBreachedAt: new Date(),
           status: 'escalated',
         },
       });

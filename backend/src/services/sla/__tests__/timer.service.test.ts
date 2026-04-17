@@ -291,6 +291,20 @@ describe('SLA Timer Service - Schedule Resolution', () => {
         escalationLevel: 1,
       });
       expect(result.breached).toBe(1);
+
+      // gh-290 (code-review F1): recovery path must persist slaBreachedAt
+      // together with slaBreached:true so /violations can compute excess
+      // without relying on responseAt.
+      expect(mockPrisma.clientRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'recovery-request-id' },
+          data: expect.objectContaining({
+            slaBreached: true,
+            slaBreachedAt: expect.any(Date),
+            status: 'escalated',
+          }),
+        })
+      );
     });
   });
 });

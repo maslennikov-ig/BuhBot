@@ -5,6 +5,26 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.3...buhbot-v0.31.0) (2026-04-17)
+
+
+### Features
+
+* **sla:** persist slaBreachedAt on ClientRequest (gh-290) ([9bd17f0](https://github.com/maslennikov-ig/BuhBot/commit/9bd17f076e85da87e4a858fbf952f71f20a400d6))
+* **sla:** write slaBreachedAt in breach setters and expose via tRPC (gh-290) ([9bd17f0](https://github.com/maslennikov-ig/BuhBot/commit/9bd17f076e85da87e4a858fbf952f71f20a400d6))
+
+
+### Bug Fixes
+
+* **bot:** hide stars from survey completion message (gh-291) ([1d3b9c4](https://github.com/maslennikov-ig/BuhBot/commit/1d3b9c44a2d0e87d88c2458d9d8badfbec0ac661))
+* **bot:** hide stars from survey completion message (gh-291) ([#299](https://github.com/maslennikov-ig/BuhBot/issues/299)) ([1d3b9c4](https://github.com/maslennikov-ig/BuhBot/commit/1d3b9c44a2d0e87d88c2458d9d8badfbec0ac661))
+* **frontend:** compute SLA excess from responseAt/slaBreachedAt/now (gh-290) ([9bd17f0](https://github.com/maslennikov-ig/BuhBot/commit/9bd17f076e85da87e4a858fbf952f71f20a400d6))
+* **frontend:** raise AccountantSelect popover z-index above modal (gh-289) ([4403229](https://github.com/maslennikov-ig/BuhBot/commit/4403229fbed19d45a78314ffdb00fb05e7c5f869))
+* **frontend:** raise AccountantSelect popover z-index above modal (gh-289) ([#300](https://github.com/maslennikov-ig/BuhBot/issues/300)) ([4403229](https://github.com/maslennikov-ig/BuhBot/commit/4403229fbed19d45a78314ffdb00fb05e7c5f869))
+* **frontend:** raise ManagerMultiSelect popover z-index + document contract (gh-289) ([4403229](https://github.com/maslennikov-ig/BuhBot/commit/4403229fbed19d45a78314ffdb00fb05e7c5f869))
+* pass z-[1300] in the className prop of PopoverContent inside AccountantSelect. twMerge inside cn() preserves the override on the shared primitive; no other popovers are affected (shared popover.tsx keeps its default z-50 so tooltips / command palette / datepickers don't jump layers unexpectedly). ([4403229](https://github.com/maslennikov-ig/BuhBot/commit/4403229fbed19d45a78314ffdb00fb05e7c5f869))
+* **sla:** /violations excess shows real elapsed delta (gh-290) ([#301](https://github.com/maslennikov-ig/BuhBot/issues/301)) ([9bd17f0](https://github.com/maslennikov-ig/BuhBot/commit/9bd17f076e85da87e4a858fbf952f71f20a400d6))
+
 ## [0.30.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.2...buhbot-v0.30.3) (2026-04-03)
 
 

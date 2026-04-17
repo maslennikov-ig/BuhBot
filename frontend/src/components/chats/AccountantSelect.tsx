@@ -236,8 +236,12 @@ export function AccountantSelect({
         </PopoverTrigger>
 
         {/* Dropdown Panel */}
+        {/* gh-289: z-[1300] keeps popover above Add Chat modal (z-[1200]).
+            InvitationModal uses z-[1200]; Radix portal renders to <body>, so a
+            default z-50 from the shared PopoverContent lands visually behind
+            the modal. Twmerge preserves the override. */}
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] p-0 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg shadow-black/10"
+          className="z-[1300] w-[--radix-popover-trigger-width] p-0 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg shadow-black/10"
           align="start"
           sideOffset={4}
           onOpenAutoFocus={(e) => {

@@ -299,8 +299,12 @@ export function ManagerMultiSelect({
         </PopoverTrigger>
 
         {/* Dropdown Panel */}
+        {/* gh-289 (code-review F2): parallel to AccountantSelect, ManagerMultiSelect
+            must also pass z-[1300] so it renders above z-[1200] modals if ever
+            placed inside one. Shared PopoverContent defaults to z-50; Radix
+            portals to <body>, so the default would render behind modal overlays. */}
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] p-0 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg shadow-black/10"
+          className="z-[1300] w-[--radix-popover-trigger-width] p-0 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] shadow-lg shadow-black/10"
           align="start"
           sideOffset={4}
           onOpenAutoFocus={(e) => {

@@ -134,12 +134,11 @@ export function registerSurveyHandler(): void {
       // Record the response
       const feedbackId = await recordResponse(deliveryId, rating, username);
 
-      // Show confirmation with rating
-      const stars = '\u2B50'.repeat(rating);
-      const confirmText = `${stars}\n\n${THANK_YOU_MESSAGE}`;
-
+      // gh-291: Send thank-you message WITHOUT stars. Rating is persisted via
+      // recordResponse and surfaced to managers in the admin UI — client chat
+      // should only see the thank-you/comment prompt.
       await ctx.answerCbQuery(`Thank you! You rated ${rating} stars`);
-      await ctx.editMessageText(confirmText, { parse_mode: 'Markdown' });
+      await ctx.editMessageText(THANK_YOU_MESSAGE, { parse_mode: 'Markdown' });
 
       // Track that we're awaiting a comment (gh-151: cap size to prevent memory leak)
       if (chatId) {

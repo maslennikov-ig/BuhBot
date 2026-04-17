@@ -9,6 +9,19 @@ const Popover = PopoverPrimitive.Root;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
+/**
+ * z-index contract for PopoverContent:
+ *   - Default `z-50` matches shadcn convention for non-modal contexts
+ *     (tooltips, dropdowns, command palette, date pickers).
+ *   - When a Popover is placed inside a modal that uses `z-[1200]` (e.g.
+ *     `InvitationModal`, any `ChatDetails` overlay), the caller MUST pass
+ *     `z-[1300]` (or higher) via `className` — `cn`/twMerge replaces the
+ *     default. See `AccountantSelect` and `ManagerMultiSelect` for reference
+ *     and `gh-289` for the original bug context.
+ *   - Do NOT raise the default here: doing so would shift tooltips and
+ *     DropdownMenu portals above elements that currently rely on the
+ *     default stacking order.
+ */
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>

@@ -810,6 +810,7 @@ describe('SLA router schemas', () => {
       slaTimerStartedAt: null,
       slaWorkingMinutes: null,
       slaBreached: false,
+      slaBreachedAt: null,
       responseAt: null,
       responseTimeMinutes: null,
       respondedBy: null,
@@ -829,6 +830,7 @@ describe('SLA router schemas', () => {
         slaTimerStartedAt: new Date(),
         slaWorkingMinutes: 45,
         slaBreached: true,
+        slaBreachedAt: new Date(),
         responseAt: new Date(),
         responseTimeMinutes: 45,
         respondedBy: VALID_UUID_2,
@@ -837,6 +839,13 @@ describe('SLA router schemas', () => {
         chatTitle: 'Client Chat',
       });
       expect(result.success).toBe(true);
+    });
+
+    it('accepts slaBreachedAt as Date or null (gh-290)', () => {
+      expect(RequestOutput.safeParse({ ...validOutput, slaBreachedAt: new Date() }).success).toBe(
+        true
+      );
+      expect(RequestOutput.safeParse({ ...validOutput, slaBreachedAt: null }).success).toBe(true);
     });
 
     it('rejects invalid id (non-UUID)', () => {

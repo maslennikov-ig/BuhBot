@@ -177,10 +177,13 @@ async function processSlaTimer(job: Job<SlaTimerJobData>): Promise<void> {
     // - Either both succeed or both fail together
     const alert = await prisma.$transaction(async (tx) => {
       // Step 1: Update request status (using tx, not prisma)
+      // gh-290: persist slaBreachedAt so /violations can compute excess
+      // without waiting on responseAt for still-pending requests.
       await tx.clientRequest.update({
         where: { id: requestId },
         data: {
           slaBreached: true,
+          slaBreachedAt: new Date(),
           status: 'escalated',
         },
       });

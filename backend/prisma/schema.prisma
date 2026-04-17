@@ -307,6 +307,7 @@ model ClientRequest {
   slaTimerPausedAt  DateTime? @map("sla_timer_paused_at") @db.Timestamptz(6) // When paused (off-hours)
   slaWorkingMinutes Int?      @map("sla_working_minutes") // Calculated working minutes
   slaBreached       Boolean   @default(false) @map("sla_breached") // SLA violation flag
+  slaBreachedAt     DateTime? @map("sla_breached_at") @db.Timestamptz(6) // When breach was recorded (gh-290)
 
   // Response tracking (T008)
   respondedBy       String? @map("responded_by") @db.Uuid // Who responded
@@ -337,6 +338,7 @@ model ClientRequest {
   @@index([receivedAt])
   @@index([classification])
   @@index([slaBreached])
+  @@index([slaBreachedAt])
   @@index([slaTimerStartedAt])
   @@unique([chatId, messageId], name: "unique_request_per_message")
   @@index([chatId, contentHash, receivedAt]) // Dedup lookup (gh-66)

@@ -5,6 +5,15 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.31.0...buhbot-v0.32.0) (2026-04-18)
+
+
+### Features
+
+* **surveys:** custom date ranges and per-chat cooldown policy (gh-292) ([#305](https://github.com/maslennikov-ig/BuhBot/issues/305)) ([6c98a20](https://github.com/maslennikov-ig/BuhBot/commit/6c98a20dfd604eac330f6c93374b17a5dbce8312))
+* **surveys:** multi-user voting with vote changes and audit history (gh-294) ([#304](https://github.com/maslennikov-ig/BuhBot/issues/304)) ([6836ca9](https://github.com/maslennikov-ig/BuhBot/commit/6836ca970723e73debdc71072fdf276dda7cdcb9))
+* **violations:** full message viewer dialog on rows (gh-293) ([#303](https://github.com/maslennikov-ig/BuhBot/issues/303)) ([ea09266](https://github.com/maslennikov-ig/BuhBot/commit/ea09266b95a73d57744445ca453011b87132dde2))
+
 ## [0.31.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.30.3...buhbot-v0.31.0) (2026-04-17)
 
 

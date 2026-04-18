@@ -23,7 +23,10 @@ import type { SurveyStatus, DeliveryStatus } from '@prisma/client';
 // ============================================================================
 
 /**
- * Input for creating a new survey campaign
+ * Input for creating a quarter-mode survey campaign (legacy API).
+ *
+ * Kept for back-compat. Internally delegates to `createCampaign()` with a
+ * range derived from the quarter.
  */
 export interface CreateSurveyInput {
   /** Quarter identifier in format "YYYY-QN" (e.g., "2025-Q1") */
@@ -35,11 +38,42 @@ export interface CreateSurveyInput {
 }
 
 /**
- * Survey with calculated statistics
+ * Input for creating a campaign with an explicit reporting-period range (gh-292).
+ */
+export interface CreateCampaignInput {
+  /** Reporting-period start (used for getActiveClients filtering and UI display) */
+  startDate: Date;
+  /** Reporting-period end (must be strictly after startDate) */
+  endDate: Date;
+  /**
+   * When the bot should start delivering. Defaults to `startDate`.
+   * If scheduledFor is in the past, delivery still starts immediately via the caller.
+   */
+  scheduledFor?: Date;
+  /**
+   * Legacy quarter label (e.g. "2025-Q1"). Null/undefined = range mode.
+   * When provided, stored on the row so admins can filter by quarter in the UI.
+   */
+  quarter?: string | null;
+  /**
+   * Days after `scheduledFor` when the survey stops accepting responses.
+   * Defaults to GlobalSettings.surveyValidityDays (typically 7).
+   */
+  validityDays?: number;
+}
+
+/**
+ * Survey with calculated statistics.
+ *
+ * `quarter` is nullable as of gh-292 — range-mode campaigns don't have a quarter.
+ * `startDate`/`endDate` describe the reporting period; for legacy quarter-only rows
+ * they are backfilled from `scheduledAt`/`expiresAt`.
  */
 export interface SurveyWithStats {
   id: string;
-  quarter: string;
+  quarter: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
   status: SurveyStatus;
   scheduledAt: Date;
   sentAt: Date | null;
@@ -50,6 +84,20 @@ export interface SurveyWithStats {
   responseCount: number;
   responseRate: number;
   averageRating: number | null;
+}
+
+/**
+ * Result of a per-chat cooldown gate check (gh-292).
+ */
+export interface CooldownStatus {
+  /** true when the chat is eligible to receive a survey right now */
+  allowed: boolean;
+  /** Cooldown reason tag, set only when `allowed` is false. Currently always 'cooldown'. */
+  reason?: 'cooldown';
+  /** Earliest UTC instant when the chat becomes eligible again. Undefined when no prior delivery. */
+  nextEligibleAt?: Date;
+  /** Previous successful delivery timestamp (echoed for UI). */
+  lastSurveySentAt?: Date | null;
 }
 
 /**
@@ -65,60 +113,208 @@ export interface ActiveClient {
 // ============================================================================
 
 /**
- * Create a new survey campaign
- *
- * Creates a survey in 'scheduled' status with calculated expiration date.
- * Validates that no active survey exists for the same quarter.
- *
- * @param input - Survey creation parameters
- * @returns Created survey with stats
- * @throws Error if survey already exists for the quarter
- *
- * @example
- * ```typescript
- * const survey = await createSurvey({
- *   quarter: '2025-Q1',
- *   scheduledAt: new Date('2025-04-01'),
- *   validityDays: 7,
- * });
- * ```
+ * Quarter/range helpers (gh-292)
+ * ---------------------------------------------------------------------------
+ * Shared by both the legacy quarter wrapper and the new createCampaign path.
  */
-export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWithStats> {
-  // Validate quarter format: YYYY-QN where N is 1-4 (gh-122)
-  if (!/^\d{4}-Q[1-4]$/.test(input.quarter)) {
-    throw new Error(
-      `Invalid quarter format: ${input.quarter}. Expected format: YYYY-Q1 to YYYY-Q4`
-    );
+
+/**
+ * Regex for quarter identifiers in the format "YYYY-QN" (N = 1-4).
+ * Exported for the tRPC input schema to avoid drift between frontend and backend.
+ */
+export const QUARTER_REGEX = /^\d{4}-Q[1-4]$/;
+
+/**
+ * Derive a UTC start/end range from a quarter identifier.
+ *
+ * - Q1 → Jan 1 00:00:00 UTC .. Mar 31 23:59:59 UTC
+ * - Q4 → Oct 1 00:00:00 UTC .. Dec 31 23:59:59 UTC
+ *
+ * Note: using `Date.UTC(...)` (instead of the locale-dependent `new Date(y, m, d)`)
+ * guarantees identical behaviour on Moscow and UTC servers, which matters for
+ * DST transitions (Europe/Moscow is permanently UTC+3 since 2014, but the bot
+ * still stores/queries timestamps as tz-aware).
+ */
+export function quarterToRange(quarter: string): { startDate: Date; endDate: Date } {
+  if (!QUARTER_REGEX.test(quarter)) {
+    throw new Error(`Invalid quarter format: ${quarter}. Expected format: YYYY-Q1 to YYYY-Q4`);
   }
+  const parts = quarter.split('-Q');
+  const year = parseInt(parts[0]!, 10);
+  const quarterNum = parseInt(parts[1]!, 10);
+  const startMonth = (quarterNum - 1) * 3;
+  const startDate = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0, 0));
+  // Day 0 of startMonth+3 = last day of startMonth+2.
+  const endDate = new Date(Date.UTC(year, startMonth + 3, 0, 23, 59, 59, 999));
+  return { startDate, endDate };
+}
 
-  const validityDays = input.validityDays ?? 7;
-  const expiresAt = new Date(input.scheduledAt);
-  expiresAt.setDate(expiresAt.getDate() + validityDays);
+/**
+ * Read the cooldown hours knob from GlobalSettings (gh-292).
+ *
+ * Falls back to 24h when the singleton row is missing (fresh DB / first boot).
+ */
+export async function getSurveyCooldownHours(): Promise<number> {
+  const settings = await prisma.globalSettings.findUnique({
+    where: { id: 'default' },
+    select: { surveyCooldownHours: true },
+  });
+  return settings?.surveyCooldownHours ?? 24;
+}
 
-  // Check for existing survey in same quarter
-  const existing = await prisma.feedbackSurvey.findFirst({
-    where: {
-      quarter: input.quarter,
-      status: { in: ['scheduled', 'sending', 'active'] },
-    },
+/**
+ * Read the max allowed reporting-range span (in days) from GlobalSettings (gh-292).
+ * Defaults to 90 days when settings row is absent.
+ */
+export async function getSurveyMaxRangeDays(): Promise<number> {
+  const settings = await prisma.globalSettings.findUnique({
+    where: { id: 'default' },
+    select: { surveyMaxRangeDays: true },
+  });
+  return settings?.surveyMaxRangeDays ?? 90;
+}
+
+/**
+ * Check whether the given chat may receive a survey right now (gh-292).
+ *
+ * Looks at `Chat.lastSurveySentAt` and compares to `now - cooldownHours`.
+ * A null `lastSurveySentAt` (chat never received a survey) is always allowed.
+ *
+ * The worker MUST call this before `bot.telegram.sendMessage`. On block, the worker
+ * sets `SurveyDelivery.status='failed'` with `skipReason` and RETURNS (no throw),
+ * so BullMQ won't retry the job.
+ *
+ * @param chatId - Telegram chat ID
+ * @param cooldownHours - Cooldown period in hours (from GlobalSettings)
+ * @returns `{ allowed, reason?, nextEligibleAt?, lastSurveySentAt? }`
+ */
+export async function canSendSurveyToChat(
+  chatId: bigint,
+  cooldownHours: number
+): Promise<CooldownStatus> {
+  const chat = await prisma.chat.findUnique({
+    where: { id: chatId },
+    select: { lastSurveySentAt: true },
   });
 
-  if (existing) {
-    throw new Error(`Survey already exists for quarter ${input.quarter}`);
+  // Chat may not exist yet in this codepath (e.g. race before ingestion).
+  if (!chat) {
+    return { allowed: true, lastSurveySentAt: null };
   }
+
+  if (!chat.lastSurveySentAt) {
+    return { allowed: true, lastSurveySentAt: null };
+  }
+
+  const nextEligibleAt = new Date(chat.lastSurveySentAt.getTime() + cooldownHours * 3_600_000);
+  if (nextEligibleAt.getTime() <= Date.now()) {
+    return { allowed: true, lastSurveySentAt: chat.lastSurveySentAt };
+  }
+
+  return {
+    allowed: false,
+    reason: 'cooldown',
+    nextEligibleAt,
+    lastSurveySentAt: chat.lastSurveySentAt,
+  };
+}
+
+/**
+ * Milliseconds per day (used for range-span validation).
+ * Not a UI conversion — purely mathematical.
+ */
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Create a survey campaign with an explicit reporting-period range (gh-292).
+ *
+ * Rules:
+ * 1. `endDate` must be strictly after `startDate`.
+ * 2. `endDate` must not be in the past (admins cannot schedule retroactively-closed surveys).
+ * 3. Range span (`endDate - startDate`) must not exceed `surveyMaxRangeDays`.
+ * 4. The range must not overlap with any existing survey in status
+ *    `scheduled|sending|active` (SQL-style range overlap:
+ *    `new.start <= existing.end AND new.end >= existing.start`).
+ *
+ * Error codes emitted via `Error.name`:
+ *  - `'RANGE_INVALID'` — rules 1, 2, or 3 violated
+ *  - `'OVERLAP'` — rule 4 violated (`error.cause` carries conflicting survey id)
+ *
+ * Callers (tRPC router) should map these into TRPCError with the matching `cause.kind`.
+ */
+export async function createCampaign(input: CreateCampaignInput): Promise<SurveyWithStats> {
+  // 1. Range sanity
+  if (input.endDate.getTime() <= input.startDate.getTime()) {
+    const err = new Error('endDate must be strictly after startDate');
+    err.name = 'RANGE_INVALID';
+    throw err;
+  }
+  if (input.endDate.getTime() < Date.now()) {
+    const err = new Error('endDate must not be in the past');
+    err.name = 'RANGE_INVALID';
+    throw err;
+  }
+
+  // 2. Max range guard
+  const maxRangeDays = await getSurveyMaxRangeDays();
+  const rangeDays = (input.endDate.getTime() - input.startDate.getTime()) / MS_PER_DAY;
+  if (rangeDays > maxRangeDays) {
+    const err = new Error(`Range span ${rangeDays.toFixed(1)}d exceeds maximum ${maxRangeDays}d`);
+    err.name = 'RANGE_INVALID';
+    throw err;
+  }
+
+  // 3. Overlap guard — reject if any active/queued campaign overlaps.
+  //    SQL semantics: overlap iff new.start <= existing.end AND new.end >= existing.start.
+  //    Translated to Prisma: startDate <= new.endDate AND endDate >= new.startDate.
+  const conflicting = await prisma.feedbackSurvey.findFirst({
+    where: {
+      status: { in: ['scheduled', 'sending', 'active'] },
+      // Only consider rows that HAVE a range (legacy quarter-only rows have
+      // start_date/end_date backfilled by the migration).
+      startDate: { not: null, lte: input.endDate },
+      endDate: { not: null, gte: input.startDate },
+    },
+    select: { id: true, quarter: true, startDate: true, endDate: true },
+  });
+  if (conflicting) {
+    const err = new Error(`Survey ${conflicting.id} overlaps with the requested range`);
+    err.name = 'OVERLAP';
+    // Typed payload for the tRPC layer.
+    (err as Error & { conflictingSurveyId?: string }).conflictingSurveyId = conflicting.id;
+    throw err;
+  }
+
+  // 4. Validity → expiresAt. Default to GlobalSettings.surveyValidityDays when caller
+  //    didn't pass one. Use `scheduledFor` as the base; fall back to `startDate`.
+  const scheduledAt = input.scheduledFor ?? input.startDate;
+  let validityDays = input.validityDays;
+  if (validityDays === undefined) {
+    const settings = await prisma.globalSettings.findUnique({
+      where: { id: 'default' },
+      select: { surveyValidityDays: true },
+    });
+    validityDays = settings?.surveyValidityDays ?? 7;
+  }
+  const expiresAt = new Date(scheduledAt.getTime() + validityDays * MS_PER_DAY);
 
   const survey = await prisma.feedbackSurvey.create({
     data: {
-      quarter: input.quarter,
-      scheduledAt: input.scheduledAt,
+      quarter: input.quarter ?? null,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      scheduledAt,
       expiresAt,
       status: 'scheduled',
     },
   });
 
-  logger.info('Survey created', {
+  logger.info('Survey campaign created', {
     surveyId: survey.id,
+    mode: input.quarter ? 'quarter' : 'range',
     quarter: survey.quarter,
+    startDate: survey.startDate,
+    endDate: survey.endDate,
     scheduledAt: survey.scheduledAt,
     expiresAt: survey.expiresAt,
     service: 'survey-service',
@@ -131,44 +327,111 @@ export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWith
 }
 
 /**
- * Get active clients for survey delivery
+ * Create a new survey campaign (LEGACY quarter-only API).
  *
- * Active clients are those who sent at least one message in the current quarter.
- * Uses ClientRequest.receivedAt to determine activity.
+ * Kept for back-compat with the existing tRPC `create` input. New code should
+ * prefer `createCampaign()` which accepts an explicit range.
  *
- * @param quarter - Quarter identifier in format "YYYY-QN"
+ * Behaviour (unchanged from pre-gh-292):
+ * - Creates a survey in 'scheduled' status.
+ * - Rejects if another active survey exists for the same quarter.
+ *
+ * Internally derives `startDate`/`endDate` from the quarter via `quarterToRange()`
+ * and delegates the overlap/range checks to `createCampaign()`.
+ *
+ * @param input - Survey creation parameters (quarter + scheduledAt + validityDays)
+ * @returns Created survey with stats
+ * @throws Error if survey already exists for the quarter, or overlap detected
+ */
+export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWithStats> {
+  if (!QUARTER_REGEX.test(input.quarter)) {
+    throw new Error(
+      `Invalid quarter format: ${input.quarter}. Expected format: YYYY-Q1 to YYYY-Q4`
+    );
+  }
+
+  // Legacy check: reject if another active survey exists for the SAME quarter label.
+  // We keep this in addition to createCampaign's range-overlap check, because
+  // historical rows may have quarter set but a slightly different range
+  // (e.g. scheduled mid-quarter for a retroactive survey).
+  const existing = await prisma.feedbackSurvey.findFirst({
+    where: {
+      quarter: input.quarter,
+      status: { in: ['scheduled', 'sending', 'active'] },
+    },
+    select: { id: true },
+  });
+  if (existing) {
+    throw new Error(`Survey already exists for quarter ${input.quarter}`);
+  }
+
+  const { startDate, endDate } = quarterToRange(input.quarter);
+
+  const campaignInput: CreateCampaignInput = {
+    startDate,
+    endDate,
+    scheduledFor: input.scheduledAt,
+    quarter: input.quarter,
+  };
+  // Only set validityDays when the caller supplied it — `exactOptionalPropertyTypes`
+  // would otherwise reject `number | undefined` for an optional `number`.
+  if (input.validityDays !== undefined) {
+    campaignInput.validityDays = input.validityDays;
+  }
+  return createCampaign(campaignInput);
+}
+
+/**
+ * Get active clients for survey delivery.
+ *
+ * A client is "active" when they sent at least one ClientRequest inside the
+ * survey's reporting period. Soft-deleted chats (gh-209) are always excluded.
+ *
+ * Two call signatures supported (gh-292):
+ *   - `getActiveClients('2025-Q1')` — legacy quarter input, derives range via `quarterToRange`.
+ *   - `getActiveClients(startDate, endDate)` — explicit range for custom campaigns.
+ *
  * @returns Array of active client chats
  *
  * @example
  * ```typescript
- * const clients = await getActiveClients('2025-Q1');
- * console.log(`Found ${clients.length} active clients`);
+ * const byQuarter = await getActiveClients('2025-Q1');
+ * const byRange = await getActiveClients(new Date('2026-01-01'), new Date('2026-03-31'));
  * ```
  */
-export async function getActiveClients(quarter: string): Promise<ActiveClient[]> {
-  // Validate quarter format (gh-122)
-  if (!/^\d{4}-Q[1-4]$/.test(quarter)) {
-    throw new Error(`Invalid quarter format: ${quarter}. Expected format: YYYY-Q1 to YYYY-Q4`);
+export async function getActiveClients(quarter: string): Promise<ActiveClient[]>;
+export async function getActiveClients(startDate: Date, endDate: Date): Promise<ActiveClient[]>;
+export async function getActiveClients(
+  quarterOrStart: string | Date,
+  endDate?: Date
+): Promise<ActiveClient[]> {
+  let rangeStart: Date;
+  let rangeEnd: Date;
+  let quarterLabel: string | null = null;
+
+  if (typeof quarterOrStart === 'string') {
+    // Quarter mode. quarterToRange validates the format and throws on bad input.
+    const range = quarterToRange(quarterOrStart);
+    rangeStart = range.startDate;
+    rangeEnd = range.endDate;
+    quarterLabel = quarterOrStart;
+  } else {
+    if (!endDate) {
+      throw new Error('getActiveClients(startDate, endDate): endDate is required in range mode');
+    }
+    rangeStart = quarterOrStart;
+    rangeEnd = endDate;
   }
 
-  // Parse quarter to get date range (format: "YYYY-QN")
-  // Regex above guarantees both parts exist
-  const parts = quarter.split('-Q');
-  const year = parseInt(parts[0]!, 10);
-  const quarterNum = parseInt(parts[1]!, 10);
-  const startMonth = (quarterNum - 1) * 3;
-  const quarterStart = new Date(year, startMonth, 1);
-  const quarterEnd = new Date(year, startMonth + 3, 0, 23, 59, 59);
-
-  // Find chats with messages in the quarter (exclude soft-deleted chats, gh-209)
+  // Find chats with messages in the range (exclude soft-deleted chats, gh-209)
   const activeChats = await prisma.chat.findMany({
     where: {
       deletedAt: null,
       clientRequests: {
         some: {
           receivedAt: {
-            gte: quarterStart,
-            lte: quarterEnd,
+            gte: rangeStart,
+            lte: rangeEnd,
           },
         },
       },
@@ -180,9 +443,9 @@ export async function getActiveClients(quarter: string): Promise<ActiveClient[]>
   });
 
   logger.info('Active clients fetched', {
-    quarter,
+    quarter: quarterLabel,
     count: activeChats.length,
-    dateRange: { from: quarterStart, to: quarterEnd },
+    dateRange: { from: rangeStart, to: rangeEnd },
     service: 'survey-service',
   });
 
@@ -217,8 +480,16 @@ export async function startSurveyDelivery(surveyId: string): Promise<void> {
     throw new Error(`Survey ${surveyId} is not in scheduled status`);
   }
 
-  // Get active clients
-  const clients = await getActiveClients(survey.quarter);
+  // Get active clients — prefer the explicit reporting-period range (gh-292);
+  // fall back to quarter for legacy rows created before the migration backfill.
+  let clients: ActiveClient[];
+  if (survey.startDate && survey.endDate) {
+    clients = await getActiveClients(survey.startDate, survey.endDate);
+  } else if (survey.quarter) {
+    clients = await getActiveClients(survey.quarter);
+  } else {
+    throw new Error(`Survey ${surveyId} has neither a quarter nor a startDate/endDate range`);
+  }
 
   // Create delivery records in transaction
   await prisma.$transaction([
@@ -683,6 +954,7 @@ export async function expireOverdueSurveys(): Promise<number> {
 
 export default {
   createSurvey,
+  createCampaign,
   getActiveClients,
   startSurveyDelivery,
   markSurveyActive,
@@ -695,4 +967,8 @@ export default {
   getDeliveriesNeedingReminder,
   getSurveys,
   expireOverdueSurveys,
+  canSendSurveyToChat,
+  getSurveyCooldownHours,
+  getSurveyMaxRangeDays,
+  quarterToRange,
 };

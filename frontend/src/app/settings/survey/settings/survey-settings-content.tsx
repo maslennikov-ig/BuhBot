@@ -17,6 +17,8 @@ import {
   Bell,
   Star,
   Clock,
+  Timer,
+  CalendarRange,
 } from 'lucide-react';
 import { HelpButton } from '@/components/ui/HelpButton';
 
@@ -29,6 +31,9 @@ type SurveySettings = {
   surveyReminderDay: number;
   lowRatingThreshold: number;
   surveyQuarterDay: number;
+  // gh-292: anti-spam cooldown + max reporting-range span.
+  surveyCooldownHours: number;
+  surveyMaxRangeDays: number;
 };
 
 // ============================================
@@ -112,6 +117,9 @@ export function SurveySettingsContent() {
         surveyReminderDay: settingsData.surveyReminderDay,
         lowRatingThreshold: settingsData.lowRatingThreshold,
         surveyQuarterDay: settingsData.surveyQuarterDay,
+        // gh-292: settings.getSettings returns these unconditionally with defaults.
+        surveyCooldownHours: settingsData.surveyCooldownHours,
+        surveyMaxRangeDays: settingsData.surveyMaxRangeDays,
       });
     }
   }, [settingsData, formState]);
@@ -135,7 +143,9 @@ export function SurveySettingsContent() {
       formState.surveyValidityDays !== settingsData.surveyValidityDays ||
       formState.surveyReminderDay !== settingsData.surveyReminderDay ||
       formState.lowRatingThreshold !== settingsData.lowRatingThreshold ||
-      formState.surveyQuarterDay !== settingsData.surveyQuarterDay
+      formState.surveyQuarterDay !== settingsData.surveyQuarterDay ||
+      formState.surveyCooldownHours !== settingsData.surveyCooldownHours ||
+      formState.surveyMaxRangeDays !== settingsData.surveyMaxRangeDays
     );
   }, [settingsData, formState]);
 
@@ -362,6 +372,62 @@ export function SurveySettingsContent() {
                 <span className="text-sm text-[var(--buh-foreground-muted)]">
                   число месяца (1-28)
                 </span>
+              </div>
+            </SettingField>
+
+            {/* gh-292: Cooldown hours */}
+            <SettingField
+              icon={Timer}
+              label="Анти-спам: пауза между опросами (часы)"
+              description="Минимальное количество часов между отправками опроса одному и тому же чату. Защищает клиентов от спама."
+            >
+              <div className="flex items-center gap-4">
+                <input
+                  type="number"
+                  min={1}
+                  max={168}
+                  value={formState.surveyCooldownHours}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= 168) {
+                      handleChange('surveyCooldownHours', val);
+                    }
+                  }}
+                  className={cn(
+                    'h-10 w-24 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] px-3 text-center text-sm',
+                    'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
+                  )}
+                />
+                <span className="text-sm text-[var(--buh-foreground-muted)]">
+                  часов (1-168 = до одной недели)
+                </span>
+              </div>
+            </SettingField>
+
+            {/* gh-292: Max range days */}
+            <SettingField
+              icon={CalendarRange}
+              label="Макс. диапазон кампании (дней)"
+              description="Максимальная длительность произвольного диапазона (режим «Произвольный диапазон» в модальном окне создания опроса)"
+            >
+              <div className="flex items-center gap-4">
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={formState.surveyMaxRangeDays}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= 365) {
+                      handleChange('surveyMaxRangeDays', val);
+                    }
+                  }}
+                  className={cn(
+                    'h-10 w-24 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] px-3 text-center text-sm',
+                    'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
+                  )}
+                />
+                <span className="text-sm text-[var(--buh-foreground-muted)]">дней (1-365)</span>
               </div>
             </SettingField>
           </div>

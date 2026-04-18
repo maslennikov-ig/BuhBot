@@ -22,6 +22,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { formatDuration, computeSlaExcessMinutes, isSlaExcessSevere } from '@/lib/format-duration';
+import { MessageViewerDialog } from '@/components/violations/MessageViewerDialog';
 
 // ============================================
 // TYPES
@@ -29,8 +30,11 @@ import { formatDuration, computeSlaExcessMinutes, isSlaExcessSevere } from '@/li
 
 type ViolatedRequest = {
   id: string;
+  chatId: string;
   chatTitle: string;
   clientUsername: string;
+  /** gh-293: full body of the incoming client message for the viewer dialog */
+  messageText: string;
   messagePreview: string;
   receivedAt: Date;
   respondedAt: Date | null;
@@ -204,8 +208,10 @@ export default function ViolationsPage() {
 
       return {
         id: req.id,
+        chatId: req.chatId,
         chatTitle: req.chatTitle || 'Без названия',
         clientUsername: req.clientUsername || 'Неизвестный',
+        messageText: req.messageText,
         messagePreview,
         receivedAt: new Date(req.receivedAt),
         respondedAt: req.responseAt ? new Date(req.responseAt) : null,
@@ -415,12 +421,26 @@ export default function ViolationsPage() {
                       </td>
 
                       <td className="px-4 py-4">
-                        <div
-                          className="truncate max-w-[250px] text-[var(--buh-foreground-muted)]"
-                          title={violation.messagePreview}
-                        >
-                          {violation.messagePreview}
-                        </div>
+                        {/* gh-293: open a shadcn Dialog with the full message +
+                            triage metadata. Replaces the non-a11y native
+                            `title` tooltip (keyboard-inaccessible, hidden on
+                            mobile). The preview stays inline so the table
+                            layout is unchanged. */}
+                        <MessageViewerDialog
+                          preview={violation.messagePreview}
+                          request={{
+                            messageText: violation.messageText,
+                            clientUsername: violation.clientUsername,
+                            chatTitle: violation.chatTitle,
+                            chatId: violation.chatId,
+                            receivedAt: violation.receivedAt,
+                            respondedAt: violation.respondedAt,
+                            slaMinutes: violation.slaMinutes,
+                            excessMinutes: violation.excessMinutes,
+                            excessSevere: violation.excessSevere,
+                            isOpenBreach: violation.isOpenBreach,
+                          }}
+                        />
                       </td>
 
                       <td className="px-4 py-4">

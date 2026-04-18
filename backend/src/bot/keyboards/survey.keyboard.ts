@@ -50,6 +50,57 @@ export function createSurveyRatingKeyboard(
 }
 
 /**
+ * Checkmark for indicating the current user's active rating.
+ * Rendered next to the numeric rating on the row the user chose.
+ */
+const CHECK = '\u2705'; // ✅
+
+/**
+ * Per-user keyboard for multi-user voting (gh-294).
+ *
+ * The keyboard is regenerated on every callback so it reflects the current
+ * voter's active rating (not the first voter's). The checkmark only appears
+ * on the rating the specific user chose — other users who press the button
+ * will still see the un-checked version because the keyboard is produced
+ * client-side per callback, not persisted on the message.
+ *
+ * When `currentActiveRating` is non-null, an additional "Отозвать оценку"
+ * button is rendered on a second row. Pressing it triggers the
+ * `survey:remove:{deliveryId}` callback handled in survey.handler.ts.
+ *
+ * NOTE: editMessageReplyMarkup on a multi-member chat only changes what the
+ * bot stores for that message. The UX is imperfect (all members see the same
+ * keyboard at any given time), but the callback handler computes the
+ * per-user state correctly on the server. This keyboard exists mainly to
+ * give the acting user fast visual feedback on the toast + edited markup.
+ */
+export function buildPerUserSurveyKeyboard(input: {
+  deliveryId: string;
+  currentActiveRating: number | null;
+}): Markup.Markup<InlineKeyboardMarkup> {
+  const { deliveryId, currentActiveRating } = input;
+  const buttonLabel = (rating: number): string => {
+    return rating === currentActiveRating ? `${rating} ${STAR} ${CHECK}` : `${rating} ${STAR}`;
+  };
+
+  const rows: ReturnType<typeof Markup.button.callback>[][] = [
+    [
+      Markup.button.callback(buttonLabel(1), `survey:rating:${deliveryId}:1`),
+      Markup.button.callback(buttonLabel(2), `survey:rating:${deliveryId}:2`),
+      Markup.button.callback(buttonLabel(3), `survey:rating:${deliveryId}:3`),
+      Markup.button.callback(buttonLabel(4), `survey:rating:${deliveryId}:4`),
+      Markup.button.callback(buttonLabel(5), `survey:rating:${deliveryId}:5`),
+    ],
+  ];
+
+  if (currentActiveRating !== null) {
+    rows.push([Markup.button.callback('\u274C Отозвать оценку', `survey:remove:${deliveryId}`)]);
+  }
+
+  return Markup.inlineKeyboard(rows);
+}
+
+/**
  * Default survey message text in Russian
  */
 export const SURVEY_MESSAGE_TEXT = `\uD83D\uDCCA *Опрос удовлетворённости*
@@ -143,6 +194,7 @@ export function parseSurveyCallback(callbackData: string): SurveyCallbackData | 
 
 export default {
   createSurveyRatingKeyboard,
+  buildPerUserSurveyKeyboard,
   parseSurveyCallback,
   SURVEY_MESSAGE_TEXT,
   SURVEY_REMINDER_TEXT,

@@ -1,15 +1,22 @@
 /**
- * Survey Callback Handler
+ * Survey Callback Handler (gh-294 multi-user)
  *
  * Handles Telegram callback queries from survey rating buttons.
- * Pattern: survey:rating:{deliveryId}:{rating}
  *
- * Features:
- * - Handles 1-5 star rating submissions
- * - Records ratings via survey service
- * - Shows thank you message and prompts for optional comment
- * - Handles already responded and expired survey cases
- * - Comment collection via text message after rating
+ * Callback patterns:
+ *   1. survey:rating:{deliveryId}:{rating}  — submit/update a user's vote
+ *   2. survey:remove:{deliveryId}           — remove the user's active vote
+ *
+ * Multi-user semantics (gh-294):
+ * - Each Telegram user in a chat votes independently.
+ * - Votes can be changed or removed while the survey is active.
+ * - The survey closes ONLY on timeout (bullmq worker) or manual close by a
+ *   manager. There is NO first-vote / threshold closure.
+ * - Vote storage/audit lives in `vote.service.ts`; this handler is a thin
+ *   transport adapter that talks to Telegram.
+ * - Comment collection is per-user: the awaitingComment map is keyed by
+ *   `${chatId}:${telegramUserId}` so two users in the same chat can
+ *   independently leave comments without stepping on each other.
  *
  * @module bot/handlers/survey
  */
@@ -18,29 +25,54 @@ import { bot } from '../bot.js';
 import logger from '../../utils/logger.js';
 import {
   THANK_YOU_MESSAGE,
-  ALREADY_RESPONDED_MESSAGE,
   SURVEY_EXPIRED_MESSAGE,
+  buildPerUserSurveyKeyboard,
 } from '../keyboards/survey.keyboard.js';
-import { recordResponse, getDeliveryById } from '../../services/feedback/survey.service.js';
+import { getDeliveryById } from '../../services/feedback/survey.service.js';
+import {
+  submitVote,
+  removeVote,
+  SurveyClosedError,
+  DeliveryNotFoundError,
+} from '../../services/feedback/vote.service.js';
 import { prisma } from '../../lib/prisma.js';
 
 /**
  * Awaiting comment data structure
  */
 interface AwaitingCommentData {
-  /** Feedback response ID */
-  feedbackId: string;
-  /** Chat ID where the rating was submitted */
+  /** SurveyVote ID (gh-294: replaces legacy feedbackId). */
+  voteId: string;
+  /** Telegram chat ID (stringified) — useful for logging/eviction. */
   chatId: string;
+  /** Telegram user ID (stringified) — comments are per-user. */
+  telegramUserId: string;
 }
 
 /**
- * Track chats awaiting comment (after rating)
- * Key: chatId, Value: { feedbackId, chatId }
- * Comments are collected for 10 minutes after rating submission
+ * Track users awaiting a comment (after rating).
+ *
+ * Key: `${chatId}:${telegramUserId}` (gh-294 composite)
+ * Value: { voteId, chatId, telegramUserId }
+ *
+ * Comments are collected for 10 minutes after rating submission.
  */
 const awaitingComment = new Map<string, AwaitingCommentData>();
 const MAX_AWAITING_COMMENTS = 1000; // Prevent unbounded memory growth (gh-151)
+
+/**
+ * Build the composite key used by the awaitingComment map.
+ *
+ * Exposed as a named export so tests and any future external callers compose
+ * the key the same way (instead of hand-rolling the format, which would drift
+ * silently).
+ */
+export function buildAwaitingCommentKey(
+  chatId: string | number | bigint,
+  telegramUserId: string | number | bigint
+): string {
+  return `${chatId.toString()}:${telegramUserId.toString()}`;
+}
 
 /**
  * Register survey callback handlers
@@ -49,24 +81,17 @@ const MAX_AWAITING_COMMENTS = 1000; // Prevent unbounded memory growth (gh-151)
  * survey rating button handling and comment collection.
  *
  * Handlers:
- * 1. survey:rating:{deliveryId}:{rating} - Records rating (1-5)
- * 2. Text messages after rating - Collects optional comments
- *
- * @example
- * ```typescript
- * import { registerSurveyHandler } from './handlers/survey.handler.js';
- *
- * // During bot initialization
- * registerSurveyHandler();
- * ```
+ *   1. survey:rating:{deliveryId}:{rating}  — submit/update vote
+ *   2. survey:remove:{deliveryId}           — remove vote
+ *   3. Text messages after rating           — collect per-user comments
  */
 export function registerSurveyHandler(): void {
   logger.info('Registering survey callback handlers', { service: 'survey-handler' });
 
-  // Handle rating button callbacks
-  // Pattern: survey:rating:{deliveryId}:{rating}
+  // --------------------------------------------------------------------------
+  // 1. Rating action: survey:rating:{deliveryId}:{rating}
+  // --------------------------------------------------------------------------
   bot.action(/^survey:rating:([^:]+):(\d)$/, async (ctx) => {
-    // Extract deliveryId and rating from regex match
     const deliveryId = ctx.match[1];
     const ratingStr = ctx.match[2];
 
@@ -77,82 +102,120 @@ export function registerSurveyHandler(): void {
 
     const rating = parseInt(ratingStr, 10);
     if (rating < 1 || rating > 5) {
-      logger.warn('Invalid survey rating value', {
-        rating,
-        service: 'survey-handler',
-      });
+      logger.warn('Invalid survey rating value', { rating, service: 'survey-handler' });
       await ctx.answerCbQuery('Invalid rating');
       return;
     }
+
     const chatId = ctx.chat?.id?.toString();
+    const telegramUserIdNum = ctx.from?.id;
     const username = ctx.from?.username;
+
+    if (!telegramUserIdNum) {
+      await ctx.answerCbQuery('Missing user context');
+      return;
+    }
+    const telegramUserId = BigInt(telegramUserIdNum);
 
     logger.info('Survey rating received', {
       deliveryId,
       rating,
       chatId,
+      telegramUserId: telegramUserId.toString(),
       username,
       service: 'survey-handler',
     });
 
     try {
-      // Check delivery status
+      // Authorization: verify callback comes from the same chat as delivery (gh-98).
+      // We still fetch the delivery to enforce this invariant; vote.service does
+      // its own validation but we want to short-circuit unauthorized callbacks.
       const delivery = await getDeliveryById(deliveryId);
-
       if (!delivery) {
         await ctx.answerCbQuery('Survey not found');
         await ctx.editMessageText(SURVEY_EXPIRED_MESSAGE, { parse_mode: 'Markdown' });
         return;
       }
 
-      // Authorization: verify callback comes from the same chat as delivery (gh-98)
       const callbackChatId = ctx.chat?.id;
       if (!callbackChatId || BigInt(callbackChatId) !== delivery.chatId) {
         logger.warn('Survey response from unauthorized chat', {
           deliveryId,
           expectedChatId: delivery.chatId.toString(),
           actualChatId: callbackChatId?.toString(),
-          userId: ctx.from?.id,
+          userId: telegramUserId.toString(),
           service: 'survey-handler',
         });
         await ctx.answerCbQuery('Unauthorized');
         return;
       }
 
-      if (delivery.status === 'responded') {
-        await ctx.answerCbQuery('Already responded');
-        await ctx.editMessageText(ALREADY_RESPONDED_MESSAGE, { parse_mode: 'Markdown' });
-        return;
-      }
+      // Submit via vote.service.ts — atomic upsert + history append.
+      // Comment is collected separately via the text-message listener below;
+      // we intentionally omit the `comment` key so the service preserves any
+      // previously-saved comment on a vote update.
+      const vote = await submitVote({
+        deliveryId,
+        telegramUserId,
+        rating,
+        username: username ?? null,
+      });
 
-      if (delivery.survey.status !== 'active' && delivery.survey.status !== 'sending') {
-        await ctx.answerCbQuery('Survey closed');
-        await ctx.editMessageText(SURVEY_EXPIRED_MESSAGE, { parse_mode: 'Markdown' });
-        return;
-      }
-
-      // Record the response
-      const feedbackId = await recordResponse(deliveryId, rating, username);
-
-      // gh-291: Send thank-you message WITHOUT stars. Rating is persisted via
-      // recordResponse and surfaced to managers in the admin UI — client chat
-      // should only see the thank-you/comment prompt.
+      // gh-291: toast-only, no stars in chat-visible text.
       await ctx.answerCbQuery(`Thank you! You rated ${rating} stars`);
-      await ctx.editMessageText(THANK_YOU_MESSAGE, { parse_mode: 'Markdown' });
 
-      // Track that we're awaiting a comment (gh-151: cap size to prevent memory leak)
+      // Update the keyboard to reflect the user's new active rating. The edit
+      // is per-message (all chat members see the same markup), but the toast
+      // + the per-user callback routing on the backend ensure correct state.
+      try {
+        await ctx.editMessageReplyMarkup(
+          buildPerUserSurveyKeyboard({ deliveryId, currentActiveRating: rating }).reply_markup
+        );
+      } catch (editErr) {
+        // Telegram rejects edits if the markup is identical; ignore that class.
+        const msg = editErr instanceof Error ? editErr.message : String(editErr);
+        if (!msg.includes('message is not modified')) {
+          logger.warn('Failed to edit survey keyboard', {
+            deliveryId,
+            error: msg,
+            service: 'survey-handler',
+          });
+        }
+      }
+
+      // On the first vote by this user, also edit the message text once to
+      // show the thank-you prompt. Subsequent edits (vote changes) reuse the
+      // same text, so we rely on "message is not modified" suppression.
+      try {
+        await ctx.editMessageText(THANK_YOU_MESSAGE, { parse_mode: 'Markdown' });
+      } catch (editErr) {
+        const msg = editErr instanceof Error ? editErr.message : String(editErr);
+        if (!msg.includes('message is not modified')) {
+          logger.debug('editMessageText skipped', {
+            deliveryId,
+            error: msg,
+            service: 'survey-handler',
+          });
+        }
+      }
+
+      // Track per-user awaiting-comment state.
       if (chatId) {
+        const key = buildAwaitingCommentKey(chatId, telegramUserId);
         if (awaitingComment.size >= MAX_AWAITING_COMMENTS) {
-          // Evict oldest entry
+          // Evict oldest entry (FIFO since Map preserves insertion order).
           const oldestKey = awaitingComment.keys().next().value;
           if (oldestKey) awaitingComment.delete(oldestKey);
         }
-        awaitingComment.set(chatId, { feedbackId, chatId });
+        awaitingComment.set(key, {
+          voteId: vote.id,
+          chatId,
+          telegramUserId: telegramUserId.toString(),
+        });
 
-        // Clear after 10 minutes
         setTimeout(
           () => {
-            awaitingComment.delete(chatId);
+            awaitingComment.delete(key);
           },
           10 * 60 * 1000
         );
@@ -161,11 +224,23 @@ export function registerSurveyHandler(): void {
       logger.info('Survey rating recorded', {
         deliveryId,
         rating,
-        feedbackId,
+        voteId: vote.id,
         chatId,
+        telegramUserId: telegramUserId.toString(),
         service: 'survey-handler',
       });
     } catch (error) {
+      if (error instanceof SurveyClosedError) {
+        await ctx.answerCbQuery('Survey closed');
+        await ctx.editMessageText(SURVEY_EXPIRED_MESSAGE, { parse_mode: 'Markdown' });
+        return;
+      }
+      if (error instanceof DeliveryNotFoundError) {
+        await ctx.answerCbQuery('Survey not found');
+        await ctx.editMessageText(SURVEY_EXPIRED_MESSAGE, { parse_mode: 'Markdown' });
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Failed to process survey rating', {
         deliveryId,
@@ -173,67 +248,144 @@ export function registerSurveyHandler(): void {
         error: errorMessage,
         service: 'survey-handler',
       });
-
-      if (errorMessage.includes('Already responded')) {
-        await ctx.answerCbQuery('Already responded');
-        await ctx.editMessageText(ALREADY_RESPONDED_MESSAGE, { parse_mode: 'Markdown' });
-      } else if (errorMessage.includes('no longer accepting')) {
-        await ctx.answerCbQuery('Survey closed');
-        await ctx.editMessageText(SURVEY_EXPIRED_MESSAGE, { parse_mode: 'Markdown' });
-      } else {
-        await ctx.answerCbQuery('Error processing rating');
-      }
+      await ctx.answerCbQuery('Error processing rating');
     }
   });
 
-  // Handle comment messages (after rating)
+  // --------------------------------------------------------------------------
+  // 2. Remove action: survey:remove:{deliveryId}
+  // --------------------------------------------------------------------------
+  bot.action(/^survey:remove:([^:]+)$/, async (ctx) => {
+    const deliveryId = ctx.match[1];
+    if (!deliveryId) {
+      await ctx.answerCbQuery('Invalid callback');
+      return;
+    }
+
+    const telegramUserIdNum = ctx.from?.id;
+    if (!telegramUserIdNum) {
+      await ctx.answerCbQuery('Missing user context');
+      return;
+    }
+    const telegramUserId = BigInt(telegramUserIdNum);
+    const username = ctx.from?.username;
+    const chatId = ctx.chat?.id?.toString();
+
+    try {
+      // Authorization check (same as rating action).
+      const delivery = await getDeliveryById(deliveryId);
+      if (!delivery) {
+        await ctx.answerCbQuery('Survey not found');
+        return;
+      }
+      const callbackChatId = ctx.chat?.id;
+      if (!callbackChatId || BigInt(callbackChatId) !== delivery.chatId) {
+        await ctx.answerCbQuery('Unauthorized');
+        return;
+      }
+
+      await removeVote({ deliveryId, telegramUserId, username: username ?? null });
+
+      await ctx.answerCbQuery('Оценка отозвана');
+
+      // Rebuild keyboard without the active checkmark.
+      try {
+        await ctx.editMessageReplyMarkup(
+          buildPerUserSurveyKeyboard({ deliveryId, currentActiveRating: null }).reply_markup
+        );
+      } catch (editErr) {
+        const msg = editErr instanceof Error ? editErr.message : String(editErr);
+        if (!msg.includes('message is not modified')) {
+          logger.warn('Failed to edit survey keyboard on remove', {
+            deliveryId,
+            error: msg,
+            service: 'survey-handler',
+          });
+        }
+      }
+
+      // Clear any pending awaitingComment entry for this user.
+      if (chatId) {
+        const key = buildAwaitingCommentKey(chatId, telegramUserId);
+        awaitingComment.delete(key);
+      }
+
+      logger.info('Survey vote removed', {
+        deliveryId,
+        telegramUserId: telegramUserId.toString(),
+        chatId,
+        service: 'survey-handler',
+      });
+    } catch (error) {
+      if (error instanceof SurveyClosedError || error instanceof DeliveryNotFoundError) {
+        await ctx.answerCbQuery('Survey closed');
+        return;
+      }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to process survey remove', {
+        deliveryId,
+        error: errorMessage,
+        service: 'survey-handler',
+      });
+      await ctx.answerCbQuery('Error removing vote');
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // 3. Comment messages (after rating) — per-user keyed
+  // --------------------------------------------------------------------------
   bot.on('message', async (ctx, next) => {
     const chatId = ctx.chat?.id?.toString();
-    if (!chatId) {
+    const telegramUserIdNum = ctx.from?.id;
+    if (!chatId || !telegramUserIdNum) {
       return next();
     }
 
-    const awaitingData = awaitingComment.get(chatId);
+    const key = buildAwaitingCommentKey(chatId, telegramUserIdNum);
+    const awaitingData = awaitingComment.get(key);
     if (!awaitingData) {
       return next();
     }
 
-    // Check if it's a text message
+    // Text-only messages.
     if (!ctx.message || !('text' in ctx.message)) {
       return next();
     }
-
     const comment = ctx.message.text;
 
-    // Don't process commands as comments
+    // Commands are never comments.
     if (comment.startsWith('/')) {
       return next();
     }
 
     try {
-      // Add comment to feedback
-      await prisma.feedbackResponse.update({
-        where: { id: awaitingData.feedbackId },
+      // Update the SurveyVote.comment directly. Writing to the legacy
+      // FeedbackResponse table is intentionally skipped in the new flow
+      // (the legacy table remains for back-compat but is no longer a
+      // write target — see vote.service.ts module docstring).
+      await prisma.surveyVote.update({
+        where: { id: awaitingData.voteId },
         data: { comment },
       });
 
-      awaitingComment.delete(chatId);
+      awaitingComment.delete(key);
 
       await ctx.reply('\u2705 Спасибо за ваш комментарий! Мы обязательно его учтём.');
 
       logger.info('Survey comment added', {
-        feedbackId: awaitingData.feedbackId,
+        voteId: awaitingData.voteId,
         chatId,
+        telegramUserId: awaitingData.telegramUserId,
         commentLength: comment.length,
         service: 'survey-handler',
       });
     } catch (error) {
       logger.error('Failed to add survey comment', {
-        feedbackId: awaitingData.feedbackId,
+        voteId: awaitingData.voteId,
         error: error instanceof Error ? error.message : String(error),
         service: 'survey-handler',
       });
-      awaitingComment.delete(chatId);
+      awaitingComment.delete(key);
     }
   });
 
@@ -241,38 +393,44 @@ export function registerSurveyHandler(): void {
 }
 
 /**
- * Check if a chat is awaiting a comment
+ * Check if a (chat, user) pair is awaiting a comment.
  *
- * @param chatId - Telegram chat ID as string
- * @returns true if the chat is awaiting a comment
- *
- * @example
- * ```typescript
- * if (isAwaitingComment('123456789')) {
- *   // Handle comment flow
- * }
- * ```
+ * Backwards-compat: the legacy single-argument form (chatId only) is still
+ * accepted and checks whether ANY user in that chat is awaiting. New callers
+ * should pass both arguments for precise matching.
  */
-export function isAwaitingComment(chatId: string): boolean {
-  return awaitingComment.has(chatId);
+export function isAwaitingComment(
+  chatId: string,
+  telegramUserId?: string | number | bigint
+): boolean {
+  if (telegramUserId === undefined) {
+    const prefix = `${chatId}:`;
+    for (const k of awaitingComment.keys()) {
+      if (k.startsWith(prefix)) return true;
+    }
+    return false;
+  }
+  return awaitingComment.has(buildAwaitingCommentKey(chatId, telegramUserId));
 }
 
 /**
- * Get awaiting comment data for a chat
+ * Get awaiting comment data for a (chat, user) pair.
  *
- * @param chatId - Telegram chat ID as string
- * @returns Awaiting comment data or undefined if not awaiting
- *
- * @example
- * ```typescript
- * const data = getAwaitingCommentData('123456789');
- * if (data) {
- *   console.log(`Awaiting comment for feedback ${data.feedbackId}`);
- * }
- * ```
+ * Backwards-compat: the legacy single-argument form returns the first entry
+ * for the chat, if any. Prefer passing the telegramUserId.
  */
-export function getAwaitingCommentData(chatId: string): AwaitingCommentData | undefined {
-  return awaitingComment.get(chatId);
+export function getAwaitingCommentData(
+  chatId: string,
+  telegramUserId?: string | number | bigint
+): AwaitingCommentData | undefined {
+  if (telegramUserId === undefined) {
+    const prefix = `${chatId}:`;
+    for (const [k, v] of awaitingComment.entries()) {
+      if (k.startsWith(prefix)) return v;
+    }
+    return undefined;
+  }
+  return awaitingComment.get(buildAwaitingCommentKey(chatId, telegramUserId));
 }
 
 export default registerSurveyHandler;

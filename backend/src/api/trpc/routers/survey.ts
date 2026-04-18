@@ -28,6 +28,7 @@ import {
   getPendingDeliveries,
   QUARTER_REGEX,
 } from '../../../services/feedback/survey.service.js';
+import { aggregateSurvey, getVoteHistory } from '../../../services/feedback/vote.service.js';
 import { queueSurveyDelivery } from '../../../queues/survey.queue.js';
 
 /**
@@ -178,6 +179,15 @@ export const surveyRouter = router({
         stats[stat.status] = count;
       }
 
+      // gh-294: overlay aggregates computed from the multi-user SurveyVote
+      // store. When the new voting path has any data, prefer it for the UI
+      // numbers so managers see the up-to-date count/avg/distribution.
+      // The legacy `survey.responseCount`/`averageRating` columns are still
+      // returned for back-compat with any pre-gh-294 consumers.
+      const agg = await aggregateSurvey(input.id);
+      const effectiveResponseCount = agg.count > 0 ? agg.count : survey.responseCount;
+      const effectiveAverageRating = agg.average ?? survey.averageRating;
+
       return {
         id: survey.id,
         quarter: survey.quarter,
@@ -191,13 +201,14 @@ export const surveyRouter = router({
         closedBy: survey.closedByUser,
         totalClients: survey.totalClients,
         deliveredCount: survey.deliveredCount,
-        responseCount: survey.responseCount,
-        averageRating: survey.averageRating,
+        responseCount: effectiveResponseCount,
+        averageRating: effectiveAverageRating,
         responseRate:
           survey.deliveredCount > 0
-            ? Math.round((survey.responseCount / survey.deliveredCount) * 100 * 10) / 10
+            ? Math.round((effectiveResponseCount / survey.deliveredCount) * 100 * 10) / 10
             : 0,
         deliveryStats: stats,
+        distribution: agg.distribution,
         createdAt: survey.createdAt,
       };
     }),
@@ -531,6 +542,62 @@ export const surveyRouter = router({
           totalPages,
         },
       };
+    }),
+
+  /**
+   * gh-294: Aggregate results for a survey (count + average + distribution)
+   *
+   * Sourced from the multi-user SurveyVote store; state='removed' rows are
+   * excluded. Use this in the detail page results card.
+   *
+   * @authorization Manager only
+   */
+  results: managerProcedure
+    .input(z.object({ surveyId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const survey = await ctx.prisma.feedbackSurvey.findUnique({
+        where: { id: input.surveyId },
+        select: { id: true },
+      });
+      if (!survey) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Survey with ID ${input.surveyId} not found`,
+        });
+      }
+
+      const agg = await aggregateSurvey(input.surveyId);
+      return {
+        count: agg.count,
+        average: agg.average,
+        distribution: agg.distribution,
+      };
+    }),
+
+  /**
+   * gh-294: Vote history (audit trail) for a single delivery
+   *
+   * Returns every SurveyVoteHistory row for the delivery in chronological
+   * order. Used by the admin UI drill-down ("История голосов").
+   *
+   * BigInt handling: telegramUserId is serialized to a string across the
+   * tRPC boundary because tRPC does not JSON-serialize BigInt natively and
+   * this project does not use superjson.
+   *
+   * @authorization Manager only
+   */
+  voteHistory: managerProcedure
+    .input(z.object({ deliveryId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      const rows = await getVoteHistory(input.deliveryId);
+      return rows.map((r) => ({
+        timestamp: r.timestamp,
+        username: r.username,
+        telegramUserId: r.telegramUserId.toString(),
+        action: r.action,
+        oldRating: r.oldRating,
+        newRating: r.newRating,
+      }));
     }),
 
   /**

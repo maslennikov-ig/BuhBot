@@ -306,7 +306,8 @@ export async function getRecentComments(
  * @returns Survey feedback summary
  */
 export async function getSurveySummary(surveyId: string): Promise<{
-  survey: { id: string; quarter: string; status: string } | null;
+  // gh-292: quarter is nullable now that range-mode surveys exist.
+  survey: { id: string; quarter: string | null; status: string } | null;
   aggregates: FeedbackAggregates;
   lowRatingCount: number;
 }> {

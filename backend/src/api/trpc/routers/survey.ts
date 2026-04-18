@@ -20,9 +20,13 @@ import { TRPCError } from '@trpc/server';
 import type { Prisma } from '@prisma/client';
 import {
   createSurvey,
+  createCampaign,
+  canSendSurveyToChat,
+  getSurveyCooldownHours,
   closeSurvey,
   startSurveyDelivery,
   getPendingDeliveries,
+  QUARTER_REGEX,
 } from '../../../services/feedback/survey.service.js';
 import { aggregateSurvey, getVoteHistory } from '../../../services/feedback/vote.service.js';
 import { queueSurveyDelivery } from '../../../queues/survey.queue.js';
@@ -93,6 +97,8 @@ export const surveyRouter = router({
       const items = surveys.map((survey) => ({
         id: survey.id,
         quarter: survey.quarter,
+        startDate: survey.startDate,
+        endDate: survey.endDate,
         status: survey.status,
         scheduledAt: survey.scheduledAt,
         sentAt: survey.sentAt,
@@ -185,6 +191,8 @@ export const surveyRouter = router({
       return {
         id: survey.id,
         quarter: survey.quarter,
+        startDate: survey.startDate,
+        endDate: survey.endDate,
         status: survey.status,
         scheduledAt: survey.scheduledAt,
         sentAt: survey.sentAt,
@@ -206,54 +214,125 @@ export const surveyRouter = router({
     }),
 
   /**
-   * T061: Create/schedule a new survey campaign
+   * T061 / gh-292: Create/schedule a new survey campaign.
    *
-   * Manager-only procedure to create a new survey.
-   * If scheduledFor is not provided, the survey starts immediately.
+   * Input is a discriminated union over `mode`:
+   *   - `mode: 'quarter'` — legacy preset, input includes a `YYYY-QN` quarter.
+   *   - `mode: 'range'`  — custom `startDate`/`endDate`, no quarter.
+   *
+   * If `scheduledFor` is omitted, delivery starts immediately (surveys go to BullMQ).
+   *
+   * Error mapping (service → tRPC):
+   *   - Error.name='RANGE_INVALID' → TRPCError BAD_REQUEST with cause.kind='RANGE_INVALID'.
+   *   - Error.name='OVERLAP'       → TRPCError PRECONDITION_FAILED with cause.kind='OVERLAP' and conflictingSurveyId.
    *
    * @authorization Manager only
    */
   create: managerProcedure
     .input(
-      z.object({
-        quarter: z.string().regex(/^\d{4}-Q[1-4]$/, {
-          message: 'Quarter must be in format YYYY-QN (e.g., 2025-Q1)',
-        }),
-        scheduledFor: z.date().optional(),
-      })
+      z
+        .discriminatedUnion('mode', [
+          z.object({
+            mode: z.literal('quarter'),
+            quarter: z.string().regex(QUARTER_REGEX, {
+              message: 'Quarter must be in format YYYY-QN (e.g., 2025-Q1)',
+            }),
+            scheduledFor: z.date().optional(),
+            validityDays: z.number().int().min(1).max(90).optional(),
+          }),
+          z.object({
+            mode: z.literal('range'),
+            startDate: z.date(),
+            endDate: z.date(),
+            scheduledFor: z.date().optional(),
+            validityDays: z.number().int().min(1).max(90).optional(),
+          }),
+        ])
+        .superRefine((input, ctx) => {
+          if (input.mode === 'range' && input.endDate <= input.startDate) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'endDate must be strictly after startDate',
+              path: ['endDate'],
+            });
+          }
+        })
     )
-    .mutation(async ({ ctx, input }) => {
-      // Get validity days from settings
-      const settings = await ctx.prisma.globalSettings.findUnique({
-        where: { id: 'default' },
-        select: { surveyValidityDays: true },
-      });
-      const validityDays = settings?.surveyValidityDays ?? 7;
-
-      // Determine start time
-      const scheduledAt = input.scheduledFor ?? new Date();
+    .mutation(async ({ input }) => {
+      // Determine trigger mode.
       const isImmediate = !input.scheduledFor;
 
-      // Create the survey using service
-      const survey = await createSurvey({
-        quarter: input.quarter,
-        scheduledAt,
-        validityDays,
-      });
+      // Build service call input based on mode.
+      let survey: Awaited<ReturnType<typeof createCampaign>>;
+      try {
+        if (input.mode === 'quarter') {
+          // Delegate to the back-compat `createSurvey` wrapper which handles
+          // same-quarter dedup (in addition to the range-overlap check that
+          // createCampaign does internally).
+          const legacyInput: Parameters<typeof createSurvey>[0] = {
+            quarter: input.quarter,
+            scheduledAt: input.scheduledFor ?? new Date(),
+          };
+          if (input.validityDays !== undefined) {
+            legacyInput.validityDays = input.validityDays;
+          }
+          survey = await createSurvey(legacyInput);
+        } else {
+          // Range mode — scheduledFor defaults to `now` when the admin wants immediate
+          // delivery. Without this, `createCampaign` would fall back to `startDate`,
+          // which may be in the past for retroactive reporting windows.
+          const campaignInput: Parameters<typeof createCampaign>[0] = {
+            startDate: input.startDate,
+            endDate: input.endDate,
+            scheduledFor: input.scheduledFor ?? new Date(),
+          };
+          if (input.validityDays !== undefined) {
+            campaignInput.validityDays = input.validityDays;
+          }
+          survey = await createCampaign(campaignInput);
+        }
+      } catch (err) {
+        // Translate service-level errors into typed TRPCErrors.
+        if (err instanceof Error && err.name === 'RANGE_INVALID') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: err.message,
+            cause: { kind: 'RANGE_INVALID' },
+          });
+        }
+        if (err instanceof Error && err.name === 'OVERLAP') {
+          const conflictingSurveyId =
+            (err as Error & { conflictingSurveyId?: string }).conflictingSurveyId ?? null;
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: err.message,
+            cause: { kind: 'OVERLAP', conflictingSurveyId },
+          });
+        }
+        throw err;
+      }
 
-      // If immediate start, trigger delivery
+      // If immediate start, trigger delivery.
       if (isImmediate) {
-        // Start delivery process
         await startSurveyDelivery(survey.id);
 
-        // Queue delivery jobs for pending deliveries
         const pendingDeliveries = await getPendingDeliveries(survey.id);
+        // Derive a quarter label for the job payload. For range-mode surveys
+        // we synthesize a "range" tag so existing log aggregation on `quarter`
+        // still works without crashing on null.
+        const quarterForJob =
+          survey.quarter ??
+          (survey.startDate && survey.endDate
+            ? `range:${survey.startDate.toISOString().slice(0, 10)}..${survey.endDate
+                .toISOString()
+                .slice(0, 10)}`
+            : 'range');
         for (const delivery of pendingDeliveries) {
           await queueSurveyDelivery({
             surveyId: survey.id,
             chatId: delivery.chatId.toString(),
             deliveryId: delivery.id,
-            quarter: survey.quarter,
+            quarter: quarterForJob,
           });
         }
       }
@@ -261,6 +340,8 @@ export const surveyRouter = router({
       return {
         id: survey.id,
         quarter: survey.quarter,
+        startDate: survey.startDate,
+        endDate: survey.endDate,
         status: survey.status,
         scheduledAt: survey.scheduledAt,
         expiresAt: survey.expiresAt,
@@ -340,14 +421,23 @@ export const surveyRouter = router({
       // Start delivery process
       await startSurveyDelivery(input.id);
 
-      // Queue delivery jobs for pending deliveries
+      // Queue delivery jobs for pending deliveries.
+      // gh-292: quarter may be null for range-mode surveys — synthesize a label
+      // so the job payload stays non-null (SurveyDeliveryJobData.quarter is string).
       const pendingDeliveries = await getPendingDeliveries(input.id);
+      const quarterForJob =
+        survey.quarter ??
+        (survey.startDate && survey.endDate
+          ? `range:${survey.startDate.toISOString().slice(0, 10)}..${survey.endDate
+              .toISOString()
+              .slice(0, 10)}`
+          : 'range');
       for (const delivery of pendingDeliveries) {
         await queueSurveyDelivery({
           surveyId: input.id,
           chatId: delivery.chatId.toString(),
           deliveryId: delivery.id,
-          quarter: survey.quarter,
+          quarter: quarterForJob,
         });
       }
 
@@ -525,6 +615,10 @@ export const surveyRouter = router({
         surveyReminderDay: true,
         lowRatingThreshold: true,
         surveyQuarterDay: true,
+        // gh-292: new cooldown / max-range knobs, read by the create modal to
+        // surface the configured limits to the admin UI.
+        surveyCooldownHours: true,
+        surveyMaxRangeDays: true,
       },
     });
 
@@ -534,6 +628,8 @@ export const surveyRouter = router({
         surveyReminderDay: 2,
         lowRatingThreshold: 3,
         surveyQuarterDay: 1,
+        surveyCooldownHours: 24,
+        surveyMaxRangeDays: 90,
       }
     );
   }),
@@ -552,6 +648,10 @@ export const surveyRouter = router({
         surveyReminderDay: z.number().min(1).max(7).optional(),
         lowRatingThreshold: z.number().min(1).max(5).optional(),
         surveyQuarterDay: z.number().min(1).max(28).optional(),
+        // gh-292: anti-spam cooldown in hours (1..168 = one week) and
+        // max allowed reporting range in days (1..365).
+        surveyCooldownHours: z.number().min(1).max(168).optional(),
+        surveyMaxRangeDays: z.number().min(1).max(365).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -570,6 +670,12 @@ export const surveyRouter = router({
       if (input.surveyQuarterDay !== undefined) {
         updateData.surveyQuarterDay = input.surveyQuarterDay;
       }
+      if (input.surveyCooldownHours !== undefined) {
+        updateData.surveyCooldownHours = input.surveyCooldownHours;
+      }
+      if (input.surveyMaxRangeDays !== undefined) {
+        updateData.surveyMaxRangeDays = input.surveyMaxRangeDays;
+      }
 
       // Update settings (upsert to handle case where no settings exist)
       const settings = await ctx.prisma.globalSettings.upsert({
@@ -581,18 +687,56 @@ export const surveyRouter = router({
           surveyReminderDay: input.surveyReminderDay ?? 2,
           lowRatingThreshold: input.lowRatingThreshold ?? 3,
           surveyQuarterDay: input.surveyQuarterDay ?? 1,
+          surveyCooldownHours: input.surveyCooldownHours ?? 24,
+          surveyMaxRangeDays: input.surveyMaxRangeDays ?? 90,
         },
         select: {
           surveyValidityDays: true,
           surveyReminderDay: true,
           lowRatingThreshold: true,
           surveyQuarterDay: true,
+          surveyCooldownHours: true,
+          surveyMaxRangeDays: true,
         },
       });
 
       return {
         success: true,
         settings,
+      };
+    }),
+
+  /**
+   * gh-292: Look up cooldown eligibility for a single chat.
+   *
+   * Used by the frontend creation modal to preview whether a given chat will
+   * be skipped on the next delivery. Returns the same `CooldownStatus` shape
+   * that the worker consults.
+   *
+   * @authorization Manager only
+   */
+  getCooldownStatus: managerProcedure
+    .input(
+      z.object({
+        /**
+         * Telegram chat ID as a decimal string (BigInt serialization; negative
+         * for supergroups). We parse + validate server-side to keep a tight
+         * error surface.
+         */
+        chatId: z
+          .string()
+          .regex(/^-?\d+$/, 'chatId must be a decimal integer (may start with "-")'),
+      })
+    )
+    .query(async ({ input }) => {
+      const cooldownHours = await getSurveyCooldownHours();
+      const status = await canSendSurveyToChat(BigInt(input.chatId), cooldownHours);
+      return {
+        cooldownHours,
+        allowed: status.allowed,
+        reason: status.reason ?? null,
+        nextEligibleAt: status.nextEligibleAt ?? null,
+        lastSurveySentAt: status.lastSurveySentAt ?? null,
       };
     }),
 });

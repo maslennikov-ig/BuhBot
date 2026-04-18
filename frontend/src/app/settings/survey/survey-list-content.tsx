@@ -23,6 +23,17 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { HelpButton } from '@/components/ui/HelpButton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarWidget } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { tz } from '@date-fns/tz';
+import { ru } from 'date-fns/locale';
+
+// gh-292: All UI-facing timestamps live in Europe/Moscow.
+// Storage is UTC (see @db.Timestamptz(6) in schema.prisma) — we only convert at
+// display time via the date-fns `in: tz(...)` option.
+const MOSCOW_TZ = 'Europe/Moscow';
+const moscow = tz(MOSCOW_TZ);
 
 // ============================================
 // TYPES
@@ -104,26 +115,70 @@ function StatusBadge({ status }: { status: SurveyStatus }) {
 // CREATE SURVEY MODAL
 // ============================================
 
+/**
+ * gh-292: Translate a tRPC error into a Russian message tailored to the
+ * discriminated `cause.kind` that the server attaches. Falls back to the
+ * plain `error.message` when the cause isn't one of the known kinds.
+ */
+function formatTrpcError(
+  error: { message?: string; data?: unknown } | null | undefined,
+  maxRangeDays: number
+): string | null {
+  if (!error) return null;
+  const cause = (
+    error.data as { cause?: { kind?: string; nextEligibleAt?: string } } | null | undefined
+  )?.cause;
+  if (cause?.kind === 'COOLDOWN' && cause.nextEligibleAt) {
+    const when = format(new Date(cause.nextEligibleAt), 'dd MMMM HH:mm', {
+      locale: ru,
+      in: moscow,
+    });
+    return `Рассылка заблокирована до ${when} (Москва)`;
+  }
+  if (cause?.kind === 'OVERLAP') {
+    return 'Уже есть активная кампания с пересекающимся диапазоном дат';
+  }
+  if (cause?.kind === 'RANGE_INVALID') {
+    return `Диапазон некорректен (макс. ${maxRangeDays} дней, даты не в прошлом, конец позже начала)`;
+  }
+  return error.message ?? 'Не удалось создать опрос';
+}
+
 function CreateSurveyModal({
   isOpen,
   onClose,
   onSuccess,
+  maxRangeDays,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /** From GlobalSettings.surveyMaxRangeDays — surfaces in the error copy. */
+  maxRangeDays: number;
 }) {
+  const [mode, setMode] = React.useState<'quarter' | 'range'>('quarter');
   const [quarter, setQuarter] = React.useState('');
+  const [rangeStart, setRangeStart] = React.useState<Date | undefined>(undefined);
+  const [rangeEnd, setRangeEnd] = React.useState<Date | undefined>(undefined);
   const [scheduledFor, setScheduledFor] = React.useState('');
   const [isImmediate, setIsImmediate] = React.useState(true);
+  const [clientError, setClientError] = React.useState<string | null>(null);
+
+  const resetForm = React.useCallback(() => {
+    setMode('quarter');
+    setQuarter('');
+    setRangeStart(undefined);
+    setRangeEnd(undefined);
+    setScheduledFor('');
+    setIsImmediate(true);
+    setClientError(null);
+  }, []);
 
   const createMutation = trpc.survey.create.useMutation({
     onSuccess: () => {
       onSuccess();
       onClose();
-      setQuarter('');
-      setScheduledFor('');
-      setIsImmediate(true);
+      resetForm();
     },
   });
 
@@ -144,15 +199,54 @@ function CreateSurveyModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!quarter) return;
+    setClientError(null);
+
+    const scheduledForDate = isImmediate ? undefined : new Date(scheduledFor);
+
+    if (mode === 'quarter') {
+      if (!quarter) {
+        setClientError('Выберите квартал');
+        return;
+      }
+      createMutation.mutate({
+        mode: 'quarter',
+        quarter,
+        ...(scheduledForDate ? { scheduledFor: scheduledForDate } : {}),
+      });
+      return;
+    }
+
+    // Range mode — client-side validation before hitting the server so the
+    // user gets instant feedback on obvious mistakes (end <= start).
+    if (!rangeStart || !rangeEnd) {
+      setClientError('Укажите начало и конец диапазона');
+      return;
+    }
+    if (rangeEnd <= rangeStart) {
+      setClientError('Дата окончания должна быть позже даты начала');
+      return;
+    }
+    const spanDays = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / 86_400_000);
+    if (spanDays > maxRangeDays) {
+      setClientError(`Диапазон ${spanDays} дн. превышает лимит ${maxRangeDays} дн.`);
+      return;
+    }
 
     createMutation.mutate({
-      quarter,
-      scheduledFor: isImmediate ? undefined : new Date(scheduledFor),
+      mode: 'range',
+      startDate: rangeStart,
+      endDate: rangeEnd,
+      ...(scheduledForDate ? { scheduledFor: scheduledForDate } : {}),
     });
   };
 
+  const serverError = formatTrpcError(createMutation.error, maxRangeDays);
+  const errorText = clientError ?? serverError;
+
   if (!isOpen) return null;
+
+  const canSubmit =
+    !createMutation.isPending && (mode === 'quarter' ? !!quarter : !!rangeStart && !!rangeEnd);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -164,28 +258,135 @@ function CreateSurveyModal({
         <h2 className="mb-4 text-xl font-semibold text-[var(--buh-foreground)]">Создать опрос</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quarter Select */}
+          {/* Mode Tabs */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
-              Квартал
+              Режим
             </label>
-            <select
-              value={quarter}
-              onChange={(e) => setQuarter(e.target.value)}
-              className={cn(
-                'h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-sm',
-                'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
-              )}
-              required
-            >
-              <option value="">Выберите квартал</option>
-              {quarterOptions.map((q) => (
-                <option key={q} value={q}>
-                  {q}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-2" role="radiogroup" aria-label="Режим создания опроса">
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="radio"
+                  name="survey-mode"
+                  value="quarter"
+                  checked={mode === 'quarter'}
+                  onChange={() => {
+                    setMode('quarter');
+                    setClientError(null);
+                  }}
+                  className="h-4 w-4 accent-[var(--buh-accent)]"
+                />
+                <span className="text-sm text-[var(--buh-foreground)]">Квартал (пресет)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="radio"
+                  name="survey-mode"
+                  value="range"
+                  checked={mode === 'range'}
+                  onChange={() => {
+                    setMode('range');
+                    setClientError(null);
+                  }}
+                  className="h-4 w-4 accent-[var(--buh-accent)]"
+                />
+                <span className="text-sm text-[var(--buh-foreground)]">Произвольный диапазон</span>
+              </label>
+            </div>
           </div>
+
+          {/* Quarter Select */}
+          {mode === 'quarter' && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
+                Квартал
+              </label>
+              <select
+                value={quarter}
+                onChange={(e) => setQuarter(e.target.value)}
+                className={cn(
+                  'h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-sm',
+                  'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
+                )}
+                required
+              >
+                <option value="">Выберите квартал</option>
+                {quarterOptions.map((q) => (
+                  <option key={q} value={q}>
+                    {q}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Range Picker */}
+          {mode === 'range' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
+                  Начало
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        'flex h-10 w-full items-center gap-2 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-left text-sm',
+                        'hover:bg-[var(--buh-surface-elevated)]',
+                        !rangeStart && 'text-[var(--buh-foreground-muted)]'
+                      )}
+                    >
+                      <Calendar className="h-4 w-4" />
+                      {rangeStart
+                        ? format(rangeStart, 'dd.MM.yyyy', { locale: ru, in: moscow })
+                        : 'Выберите дату'}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarWidget
+                      mode="single"
+                      selected={rangeStart}
+                      onSelect={setRangeStart}
+                      locale={ru}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
+                  Конец
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        'flex h-10 w-full items-center gap-2 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-left text-sm',
+                        'hover:bg-[var(--buh-surface-elevated)]',
+                        !rangeEnd && 'text-[var(--buh-foreground-muted)]'
+                      )}
+                    >
+                      <Calendar className="h-4 w-4" />
+                      {rangeEnd
+                        ? format(rangeEnd, 'dd.MM.yyyy', { locale: ru, in: moscow })
+                        : 'Выберите дату'}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarWidget
+                      mode="single"
+                      selected={rangeEnd}
+                      onSelect={setRangeEnd}
+                      locale={ru}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
 
           {/* Schedule Options */}
           <div>
@@ -218,7 +419,7 @@ function CreateSurveyModal({
           {!isImmediate && (
             <div>
               <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
-                Дата и время запуска
+                Дата и время запуска (Москва)
               </label>
               <input
                 type="datetime-local"
@@ -234,9 +435,12 @@ function CreateSurveyModal({
           )}
 
           {/* Error Message */}
-          {createMutation.error && (
-            <div className="rounded-lg bg-[var(--buh-error-muted)] p-3 text-sm text-[var(--buh-error)]">
-              {createMutation.error.message}
+          {errorText && (
+            <div
+              role="alert"
+              className="rounded-lg bg-[var(--buh-error-muted)] p-3 text-sm text-[var(--buh-error)]"
+            >
+              {errorText}
             </div>
           )}
 
@@ -244,7 +448,10 @@ function CreateSurveyModal({
           <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                resetForm();
+              }}
               className={cn(
                 'flex-1 rounded-lg border border-[var(--buh-border)] px-4 py-2 text-sm font-medium',
                 'text-[var(--buh-foreground)] hover:bg-[var(--buh-surface-elevated)]',
@@ -255,7 +462,7 @@ function CreateSurveyModal({
             </button>
             <button
               type="submit"
-              disabled={createMutation.isPending || !quarter}
+              disabled={!canSubmit}
               className={cn(
                 'flex-1 rounded-lg bg-gradient-to-r from-[var(--buh-accent)] to-[var(--buh-primary)] px-4 py-2 text-sm font-medium text-white',
                 'hover:opacity-90 transition-opacity duration-200',
@@ -325,7 +532,12 @@ export function SurveyListContent() {
     }
   );
 
-  // Format date helper
+  // gh-292: pull cooldown/maxRange knobs so the create modal can show
+  // the configured limit in its error copy.
+  const { data: settingsData } = trpc.survey.getSettings.useQuery();
+  const maxRangeDays = settingsData?.surveyMaxRangeDays ?? 90;
+
+  // Format date helper (legacy — kept for scheduledAt display).
   const formatDate = (date: Date | string | null): string => {
     if (!date) return '-';
     const d = new Date(date);
@@ -336,6 +548,24 @@ export function SurveyListContent() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  /**
+   * gh-292: Render the "period" column. Prefer quarter label when present,
+   * otherwise render the explicit startDate..endDate range in Moscow tz.
+   */
+  const formatPeriod = (
+    quarter: string | null,
+    startDate: Date | string | null,
+    endDate: Date | string | null
+  ): string => {
+    if (quarter) return quarter;
+    if (startDate && endDate) {
+      const s = format(new Date(startDate), 'dd.MM.yyyy', { locale: ru, in: moscow });
+      const e = format(new Date(endDate), 'dd.MM.yyyy', { locale: ru, in: moscow });
+      return `${s} — ${e}`;
+    }
+    return '—';
   };
 
   // Handle filter change
@@ -458,7 +688,7 @@ export function SurveyListContent() {
             <thead>
               <tr className="border-b border-[var(--buh-border)] bg-[var(--buh-surface-elevated)]/50">
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
-                  Квартал
+                  Период
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                   Статус
@@ -490,10 +720,14 @@ export function SurveyListContent() {
                   )}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  {/* Quarter */}
+                  {/* Quarter / Range (gh-292) */}
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className="font-semibold text-[var(--buh-foreground)]">
-                      {survey.quarter}
+                      {formatPeriod(
+                        survey.quarter ?? null,
+                        survey.startDate ?? null,
+                        survey.endDate ?? null
+                      )}
                     </span>
                   </td>
 
@@ -617,6 +851,7 @@ export function SurveyListContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => refetch()}
+        maxRangeDays={maxRangeDays}
       />
     </AdminLayout>
   );

@@ -4,18 +4,18 @@
  * Validates that the survey rating callback produces the expected chat-visible
  * message after a user rates. gh-291 requires that the post-rating message
  * contain ONLY the thank-you text — no stars. The rating itself is persisted
- * via recordResponse and visible to managers in the admin UI.
+ * via the vote service and visible to managers in the admin UI.
  *
- * Strategy: mock bot, logger, prisma, and survey service, import the handler
- * registration function, capture the rating action callback registered on
- * bot.action(pattern, handler), and invoke it directly with a mock context.
+ * Strategy: mock bot, logger, prisma, and the survey/vote services, import the
+ * handler registration function, capture the rating action callback registered
+ * on bot.action(pattern, handler), and invoke it directly with a mock context.
  *
  * @module bot/handlers/__tests__/survey.handler.test
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { mockBot, mockLogger, mockPrisma, mockSurveyService } = vi.hoisted(() => {
+const { mockBot, mockLogger, mockPrisma, mockSurveyService, mockVoteService } = vi.hoisted(() => {
   return {
     mockBot: {
       on: vi.fn(),
@@ -31,13 +31,34 @@ const { mockBot, mockLogger, mockPrisma, mockSurveyService } = vi.hoisted(() => 
       error: vi.fn(),
     },
     mockPrisma: {
+      surveyVote: {
+        update: vi.fn(),
+      },
       feedbackResponse: {
         update: vi.fn(),
       },
     },
     mockSurveyService: {
-      recordResponse: vi.fn(),
       getDeliveryById: vi.fn(),
+    },
+    mockVoteService: {
+      submitVote: vi.fn(),
+      removeVote: vi.fn(),
+      getEffectiveVote: vi.fn(),
+      SurveyClosedError: class SurveyClosedError extends Error {
+        public readonly code = 'SURVEY_CLOSED' as const;
+        constructor(surveyId: string, status: string) {
+          super(`Survey ${surveyId} is not accepting votes (status=${status})`);
+          this.name = 'SurveyClosedError';
+        }
+      },
+      DeliveryNotFoundError: class DeliveryNotFoundError extends Error {
+        public readonly code = 'DELIVERY_NOT_FOUND' as const;
+        constructor(deliveryId: string) {
+          super(`Survey delivery ${deliveryId} not found`);
+          this.name = 'DeliveryNotFoundError';
+        }
+      },
     },
   };
 });
@@ -56,6 +77,7 @@ vi.mock('../../../lib/prisma.js', () => ({
 }));
 
 vi.mock('../../../services/feedback/survey.service.js', () => mockSurveyService);
+vi.mock('../../../services/feedback/vote.service.js', () => mockVoteService);
 
 import { registerSurveyHandler } from '../survey.handler.js';
 import { THANK_YOU_MESSAGE, SURVEY_EXPIRED_MESSAGE } from '../../keyboards/survey.keyboard.js';
@@ -76,6 +98,7 @@ function buildMockCtx(
     rating: string;
     chatId: number;
     fromUsername: string;
+    fromId: number;
   }> = {}
 ) {
   const deliveryId = overrides.deliveryId ?? 'delivery-123';
@@ -85,9 +108,10 @@ function buildMockCtx(
   return {
     match: [`survey:rating:${deliveryId}:${rating}`, deliveryId, rating],
     chat: { id: chatId },
-    from: { id: 999, username: overrides.fromUsername ?? 'tester' },
+    from: { id: overrides.fromId ?? 999, username: overrides.fromUsername ?? 'tester' },
     answerCbQuery: vi.fn().mockResolvedValue(undefined),
     editMessageText: vi.fn().mockResolvedValue(undefined),
+    editMessageReplyMarkup: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -110,14 +134,16 @@ describe('registerSurveyHandler — rating callback', () => {
       status: 'sent',
       survey: { status: 'active' },
     });
-    mockSurveyService.recordResponse.mockResolvedValue('feedback-xyz');
+    mockVoteService.submitVote.mockResolvedValue({ id: 'vote-xyz', rating: 5 });
 
     const handler = getRatingActionHandler();
     const ctx = buildMockCtx({ deliveryId, rating: '5', chatId });
 
     await handler(ctx);
 
-    expect(mockSurveyService.recordResponse).toHaveBeenCalledWith(deliveryId, 5, 'tester');
+    expect(mockVoteService.submitVote).toHaveBeenCalledWith(
+      expect.objectContaining({ deliveryId, rating: 5, username: 'tester' })
+    );
     expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
 
     const [text, options] = ctx.editMessageText.mock.calls[0]!;
@@ -132,7 +158,7 @@ describe('registerSurveyHandler — rating callback', () => {
       status: 'sent',
       survey: { status: 'active' },
     });
-    mockSurveyService.recordResponse.mockResolvedValue('fb-1');
+    mockVoteService.submitVote.mockResolvedValue({ id: 'vote-1', rating: 3 });
 
     const handler = getRatingActionHandler();
     const ctx = buildMockCtx({ rating: '3', chatId: 42 });
@@ -150,10 +176,7 @@ describe('registerSurveyHandler — rating callback', () => {
 
     await handler(ctx);
 
-    expect(mockSurveyService.recordResponse).not.toHaveBeenCalled();
-    // F7: assert exact SURVEY_EXPIRED_MESSAGE (not just absence of stars) so
-    // we catch a regression where the expired branch accidentally sends
-    // ALREADY_RESPONDED_MESSAGE or any other wrong-but-starless message.
+    expect(mockVoteService.submitVote).not.toHaveBeenCalled();
     const [text, options] = ctx.editMessageText.mock.calls[0]!;
     expect(text).toBe(SURVEY_EXPIRED_MESSAGE);
     expect(options).toEqual({ parse_mode: 'Markdown' });

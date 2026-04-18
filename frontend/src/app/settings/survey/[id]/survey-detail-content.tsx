@@ -5,6 +5,13 @@ import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { StatCard } from '@/components/layout/StatCard';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
@@ -21,6 +28,7 @@ import {
   Calendar,
   Loader2,
   RefreshCw,
+  History,
 } from 'lucide-react';
 
 // ============================================
@@ -189,6 +197,9 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
   const [deliveryStatusFilter, setDeliveryStatusFilter] = React.useState<DeliveryStatus | 'all'>(
     'all'
   );
+  // gh-294: when non-null, renders the "История голосов" dialog for this
+  // delivery. The trpc.survey.voteHistory query runs lazily via `enabled`.
+  const [historyDeliveryId, setHistoryDeliveryId] = React.useState<string | null>(null);
 
   // Fetch survey details
   const {
@@ -493,12 +504,15 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
                   Попытки
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--buh-foreground-muted)]">
+                  История
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--buh-border)]">
               {deliveriesLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center">
+                  <td colSpan={7} className="px-6 py-8 text-center">
                     <div className="flex items-center justify-center gap-2 text-[var(--buh-foreground-muted)]">
                       <Loader2 className="h-5 w-5 animate-spin" />
                       Загрузка...
@@ -570,6 +584,22 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
                       >
                         {delivery.retryCount}
                       </span>
+                    </td>
+
+                    {/* gh-294: История голосов — opens the audit-log dialog */}
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <button
+                        type="button"
+                        onClick={() => setHistoryDeliveryId(delivery.id)}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-lg border border-[var(--buh-border)] px-3 py-1.5 text-xs font-medium',
+                          'text-[var(--buh-foreground-muted)] hover:bg-[var(--buh-surface-elevated)] hover:text-[var(--buh-foreground)]',
+                          'transition-colors duration-200'
+                        )}
+                      >
+                        <History className="h-3.5 w-3.5" />
+                        История
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -645,6 +675,139 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
           {sendNowMutation.error?.message || closeMutation.error?.message}
         </div>
       )}
+
+      {/* gh-294: Vote history dialog — rendered at the AdminLayout root so the
+          Radix portal escapes the table/overflow stacking context. Query runs
+          lazily via `enabled` so we don't hit the API until the dialog opens. */}
+      <VoteHistoryDialog
+        deliveryId={historyDeliveryId}
+        onClose={() => setHistoryDeliveryId(null)}
+      />
     </AdminLayout>
+  );
+}
+
+// ============================================
+// VOTE HISTORY DIALOG (gh-294)
+// ============================================
+
+interface VoteHistoryDialogProps {
+  deliveryId: string | null;
+  onClose: () => void;
+}
+
+/**
+ * Modal showing the append-only audit trail for a single delivery's votes.
+ *
+ * The query is enabled only while a non-null deliveryId is set, so opening/
+ * closing the dialog triggers a fresh fetch. Users are rendered by username
+ * where available; falling back to the stringified Telegram user ID.
+ */
+function VoteHistoryDialog({ deliveryId, onClose }: VoteHistoryDialogProps) {
+  const open = deliveryId !== null;
+  const { data, isLoading, error } = trpc.survey.voteHistory.useQuery(
+    { deliveryId: deliveryId ?? '' },
+    { enabled: open }
+  );
+
+  const formatTime = (d: Date | string): string => {
+    const dt = new Date(d);
+    return dt.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const actionLabel = (action: 'create' | 'update' | 'remove'): string => {
+    switch (action) {
+      case 'create':
+        return 'Создана';
+      case 'update':
+        return 'Изменена';
+      case 'remove':
+        return 'Отозвана';
+      default:
+        return action;
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>История голосов</DialogTitle>
+          <DialogDescription>
+            Полный журнал изменений оценок по этой доставке. Записи добавляются только
+            (append-only), удалённые голоса помечены «Отозвана».
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading && (
+          <div className="flex items-center justify-center gap-2 py-8 text-[var(--buh-foreground-muted)]">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Загрузка...
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-lg bg-[var(--buh-error-muted)] p-4 text-sm text-[var(--buh-error)]">
+            {error.message}
+          </div>
+        )}
+
+        {!isLoading && !error && data && data.length === 0 && (
+          <div className="py-8 text-center text-sm text-[var(--buh-foreground-muted)]">
+            Нет записей о голосах по этой доставке
+          </div>
+        )}
+
+        {!isLoading && !error && data && data.length > 0 && (
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--buh-border)]">
+                  <th className="px-3 py-2 text-left font-medium text-[var(--buh-foreground-muted)]">
+                    Время
+                  </th>
+                  <th className="px-3 py-2 text-left font-medium text-[var(--buh-foreground-muted)]">
+                    Пользователь
+                  </th>
+                  <th className="px-3 py-2 text-left font-medium text-[var(--buh-foreground-muted)]">
+                    Действие
+                  </th>
+                  <th className="px-3 py-2 text-left font-medium text-[var(--buh-foreground-muted)]">
+                    Оценка
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--buh-border)]">
+                {data.map((row, idx) => (
+                  <tr key={idx}>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-[var(--buh-foreground-muted)]">
+                      {formatTime(row.timestamp)}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--buh-foreground)]">
+                      {row.username ? `@${row.username}` : `id:${row.telegramUserId}`}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--buh-foreground)]">
+                      {actionLabel(row.action)}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-[var(--buh-foreground)]">
+                      {row.oldRating ?? '—'}
+                      {' → '}
+                      {row.newRating ?? '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -127,6 +127,25 @@ enum DeliveryStatus {
   @@schema("public")
 }
 
+// Multi-user voting on surveys (gh-294). `state='removed'` rows are kept for
+// history but excluded from aggregates. Effective vote per (delivery, user) is
+// the latest row with state='active'.
+enum SurveyVoteState {
+  active
+  removed
+
+  @@schema("public")
+}
+
+// Audit log entry action types for SurveyVoteHistory (gh-294).
+enum SurveyVoteAction {
+  create
+  update
+  remove
+
+  @@schema("public")
+}
+
 enum ErrorStatus {
   new
   in_progress
@@ -496,12 +515,61 @@ model SurveyDelivery {
   survey   FeedbackSurvey    @relation(fields: [surveyId], references: [id])
   chat     Chat              @relation(fields: [chatId], references: [id], onDelete: Cascade)
   response FeedbackResponse?
+  votes    SurveyVote[]
 
   @@unique([surveyId, chatId], name: "unique_survey_chat")
   @@index([surveyId])
   @@index([chatId])
   @@index([status])
   @@map("survey_deliveries")
+  @@schema("public")
+}
+
+/// Multi-user survey votes (gh-294). One row per (delivery, telegram user).
+/// Effective vote = latest row with state='active'. Vote transitions are
+/// recorded in SurveyVoteHistory as an append-only audit trail.
+model SurveyVote {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deliveryId     String          @map("delivery_id") @db.Uuid
+  telegramUserId BigInt          @map("telegram_user_id") @db.BigInt
+  username       String?         @db.VarChar(100)
+  rating         Int
+  comment        String?
+  state          SurveyVoteState @default(active)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  delivery SurveyDelivery      @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  history  SurveyVoteHistory[]
+
+  @@unique([deliveryId, telegramUserId], name: "survey_votes_delivery_user_unique")
+  @@index([deliveryId])
+  @@index([telegramUserId])
+  @@map("survey_votes")
+  @@schema("public")
+}
+
+/// Append-only audit log for SurveyVote transitions (gh-294).
+/// Rows are never updated or deleted while the parent vote exists. Used by
+/// the manager UI drill-down ("История голосов") and for compliance.
+model SurveyVoteHistory {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  voteId         String           @map("vote_id") @db.Uuid
+  deliveryId     String           @map("delivery_id") @db.Uuid
+  telegramUserId BigInt           @map("telegram_user_id") @db.BigInt
+  username       String?          @db.VarChar(100)
+  action         SurveyVoteAction
+  oldRating      Int?             @map("old_rating")
+  newRating      Int?             @map("new_rating")
+  changedAt      DateTime         @default(now()) @map("changed_at") @db.Timestamptz(6)
+
+  // Relations
+  vote SurveyVote @relation(fields: [voteId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId, changedAt])
+  @@index([voteId])
+  @@map("survey_vote_history")
   @@schema("public")
 }
 

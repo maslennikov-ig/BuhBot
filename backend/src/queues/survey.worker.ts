@@ -37,6 +37,10 @@ import {
   getSurveyReminderDelayMs,
   getSurveyManagerNotifyDelayMs,
 } from '../config/queue.config.js';
+import {
+  canSendSurveyToChat,
+  getSurveyCooldownHours,
+} from '../services/feedback/survey.service.js';
 import type { DeliveryStatus } from '@prisma/client';
 
 // ============================================================================
@@ -118,14 +122,24 @@ async function getDeliveryById(deliveryId: string) {
 // ============================================================================
 
 /**
- * Process survey delivery job
+ * Process survey delivery job.
  *
  * Sends the initial survey message to the client chat with rating buttons.
  * On success, schedules a reminder for day 2.
  *
+ * gh-292 changes:
+ *   1. BEFORE sending, consults `canSendSurveyToChat()` against the per-chat cooldown.
+ *      When blocked, writes `status='failed'` + `skipReason='cooldown: ...'` and
+ *      RETURNS without throwing — so BullMQ does NOT retry and the job is a no-op.
+ *   2. On success, wraps the delivery-status write + `Chat.lastSurveySentAt` write in
+ *      a single `prisma.$transaction(...)` so the cooldown gate never sees a partial
+ *      update (half-written delivered row without a bumped chat timestamp).
+ *
+ * Exported for unit testing (see queues/__tests__/survey.worker.cooldown.test.ts).
+ *
  * @param job - BullMQ job with survey delivery data
  */
-async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Promise<void> {
+export async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Promise<void> {
   const { surveyId, chatId, deliveryId, quarter } = job.data;
 
   logger.info('Processing survey delivery', {
@@ -138,6 +152,46 @@ async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Promise<v
     service: 'survey-worker',
   });
 
+  // ── gh-292: cooldown gate ────────────────────────────────────────────────
+  // Skip this delivery silently (no throw, no retry) when the chat is still
+  // within the configured cooldown window.
+  try {
+    const cooldownHours = await getSurveyCooldownHours();
+    const cooldownCheck = await canSendSurveyToChat(BigInt(chatId), cooldownHours);
+    if (!cooldownCheck.allowed) {
+      const nextEligibleIso = cooldownCheck.nextEligibleAt!.toISOString();
+      await prisma.surveyDelivery.update({
+        where: { id: deliveryId },
+        data: {
+          status: 'failed',
+          skipReason: `cooldown: next eligible ${nextEligibleIso}`,
+        },
+      });
+      logger.info('Survey delivery skipped by cooldown', {
+        surveyId,
+        chatId,
+        deliveryId,
+        nextEligibleAt: nextEligibleIso,
+        lastSurveySentAt: cooldownCheck.lastSurveySentAt?.toISOString() ?? null,
+        cooldownHours,
+        audit: true,
+        service: 'survey-worker',
+      });
+      return; // IMPORTANT: no throw — BullMQ must not retry a cooldown skip.
+    }
+  } catch (cooldownErr) {
+    // Cooldown read failure should not silently block the delivery pipeline.
+    // Log and continue — if the DB is unreachable the sendMessage below will
+    // fail anyway and that path already handles retries.
+    logger.warn('Cooldown check failed, proceeding to send anyway', {
+      surveyId,
+      chatId,
+      deliveryId,
+      error: cooldownErr instanceof Error ? cooldownErr.message : String(cooldownErr),
+      service: 'survey-worker',
+    });
+  }
+
   try {
     // Build inline keyboard with rating buttons
     const keyboard = createSurveyRatingKeyboard(surveyId, deliveryId);
@@ -148,17 +202,33 @@ async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Promise<v
       ...keyboard,
     });
 
-    // Update delivery status to 'delivered'
-    await updateDeliveryStatus(deliveryId, 'delivered', BigInt(message.message_id));
-
-    // Schedule reminder for day 2
-    await queueSurveyReminder({ surveyId, chatId, deliveryId }, REMINDER_DELAY_MS);
-
-    // Increment delivered count on survey
-    await prisma.feedbackSurvey.update({
-      where: { id: surveyId },
-      data: { deliveredCount: { increment: 1 } },
+    // gh-292: atomic delivery-status + chat.lastSurveySentAt update.
+    // Both writes go together so the cooldown gate (which reads lastSurveySentAt)
+    // never observes a delivered row without the timestamp bump.
+    const now = new Date();
+    const chatIdBigInt = BigInt(chatId);
+    await prisma.$transaction(async (tx) => {
+      await tx.surveyDelivery.update({
+        where: { id: deliveryId },
+        data: {
+          status: 'delivered',
+          deliveredAt: now,
+          messageId: BigInt(message.message_id),
+        },
+      });
+      await tx.chat.update({
+        where: { id: chatIdBigInt },
+        data: { lastSurveySentAt: now },
+      });
+      await tx.feedbackSurvey.update({
+        where: { id: surveyId },
+        data: { deliveredCount: { increment: 1 } },
+      });
     });
+
+    // Schedule reminder for day 2 (outside transaction — queue write doesn't need atomicity
+    // with the DB writes; a duplicate reminder if this throws is harmless).
+    await queueSurveyReminder({ surveyId, chatId, deliveryId }, REMINDER_DELAY_MS);
 
     logger.info('Survey delivered successfully', {
       surveyId,

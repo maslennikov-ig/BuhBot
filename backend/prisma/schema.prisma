@@ -266,6 +266,11 @@ model Chat {
   /// Soft-delete timestamp (gh-209). When set, chat is excluded from active queries but data is preserved for restoration.
   deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  /// gh-292: Timestamp of the most recent successful survey delivery to this chat.
+  /// Used by the cooldown check in survey.worker.ts to avoid survey spam:
+  /// a chat may receive at most one survey per GlobalSettings.surveyCooldownHours.
+  lastSurveySentAt        DateTime? @map("last_survey_sent_at") @db.Timestamptz(6)
+
   // Relations
   assignedAccountant User?              @relation("AssignedAccountant", fields: [assignedAccountantId], references: [id], onDelete: SetNull)
   clientRequests     ClientRequest[]
@@ -278,6 +283,7 @@ model Chat {
   @@index([assignedAccountantId])
   @@index([slaEnabled], map: "idx_chats_sla_enabled")
   @@index([monitoringEnabled])
+  @@index([lastSurveySentAt])
   @@map("chats")
   @@schema("public")
 }
@@ -450,10 +456,24 @@ model FeedbackResponse {
   @@schema("public")
 }
 
-/// Quarterly survey campaigns for client feedback collection
+/// Survey campaigns for client feedback collection.
+///
+/// gh-292: Supports both quarter presets ("2025-Q1") and custom date ranges.
+/// - Quarter mode: `quarter` is set, `startDate`/`endDate` are derived from the quarter.
+/// - Range mode: `quarter` is null, `startDate`/`endDate` are explicit.
+/// In both modes, `scheduledAt` is the delivery start trigger and `expiresAt`
+/// is the response deadline. The new `startDate`/`endDate` columns describe
+/// the *reporting period* (what timespan the survey covers), which may differ
+/// from scheduling — for back-compat they are backfilled from
+/// `scheduledAt`/`expiresAt` on legacy rows.
 model FeedbackSurvey {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  quarter        String // "2025-Q1"
+  /// Quarter identifier "YYYY-QN" (nullable since gh-292; null = custom range mode)
+  quarter        String?
+  /// Reporting period start. For quarter mode: first day of quarter. For range mode: user-selected.
+  startDate      DateTime?    @map("start_date") @db.Timestamptz(6)
+  /// Reporting period end. For quarter mode: last day of quarter. For range mode: user-selected.
+  endDate        DateTime?    @map("end_date") @db.Timestamptz(6)
   scheduledAt    DateTime     @map("scheduled_at") @db.Timestamptz(6)
   sentAt         DateTime?    @map("sent_at") @db.Timestamptz(6)
   expiresAt      DateTime     @map("expires_at") @db.Timestamptz(6)
@@ -474,6 +494,7 @@ model FeedbackSurvey {
 
   @@index([quarter])
   @@index([status])
+  @@index([startDate, endDate])
   @@map("feedback_surveys")
   @@schema("public")
 }
@@ -490,6 +511,9 @@ model SurveyDelivery {
   managerNotifiedAt DateTime?      @map("manager_notified_at") @db.Timestamptz(6)
   retryCount        Int            @default(0) @map("retry_count")
   errorMessage      String?        @map("error_message")
+  /// gh-292: Human-readable reason why a pending delivery was skipped without retry
+  /// (e.g. "cooldown: next eligible 2026-04-19T09:00:00Z"). Set alongside status='failed'.
+  skipReason        String?        @map("skip_reason")
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
@@ -617,6 +641,12 @@ model GlobalSettings {
   surveyReminderDay  Int @default(2) @map("survey_reminder_day")
   lowRatingThreshold Int @default(3) @map("low_rating_threshold")
   surveyQuarterDay   Int @default(1) @map("survey_quarter_day")
+  /// gh-292: Minimum hours between successive surveys to the same chat.
+  /// Enforced in survey.worker.ts via Chat.lastSurveySentAt.
+  surveyCooldownHours Int @default(24) @map("survey_cooldown_hours")
+  /// gh-292: Maximum user-selectable reporting range (in days) for custom-range surveys.
+  /// Validated in createCampaign() before persisting the survey row.
+  surveyMaxRangeDays  Int @default(90) @map("survey_max_range_days")
 
   // Internal Chat for SLA notifications (instead of client chat)
   internalChatId BigInt? @map("internal_chat_id") @db.BigInt

@@ -155,6 +155,15 @@ const RequestOutput = z.object({
   // SLA
   slaTimerStartedAt: z.date().nullable(),
   slaWorkingMinutes: z.number().nullable(),
+  /**
+   * gh-290 (2026-04-19): SLA threshold (minutes) sourced from
+   * `Chat.slaThresholdMinutes`. Exposed because the frontend was
+   * previously using `slaWorkingMinutes` as the threshold, but
+   * `slaWorkingMinutes` is overwritten with the actual response time
+   * on answer (see `timer.service.ts:414`). For an answered breach this
+   * meant elapsed === threshold and the excess always rendered as +0м.
+   */
+  slaThresholdMinutes: z.number(),
   slaBreached: z.boolean(),
   slaBreachedAt: z.date().nullable(), // gh-290: when breach was recorded
 
@@ -227,6 +236,10 @@ function formatRequestOutput(
     classificationModel: request.classificationModel,
     slaTimerStartedAt: request.slaTimerStartedAt,
     slaWorkingMinutes: request.slaWorkingMinutes,
+    // gh-290 (2026-04-19): chat-level SLA threshold; mirrors the formula
+    // used by `timer.service.ts:395` so the frontend computes the same
+    // excess regardless of whether the request is answered.
+    slaThresholdMinutes: chat?.slaThresholdMinutes ?? 60,
     slaBreached: request.slaBreached,
     slaBreachedAt: request.slaBreachedAt,
     responseAt: request.responseAt,

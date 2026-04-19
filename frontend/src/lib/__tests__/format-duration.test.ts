@@ -97,6 +97,43 @@ describe('computeSlaExcessMinutes', () => {
     ).toBe(120);
   });
 
+  // gh-290 follow-up: legacy rows created before migration
+  // 20260417000000_add_sla_breached_at have slaBreachedAt = null even when
+  // they are clearly breached (responseAt = null AND now > receivedAt + SLA).
+  // The formula must still return positive excess by falling through to
+  // `now` when both responseAt and slaBreachedAt are absent. Without this
+  // guarantee, the /violations page would render "+0м" for old open
+  // breaches (Dahgoth's symptom).
+  it('legacy unanswered row (slaBreachedAt=null, responseAt=null, old receivedAt) returns positive excess', () => {
+    const receivedAt = new Date('2026-04-15T12:00:00Z'); // 2 days ago, SLA 60 → excess 60+24*60-60 = 2820
+    expect(
+      computeSlaExcessMinutes({
+        receivedAt,
+        responseAt: null,
+        slaBreachedAt: null,
+        slaMinutes: 60,
+        now,
+      })
+    ).toBe(2 * 24 * 60 - 60); // 2820 minutes
+  });
+
+  // Mirror case for legacy answered row: responseAt is present but
+  // slaBreachedAt was never written (pre-migration). Excess must be
+  // (responseAt - receivedAt) - slaMinutes, NOT 0.
+  it('legacy answered row (slaBreachedAt=null, responseAt present) returns excess from responseAt', () => {
+    const receivedAt = new Date('2026-04-17T08:00:00Z');
+    const responseAt = new Date('2026-04-17T11:30:00Z'); // 210 min after receipt, SLA 60 → excess 150
+    expect(
+      computeSlaExcessMinutes({
+        receivedAt,
+        responseAt,
+        slaBreachedAt: null,
+        slaMinutes: 60,
+        now,
+      })
+    ).toBe(150);
+  });
+
   it('clamps to 0 when elapsed is within SLA threshold', () => {
     const receivedAt = new Date('2026-04-17T11:55:00Z'); // 5 min ago, SLA 60 → 0
     expect(

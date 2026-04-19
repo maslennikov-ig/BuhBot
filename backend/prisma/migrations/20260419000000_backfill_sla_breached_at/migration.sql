@@ -28,6 +28,17 @@
 --
 -- Idempotent: only touches rows where sla_breached_at IS NULL. Safe to
 -- replay in any environment.
+--
+-- Atomic: both UPDATEs run inside a single transaction so a lock-timeout
+-- or other failure on the second pass cannot leave the main pass
+-- half-applied. Review fix 2026-04-19.
+-- Note on now(): the unanswered-breach branch uses now() which is
+-- evaluated at statement-execution time. Any request that crosses the
+-- threshold between the two UPDATEs (microseconds apart) will be picked
+-- up on a subsequent replay of the same migration; idempotent filter
+-- (sla_breached_at IS NULL) guarantees no double-writes.
+
+BEGIN;
 
 UPDATE "public"."client_requests" cr
 SET
@@ -77,3 +88,5 @@ WHERE cr."sla_breached_at" IS NULL
       AND now() > cr."received_at" + make_interval(mins => 60)
     )
   );
+
+COMMIT;

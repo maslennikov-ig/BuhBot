@@ -105,7 +105,8 @@ describe('computeSlaExcessMinutes', () => {
   // guarantee, the /violations page would render "+0м" for old open
   // breaches (Dahgoth's symptom).
   it('legacy unanswered row (slaBreachedAt=null, responseAt=null, old receivedAt) returns positive excess', () => {
-    const receivedAt = new Date('2026-04-15T12:00:00Z'); // 2 days ago, SLA 60 → excess 60+24*60-60 = 2820
+    // Received 2 days before `now`, SLA 60 min → excess = 2*24*60 - 60 = 2820 min.
+    const receivedAt = new Date('2026-04-15T12:00:00Z');
     expect(
       computeSlaExcessMinutes({
         receivedAt,

@@ -105,7 +105,13 @@ const RequestOutput = z.object({
   classificationModel: z.string().nullable(),
   slaTimerStartedAt: z.date().nullable(),
   slaWorkingMinutes: z.number().nullable(),
+  // gh-290 (2026-04-19): exposed so the frontend can compute excess
+  // against the real per-chat threshold instead of the post-response
+  // `slaWorkingMinutes` metric (which collapses excess to 0 after answer).
+  // Non-nullable — `Chat.slaThresholdMinutes` has a Prisma default of 60.
+  slaThresholdMinutes: z.number(),
   slaBreached: z.boolean(),
+  slaBreachedAt: z.date().nullable(), // gh-290 (PR #301): when breach was recorded
   responseAt: z.date().nullable(),
   responseTimeMinutes: z.number().nullable(),
   respondedBy: z.string().uuid().nullable(),
@@ -809,6 +815,7 @@ describe('SLA router schemas', () => {
       classificationModel: 'openrouter',
       slaTimerStartedAt: null,
       slaWorkingMinutes: null,
+      slaThresholdMinutes: 60,
       slaBreached: false,
       slaBreachedAt: null,
       responseAt: null,
@@ -821,6 +828,23 @@ describe('SLA router schemas', () => {
 
     it('accepts valid output', () => {
       expect(RequestOutput.safeParse(validOutput).success).toBe(true);
+    });
+
+    // gh-290 (2026-04-19): pin slaThresholdMinutes as a REQUIRED, NON-NULLABLE
+    // number so a future refactor to `nullable()` or removal is caught here
+    // before the /violations page silently renders the wrong excess again.
+    it('requires slaThresholdMinutes (non-nullable number)', () => {
+      const withoutField = omitKey(validOutput, 'slaThresholdMinutes');
+      expect(RequestOutput.safeParse(withoutField).success).toBe(false);
+
+      const withNull = { ...validOutput, slaThresholdMinutes: null };
+      expect(RequestOutput.safeParse(withNull).success).toBe(false);
+
+      const withString = { ...validOutput, slaThresholdMinutes: '60' };
+      expect(RequestOutput.safeParse(withString).success).toBe(false);
+
+      const withNumber = { ...validOutput, slaThresholdMinutes: 120 };
+      expect(RequestOutput.safeParse(withNumber).success).toBe(true);
     });
 
     it('accepts output with all nullable fields populated', () => {

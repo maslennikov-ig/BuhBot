@@ -24,6 +24,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma, ClientRequest, Chat, User } from '@prisma/client';
 import { getScopedChatIds } from '../helpers/scoping.js';
+import logger from '../../../utils/logger.js';
 import { classifyMessage as classifyMessageService } from '../../../services/classifier/index.js';
 import { startSlaTimer, stopSlaTimer, getSlaStatus } from '../../../services/sla/timer.service.js';
 import {
@@ -223,6 +224,22 @@ function formatRequestOutput(
   chat: Chat | null,
   assignedUser: User | null
 ): z.infer<typeof RequestOutput> {
+  // gh-290 review fix (2026-04-19): log when a breached request no longer
+  // has a chat row (hard-delete after the request was recorded). In that
+  // case the threshold silently falls back to 60, which may misrepresent
+  // the excess on /violations. A warn log makes the condition observable
+  // so an operator can decide whether to backfill or patch the fallback.
+  if (!chat && request.slaBreached) {
+    logger.warn(
+      'formatRequestOutput: chat is null for breached request, threshold defaulting to 60',
+      {
+        requestId: request.id,
+        chatId: String(request.chatId),
+        service: 'sla-router',
+      }
+    );
+  }
+
   return {
     id: request.id,
     chatId: String(request.chatId),

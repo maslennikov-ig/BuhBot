@@ -82,28 +82,53 @@ Keep Release Please managing only the root version. Add a CI script (`scripts/sy
 
 Configure Release Please as a multi-package monorepo by expanding `release-please-config.json` and `.release-please-manifest.json` to list `backend/`, `frontend/`, and `.` (root) as separate, independently versioned packages. Each component gets its own CHANGELOG, its own version, and its own GitHub Release.
 
-**How it works:**
-- Release Please reads scoped commits (`feat(frontend):`, `fix(backend):`) and routes each change to the appropriate component's release PR.
-- Commits without a recognized scope (or with scope `bot`, `infra`, etc.) contribute to the root release.
-- Each component's Docker image is tagged with its own component version (e.g. `backend:1.0.0`, `frontend:0.15.0`).
-- The manifest tracks three independent cursors:
-  ```json
-  { ".": "0.32.2", "backend": "1.0.0", "frontend": "0.15.0" }
-  ```
+**How it works — correction (2026-04-19 code review):** Release Please multi-package mode routes commits by **file path**, not by commit-message scope. The internal `CommitSplit` utility walks each commit's `git diff --name-only` against the `packages` config and attributes the commit to every package whose `packagePath` prefix matches a changed file.
+
+Concrete consequences:
+- A `fix(backend): handle null telegramId` commit that only touches `frontend/src/*.tsx` goes into the **frontend** release, regardless of the `backend` scope in the subject.
+- A `feat: add OTel` commit with no scope that touches `backend/src/*.ts` goes into the **backend** release.
+- A commit that touches files under both `backend/` and `frontend/` is attributed to **both** packages, producing version bumps on each.
+- The commit-message scope still appears in each package's CHANGELOG as the conventional-commit prefix, but it is a display-time label, not a routing signal.
+
+Each component's Docker image is tagged with its own component version. The manifest tracks three independent cursors:
+
+```json
+{ ".": "0.32.2", "backend": "1.0.0", "frontend": "0.15.0" }
+```
 
 **Pros:**
-- Commit scopes (`feat(frontend):`, `fix(backend):`) are already established practice — no behavior change for contributors.
-- Each component's CHANGELOG contains only relevant entries, making it usable.
+- Commits that touch `backend/*` files automatically increment `backend/package.json` — objective, not prone to human error on scope naming.
+- Each component's CHANGELOG contains only entries whose commits modified that component's files.
 - Docker image tags directly reflect the component semver — operators can `docker pull backend:1.2.3` with meaning.
-- Version bumps are semantically correct: a `fix(backend):` bump increments `backend/package.json` patch and leaves `frontend/package.json` untouched.
 - Eliminates hand-editing as the source of drift — Release Please owns all component versions.
-- Independent rollback: redeploy backend `1.2.1` without touching the frontend image.
+- Independent rollback: redeploy `backend:1.2.1` without touching the frontend image.
 
 **Cons:**
-- Three concurrent Release Please PRs may appear simultaneously; reviewers must merge each independently (or configure linked versioning).
+- Commits that touch files in multiple packages produce version bumps on each — e.g. a migration that adds a Prisma model and a corresponding frontend UI tweak will bump both `backend` and `frontend`. Usually desired, but needs to be understood.
+- Three concurrent Release Please PRs may appear simultaneously; reviewers must merge each independently (the [linked-versions](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#linked-versions) plugin can fold them into one if the overhead becomes a problem).
 - Initial version alignment requires a deliberate decision (see Implementation Plan, Step 3).
-- The deploy workflow must be updated to handle per-component release outputs rather than a single `releases_created` boolean.
-- Contributors must use correct commit scopes consistently, or changes will fall into the wrong component's changelog. (Mitigation: commitlint scope enforcement can be tightened.)
+- The deploy workflow must be updated to handle per-component release outputs rather than a single `releases_created` boolean. The correct per-path output name is `<path>--release_created` (singular) — see Step 4.
+- Developers cannot control routing by editing the commit subject alone; mis-routing has to be fixed by an actual file change (which is arguably a strength, but surprises people familiar with scope-based tools like Changesets).
+
+### Option D: Changesets (`@changesets/cli`)
+
+Changesets is the de-facto standard for independent package versioning in Node.js monorepos. Developers run `pnpm changeset` at the end of a PR, pick which packages bumped and at what severity, and commit a generated `.changeset/*.md` file. A separate `changesets` action then aggregates pending changesets and opens a release PR per package.
+
+**How it works:**
+- Routing signal is an explicit author-authored changeset file, not file paths or commit scopes.
+- Each changeset declares which packages bump and at what severity (patch/minor/major).
+- CHANGELOGs are built from human-authored changeset summaries, not from commit messages.
+
+**Pros:**
+- Clearest authoring model for multi-package bumps — author declares intent explicitly.
+- Human-readable changelog entries independent of commit message discipline.
+- Common in JS ecosystem (pnpm/turborepo monorepos).
+
+**Cons:**
+- Requires developers to run `pnpm changeset` and commit a changeset file on every multi-package PR. This is non-zero friction — easy to forget, and CI enforcement requires a dedicated check.
+- We already have conventional-commit + commitlint hooks producing machine-parseable commit history. Adopting Changesets discards that automation and replaces it with a different manual step.
+- Docker image tagging integration requires additional glue (the changesets action doesn't know about Docker).
+- Existing ADR-002 picked Release Please specifically for its zero-configuration changelog generation. Switching tool families is a larger decision than reconfiguring RP.
 
 ### Option C: Hybrid (Root Tracks Deploy Train, Components Track Internal Semver)
 
@@ -127,9 +152,11 @@ Keep root version as a "deploy train" cadence version managed by Release Please.
 
 **Adopt Option B: Per-Package Independent Semver.**
 
-The project's commit history already organizes changes by component scope. Release Please natively supports multi-package monorepo configuration through `release-please-config.json`'s `packages` map — this is a configuration expansion, not a tooling change. The operational benefit (meaningful Docker tags, per-component rollback, legible changelogs) is proportionate to the one-time migration cost (updating config files, aligning initial versions, updating the deploy workflow).
+Release Please already underpins the release process (see ADR-002) and natively supports multi-package monorepo configuration through `release-please-config.json`'s `packages` map — this is a **configuration expansion, not a tooling change**. File-path routing is arguably stronger than scope-based routing: it eliminates the "wrong-scope drift" class of bug entirely, because version attribution is a mechanical function of what the commit changed rather than a prose field the author has to type correctly.
 
-Option A was rejected because it only superficially resolves the drift — it makes component versions match the root number, but the root number remains semantically tied to the full monorepo rather than to any individual component. Option C was rejected as the most complex with the least benefit.
+The operational benefit (meaningful Docker tags, per-component rollback, legible changelogs) is proportionate to the one-time migration cost (updating config files, aligning initial versions, updating the deploy workflow).
+
+Option A was rejected because it only superficially resolves the drift — it makes component versions match the root number, but the root number remains semantically tied to the full monorepo rather than to any individual component. Option C was rejected as the most complex with the least benefit. Option D (Changesets) was rejected because it discards our existing conventional-commit + commitlint automation in exchange for author-authored changeset files with roughly equivalent outcomes.
 
 ## Consequences
 
@@ -143,10 +170,11 @@ Option A was rejected because it only superficially resolves the drift — it ma
 
 ### Negative
 
-- The deploy workflow (`deploy.yml`) must handle per-component release outputs. Release Please produces separate outputs for each package (e.g. `backend--releases_created`, `frontend--releases_created`). The workflow will need to detect which component was released and trigger the appropriate Docker build/push.
-- Commit discipline on scope becomes critical. An unscoped `feat:` commit will contribute to the root changelog but not to any component changelog. Agents and contributors must use correct scopes consistently.
+- The deploy workflow (`deploy.yml`) must handle per-component release outputs. Release Please produces per-path outputs named `<path>--release_created` (singular — see Step 4). The workflow needs to detect which component was released and trigger the appropriate Docker build/push.
+- Commits that modify files in multiple packages produce version bumps on all of them. Usually desired (a cross-cutting refactor really does change backend + frontend), but a contributor needs to realise that touching `frontend/next.config.js` inside a "backend-only" feature branch will also bump `frontend/package.json`.
+- The commit subject's scope (`feat(backend):`) no longer controls routing — only the changelog header label. A PR titled `fix(backend):` that accidentally only edits frontend files will end up in the frontend changelog under a `### Bug Fixes` header labelled `backend:`, which is weird-looking but not broken. Mitigation: commitlint already enforces that scope matches an allowed list; add a softer pre-push check that warns when the scope does not match any of the modified packages.
 - Migration requires a one-time version alignment decision (see Step 3 of the Implementation Plan).
-- Reviewing and merging three separate Release Please PRs adds a small operational overhead compared to one.
+- Reviewing and merging three separate Release Please PRs adds a small operational overhead compared to one. The [`linked-versions`](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#linked-versions) plugin can fold them back into one PR if the overhead becomes measurable.
 
 ### Required Follow-Up Tasks
 
@@ -183,13 +211,11 @@ Recommendation: **Option 1a** — bump both to `0.32.2` as a clean baseline. The
     },
     "backend": {
       "changelog-path": "CHANGELOG.md",
-      "component": "backend",
-      "release-type": "node"
+      "component": "backend"
     },
     "frontend": {
       "changelog-path": "CHANGELOG.md",
-      "component": "frontend",
-      "release-type": "node"
+      "component": "frontend"
     }
   },
   "changelogSections": [
@@ -208,7 +234,9 @@ Recommendation: **Option 1a** — bump both to `0.32.2` as a clean baseline. The
 }
 ```
 
-Note: `component` fields in each package entry control how Release Please labels the release PR and tags. Root commits (no scope or scope `infra`, `bot`, `ci`) continue to target the `.` package.
+Note: the `component` field is a logical package identifier — it's the key used by Release Please to name the per-package release PR, to prefix tags (combined with `include-component-in-tag: true` in the workflow step, see Step 4), and to key the `.release-please-manifest.json` entries. The top-level `release-type: node` covers all three packages; the per-package `release-type` was removed to avoid the impression that `backend` is special.
+
+Routing across the three entries is **by file path**: commits that touch files under `backend/` are attributed to the `backend` package, files under `frontend/` go to `frontend`, and anything else (root `package.json`, `docs/`, `.github/`, etc.) goes to `.`. The commit-message scope is not involved in this decision — it only appears as the changelog header label inside whichever package the commit was routed to.
 
 ### Step 3: Update `.release-please-manifest.json`
 
@@ -224,24 +252,34 @@ Note: `component` fields in each package entry control how Release Please labels
 
 ### Step 4: Update `.github/workflows/release-please.yml`
 
-The Release Please action outputs per-package boolean and version keys when configured as a multi-package monorepo. Key outputs change from flat `releases_created` to component-namespaced variants:
+The Release Please action outputs per-package boolean and version keys when configured as a multi-package monorepo. The correct per-path output name is `<path>--release_created` (**singular** — the plural `releases_created` is the top-level aggregate flag, which is a different thing). Key outputs:
 
-- `steps.release.outputs.releases_created` — still `true` if any package released.
-- `steps.release.outputs.backend--releases_created` — backend released.
-- `steps.release.outputs.frontend--releases_created` — frontend released.
-- `steps.release.outputs.backend--tag_name` — e.g. `backend-v0.33.0`.
-- `steps.release.outputs.frontend--tag_name` — e.g. `frontend-v0.33.0`.
+- `steps.release.outputs.releases_created` — top-level aggregate: `true` if any package released.
+- `steps.release.outputs.backend--release_created` — backend released (note: singular `release_created`).
+- `steps.release.outputs.frontend--release_created` — frontend released.
+- `steps.release.outputs.backend--tag_name` — e.g. `backend-v0.33.0` when `include-component-in-tag: true`.
+- `steps.release.outputs.frontend--tag_name` — e.g. `frontend-v0.15.0`.
+
+`include-component-in-tag` defaults to `false`, which would produce `v0.32.3` tags for all three packages — they would collide as soon as versions diverge. The flag **must** be set to `true` on the action step for the component-prefixed tags used below to actually appear.
 
 The deploy trigger step should be updated to pass component-level information to `deploy.yml`, which can then selectively rebuild only the changed Docker service(s):
 
 ```yaml
+- uses: googleapis/release-please-action@v4
+  id: release
+  with:
+    token: ${{ secrets.RELEASE_BOT_PAT }}
+    config-file: release-please-config.json
+    manifest-file: .release-please-manifest.json
+    include-component-in-tag: true   # REQUIRED — produces `backend-v0.33.0` etc.
+
 - name: Trigger Production Deploy
   if: steps.release.outputs.releases_created == 'true'
   uses: actions/github-script@v7
   with:
     script: |
-      const backendReleased  = '${{ steps.release.outputs.backend--releases_created }}' === 'true';
-      const frontendReleased = '${{ steps.release.outputs.frontend--releases_created }}' === 'true';
+      const backendReleased  = '${{ steps.release.outputs.backend--release_created }}'  === 'true';
+      const frontendReleased = '${{ steps.release.outputs.frontend--release_created }}' === 'true';
       const backendTag       = '${{ steps.release.outputs.backend--tag_name }}';
       const frontendTag      = '${{ steps.release.outputs.frontend--tag_name }}';
 
@@ -260,7 +298,7 @@ The deploy trigger step should be updated to pass component-level information to
       });
 ```
 
-`deploy.yml` will need matching `workflow_dispatch` inputs and conditional build steps — this is a follow-up task for the migration PR.
+`deploy.yml` will need matching `workflow_dispatch` inputs and conditional build steps — this is a follow-up task for the migration PR. Verify output names against the [release-please-action README](https://github.com/googleapis/release-please-action#outputs) before the implementation PR goes in; the action has historically changed the exact shape of outputs between major versions.
 
 ### Step 5: Document Scoped Commit Convention in `CONTRIBUTING.md`
 
@@ -305,3 +343,4 @@ Assign to `fix/gh-310-monorepo-versioning` branch, PR to `main`.
 | Date | Version | Changes |
 |------|---------|---------|
 | 2026-04-18 | 1.0 | Initial ADR — proposed for @maslennikov-ig review |
+| 2026-04-19 | 1.1 | Code-review pass (PR #318): corrected the fundamental routing model — Release Please multi-package routes by file path, not commit-message scope. Rewrote Option B's "How it works / Pros / Cons", consequences, and Step 4 accordingly. Fixed the `releases_created` → `release_created` output name. Added the required `include-component-in-tag: true` flag to the workflow snippet. Added Option D (Changesets) as a considered alternative. Removed redundant per-package `release-type` from the config snippet. Clarified the `component` field description. |

@@ -2,7 +2,15 @@
 
 **ADR reference:** [ADR-005: Monorepo Versioning Strategy](../adr/005-monorepo-versioning-strategy.md)
 **Branch:** `fix/gh-310-monorepo-versioning`
-**Beads task:** create via `bd create "Migrate to per-package Release Please monorepo config (gh-310)" -t chore -p 2`
+**Beads task:** after this ADR is approved, create the implementation task linked to this epic. A template command (adjust the parent epic id to the one tracking this batch — currently `buh-kopt` for the 2026-04-19 code-review remediation):
+
+```bash
+bd create "Migrate to per-package Release Please monorepo config (gh-310)" \
+  --type=chore --priority=2 --external-ref=gh-310 \
+  --deps "parent:<epic-id>"
+```
+
+Record the resulting `buh-*` id at the top of this plan file in a follow-up commit so reviewers of the implementation PR can find the task directly.
 
 ---
 
@@ -88,7 +96,19 @@ Replace the current single-package config with a three-package config:
 
 ## Step 4: Update `.github/workflows/release-please.yml`
 
-In the `Trigger Production Deploy` step, replace the current flat `releases_created` logic with per-component output handling:
+First, make sure the Release Please action step itself has `include-component-in-tag: true`. Without that flag, multi-package mode emits identical `v0.32.3` tags for every package and the per-component tags (`backend-v0.33.0`, `frontend-v0.15.0`) referenced below would never appear:
+
+```yaml
+- uses: googleapis/release-please-action@v4
+  id: release
+  with:
+    token: ${{ secrets.RELEASE_BOT_PAT }}
+    config-file: release-please-config.json
+    manifest-file: .release-please-manifest.json
+    include-component-in-tag: true   # REQUIRED for per-component tags
+```
+
+Then in the `Trigger Production Deploy` step, replace the current flat `releases_created` logic with per-component output handling. Note the per-path output name is `<path>--release_created` (**singular** — the plural `releases_created` is the top-level aggregate flag, a different thing):
 
 ```yaml
 - name: Trigger Production Deploy
@@ -96,8 +116,8 @@ In the `Trigger Production Deploy` step, replace the current flat `releases_crea
   uses: actions/github-script@v7
   with:
     script: |
-      const backendReleased  = '${{ steps.release.outputs.backend--releases_created }}' === 'true';
-      const frontendReleased = '${{ steps.release.outputs.frontend--releases_created }}' === 'true';
+      const backendReleased  = '${{ steps.release.outputs.backend--release_created }}' === 'true';
+      const frontendReleased = '${{ steps.release.outputs.frontend--release_created }}' === 'true';
       const backendTag       = '${{ steps.release.outputs.backend--tag_name }}' || '';
       const frontendTag      = '${{ steps.release.outputs.frontend--tag_name }}' || '';
       const releaseSha       = '${{ steps.release_info.outputs.release_sha }}';
@@ -158,19 +178,24 @@ workflow_dispatch:
 
 ## Step 5: Update `CONTRIBUTING.md`
 
-Add a "Commit Scopes" section. If `CONTRIBUTING.md` does not exist, create it at repo root with at minimum the scopes table and a reference to `docs/COMMIT_CONVENTIONS.md`.
+`CONTRIBUTING.md` does not exist on `main` (confirmed via `ls CONTRIBUTING.md` before this plan was drafted). **Create it at the repo root** with at minimum the "Commit scope reference" section below and a pointer to `docs/COMMIT_CONVENTIONS.md` for the full rules.
 
-**Scopes table to add:**
+**Commit scope reference to add** (corrected 2026-04-19: Release Please routes by **file path**, not by commit scope — the scope is only a label for the changelog entry; the package bump is determined by which files the commit modified):
 
-| Scope | Routes to | Example commit |
-|-------|-----------|----------------|
-| `frontend` | `frontend/package.json` + `frontend/CHANGELOG.md` | `feat(frontend): add dark mode toggle` |
-| `backend` | `backend/package.json` + `backend/CHANGELOG.md` | `fix(backend): handle null telegramId` |
-| `bot` | root `package.json` + `CHANGELOG.md` | `feat(bot): SLA escalation v2` |
-| `infra`, `ci`, `deps` | root | `chore(ci): add path-based filtering` |
-| _(unscoped)_ | root | `docs: update README` |
+| You touched these files | Release Please bumps | Example commit |
+|-------------------------|---------------------|----------------|
+| `frontend/**` | `frontend/package.json` + `frontend/CHANGELOG.md` | `feat(frontend): add dark mode toggle` |
+| `backend/**` | `backend/package.json` + `backend/CHANGELOG.md` | `fix(backend): handle null telegramId` |
+| `backend/**` + `frontend/**` (cross-cutting) | BOTH packages (each with the same commit) | `feat: add OTel tracing` modifying both |
+| root files (`package.json`, `docs/`, `.github/`, `infrastructure/`, …) | root `package.json` + `CHANGELOG.md` | `chore(ci): update workflow` |
 
-**Verification:** Read through the updated file; confirm the scopes table is present and accurate.
+**Common misconceptions worth explicitly calling out** in CONTRIBUTING.md:
+
+- Writing `fix(backend):` in the subject does **not** force the bump into the `backend` package. If the diff only touches `frontend/**`, the bump goes to `frontend` and the commit subject becomes the changelog entry's header label only.
+- Unscoped commits that only touch root files go to the root package. Unscoped commits that touch `backend/**` go to the `backend` package even without a scope.
+- If you want a cross-cutting refactor NOT to bump both packages, split the PR into two commits so each touches only one package's files.
+
+**Verification:** Read through the updated file; confirm the scopes table is present and that the clarifications on path-routing vs scope-labelling are clear.
 
 ---
 
@@ -219,7 +244,7 @@ gh pr create \
 
 After the PR is merged and Release Please runs for the first time:
 
-- [ ] Three Release Please PRs appear (or one combined PR with three package sections) for any pending scoped commits.
+- [ ] Release Please creates up to three release PRs (one per package) for any commits since the last release that modified files under `backend/`, `frontend/`, or the repo root respectively. If the `linked-versions` plugin is configured later, the three PRs can fold into one combined PR; without it expect three.
 - [ ] `backend/CHANGELOG.md` and `frontend/CHANGELOG.md` are created by Release Please on first per-component release.
 - [ ] Docker images continue to build and deploy without errors.
 - [ ] `.release-please-manifest.json` is updated by Release Please with the new per-component versions after merge.

@@ -144,6 +144,8 @@ function formatTrpcError(
   return error.message ?? 'Не удалось создать опрос';
 }
 
+type AudienceMode = 'all' | 'specific_chats' | 'segments';
+
 function CreateSurveyModal({
   isOpen,
   onClose,
@@ -164,6 +166,24 @@ function CreateSurveyModal({
   const [isImmediate, setIsImmediate] = React.useState(true);
   const [clientError, setClientError] = React.useState<string | null>(null);
 
+  // gh-313: Audience selector state. Default 'all' preserves the historical
+  // "blast every active client" behavior so the form behaves like before for
+  // admins who don't touch the new picker.
+  const [audienceMode, setAudienceMode] = React.useState<AudienceMode>('all');
+  const [audienceChatIds, setAudienceChatIds] = React.useState<string[]>([]);
+  const [audienceSegmentId, setAudienceSegmentId] = React.useState<string>('');
+
+  // Lazy-loaded option sources for the picker. Both fire only when the modal
+  // is open AND the relevant audience mode is active so we don't pay the cost
+  // for the default 'all' path.
+  const chatsListQuery = trpc.chats.list.useQuery(
+    { limit: 100, offset: 0 },
+    { enabled: isOpen && audienceMode === 'specific_chats' }
+  );
+  const segmentsListQuery = trpc.segment.list.useQuery(undefined, {
+    enabled: isOpen && audienceMode === 'segments',
+  });
+
   const resetForm = React.useCallback(() => {
     setMode('quarter');
     setQuarter('');
@@ -172,6 +192,9 @@ function CreateSurveyModal({
     setScheduledFor('');
     setIsImmediate(true);
     setClientError(null);
+    setAudienceMode('all');
+    setAudienceChatIds([]);
+    setAudienceSegmentId('');
   }, []);
 
   const createMutation = trpc.survey.create.useMutation({
@@ -197,9 +220,38 @@ function CreateSurveyModal({
     return options;
   }, []);
 
+  /**
+   * gh-313: Build the `audience` payload from the picker state. Returns
+   * `undefined` for the default "all" mode so the server applies the legacy
+   * behavior. Returns `null` (sentinel) when validation fails — caller surfaces
+   * the matching error string.
+   */
+  const buildAudiencePayload = ():
+    | { audience: { type: 'all' } | { type: 'specific_chats'; chatIds: string[] } | { type: 'segments'; segmentIds: string[] } }
+    | null
+    | undefined => {
+    if (audienceMode === 'all') return undefined;
+    if (audienceMode === 'specific_chats') {
+      if (audienceChatIds.length === 0) {
+        setClientError('Выберите хотя бы один чат');
+        return null;
+      }
+      return { audience: { type: 'specific_chats', chatIds: audienceChatIds } };
+    }
+    // segments
+    if (!audienceSegmentId) {
+      setClientError('Выберите сегмент');
+      return null;
+    }
+    return { audience: { type: 'segments', segmentIds: [audienceSegmentId] } };
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setClientError(null);
+
+    const audiencePayload = buildAudiencePayload();
+    if (audiencePayload === null) return; // validation failure already set clientError
 
     const scheduledForDate = isImmediate ? undefined : new Date(scheduledFor);
 
@@ -212,6 +264,7 @@ function CreateSurveyModal({
         mode: 'quarter',
         quarter,
         ...(scheduledForDate ? { scheduledFor: scheduledForDate } : {}),
+        ...(audiencePayload ?? {}),
       });
       return;
     }
@@ -237,6 +290,7 @@ function CreateSurveyModal({
       startDate: rangeStart,
       endDate: rangeEnd,
       ...(scheduledForDate ? { scheduledFor: scheduledForDate } : {}),
+      ...(audiencePayload ?? {}),
     });
   };
 
@@ -245,8 +299,15 @@ function CreateSurveyModal({
 
   if (!isOpen) return null;
 
+  const audienceValid =
+    audienceMode === 'all' ||
+    (audienceMode === 'specific_chats' && audienceChatIds.length > 0) ||
+    (audienceMode === 'segments' && !!audienceSegmentId);
+
   const canSubmit =
-    !createMutation.isPending && (mode === 'quarter' ? !!quarter : !!rangeStart && !!rangeEnd);
+    !createMutation.isPending &&
+    (mode === 'quarter' ? !!quarter : !!rangeStart && !!rangeEnd) &&
+    audienceValid;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -387,6 +448,142 @@ function CreateSurveyModal({
               </div>
             </div>
           )}
+
+          {/* gh-313: Audience picker (orthogonal axis to scheduling mode). */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
+              Аудитория
+            </label>
+            <div
+              className="flex gap-2 mb-2"
+              role="radiogroup"
+              aria-label="Выбор аудитории опроса"
+            >
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="radio"
+                  name="audience-mode"
+                  value="all"
+                  checked={audienceMode === 'all'}
+                  onChange={() => {
+                    setAudienceMode('all');
+                    setClientError(null);
+                  }}
+                  className="h-4 w-4 accent-[var(--buh-accent)]"
+                />
+                <span className="text-sm text-[var(--buh-foreground)]">Все чаты</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="radio"
+                  name="audience-mode"
+                  value="specific_chats"
+                  checked={audienceMode === 'specific_chats'}
+                  onChange={() => {
+                    setAudienceMode('specific_chats');
+                    setClientError(null);
+                  }}
+                  className="h-4 w-4 accent-[var(--buh-accent)]"
+                />
+                <span className="text-sm text-[var(--buh-foreground)]">Выбрать чаты</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                <input
+                  type="radio"
+                  name="audience-mode"
+                  value="segments"
+                  checked={audienceMode === 'segments'}
+                  onChange={() => {
+                    setAudienceMode('segments');
+                    setClientError(null);
+                  }}
+                  className="h-4 w-4 accent-[var(--buh-accent)]"
+                />
+                <span className="text-sm text-[var(--buh-foreground)]">Сегмент</span>
+              </label>
+            </div>
+
+            {audienceMode === 'specific_chats' && (
+              <div className="rounded-lg border border-[var(--buh-border)] p-2">
+                {chatsListQuery.isLoading ? (
+                  <div className="flex items-center justify-center py-4 text-sm text-[var(--buh-foreground-muted)]">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Загрузка чатов...
+                  </div>
+                ) : chatsListQuery.data?.chats?.length ? (
+                  <div className="max-h-48 overflow-y-auto">
+                    {chatsListQuery.data.chats.map((chat) => {
+                      const idStr = chat.id.toString();
+                      const checked = audienceChatIds.includes(idStr);
+                      return (
+                        <label
+                          key={idStr}
+                          className={cn(
+                            'flex items-center gap-2 cursor-pointer rounded px-2 py-1.5 text-sm',
+                            'hover:bg-[var(--buh-surface-elevated)]'
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setAudienceChatIds((prev) =>
+                                e.target.checked
+                                  ? [...prev, idStr]
+                                  : prev.filter((id) => id !== idStr)
+                              );
+                            }}
+                            className="h-4 w-4 accent-[var(--buh-accent)]"
+                          />
+                          <span className="truncate text-[var(--buh-foreground)]">
+                            {chat.title ?? `Chat ${idStr}`}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="py-2 text-center text-sm text-[var(--buh-foreground-muted)]">
+                    Нет доступных чатов
+                  </p>
+                )}
+                <p className="mt-1 px-2 text-xs text-[var(--buh-foreground-subtle)]">
+                  Выбрано: {audienceChatIds.length}
+                </p>
+              </div>
+            )}
+
+            {audienceMode === 'segments' && (
+              <div>
+                {segmentsListQuery.isLoading ? (
+                  <div className="flex items-center justify-center py-4 text-sm text-[var(--buh-foreground-muted)]">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Загрузка сегментов...
+                  </div>
+                ) : segmentsListQuery.data?.length ? (
+                  <select
+                    value={audienceSegmentId}
+                    onChange={(e) => setAudienceSegmentId(e.target.value)}
+                    className={cn(
+                      'h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-sm',
+                      'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
+                    )}
+                  >
+                    <option value="">Выберите сегмент</option>
+                    {segmentsListQuery.data.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.memberCount})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="rounded-lg border border-dashed border-[var(--buh-border)] px-3 py-3 text-sm text-[var(--buh-foreground-muted)]">
+                    Нет сегментов. Создайте сегмент в разделе управления сегментами.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Schedule Options */}
           <div>

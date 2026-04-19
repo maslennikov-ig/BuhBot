@@ -40,13 +40,13 @@ const isoDateInputSchema = z
 import { TRPCError } from '@trpc/server';
 import type { Prisma } from '@prisma/client';
 import {
-  createSurvey,
   createCampaign,
   canSendSurveyToChat,
   getSurveyCooldownHours,
   closeSurvey,
   startSurveyDelivery,
   getPendingDeliveries,
+  quarterToRange,
   QUARTER_REGEX,
 } from '../../../services/feedback/survey.service.js';
 import { aggregateSurvey, getVoteHistory } from '../../../services/feedback/vote.service.js';
@@ -56,6 +56,36 @@ import { queueSurveyDelivery } from '../../../queues/survey.queue.js';
  * Survey status enum for input validation
  */
 const SurveyStatusSchema = z.enum(['scheduled', 'sending', 'active', 'closed', 'expired']);
+
+/**
+ * gh-313: Audience selector schema.
+ *
+ * Nested `z.discriminatedUnion('type', ...)` next to the top-level `mode` DU
+ * keeps the two axes orthogonal (scheduling mode × audience mode) without
+ * expanding into a 6-variant compound DU. Zod 3 supports multiple DUs per
+ * object — the outer `.discriminatedUnion('mode', ...)` discriminates scheduling
+ * and this schema is embedded as a sibling `audience` field on each variant.
+ *
+ * chatIds arrive as decimal strings across the tRPC JSON boundary (BigInt can't
+ * be serialized by default) and are parsed to BigInt on the server.
+ */
+const chatIdStringSchema = z
+  .string()
+  .regex(/^-?\d+$/, 'chatId must be a decimal integer (may start with "-")');
+
+const audienceSchema = z
+  .discriminatedUnion('type', [
+    z.object({ type: z.literal('all') }),
+    z.object({
+      type: z.literal('specific_chats'),
+      chatIds: z.array(chatIdStringSchema).min(1).max(500),
+    }),
+    z.object({
+      type: z.literal('segments'),
+      segmentIds: z.array(z.string().uuid()).min(1).max(50),
+    }),
+  ])
+  .optional();
 
 /**
  * Delivery status enum for input validation
@@ -129,6 +159,10 @@ export const surveyRouter = router({
         deliveredCount: survey.deliveredCount,
         responseCount: survey.responseCount,
         averageRating: survey.averageRating,
+        // gh-313: surface audience selector so the UI can render a badge/summary.
+        audienceType: survey.audienceType,
+        audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
+        audienceSegmentIds: survey.audienceSegmentIds,
         responseRate:
           survey.deliveredCount > 0
             ? Math.round((survey.responseCount / survey.deliveredCount) * 100 * 10) / 10
@@ -224,6 +258,10 @@ export const surveyRouter = router({
         deliveredCount: survey.deliveredCount,
         responseCount: effectiveResponseCount,
         averageRating: effectiveAverageRating,
+        // gh-313: surface audience selector (chatIds stringified for JSON safety).
+        audienceType: survey.audienceType,
+        audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
+        audienceSegmentIds: survey.audienceSegmentIds,
         responseRate:
           survey.deliveredCount > 0
             ? Math.round((effectiveResponseCount / survey.deliveredCount) * 100 * 10) / 10
@@ -262,6 +300,8 @@ export const surveyRouter = router({
             // superjson is not enabled. Accept only ISO/Date inputs, then coerce.
             scheduledFor: isoDateInputSchema.optional(),
             validityDays: z.number().int().min(1).max(90).optional(),
+            // gh-313: audience selector (optional — defaults to 'all' in the service)
+            audience: audienceSchema,
           }),
           z.object({
             mode: z.literal('range'),
@@ -270,6 +310,8 @@ export const surveyRouter = router({
             endDate: isoDateInputSchema,
             scheduledFor: isoDateInputSchema.optional(),
             validityDays: z.number().int().min(1).max(90).optional(),
+            // gh-313: audience selector (optional — defaults to 'all' in the service)
+            audience: audienceSchema,
           }),
         ])
         .superRefine((input, ctx) => {
@@ -286,21 +328,45 @@ export const surveyRouter = router({
       // Determine trigger mode.
       const isImmediate = !input.scheduledFor;
 
+      // gh-313: Translate the wire-format audience (chatIds as strings) into
+      // the service-layer AudienceInput (chatIds as BigInt). Zod already ran
+      // the decimal-integer regex so BigInt() is safe here.
+      let audience: Parameters<typeof createCampaign>[0]['audience'] = undefined;
+      if (input.audience) {
+        if (input.audience.type === 'specific_chats') {
+          audience = {
+            type: 'specific_chats',
+            chatIds: input.audience.chatIds.map((c) => BigInt(c)),
+          };
+        } else if (input.audience.type === 'segments') {
+          audience = { type: 'segments', segmentIds: input.audience.segmentIds };
+        } else {
+          audience = { type: 'all' };
+        }
+      }
+
       // Build service call input based on mode.
       let survey: Awaited<ReturnType<typeof createCampaign>>;
       try {
         if (input.mode === 'quarter') {
-          // Delegate to the back-compat `createSurvey` wrapper which handles
-          // same-quarter dedup (in addition to the range-overlap check that
-          // createCampaign does internally).
-          const legacyInput: Parameters<typeof createSurvey>[0] = {
+          // gh-313: Route quarter-mode creation through createCampaign directly so
+          // the new audience selector is honored. Same-quarter dedup is still
+          // enforced because createCampaign's OVERLAP guard catches any active
+          // campaign that overlaps the quarter's start/end range.
+          const { startDate, endDate } = quarterToRange(input.quarter);
+          const campaignInput: Parameters<typeof createCampaign>[0] = {
+            startDate,
+            endDate,
+            scheduledFor: input.scheduledFor ?? new Date(),
             quarter: input.quarter,
-            scheduledAt: input.scheduledFor ?? new Date(),
           };
           if (input.validityDays !== undefined) {
-            legacyInput.validityDays = input.validityDays;
+            campaignInput.validityDays = input.validityDays;
           }
-          survey = await createSurvey(legacyInput);
+          if (audience) {
+            campaignInput.audience = audience;
+          }
+          survey = await createCampaign(campaignInput);
         } else {
           // Range mode — scheduledFor defaults to `now` when the admin wants immediate
           // delivery. Without this, `createCampaign` would fall back to `startDate`,
@@ -312,6 +378,9 @@ export const surveyRouter = router({
           };
           if (input.validityDays !== undefined) {
             campaignInput.validityDays = input.validityDays;
+          }
+          if (audience) {
+            campaignInput.audience = audience;
           }
           survey = await createCampaign(campaignInput);
         }
@@ -331,6 +400,13 @@ export const surveyRouter = router({
             code: 'PRECONDITION_FAILED',
             message: err.message,
             cause: { kind: 'OVERLAP', conflictingSurveyId },
+          });
+        }
+        if (err instanceof Error && err.name === 'AUDIENCE_INVALID') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: err.message,
+            cause: { kind: 'AUDIENCE_INVALID' },
           });
         }
         throw err;

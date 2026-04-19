@@ -230,15 +230,14 @@ const MS_PER_DAY = 86_400_000;
  *
  * Rules:
  * 1. `endDate` must be strictly after `startDate`.
- * 2. `endDate` must not be in the past (admins cannot schedule retroactively-closed surveys).
- * 3. Range span (`endDate - startDate`) must not exceed `surveyMaxRangeDays`.
- * 4. The range must not overlap with any existing survey in status
+ * 2. Range span (`endDate - startDate`) must not exceed `surveyMaxRangeDays`.
+ * 3. The range must not overlap with any existing survey in status
  *    `scheduled|sending|active` (SQL-style range overlap:
  *    `new.start <= existing.end AND new.end >= existing.start`).
  *
  * Error codes emitted via `Error.name`:
- *  - `'RANGE_INVALID'` — rules 1, 2, or 3 violated
- *  - `'OVERLAP'` — rule 4 violated (`error.cause` carries conflicting survey id)
+ *  - `'RANGE_INVALID'` — rules 1 or 2 violated
+ *  - `'OVERLAP'` — rule 3 violated (`error.cause` carries conflicting survey id)
  *
  * Callers (tRPC router) should map these into TRPCError with the matching `cause.kind`.
  */
@@ -249,12 +248,6 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
     err.name = 'RANGE_INVALID';
     throw err;
   }
-  if (input.endDate.getTime() < Date.now()) {
-    const err = new Error('endDate must not be in the past');
-    err.name = 'RANGE_INVALID';
-    throw err;
-  }
-
   // 2. Max range guard
   const maxRangeDays = await getSurveyMaxRangeDays();
   const rangeDays = (input.endDate.getTime() - input.startDate.getTime()) / MS_PER_DAY;

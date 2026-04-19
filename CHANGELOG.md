@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.32.1...buhbot-v0.32.2) (2026-04-19)
+
+
+### Bug Fixes
+
+* **surveys:** allow historical custom ranges and correct calendar day styling ([#312](https://github.com/maslennikov-ig/BuhBot/issues/312)) ([2a880a1](https://github.com/maslennikov-ig/BuhBot/commit/2a880a19713085b09b2785e8fb48d7b9f0b56279)), closes [#292](https://github.com/maslennikov-ig/BuhBot/issues/292)
+
 ## [0.32.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.32.0...buhbot-v0.32.1) (2026-04-19)
 
 

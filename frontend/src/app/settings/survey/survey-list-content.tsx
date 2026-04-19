@@ -139,7 +139,7 @@ function formatTrpcError(
     return 'Уже есть активная кампания с пересекающимся диапазоном дат';
   }
   if (cause?.kind === 'RANGE_INVALID') {
-    return `Диапазон некорректен (макс. ${maxRangeDays} дней, даты не в прошлом, конец позже начала)`;
+    return `Диапазон некорректен (макс. ${maxRangeDays} дней, конец позже начала)`;
   }
   return error.message ?? 'Не удалось создать опрос';
 }

@@ -179,17 +179,28 @@ describe('createCampaign', () => {
     expect(mockPrisma.feedbackSurvey.create).not.toHaveBeenCalled();
   });
 
-  it('rejects endDate in the past with RANGE_INVALID', async () => {
+  it('allows historical ranges when they satisfy ordering and max-range rules', async () => {
     freezeClock('2026-04-18T10:00:00.000Z');
 
     const startDate = new Date('2026-03-01T00:00:00.000Z');
     const endDate = new Date('2026-03-15T00:00:00.000Z');
 
-    await expect(createCampaign({ startDate, endDate })).rejects.toMatchObject({
-      name: 'RANGE_INVALID',
-      message: expect.stringMatching(/not be in the past/),
+    mockPrisma.feedbackSurvey.create.mockResolvedValue({
+      id: 'survey-past-range',
+      quarter: null,
+      startDate,
+      endDate,
+      scheduledAt: startDate,
+      expiresAt: new Date(startDate.getTime() + 7 * 86_400_000),
+      status: 'scheduled',
+      createdAt: new Date('2026-04-18T10:00:00.000Z'),
+      updatedAt: new Date('2026-04-18T10:00:00.000Z'),
     });
-    expect(mockPrisma.feedbackSurvey.create).not.toHaveBeenCalled();
+
+    const survey = await createCampaign({ startDate, endDate });
+
+    expect(mockPrisma.feedbackSurvey.create).toHaveBeenCalledTimes(1);
+    expect(survey.id).toBe('survey-past-range');
   });
 
   it('rejects overlap with a scheduled/sending/active campaign and attaches conflictingSurveyId', async () => {

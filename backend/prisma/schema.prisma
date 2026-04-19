@@ -146,6 +146,18 @@ enum SurveyVoteAction {
   @@schema("public")
 }
 
+// gh-313: Targeted survey audience selection.
+// `all` preserves historical "blast to every active client" behavior; `specific_chats`
+// limits delivery to an explicit BigInt[] of chatIds; `segments` delivers to the union
+// of chats that belong to the referenced ChatSegment rows.
+enum SurveyAudienceType {
+  all
+  specific_chats
+  segments
+
+  @@schema("public")
+}
+
 enum ErrorStatus {
   new
   in_progress
@@ -193,6 +205,10 @@ model User {
   verificationTokens     VerificationToken[]
   notificationPreferences          NotificationPreference[] @relation("userNotificationPreferences")
   overriddenNotificationPreferences NotificationPreference[] @relation("overriddenNotificationPreferences")
+
+  // gh-313: Reusable chat segments for targeted survey audiences
+  createdSegments       ChatSegment[]         @relation("SegmentCreatedBy")
+  addedSegmentMembers   ChatSegmentMember[]   @relation("SegmentMemberAddedBy")
 
   @@index([email])
   @@index([role])
@@ -298,6 +314,8 @@ model Chat {
   holidays           ChatHoliday[]
   surveyDeliveries   SurveyDelivery[]
   messages           ChatMessage[]
+  // gh-313: chat membership in targeted-audience segments (cascade-deletes when chat is hard-deleted)
+  segmentMemberships ChatSegmentMember[]
 
   @@index([assignedAccountantId])
   @@index([slaEnabled], map: "idx_chats_sla_enabled")
@@ -506,6 +524,16 @@ model FeedbackSurvey {
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  /// gh-313: Targeted audience selector. `all` = historical blast behavior;
+  /// `specific_chats` uses `audienceChatIds`; `segments` uses `audienceSegmentIds`.
+  audienceType        SurveyAudienceType @default(all) @map("audience_type")
+  /// gh-313: Explicit Telegram chat IDs to deliver to (when audienceType='specific_chats').
+  /// Empty array for other modes.
+  audienceChatIds     BigInt[]           @default([]) @map("audience_chat_ids")
+  /// gh-313: ChatSegment UUIDs whose members form the delivery set (when audienceType='segments').
+  /// Empty array for other modes.
+  audienceSegmentIds  String[]           @default([]) @map("audience_segment_ids") @db.Uuid
+
   // Relations
   closedByUser User?              @relation("SurveyClosedBy", fields: [closedBy], references: [id], onDelete: SetNull)
   deliveries   SurveyDelivery[]
@@ -514,6 +542,7 @@ model FeedbackSurvey {
   @@index([quarter])
   @@index([status])
   @@index([startDate, endDate])
+  @@index([audienceType])
   @@map("feedback_surveys")
   @@schema("public")
 }
@@ -964,5 +993,49 @@ model NotificationPreference {
   @@unique([userId, notificationType], name: "unique_user_notification_type")
   @@index([userId])
   @@map("notification_preferences")
+  @@schema("public")
+}
+
+// ============================================================================
+// CHAT SEGMENTS (gh-313 Targeted Survey Audiences)
+// ============================================================================
+
+/// gh-313: Reusable named group of Telegram chats. Created and owned by a manager/admin;
+/// the `(createdById, name)` uniqueness lets each owner reuse names independently.
+/// Referenced from FeedbackSurvey.audienceSegmentIds when audienceType='segments'.
+model ChatSegment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById String   @map("created_by_id") @db.Uuid
+
+  createdBy User                @relation("SegmentCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  members   ChatSegmentMember[]
+
+  @@unique([createdById, name], name: "unique_segment_name_per_owner")
+  @@index([createdById])
+  @@map("chat_segments")
+  @@schema("public")
+}
+
+/// gh-313: M:N join row between ChatSegment and Chat. Cascade-deletes when either side disappears
+/// so we never leave dangling membership rows in segment-based audience expansion.
+model ChatSegmentMember {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  segmentId String   @map("segment_id") @db.Uuid
+  chatId    BigInt   @map("chat_id") @db.BigInt
+  addedAt   DateTime @default(now()) @map("added_at") @db.Timestamptz(6)
+  addedById String   @map("added_by_id") @db.Uuid
+
+  segment ChatSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  chat    Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  addedBy User        @relation("SegmentMemberAddedBy", fields: [addedById], references: [id])
+
+  @@unique([segmentId, chatId], name: "unique_segment_chat")
+  @@index([segmentId])
+  @@index([chatId])
+  @@map("chat_segment_members")
   @@schema("public")
 }

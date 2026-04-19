@@ -16,26 +16,12 @@
 
 import { prisma } from '../../lib/prisma.js';
 import logger from '../../utils/logger.js';
-import type { SurveyStatus, DeliveryStatus } from '@prisma/client';
+import type { SurveyStatus, DeliveryStatus, SurveyAudienceType } from '@prisma/client';
+import { getChatsInSegments } from './segment.service.js';
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-/**
- * Input for creating a quarter-mode survey campaign (legacy API).
- *
- * Kept for back-compat. Internally delegates to `createCampaign()` with a
- * range derived from the quarter.
- */
-export interface CreateSurveyInput {
-  /** Quarter identifier in format "YYYY-QN" (e.g., "2025-Q1") */
-  quarter: string;
-  /** When to start sending surveys */
-  scheduledAt: Date;
-  /** Days until survey expires (default: 7) */
-  validityDays?: number;
-}
 
 /**
  * Input for creating a campaign with an explicit reporting-period range (gh-292).
@@ -60,7 +46,28 @@ export interface CreateCampaignInput {
    * Defaults to GlobalSettings.surveyValidityDays (typically 7).
    */
   validityDays?: number;
+  /**
+   * gh-313: Targeted audience selector. Defaults to `{ type: 'all' }` for
+   * back-compat — callers that don't pass `audience` get the historical
+   * "blast every active client" behavior.
+   */
+  audience?: AudienceInput;
 }
+
+/**
+ * gh-313: Discriminated audience selector for createCampaign.
+ *
+ *  - `all`            — every active client in the reporting period (legacy).
+ *  - `specific_chats` — explicit set of chat IDs (subject to the active-period filter).
+ *  - `segments`       — union of chat memberships for the given ChatSegment UUIDs.
+ *
+ * Validation/error contract (Error.name):
+ *   - `'AUDIENCE_INVALID'` — empty list for specific_chats/segments, or unknown segment UUID.
+ */
+export type AudienceInput =
+  | { type: 'all' }
+  | { type: 'specific_chats'; chatIds: bigint[] }
+  | { type: 'segments'; segmentIds: string[] };
 
 /**
  * Survey with calculated statistics.
@@ -84,6 +91,13 @@ export interface SurveyWithStats {
   responseCount: number;
   responseRate: number;
   averageRating: number | null;
+  // gh-313: audience selector surfaced to callers for UI display.
+  // These columns are non-null in the DB (with a default of 'all' / [] on migration),
+  // so the return shape here reflects that — avoiding spurious `?.length` guards
+  // downstream and keeping the type aligned with `SurveyAudienceType`.
+  audienceType: SurveyAudienceType;
+  audienceChatIds: bigint[];
+  audienceSegmentIds: string[];
 }
 
 /**
@@ -278,6 +292,34 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
     throw err;
   }
 
+  // gh-313: normalize + validate audience selector. Missing audience defaults to 'all'.
+  const audience: AudienceInput = input.audience ?? { type: 'all' };
+  if (audience.type === 'specific_chats' && audience.chatIds.length === 0) {
+    const err = new Error('audience.specific_chats requires at least one chatId');
+    err.name = 'AUDIENCE_INVALID';
+    throw err;
+  }
+  if (audience.type === 'segments' && audience.segmentIds.length === 0) {
+    const err = new Error('audience.segments requires at least one segmentId');
+    err.name = 'AUDIENCE_INVALID';
+    throw err;
+  }
+  // Fail fast when a segment UUID is unknown — we'd rather reject at creation
+  // than silently blast zero chats.
+  if (audience.type === 'segments') {
+    const found = await prisma.chatSegment.findMany({
+      where: { id: { in: audience.segmentIds } },
+      select: { id: true },
+    });
+    if (found.length !== audience.segmentIds.length) {
+      const knownIds = new Set(found.map((r) => r.id));
+      const missing = audience.segmentIds.filter((id) => !knownIds.has(id));
+      const err = new Error(`Unknown segment id(s): ${missing.join(', ')}`);
+      err.name = 'AUDIENCE_INVALID';
+      throw err;
+    }
+  }
+
   // 4. Validity → expiresAt. Default to GlobalSettings.surveyValidityDays when caller
   //    didn't pass one. Use `scheduledFor` as the base; fall back to `startDate`.
   const scheduledAt = input.scheduledFor ?? input.startDate;
@@ -291,6 +333,14 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
   }
   const expiresAt = new Date(scheduledAt.getTime() + validityDays * MS_PER_DAY);
 
+  // Persist the audience selector. Storing both the chat-id array AND the
+  // segment-id array on the same row lets us keep a single discriminator column
+  // (`audienceType`) and avoid a parallel join table for the survey→chatId list,
+  // which would be overkill for a one-shot snapshot.
+  const audienceType: SurveyAudienceType = audience.type;
+  const audienceChatIds = audience.type === 'specific_chats' ? audience.chatIds : [];
+  const audienceSegmentIds = audience.type === 'segments' ? audience.segmentIds : [];
+
   const survey = await prisma.feedbackSurvey.create({
     data: {
       quarter: input.quarter ?? null,
@@ -299,6 +349,9 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
       scheduledAt,
       expiresAt,
       status: 'scheduled',
+      audienceType,
+      audienceChatIds,
+      audienceSegmentIds,
     },
   });
 
@@ -310,6 +363,11 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
     endDate: survey.endDate,
     scheduledAt: survey.scheduledAt,
     expiresAt: survey.expiresAt,
+    // gh-313: audience logging falls back to the normalized input when Prisma
+    // echoes back a partial row (e.g. test mocks that don't include the new columns).
+    audienceType: survey.audienceType ?? audienceType,
+    audienceChatCount: survey.audienceChatIds?.length ?? audienceChatIds.length,
+    audienceSegmentCount: survey.audienceSegmentIds?.length ?? audienceSegmentIds.length,
     service: 'survey-service',
   });
 
@@ -319,59 +377,28 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
   };
 }
 
+// Note: the legacy `createSurvey(input)` quarter-only wrapper and its
+// `CreateSurveyInput` type have been removed — no callers remained after the
+// tRPC `create` procedure switched to `createCampaign()` directly in gh-313.
+// New code should always use `createCampaign()` which accepts an explicit
+// `startDate`/`endDate` range and an optional `audience` selector.
+
 /**
- * Create a new survey campaign (LEGACY quarter-only API).
+ * gh-313: Options object for audience-aware `getActiveClients`.
  *
- * Kept for back-compat with the existing tRPC `create` input. New code should
- * prefer `createCampaign()` which accepts an explicit range.
+ * When `audience` is omitted or `{ type: 'all' }`, the function behaves as before:
+ * return every chat with at least one ClientRequest inside the reporting period.
  *
- * Behaviour (unchanged from pre-gh-292):
- * - Creates a survey in 'scheduled' status.
- * - Rejects if another active survey exists for the same quarter.
- *
- * Internally derives `startDate`/`endDate` from the quarter via `quarterToRange()`
- * and delegates the overlap/range checks to `createCampaign()`.
- *
- * @param input - Survey creation parameters (quarter + scheduledAt + validityDays)
- * @returns Created survey with stats
- * @throws Error if survey already exists for the quarter, or overlap detected
+ * When `audience` is `{ type: 'specific_chats' }` or `{ type: 'segments' }`,
+ * the result is the intersection of:
+ *   (a) the chats resolved from the audience selector, AND
+ *   (b) chats that actually exist and aren't soft-deleted.
+ * NOTE: For targeted modes we intentionally DROP the "had a request in range"
+ * filter — admins sometimes want to survey quiet chats too. The reporting-period
+ * columns stay meaningful as UI metadata and for retroactive analytics.
  */
-export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWithStats> {
-  if (!QUARTER_REGEX.test(input.quarter)) {
-    throw new Error(
-      `Invalid quarter format: ${input.quarter}. Expected format: YYYY-Q1 to YYYY-Q4`
-    );
-  }
-
-  // Legacy check: reject if another active survey exists for the SAME quarter label.
-  // We keep this in addition to createCampaign's range-overlap check, because
-  // historical rows may have quarter set but a slightly different range
-  // (e.g. scheduled mid-quarter for a retroactive survey).
-  const existing = await prisma.feedbackSurvey.findFirst({
-    where: {
-      quarter: input.quarter,
-      status: { in: ['scheduled', 'sending', 'active'] },
-    },
-    select: { id: true },
-  });
-  if (existing) {
-    throw new Error(`Survey already exists for quarter ${input.quarter}`);
-  }
-
-  const { startDate, endDate } = quarterToRange(input.quarter);
-
-  const campaignInput: CreateCampaignInput = {
-    startDate,
-    endDate,
-    scheduledFor: input.scheduledAt,
-    quarter: input.quarter,
-  };
-  // Only set validityDays when the caller supplied it — `exactOptionalPropertyTypes`
-  // would otherwise reject `number | undefined` for an optional `number`.
-  if (input.validityDays !== undefined) {
-    campaignInput.validityDays = input.validityDays;
-  }
-  return createCampaign(campaignInput);
+export interface GetActiveClientsOptions {
+  audience?: AudienceInput;
 }
 
 /**
@@ -380,9 +407,10 @@ export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWith
  * A client is "active" when they sent at least one ClientRequest inside the
  * survey's reporting period. Soft-deleted chats (gh-209) are always excluded.
  *
- * Two call signatures supported (gh-292):
+ * Three call signatures supported:
  *   - `getActiveClients('2025-Q1')` — legacy quarter input, derives range via `quarterToRange`.
  *   - `getActiveClients(startDate, endDate)` — explicit range for custom campaigns.
+ *   - `getActiveClients(startDate, endDate, { audience })` — gh-313 targeted audience.
  *
  * @returns Array of active client chats
  *
@@ -390,13 +418,24 @@ export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWith
  * ```typescript
  * const byQuarter = await getActiveClients('2025-Q1');
  * const byRange = await getActiveClients(new Date('2026-01-01'), new Date('2026-03-31'));
+ * const byAudience = await getActiveClients(
+ *   new Date('2026-01-01'),
+ *   new Date('2026-03-31'),
+ *   { audience: { type: 'specific_chats', chatIds: [-100123n] } },
+ * );
  * ```
  */
 export async function getActiveClients(quarter: string): Promise<ActiveClient[]>;
 export async function getActiveClients(startDate: Date, endDate: Date): Promise<ActiveClient[]>;
 export async function getActiveClients(
+  startDate: Date,
+  endDate: Date,
+  options: GetActiveClientsOptions
+): Promise<ActiveClient[]>;
+export async function getActiveClients(
   quarterOrStart: string | Date,
-  endDate?: Date
+  endDate?: Date,
+  options?: GetActiveClientsOptions
 ): Promise<ActiveClient[]> {
   let rangeStart: Date;
   let rangeEnd: Date;
@@ -416,7 +455,49 @@ export async function getActiveClients(
     rangeEnd = endDate;
   }
 
-  // Find chats with messages in the range (exclude soft-deleted chats, gh-209)
+  const audience: AudienceInput = options?.audience ?? { type: 'all' };
+
+  // gh-313 — targeted modes short-circuit the "active in range" filter so
+  // admins can survey quiet chats too (see GetActiveClientsOptions comment).
+  if (audience.type === 'specific_chats') {
+    const chatIds = audience.chatIds;
+    if (chatIds.length === 0) return [];
+    const rows = await prisma.chat.findMany({
+      where: {
+        id: { in: chatIds },
+        deletedAt: null,
+      },
+      select: { id: true, title: true },
+    });
+    logger.info('Active clients fetched (specific_chats)', {
+      quarter: quarterLabel,
+      requestedCount: chatIds.length,
+      resolvedCount: rows.length,
+      service: 'survey-service',
+    });
+    return rows.map((c) => ({ chatId: c.id, title: c.title }));
+  }
+
+  if (audience.type === 'segments') {
+    const chatIds = await getChatsInSegments(audience.segmentIds);
+    if (chatIds.length === 0) return [];
+    const rows = await prisma.chat.findMany({
+      where: {
+        id: { in: chatIds },
+        deletedAt: null,
+      },
+      select: { id: true, title: true },
+    });
+    logger.info('Active clients fetched (segments)', {
+      quarter: quarterLabel,
+      segmentCount: audience.segmentIds.length,
+      resolvedCount: rows.length,
+      service: 'survey-service',
+    });
+    return rows.map((c) => ({ chatId: c.id, title: c.title }));
+  }
+
+  // audience.type === 'all' — legacy behavior.
   const activeChats = await prisma.chat.findMany({
     where: {
       deletedAt: null,
@@ -475,13 +556,41 @@ export async function startSurveyDelivery(surveyId: string): Promise<void> {
 
   // Get active clients — prefer the explicit reporting-period range (gh-292);
   // fall back to quarter for legacy rows created before the migration backfill.
+  // gh-313: honor the persisted audience selector on the survey row so
+  // specific_chats / segments campaigns only enqueue deliveries for their
+  // targets.
+  const audience: AudienceInput =
+    survey.audienceType === 'specific_chats'
+      ? { type: 'specific_chats', chatIds: survey.audienceChatIds }
+      : survey.audienceType === 'segments'
+        ? { type: 'segments', segmentIds: survey.audienceSegmentIds }
+        : { type: 'all' };
+
   let clients: ActiveClient[];
   if (survey.startDate && survey.endDate) {
-    clients = await getActiveClients(survey.startDate, survey.endDate);
+    clients = await getActiveClients(survey.startDate, survey.endDate, { audience });
   } else if (survey.quarter) {
-    clients = await getActiveClients(survey.quarter);
+    // Legacy quarter-only path: derive range and apply audience.
+    const { startDate, endDate } = quarterToRange(survey.quarter);
+    clients = await getActiveClients(startDate, endDate, { audience });
   } else {
     throw new Error(`Survey ${surveyId} has neither a quarter nor a startDate/endDate range`);
+  }
+
+  // gh-313: observability for the TOCTOU race where a targeted segment or
+  // specific_chats list is emptied (e.g. segment deleted, soft-deleted chats
+  // filtered) between campaign creation and delivery. We can't prevent this at
+  // the DB layer — arrays don't support FKs — so we make the failure mode
+  // observable via a warn log. `all` campaigns that legitimately resolve to
+  // zero active clients are logged at info level inside getActiveClients.
+  if (clients.length === 0 && audience.type !== 'all') {
+    logger.warn('Survey delivery expanded to zero chats (targeted audience)', {
+      surveyId,
+      audienceType: audience.type,
+      audienceSegmentIds: survey.audienceSegmentIds,
+      audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
+      service: 'survey-service',
+    });
   }
 
   // Create delivery records in transaction
@@ -946,7 +1055,6 @@ export async function expireOverdueSurveys(): Promise<number> {
 // ============================================================================
 
 export default {
-  createSurvey,
   createCampaign,
   getActiveClients,
   startSurveyDelivery,

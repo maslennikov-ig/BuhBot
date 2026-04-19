@@ -28,6 +28,7 @@ import { settingsRouter } from './routers/settings.js';
 import { slaRouter } from './routers/sla.js';
 import { feedbackRouter } from './routers/feedback.js';
 import { surveyRouter } from './routers/survey.js';
+import { segmentRouter } from './routers/segment.js';
 import { contactRouter } from './routers/contact.js';
 import { userRouter } from './routers/user.js';
 import { notificationRouter } from './routers/notification.js';
@@ -223,6 +224,17 @@ export const appRouter = router({
    * - updateSettings: Update survey settings (admin only)
    */
   survey: surveyRouter,
+
+  /**
+   * Segment router - Chat Segment Management (gh-313)
+   *
+   * Procedures (manager only):
+   * - list: List segments (with member counts)
+   * - getById: Get single segment with members
+   * - create / update / delete: Segment CRUD
+   * - addChat / removeChat / getChats: Membership management
+   */
+  segment: segmentRouter,
 
   /**
    * Contact router - Landing page lead capture

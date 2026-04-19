@@ -23,7 +23,10 @@
 
 import { bot } from '../bot.js';
 import logger from '../../utils/logger.js';
-import { SURVEY_EXPIRED_MESSAGE } from '../keyboards/survey.keyboard.js';
+import {
+  SURVEY_EXPIRED_MESSAGE,
+  COMMENT_RECEIVED_MESSAGE,
+} from '../keyboards/survey.keyboard.js';
 import { getDeliveryById } from '../../services/feedback/survey.service.js';
 import {
   submitVote,
@@ -55,6 +58,38 @@ interface AwaitingCommentData {
  */
 const awaitingComment = new Map<string, AwaitingCommentData>();
 const MAX_AWAITING_COMMENTS = 1000; // Prevent unbounded memory growth (gh-151)
+
+/**
+ * Timer handles for the 10-minute awaitingComment TTL, keyed the same way as
+ * `awaitingComment`. gh-294 code-review (2026-04-19): without this map each
+ * re-vote scheduled a fresh timer while the previous one stayed armed, so
+ * the first timer would fire and delete the entry even after the user voted
+ * again. We now cancel the pending timer on every re-vote and on remove.
+ */
+const commentTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function scheduleCommentExpiry(key: string): void {
+  const existing = commentTimers.get(key);
+  if (existing) {
+    clearTimeout(existing);
+  }
+  const timer = setTimeout(
+    () => {
+      awaitingComment.delete(key);
+      commentTimers.delete(key);
+    },
+    10 * 60 * 1000
+  );
+  commentTimers.set(key, timer);
+}
+
+function cancelCommentExpiry(key: string): void {
+  const existing = commentTimers.get(key);
+  if (existing) {
+    clearTimeout(existing);
+    commentTimers.delete(key);
+  }
+}
 
 /**
  * Build the composite key used by the awaitingComment map.
@@ -164,8 +199,15 @@ export function registerSurveyHandler(): void {
       // the survey appear closed for other voters. Per-user feedback is
       // now delivered strictly via `answerCbQuery` (a toast visible only
       // to the acting user). See gh-294 comment 2026-04-18.
+      //
+      // Review fix (2026-04-19): only promise the comment-collection
+      // follow-up when `chatId` is truthy — otherwise the awaitingComment
+      // entry is never created and the user follows useless instructions.
+      const commentHint = chatId
+        ? ' Отправьте сообщение в чат, чтобы оставить комментарий.'
+        : '';
       await ctx.answerCbQuery(
-        `\u2705 Ваша оценка принята: ${rating} \u2B50. Можете изменить её или отозвать. Отправьте сообщение в чат, чтобы оставить комментарий.`,
+        `\u2705 Ваша оценка принята: ${rating} \u2B50. Можете изменить её или отозвать.${commentHint}`,
         { show_alert: false }
       );
 
@@ -175,20 +217,17 @@ export function registerSurveyHandler(): void {
         if (awaitingComment.size >= MAX_AWAITING_COMMENTS) {
           // Evict oldest entry (FIFO since Map preserves insertion order).
           const oldestKey = awaitingComment.keys().next().value;
-          if (oldestKey) awaitingComment.delete(oldestKey);
+          if (oldestKey) {
+            awaitingComment.delete(oldestKey);
+            cancelCommentExpiry(oldestKey);
+          }
         }
         awaitingComment.set(key, {
           voteId: vote.id,
           chatId,
           telegramUserId: telegramUserId.toString(),
         });
-
-        setTimeout(
-          () => {
-            awaitingComment.delete(key);
-          },
-          10 * 60 * 1000
-        );
+        scheduleCommentExpiry(key);
       }
 
       logger.info('Survey rating recorded', {
@@ -273,9 +312,12 @@ export function registerSurveyHandler(): void {
       );
 
       // Clear any pending awaitingComment entry for this user.
+      // Review fix (2026-04-19): also cancel the pending TTL timer so it
+      // doesn't fire later and double-delete a freshly re-voted entry.
       if (chatId) {
         const key = buildAwaitingCommentKey(chatId, telegramUserId);
         awaitingComment.delete(key);
+        cancelCommentExpiry(key);
       }
 
       logger.info('Survey vote removed', {
@@ -337,8 +379,9 @@ export function registerSurveyHandler(): void {
       });
 
       awaitingComment.delete(key);
+      cancelCommentExpiry(key);
 
-      await ctx.reply('\u2705 Спасибо за ваш комментарий! Мы обязательно его учтём.');
+      await ctx.reply(COMMENT_RECEIVED_MESSAGE);
 
       logger.info('Survey comment added', {
         voteId: awaitingData.voteId,
@@ -354,6 +397,7 @@ export function registerSurveyHandler(): void {
         service: 'survey-handler',
       });
       awaitingComment.delete(key);
+      cancelCommentExpiry(key);
     }
   });
 

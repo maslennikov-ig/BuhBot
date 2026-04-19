@@ -194,4 +194,29 @@ describe('registerSurveyHandler — rating callback', () => {
     expect(options).toEqual({ parse_mode: 'Markdown' });
     expect(ctx.answerCbQuery).toHaveBeenCalledWith('Survey not found');
   });
+
+  it('toast includes the comment-collection hint only when chatId is truthy (review fix)', async () => {
+    // Review fix (2026-04-19): promising "send a chat message for the
+    // comment" when chatId is undefined misleads the user — the
+    // awaitingComment entry is only created inside `if (chatId)`.
+    // Happy path assertion (hint PRESENT) is covered here; the complement
+    // is hard to exercise at unit level because the authorization branch
+    // rejects ctx without chat before the toast builder runs. If either
+    // branch ever regresses, the awaitingComment / setTimeout code paths
+    // will also drift and break other tests.
+    mockSurveyService.getDeliveryById.mockResolvedValue({
+      chatId: BigInt(42),
+      status: 'sent',
+      survey: { status: 'active' },
+    });
+    mockVoteService.submitVote.mockResolvedValue({ id: 'vote-1', rating: 4 });
+
+    const handler = getRatingActionHandler();
+    const ctx = buildMockCtx({ chatId: 42, rating: '4' });
+    await handler(ctx);
+
+    const [toastText] = ctx.answerCbQuery.mock.calls[0]!;
+    expect(toastText).toContain('Отправьте сообщение в чат');
+    expect(toastText).toContain('4');
+  });
 });

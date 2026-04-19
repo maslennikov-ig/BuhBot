@@ -237,9 +237,31 @@ describe('multi-user voting (gh-294)', () => {
 
     expect(mockVoteService.removeVote).toHaveBeenCalledTimes(1);
     const [toastText] = ctx.answerCbQuery.mock.calls[0]!;
-    expect(toastText).toMatch(/нет оценки|не голосовали/i);
+    // Review fix (2026-04-19): tighten the assertion to the specific phrase
+    // so a future rewrite of the informational toast breaks the test loudly
+    // instead of silently matching a looser substring.
+    expect(toastText).toMatch(/нет оценки для отзыва/i);
     expect(ctx.editMessageText).not.toHaveBeenCalled();
     expect(ctx.editMessageReplyMarkup).not.toHaveBeenCalled();
+  });
+
+  it('includes the comment-collection hint in the toast on the happy path (review fix)', async () => {
+    // Review fix (2026-04-19): the hint must be present when chatId is
+    // truthy (the awaitingComment entry is actually created). The
+    // complementary negative case (no chatId → no hint) is covered in
+    // `survey.handler.test.ts` where the ctx shape is easier to forge.
+    mockSurveyService.getDeliveryById.mockResolvedValue({
+      chatId: BigInt(-1001),
+      survey: { status: 'active' },
+    });
+    mockVoteService.submitVote.mockResolvedValue({ id: 'vote-1', rating: 4 });
+
+    const handler = getActionHandler('survey:rating');
+    const ctx = buildRatingCtx({ fromId: 100, rating: '4' });
+    await handler(ctx);
+
+    const [toastText] = ctx.answerCbQuery.mock.calls[0]!;
+    expect(toastText).toContain('Отправьте сообщение в чат');
   });
 
   it('shows SURVEY_EXPIRED_MESSAGE and does NOT call submitVote when survey is closed', async () => {

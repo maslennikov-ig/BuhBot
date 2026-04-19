@@ -237,14 +237,17 @@ export const surveyRouter = router({
             quarter: z.string().regex(QUARTER_REGEX, {
               message: 'Quarter must be in format YYYY-QN (e.g., 2025-Q1)',
             }),
-            scheduledFor: z.date().optional(),
+            // Frontend sends JSON, so Date values arrive as ISO strings when
+            // superjson is not enabled. Coerce to Date at the API boundary.
+            scheduledFor: z.coerce.date().optional(),
             validityDays: z.number().int().min(1).max(90).optional(),
           }),
           z.object({
             mode: z.literal('range'),
-            startDate: z.date(),
-            endDate: z.date(),
-            scheduledFor: z.date().optional(),
+            // gh-292 hotfix: accept ISO datetime strings from tRPC JSON transport.
+            startDate: z.coerce.date(),
+            endDate: z.coerce.date(),
+            scheduledFor: z.coerce.date().optional(),
             validityDays: z.number().int().min(1).max(90).optional(),
           }),
         ])

@@ -16,6 +16,27 @@
 
 import { router, managerProcedure, adminProcedure } from '../trpc.js';
 import { z } from 'zod';
+
+const ISO_DATE_TIME_REGEX =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Accept Date instances or ISO-8601 date strings only.
+ * We intentionally reject loose date-like strings (e.g. "April 1, 2026").
+ */
+const isoDateInputSchema = z
+  .union([
+    z.date(),
+    z
+      .string()
+      .trim()
+      .refine((value) => ISO_DATE_TIME_REGEX.test(value) || ISO_DATE_ONLY_REGEX.test(value), {
+        message: 'Expected ISO-8601 date string or Date object',
+      }),
+  ])
+  .pipe(z.coerce.date())
+  .refine((value) => !Number.isNaN(value.getTime()), { message: 'Invalid date value' });
 import { TRPCError } from '@trpc/server';
 import type { Prisma } from '@prisma/client';
 import {
@@ -237,14 +258,17 @@ export const surveyRouter = router({
             quarter: z.string().regex(QUARTER_REGEX, {
               message: 'Quarter must be in format YYYY-QN (e.g., 2025-Q1)',
             }),
-            scheduledFor: z.date().optional(),
+            // Frontend sends JSON, so Date values arrive as ISO strings when
+            // superjson is not enabled. Accept only ISO/Date inputs, then coerce.
+            scheduledFor: isoDateInputSchema.optional(),
             validityDays: z.number().int().min(1).max(90).optional(),
           }),
           z.object({
             mode: z.literal('range'),
-            startDate: z.date(),
-            endDate: z.date(),
-            scheduledFor: z.date().optional(),
+            // gh-292 hotfix: accept ISO/Date inputs from tRPC JSON transport.
+            startDate: isoDateInputSchema,
+            endDate: isoDateInputSchema,
+            scheduledFor: isoDateInputSchema.optional(),
             validityDays: z.number().int().min(1).max(90).optional(),
           }),
         ])

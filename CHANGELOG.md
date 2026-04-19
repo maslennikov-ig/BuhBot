@@ -5,6 +5,19 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.32.2...buhbot-v0.33.0) (2026-04-19)
+
+
+### Features
+
+* **surveys:** targeted audience selection — all / specific chats / segments (gh-313) ([#320](https://github.com/maslennikov-ig/BuhBot/issues/320)) ([e467d88](https://github.com/maslennikov-ig/BuhBot/commit/e467d88bab1d46d9ff6baa74970821f84281102f))
+
+
+### Bug Fixes
+
+* **sla:** expose chat SLA threshold so excess stops showing +0m (gh-290) ([#319](https://github.com/maslennikov-ig/BuhBot/issues/319)) ([c5c4f4c](https://github.com/maslennikov-ig/BuhBot/commit/c5c4f4caf5096ba9a48cd81e511e5755e010b49e))
+* **surveys:** keep survey keyboard static so multi-user voting actually works ([#315](https://github.com/maslennikov-ig/BuhBot/issues/315)) ([f26b5b5](https://github.com/maslennikov-ig/BuhBot/commit/f26b5b55de43503ec8c99beafc9a987c8edc00f3))
+
 ## [0.32.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.32.1...buhbot-v0.32.2) (2026-04-19)
 
 

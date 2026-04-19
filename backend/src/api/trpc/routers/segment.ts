@@ -26,7 +26,9 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { PrismaClient } from '@prisma/client';
 import { router, managerProcedure } from '../trpc.js';
+import { chatIdStringSchema } from '../helpers/zod-schemas.js';
 import {
   createSegment,
   updateSegment,
@@ -38,16 +40,34 @@ import {
 } from '../../../services/feedback/segment.service.js';
 
 // ============================================================================
-// SHARED SCHEMAS
+// HELPERS
 // ============================================================================
 
 /**
- * Accept Telegram chat IDs as decimal strings (supergroups are negative BigInts,
- * so we can't use z.number — JS loses precision).
+ * Enforce segment ownership for mutating procedures (update / delete).
+ *
+ * Managers may only modify segments they created themselves; admins may modify any.
+ * Missing segment → NOT_FOUND; unauthorized → FORBIDDEN.
+ *
+ * Centralized so the invariant is identical across `update` and `delete` — and any
+ * future per-segment mutation procedure picks the same behavior up for free.
  */
-const chatIdStringSchema = z
-  .string()
-  .regex(/^-?\d+$/, 'chatId must be a decimal integer (may start with "-")');
+async function assertSegmentOwnership(
+  prisma: Pick<PrismaClient, 'chatSegment'>,
+  segmentId: string,
+  user: { id: string; role: string }
+): Promise<void> {
+  const segment = await prisma.chatSegment.findUnique({
+    where: { id: segmentId },
+    select: { createdById: true },
+  });
+  if (!segment) {
+    throw new TRPCError({ code: 'NOT_FOUND', message: `Segment ${segmentId} not found` });
+  }
+  if (user.role !== 'admin' && segment.createdById !== user.id) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not own this segment' });
+  }
+}
 
 /**
  * Translate a `service-level` named Error into a TRPCError with the expected
@@ -95,6 +115,10 @@ export const segmentRouter = router({
 
   /**
    * Fetch a single segment along with its members (chat IDs + titles).
+   *
+   * Single round-trip: we eagerly include membership rows (plus their chat
+   * title) alongside the segment row so the UI detail page doesn't pay for a
+   * second `getSegmentChats` query.
    */
   getById: managerProcedure
     .input(z.object({ id: z.string().uuid() }))
@@ -103,13 +127,15 @@ export const segmentRouter = router({
         where: { id: input.id },
         include: {
           createdBy: { select: { id: true, fullName: true } },
-          _count: { select: { members: true } },
+          members: {
+            orderBy: { addedAt: 'desc' },
+            include: { chat: { select: { id: true, title: true } } },
+          },
         },
       });
       if (!segment) {
         throw new TRPCError({ code: 'NOT_FOUND', message: `Segment ${input.id} not found` });
       }
-      const members = await getSegmentChats(input.id);
       return {
         id: segment.id,
         name: segment.name,
@@ -118,11 +144,13 @@ export const segmentRouter = router({
         updatedAt: segment.updatedAt,
         createdById: segment.createdById,
         createdBy: segment.createdBy,
-        memberCount: segment._count.members,
+        // Derive count from the already-fetched membership list — no separate
+        // `_count` round-trip needed.
+        memberCount: segment.members.length,
         // Serialize BigInt chatIds as strings for the tRPC JSON boundary.
-        members: members.map((m) => ({
-          chatId: m.chatId.toString(),
-          title: m.title,
+        members: segment.members.map((m) => ({
+          chatId: m.chat.id.toString(),
+          title: m.chat.title,
           addedAt: m.addedAt,
         })),
       };
@@ -152,6 +180,8 @@ export const segmentRouter = router({
 
   /**
    * Update segment metadata (name / description). Requires at least one field.
+   *
+   * Ownership: managers may only update segments they created. Admins may update any.
    */
   update: managerProcedure
     .input(
@@ -161,7 +191,8 @@ export const segmentRouter = router({
         description: z.string().max(500).nullable().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertSegmentOwnership(ctx.prisma, input.id, ctx.user);
       try {
         return await updateSegment({
           segmentId: input.id,
@@ -176,10 +207,13 @@ export const segmentRouter = router({
   /**
    * Hard-delete segment. The segment id may still linger in historical
    * `FeedbackSurvey.audienceSegmentIds` rows — that's intentional.
+   *
+   * Ownership: managers may only delete segments they created. Admins may delete any.
    */
   delete: managerProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertSegmentOwnership(ctx.prisma, input.id, ctx.user);
       try {
         await deleteSegment(input.id);
         return { success: true };

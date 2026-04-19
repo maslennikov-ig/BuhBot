@@ -232,6 +232,27 @@ describe('addChatToSegment', () => {
     });
   });
 
+  // H2 (gh-313 code review): soft-deleted chats must be rejected — otherwise a
+  // chat archived in gh-209 could silently reappear in segment membership and
+  // leak into audience expansion.
+  it('rejects soft-deleted chats via the deletedAt:null filter', async () => {
+    mockPrisma.chatSegment.findUnique.mockResolvedValue({ id: 's1' });
+    // Simulate Prisma's behavior: with `deletedAt: null` in the where clause,
+    // a soft-deleted chat is NOT returned (findUnique → null).
+    mockPrisma.chat.findUnique.mockResolvedValue(null);
+
+    await expect(addChatToSegment('s1', 555n, 'u1')).rejects.toMatchObject({
+      name: 'CHAT_NOT_FOUND',
+    });
+
+    // Verify the query explicitly filters soft-deleted rows.
+    expect(mockPrisma.chat.findUnique).toHaveBeenCalledWith({
+      where: { id: 555n, deletedAt: null },
+      select: { id: true },
+    });
+    expect(mockPrisma.chatSegmentMember.create).not.toHaveBeenCalled();
+  });
+
   it('creates membership on happy path', async () => {
     mockPrisma.chatSegment.findUnique.mockResolvedValue({ id: 's1' });
     mockPrisma.chat.findUnique.mockResolvedValue({ id: 123n });
@@ -328,5 +349,23 @@ describe('getChatsInSegments', () => {
     expect(out).toHaveLength(2);
     expect(out).toContain(10n);
     expect(out).toContain(20n);
+  });
+
+  // gh-313 code review H3: TOCTOU — a segment referenced by an already-created
+  // campaign may be deleted before delivery fires. The worker must tolerate the
+  // missing id by returning an empty chat list (no throw). This mirrors the
+  // warn-log observability added to startSurveyDelivery.
+  it('returns [] for unknown segment UUIDs without throwing (post-delete TOCTOU)', async () => {
+    mockPrisma.chatSegmentMember.findMany.mockResolvedValue([]);
+
+    const out = await getChatsInSegments(['00000000-0000-0000-0000-00000000dead']);
+
+    expect(out).toEqual([]);
+    // The implementation issues a single findMany with an `in` filter; the
+    // empty result proves the "missing segment" path is silent, not fatal.
+    expect(mockPrisma.chatSegmentMember.findMany).toHaveBeenCalledWith({
+      where: { segmentId: { in: ['00000000-0000-0000-0000-00000000dead'] } },
+      select: { chatId: true },
+    });
   });
 });

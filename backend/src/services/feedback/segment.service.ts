@@ -173,7 +173,7 @@ export async function updateSegment(input: UpdateSegmentInput) {
  * The segment id is NOT cleaned out of any pre-existing
  * `FeedbackSurvey.audienceSegmentIds` arrays — those are immutable historical
  * records. The worker is defensive and tolerates a missing segment by treating
- * it as "no chats from this segment" (see `expandAudienceToChats`).
+ * it as "no chats from this segment" (see `getChatsInSegments`).
  */
 export async function deleteSegment(segmentId: string): Promise<void> {
   const existing = await prisma.chatSegment.findUnique({
@@ -223,6 +223,11 @@ export async function listSegments(ownedById?: string): Promise<SegmentListItem[
 /**
  * Add a chat to a segment. No-ops gracefully when the membership row already
  * exists (treat as idempotent — admins re-clicking the UI shouldn't crash).
+ *
+ * Soft-deleted chats (`Chat.deletedAt !== null`, gh-209) are treated as
+ * non-existent and cause `CHAT_NOT_FOUND` — otherwise a chat that was archived
+ * elsewhere could reappear in segment membership and leak into audience
+ * expansion results.
  */
 export async function addChatToSegment(
   segmentId: string,
@@ -230,12 +235,14 @@ export async function addChatToSegment(
   addedById: string
 ): Promise<void> {
   // Validate parents exist so we can emit typed errors instead of bubbling P2003.
+  // The `deletedAt: null` clause excludes soft-deleted chats — see doc above.
   const [segment, chat] = await Promise.all([
     prisma.chatSegment.findUnique({ where: { id: segmentId }, select: { id: true } }),
-    prisma.chat.findUnique({ where: { id: chatId }, select: { id: true } }),
+    prisma.chat.findUnique({ where: { id: chatId, deletedAt: null }, select: { id: true } }),
   ]);
   if (!segment) throw namedError('SEGMENT_NOT_FOUND', `Segment ${segmentId} not found`);
-  if (!chat) throw namedError('CHAT_NOT_FOUND', `Chat ${chatId.toString()} not found`);
+  if (!chat)
+    throw namedError('CHAT_NOT_FOUND', `Chat ${chatId.toString()} not found или soft-deleted`);
 
   try {
     await prisma.chatSegmentMember.create({
@@ -328,17 +335,5 @@ export async function getChatsInSegments(segmentIds: string[]): Promise<bigint[]
   return out;
 }
 
-// ============================================================================
-// DEFAULT EXPORT
-// ============================================================================
-
-export default {
-  createSegment,
-  updateSegment,
-  deleteSegment,
-  listSegments,
-  addChatToSegment,
-  removeChatFromSegment,
-  getSegmentChats,
-  getChatsInSegments,
-};
+// Named exports only — callers import individual functions. No default export is
+// provided because the barrel-style re-export was unused and added noise.

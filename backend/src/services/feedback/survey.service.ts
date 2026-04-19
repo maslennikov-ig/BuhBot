@@ -24,21 +24,6 @@ import { getChatsInSegments } from './segment.service.js';
 // ============================================================================
 
 /**
- * Input for creating a quarter-mode survey campaign (legacy API).
- *
- * Kept for back-compat. Internally delegates to `createCampaign()` with a
- * range derived from the quarter.
- */
-export interface CreateSurveyInput {
-  /** Quarter identifier in format "YYYY-QN" (e.g., "2025-Q1") */
-  quarter: string;
-  /** When to start sending surveys */
-  scheduledAt: Date;
-  /** Days until survey expires (default: 7) */
-  validityDays?: number;
-}
-
-/**
  * Input for creating a campaign with an explicit reporting-period range (gh-292).
  */
 export interface CreateCampaignInput {
@@ -106,10 +91,13 @@ export interface SurveyWithStats {
   responseCount: number;
   responseRate: number;
   averageRating: number | null;
-  // gh-313: audience selector surfaced to callers for UI display
-  audienceType?: SurveyAudienceType;
-  audienceChatIds?: bigint[];
-  audienceSegmentIds?: string[];
+  // gh-313: audience selector surfaced to callers for UI display.
+  // These columns are non-null in the DB (with a default of 'all' / [] on migration),
+  // so the return shape here reflects that — avoiding spurious `?.length` guards
+  // downstream and keeping the type aligned with `SurveyAudienceType`.
+  audienceType: SurveyAudienceType;
+  audienceChatIds: bigint[];
+  audienceSegmentIds: string[];
 }
 
 /**
@@ -389,60 +377,11 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
   };
 }
 
-/**
- * Create a new survey campaign (LEGACY quarter-only API).
- *
- * Kept for back-compat with the existing tRPC `create` input. New code should
- * prefer `createCampaign()` which accepts an explicit range.
- *
- * Behaviour (unchanged from pre-gh-292):
- * - Creates a survey in 'scheduled' status.
- * - Rejects if another active survey exists for the same quarter.
- *
- * Internally derives `startDate`/`endDate` from the quarter via `quarterToRange()`
- * and delegates the overlap/range checks to `createCampaign()`.
- *
- * @param input - Survey creation parameters (quarter + scheduledAt + validityDays)
- * @returns Created survey with stats
- * @throws Error if survey already exists for the quarter, or overlap detected
- */
-export async function createSurvey(input: CreateSurveyInput): Promise<SurveyWithStats> {
-  if (!QUARTER_REGEX.test(input.quarter)) {
-    throw new Error(
-      `Invalid quarter format: ${input.quarter}. Expected format: YYYY-Q1 to YYYY-Q4`
-    );
-  }
-
-  // Legacy check: reject if another active survey exists for the SAME quarter label.
-  // We keep this in addition to createCampaign's range-overlap check, because
-  // historical rows may have quarter set but a slightly different range
-  // (e.g. scheduled mid-quarter for a retroactive survey).
-  const existing = await prisma.feedbackSurvey.findFirst({
-    where: {
-      quarter: input.quarter,
-      status: { in: ['scheduled', 'sending', 'active'] },
-    },
-    select: { id: true },
-  });
-  if (existing) {
-    throw new Error(`Survey already exists for quarter ${input.quarter}`);
-  }
-
-  const { startDate, endDate } = quarterToRange(input.quarter);
-
-  const campaignInput: CreateCampaignInput = {
-    startDate,
-    endDate,
-    scheduledFor: input.scheduledAt,
-    quarter: input.quarter,
-  };
-  // Only set validityDays when the caller supplied it — `exactOptionalPropertyTypes`
-  // would otherwise reject `number | undefined` for an optional `number`.
-  if (input.validityDays !== undefined) {
-    campaignInput.validityDays = input.validityDays;
-  }
-  return createCampaign(campaignInput);
-}
+// Note: the legacy `createSurvey(input)` quarter-only wrapper and its
+// `CreateSurveyInput` type have been removed — no callers remained after the
+// tRPC `create` procedure switched to `createCampaign()` directly in gh-313.
+// New code should always use `createCampaign()` which accepts an explicit
+// `startDate`/`endDate` range and an optional `audience` selector.
 
 /**
  * gh-313: Options object for audience-aware `getActiveClients`.
@@ -636,6 +575,22 @@ export async function startSurveyDelivery(surveyId: string): Promise<void> {
     clients = await getActiveClients(startDate, endDate, { audience });
   } else {
     throw new Error(`Survey ${surveyId} has neither a quarter nor a startDate/endDate range`);
+  }
+
+  // gh-313: observability for the TOCTOU race where a targeted segment or
+  // specific_chats list is emptied (e.g. segment deleted, soft-deleted chats
+  // filtered) between campaign creation and delivery. We can't prevent this at
+  // the DB layer — arrays don't support FKs — so we make the failure mode
+  // observable via a warn log. `all` campaigns that legitimately resolve to
+  // zero active clients are logged at info level inside getActiveClients.
+  if (clients.length === 0 && audience.type !== 'all') {
+    logger.warn('Survey delivery expanded to zero chats (targeted audience)', {
+      surveyId,
+      audienceType: audience.type,
+      audienceSegmentIds: survey.audienceSegmentIds,
+      audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
+      service: 'survey-service',
+    });
   }
 
   // Create delivery records in transaction
@@ -1100,7 +1055,6 @@ export async function expireOverdueSurveys(): Promise<number> {
 // ============================================================================
 
 export default {
-  createSurvey,
   createCampaign,
   getActiveClients,
   startSurveyDelivery,

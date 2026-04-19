@@ -190,8 +190,14 @@ export default function ViolationsPage() {
       const messagePreview =
         req.messageText.length > 100 ? `${req.messageText.substring(0, 100)}...` : req.messageText;
 
-      // Use slaWorkingMinutes from request, default to 60 if not set
-      const slaMinutes = req.slaWorkingMinutes || 60;
+      // gh-290 (2026-04-19): use the chat-level SLA THRESHOLD, not
+      // `slaWorkingMinutes`. The latter is overwritten with the actual
+      // response time on answer (timer.service.ts:414), so for any
+      // answered breach `slaWorkingMinutes === responseTimeMinutes` and
+      // the excess collapsed to +0м. `slaThresholdMinutes` is now exposed
+      // by the tRPC RequestOutput schema and mirrors the formula used by
+      // the backend SLA calculator.
+      const slaMinutes = req.slaThresholdMinutes;
 
       // gh-290: Excess = (x − receivedAt) − slaMinutes, where
       // x = responseAt || slaBreachedAt || now. This keeps the counter

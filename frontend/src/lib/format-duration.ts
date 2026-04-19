@@ -54,9 +54,27 @@ export function formatDuration(minutes: number | null | undefined): string {
 /**
  * Compute SLA excess (minutes beyond threshold) for a request.
  *
- * x = responseAt || slaBreachedAt || now. Excess is measured as
- * (x − receivedAt) − slaMinutes, clamped to 0. Returns `null` when
- * `receivedAt` is missing so callers can render a placeholder.
+ * Reference point precedence (oldest is least accurate, freshest is best):
+ *   1. `responseAt` — most accurate when present (breach resolved at that
+ *      moment).
+ *   2. `slaBreachedAt` — written by the worker when the SLA timer fires
+ *      (gh-290; only present from migration `20260417000000_add_sla_breached_at`
+ *      onwards, with backfill in `20260419000000_backfill_sla_breached_at`).
+ *   3. `now` — for unanswered breaches with no recorded `slaBreachedAt`
+ *      (legacy rows that fell through both migrations). Using `now` keeps
+ *      the counter ticking on the /violations page so a 3-day old open
+ *      breach renders as e.g. `3д 2ч` instead of `+0м`.
+ *
+ * Excess = (xMs − receivedAt) − slaMinutes, clamped to 0 and rounded.
+ *
+ * Caller contract: `slaMinutes` MUST be the configured SLA threshold (e.g.
+ * `chat.slaThresholdMinutes`), NOT the elapsed working minutes. Passing
+ * `slaWorkingMinutes` (which `stopSlaTimer` overwrites with the actual
+ * response time on answer) would yield a spurious 0 because elapsed minus
+ * elapsed is zero. See gh-290 / violations-row +0m bug.
+ *
+ * Returns `null` when `receivedAt` is missing so callers can render a
+ * placeholder.
  */
 export function computeSlaExcessMinutes(params: {
   receivedAt: Date | string | null | undefined;
@@ -71,6 +89,9 @@ export function computeSlaExcessMinutes(params: {
   const receivedMs = toMs(receivedAt);
   if (receivedMs === null) return null;
 
+  // For legacy rows where slaBreachedAt is null and there is no response,
+  // fall back to `now` so unanswered open breaches keep ticking instead of
+  // rendering as "+0м".
   const xMs = toMs(responseAt) ?? toMs(slaBreachedAt) ?? now.getTime();
   const elapsedMinutes = (xMs - receivedMs) / 60_000;
   const excess = elapsedMinutes - slaMinutes;

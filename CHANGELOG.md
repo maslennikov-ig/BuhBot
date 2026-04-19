@@ -5,6 +5,16 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.32.0...buhbot-v0.32.1) (2026-04-19)
+
+
+### Bug Fixes
+
+* **ci:** sync frontend lockfile and modernize docker actions ([46bb8fc](https://github.com/maslennikov-ig/BuhBot/commit/46bb8fcdc5e021e661276c322ec785bdc94a626b))
+* **frontend:** type vote history dialog callback and install radix dialog ([46bb8fc](https://github.com/maslennikov-ig/BuhBot/commit/46bb8fcdc5e021e661276c322ec785bdc94a626b))
+* **surveys:** coerce custom range dates in survey.create (gh-292) ([#307](https://github.com/maslennikov-ig/BuhBot/issues/307)) ([46bb8fc](https://github.com/maslennikov-ig/BuhBot/commit/46bb8fcdc5e021e661276c322ec785bdc94a626b))
+* **surveys:** enforce strict ISO-or-Date input for create dates (gh-292) ([46bb8fc](https://github.com/maslennikov-ig/BuhBot/commit/46bb8fcdc5e021e661276c322ec785bdc94a626b)), closes [#292](https://github.com/maslennikov-ig/BuhBot/issues/292)
+
 ## [0.32.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.31.0...buhbot-v0.32.0) (2026-04-18)
 
 

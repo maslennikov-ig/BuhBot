@@ -23,10 +23,7 @@
 
 import { bot } from '../bot.js';
 import logger from '../../utils/logger.js';
-import {
-  SURVEY_EXPIRED_MESSAGE,
-  COMMENT_RECEIVED_MESSAGE,
-} from '../keyboards/survey.keyboard.js';
+import { SURVEY_EXPIRED_MESSAGE, COMMENT_RECEIVED_MESSAGE } from '../keyboards/survey.keyboard.js';
 import { getDeliveryById } from '../../services/feedback/survey.service.js';
 import {
   submitVote,
@@ -203,9 +200,7 @@ export function registerSurveyHandler(): void {
       // Review fix (2026-04-19): only promise the comment-collection
       // follow-up when `chatId` is truthy — otherwise the awaitingComment
       // entry is never created and the user follows useless instructions.
-      const commentHint = chatId
-        ? ' Отправьте сообщение в чат, чтобы оставить комментарий.'
-        : '';
+      const commentHint = chatId ? ' Отправьте сообщение в чат, чтобы оставить комментарий.' : '';
       await ctx.answerCbQuery(
         `\u2705 Ваша оценка принята: ${rating} \u2B50. Можете изменить её или отозвать.${commentHint}`,
         { show_alert: false }

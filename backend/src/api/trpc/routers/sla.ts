@@ -24,6 +24,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma, ClientRequest, Chat, User } from '@prisma/client';
 import { getScopedChatIds } from '../helpers/scoping.js';
+import logger from '../../../utils/logger.js';
 import { classifyMessage as classifyMessageService } from '../../../services/classifier/index.js';
 import { startSlaTimer, stopSlaTimer, getSlaStatus } from '../../../services/sla/timer.service.js';
 import {
@@ -155,6 +156,15 @@ const RequestOutput = z.object({
   // SLA
   slaTimerStartedAt: z.date().nullable(),
   slaWorkingMinutes: z.number().nullable(),
+  /**
+   * gh-290 (2026-04-19): SLA threshold (minutes) sourced from
+   * `Chat.slaThresholdMinutes`. Exposed because the frontend was
+   * previously using `slaWorkingMinutes` as the threshold, but
+   * `slaWorkingMinutes` is overwritten with the actual response time
+   * on answer (see `timer.service.ts:414`). For an answered breach this
+   * meant elapsed === threshold and the excess always rendered as +0м.
+   */
+  slaThresholdMinutes: z.number(),
   slaBreached: z.boolean(),
   slaBreachedAt: z.date().nullable(), // gh-290: when breach was recorded
 
@@ -214,6 +224,22 @@ function formatRequestOutput(
   chat: Chat | null,
   assignedUser: User | null
 ): z.infer<typeof RequestOutput> {
+  // gh-290 review fix (2026-04-19): log when a breached request no longer
+  // has a chat row (hard-delete after the request was recorded). In that
+  // case the threshold silently falls back to 60, which may misrepresent
+  // the excess on /violations. A warn log makes the condition observable
+  // so an operator can decide whether to backfill or patch the fallback.
+  if (!chat && request.slaBreached) {
+    logger.warn(
+      'formatRequestOutput: chat is null for breached request, threshold defaulting to 60',
+      {
+        requestId: request.id,
+        chatId: String(request.chatId),
+        service: 'sla-router',
+      }
+    );
+  }
+
   return {
     id: request.id,
     chatId: String(request.chatId),
@@ -227,6 +253,10 @@ function formatRequestOutput(
     classificationModel: request.classificationModel,
     slaTimerStartedAt: request.slaTimerStartedAt,
     slaWorkingMinutes: request.slaWorkingMinutes,
+    // gh-290 (2026-04-19): chat-level SLA threshold; mirrors the formula
+    // used by `timer.service.ts:395` so the frontend computes the same
+    // excess regardless of whether the request is answered.
+    slaThresholdMinutes: chat?.slaThresholdMinutes ?? 60,
     slaBreached: request.slaBreached,
     slaBreachedAt: request.slaBreachedAt,
     responseAt: request.responseAt,

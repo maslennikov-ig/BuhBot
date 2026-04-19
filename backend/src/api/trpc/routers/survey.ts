@@ -15,6 +15,7 @@
  */
 
 import { router, managerProcedure, adminProcedure } from '../trpc.js';
+import { chatIdStringSchema } from '../helpers/zod-schemas.js';
 import { z } from 'zod';
 
 const ISO_DATE_TIME_REGEX =
@@ -69,9 +70,8 @@ const SurveyStatusSchema = z.enum(['scheduled', 'sending', 'active', 'closed', '
  * chatIds arrive as decimal strings across the tRPC JSON boundary (BigInt can't
  * be serialized by default) and are parsed to BigInt on the server.
  */
-const chatIdStringSchema = z
-  .string()
-  .regex(/^-?\d+$/, 'chatId must be a decimal integer (may start with "-")');
+// chatIdStringSchema is imported from the shared helper — see
+// gh-313 code review L1 for why we extracted it.
 
 const audienceSchema = z
   .discriminatedUnion('type', [

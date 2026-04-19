@@ -176,8 +176,13 @@ function CreateSurveyModal({
   // Lazy-loaded option sources for the picker. Both fire only when the modal
   // is open AND the relevant audience mode is active so we don't pay the cost
   // for the default 'all' path.
+  // gh-313 code review M1: bumped from 100 → 500 so medium-sized tenants can
+  // pick from the full chat list. When we hit the ceiling we surface a banner
+  // (see below) rather than silently truncating — admins with more than 500
+  // chats are expected to contact an operator.
+  const CHATS_PICKER_LIMIT = 500;
   const chatsListQuery = trpc.chats.list.useQuery(
-    { limit: 100, offset: 0 },
+    { limit: CHATS_PICKER_LIMIT, offset: 0 },
     { enabled: isOpen && audienceMode === 'specific_chats' }
   );
   const segmentsListQuery = trpc.segment.list.useQuery(undefined, {
@@ -227,7 +232,12 @@ function CreateSurveyModal({
    * the matching error string.
    */
   const buildAudiencePayload = ():
-    | { audience: { type: 'all' } | { type: 'specific_chats'; chatIds: string[] } | { type: 'segments'; segmentIds: string[] } }
+    | {
+        audience:
+          | { type: 'all' }
+          | { type: 'specific_chats'; chatIds: string[] }
+          | { type: 'segments'; segmentIds: string[] };
+      }
     | null
     | undefined => {
     if (audienceMode === 'all') return undefined;
@@ -454,11 +464,7 @@ function CreateSurveyModal({
             <label className="mb-1.5 block text-sm font-medium text-[var(--buh-foreground)]">
               Аудитория
             </label>
-            <div
-              className="flex gap-2 mb-2"
-              role="radiogroup"
-              aria-label="Выбор аудитории опроса"
-            >
+            <div className="flex gap-2 mb-2" role="radiogroup" aria-label="Выбор аудитории опроса">
               <label className="flex items-center gap-2 cursor-pointer flex-1">
                 <input
                   type="radio"
@@ -512,6 +518,18 @@ function CreateSurveyModal({
                   </div>
                 ) : chatsListQuery.data?.chats?.length ? (
                   <div className="max-h-48 overflow-y-auto">
+                    {/* gh-313 code review M1: at-ceiling banner when the server returned
+                        exactly the picker limit — there are likely more chats the admin
+                        can't see. */}
+                    {chatsListQuery.data.chats.length >= CHATS_PICKER_LIMIT && (
+                      <p
+                        role="status"
+                        className="mb-2 rounded-md border border-[var(--buh-warning)]/40 bg-[var(--buh-warning-muted)] px-2 py-1.5 text-xs text-[var(--buh-warning)]"
+                      >
+                        Показаны первые {CHATS_PICKER_LIMIT} чатов — уточните фильтры или обратитесь
+                        к администратору
+                      </p>
+                    )}
                     {chatsListQuery.data.chats.map((chat) => {
                       const idStr = chat.id.toString();
                       const checked = audienceChatIds.includes(idStr);
@@ -561,21 +579,30 @@ function CreateSurveyModal({
                     Загрузка сегментов...
                   </div>
                 ) : segmentsListQuery.data?.length ? (
-                  <select
-                    value={audienceSegmentId}
-                    onChange={(e) => setAudienceSegmentId(e.target.value)}
-                    className={cn(
-                      'h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-sm',
-                      'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
-                    )}
-                  >
-                    <option value="">Выберите сегмент</option>
-                    {segmentsListQuery.data.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.memberCount})
-                      </option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      value={audienceSegmentId}
+                      onChange={(e) => setAudienceSegmentId(e.target.value)}
+                      className={cn(
+                        'h-10 w-full rounded-lg border border-[var(--buh-border)] bg-[var(--buh-background)] px-3 text-sm',
+                        'focus:border-[var(--buh-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent-glow)]'
+                      )}
+                    >
+                      <option value="">Выберите сегмент</option>
+                      {segmentsListQuery.data.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.memberCount})
+                        </option>
+                      ))}
+                    </select>
+                    {/* gh-313 code review L3: the backend accepts up to 50 segments in
+                        one campaign, but this UI binds to a single id. Document the
+                        limitation so admins don't expect multi-select in this release. */}
+                    <p className="mt-1 text-xs text-[var(--buh-foreground-subtle)]">
+                      Выберите один сегмент. Несколько сегментов в одной кампании появятся в
+                      следующем релизе.
+                    </p>
+                  </>
                 ) : (
                   <p className="rounded-lg border border-dashed border-[var(--buh-border)] px-3 py-3 text-sm text-[var(--buh-foreground-muted)]">
                     Нет сегментов. Создайте сегмент в разделе управления сегментами.

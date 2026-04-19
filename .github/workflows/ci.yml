@@ -269,6 +269,15 @@ jobs:
         run: npm audit --audit-level=critical
         continue-on-error: true
 
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Run npm audit (frontend)
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
   # ==========================================================================
   # Test Job - Skip for Release PRs
   # ==========================================================================

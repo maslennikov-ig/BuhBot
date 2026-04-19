@@ -736,7 +736,7 @@ function VoteHistoryDialog({ deliveryId, onClose }: VoteHistoryDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o: boolean) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>История голосов</DialogTitle>

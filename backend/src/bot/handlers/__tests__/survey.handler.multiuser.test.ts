@@ -149,8 +149,11 @@ describe('multi-user voting (gh-294)', () => {
 
     const handler = getActionHandler('survey:rating');
 
-    await handler(buildRatingCtx({ fromId: 100, rating: '4' }));
-    await handler(buildRatingCtx({ fromId: 200, rating: '5' }));
+    const ctxUser1 = buildRatingCtx({ fromId: 100, rating: '4' });
+    const ctxUser2 = buildRatingCtx({ fromId: 200, rating: '5' });
+
+    await handler(ctxUser1);
+    await handler(ctxUser2);
 
     expect(mockVoteService.submitVote).toHaveBeenCalledTimes(2);
     expect(mockVoteService.submitVote).toHaveBeenNthCalledWith(
@@ -161,6 +164,15 @@ describe('multi-user voting (gh-294)', () => {
       2,
       expect.objectContaining({ telegramUserId: BigInt(200), rating: 5 })
     );
+
+    // gh-294 regression guard (2026-04-19): the handler must NEVER edit the
+    // shared message/keyboard on success. If User 1's callback edited it,
+    // the static 5-star keyboard would be replaced for User 2 as well,
+    // effectively closing the survey for everyone after the first vote.
+    expect(ctxUser1.editMessageText).not.toHaveBeenCalled();
+    expect(ctxUser1.editMessageReplyMarkup).not.toHaveBeenCalled();
+    expect(ctxUser2.editMessageText).not.toHaveBeenCalled();
+    expect(ctxUser2.editMessageReplyMarkup).not.toHaveBeenCalled();
   });
 
   it('allows the same user to change their vote (no gate on delivery.status)', async () => {
@@ -182,7 +194,7 @@ describe('multi-user voting (gh-294)', () => {
     expect(mockVoteService.submitVote).toHaveBeenCalledTimes(2);
   });
 
-  it('survey:remove callback triggers removeVote for the acting user', async () => {
+  it('survey:remove callback triggers removeVote for the acting user and does NOT edit the shared keyboard', async () => {
     mockSurveyService.getDeliveryById.mockResolvedValue({
       chatId: BigInt(-1001),
       survey: { status: 'active' },
@@ -190,8 +202,9 @@ describe('multi-user voting (gh-294)', () => {
     mockVoteService.removeVote.mockResolvedValue({ id: 'vote-1', state: 'removed' });
 
     const handler = getActionHandler('survey:remove');
+    const ctx = buildRemoveCtx({ fromId: 100 });
 
-    await handler(buildRemoveCtx({ fromId: 100 }));
+    await handler(ctx);
 
     expect(mockVoteService.removeVote).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -199,6 +212,34 @@ describe('multi-user voting (gh-294)', () => {
         telegramUserId: BigInt(100),
       })
     );
+    // gh-294 regression guard: same invariant as the rating action — the
+    // remove action must not alter the shared message/keyboard; per-user
+    // feedback is toast-only.
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
+    expect(ctx.editMessageReplyMarkup).not.toHaveBeenCalled();
+    expect(ctx.answerCbQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('survey:remove with no prior vote shows an informational toast without editing the chat', async () => {
+    // removeVote returns null when there was no prior active vote (idempotent
+    // no-op). The handler must surface that as a friendly toast and still
+    // leave the shared keyboard untouched.
+    mockSurveyService.getDeliveryById.mockResolvedValue({
+      chatId: BigInt(-1001),
+      survey: { status: 'active' },
+    });
+    mockVoteService.removeVote.mockResolvedValue(null);
+
+    const handler = getActionHandler('survey:remove');
+    const ctx = buildRemoveCtx({ fromId: 999 });
+
+    await handler(ctx);
+
+    expect(mockVoteService.removeVote).toHaveBeenCalledTimes(1);
+    const [toastText] = ctx.answerCbQuery.mock.calls[0]!;
+    expect(toastText).toMatch(/нет оценки|не голосовали/i);
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
+    expect(ctx.editMessageReplyMarkup).not.toHaveBeenCalled();
   });
 
   it('shows SURVEY_EXPIRED_MESSAGE and does NOT call submitVote when survey is closed', async () => {

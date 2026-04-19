@@ -22,17 +22,21 @@ import type { InlineKeyboardMarkup } from 'telegraf/types';
 const STAR = '\u2B50'; // Star emoji
 
 /**
- * Creates an inline keyboard with 5 star rating buttons
+ * Creates an inline keyboard with 5 star rating buttons + "Отозвать оценку"
+ * button, shared across every chat member (gh-294 regression fix).
+ *
+ * A Telegram message has ONE inline keyboard shared by all viewers. Editing
+ * the keyboard after a vote would overwrite it for everyone and prevent
+ * other chat members from voting. This keyboard therefore stays STATIC
+ * for the lifetime of the survey — per-user state (which rating the
+ * current user chose) is surfaced only via `answerCbQuery` toasts.
+ *
+ * Clicking "Отозвать оценку" without a prior vote is a safe no-op —
+ * `removeVote` returns null and the handler shows a friendly toast.
  *
  * @param surveyId - The survey campaign ID (not used in callback, for future use)
  * @param deliveryId - The delivery record ID
- * @returns Inline keyboard markup with rating buttons
- *
- * @example
- * ```typescript
- * const keyboard = createSurveyRatingKeyboard('survey-123', 'delivery-456');
- * await ctx.reply('Оцените качество обслуживания:', keyboard);
- * ```
+ * @returns Inline keyboard markup with rating + withdraw buttons
  */
 export function createSurveyRatingKeyboard(
   _surveyId: string,
@@ -46,6 +50,7 @@ export function createSurveyRatingKeyboard(
       Markup.button.callback(`4 ${STAR}`, `survey:rating:${deliveryId}:4`),
       Markup.button.callback(`5 ${STAR}`, `survey:rating:${deliveryId}:5`),
     ],
+    [Markup.button.callback('\u274C Отозвать оценку', `survey:remove:${deliveryId}`)],
   ]);
 }
 
@@ -56,23 +61,19 @@ export function createSurveyRatingKeyboard(
 const CHECK = '\u2705'; // ✅
 
 /**
- * Per-user keyboard for multi-user voting (gh-294).
+ * @deprecated Do not use. Kept only so legacy callers / old tests compile.
  *
- * The keyboard is regenerated on every callback so it reflects the current
- * voter's active rating (not the first voter's). The checkmark only appears
- * on the rating the specific user chose — other users who press the button
- * will still see the un-checked version because the keyboard is produced
- * client-side per callback, not persisted on the message.
+ * The original gh-294 implementation edited the message keyboard after each
+ * vote to show a per-user checkmark. That broke multi-user voting because
+ * Telegram shares ONE keyboard per message across all chat members — editing
+ * it overwrote the 5-star keyboard for everyone, leaving other users unable
+ * to vote. See gh-294 (regression comment 2026-04-18) and
+ * {@link createSurveyRatingKeyboard}, which is the static replacement that
+ * includes the "Отозвать оценку" button unconditionally.
  *
- * When `currentActiveRating` is non-null, an additional "Отозвать оценку"
- * button is rendered on a second row. Pressing it triggers the
- * `survey:remove:{deliveryId}` callback handled in survey.handler.ts.
- *
- * NOTE: editMessageReplyMarkup on a multi-member chat only changes what the
- * bot stores for that message. The UX is imperfect (all members see the same
- * keyboard at any given time), but the callback handler computes the
- * per-user state correctly on the server. This keyboard exists mainly to
- * give the acting user fast visual feedback on the toast + edited markup.
+ * Always renders the 5-star row. When `currentActiveRating` is non-null we
+ * also render the "Отозвать оценку" row, matching the shape the new static
+ * keyboard emits so any stray call still produces a working markup.
  */
 export function buildPerUserSurveyKeyboard(input: {
   deliveryId: string;

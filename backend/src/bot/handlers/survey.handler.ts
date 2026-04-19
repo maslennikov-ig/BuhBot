@@ -23,11 +23,7 @@
 
 import { bot } from '../bot.js';
 import logger from '../../utils/logger.js';
-import {
-  THANK_YOU_MESSAGE,
-  SURVEY_EXPIRED_MESSAGE,
-  buildPerUserSurveyKeyboard,
-} from '../keyboards/survey.keyboard.js';
+import { SURVEY_EXPIRED_MESSAGE } from '../keyboards/survey.keyboard.js';
 import { getDeliveryById } from '../../services/feedback/survey.service.js';
 import {
   submitVote,
@@ -161,43 +157,17 @@ export function registerSurveyHandler(): void {
         username: username ?? null,
       });
 
-      // gh-291: toast-only, no stars in chat-visible text.
-      await ctx.answerCbQuery(`Thank you! You rated ${rating} stars`);
-
-      // Update the keyboard to reflect the user's new active rating. The edit
-      // is per-message (all chat members see the same markup), but the toast
-      // + the per-user callback routing on the backend ensure correct state.
-      try {
-        await ctx.editMessageReplyMarkup(
-          buildPerUserSurveyKeyboard({ deliveryId, currentActiveRating: rating }).reply_markup
-        );
-      } catch (editErr) {
-        // Telegram rejects edits if the markup is identical; ignore that class.
-        const msg = editErr instanceof Error ? editErr.message : String(editErr);
-        if (!msg.includes('message is not modified')) {
-          logger.warn('Failed to edit survey keyboard', {
-            deliveryId,
-            error: msg,
-            service: 'survey-handler',
-          });
-        }
-      }
-
-      // On the first vote by this user, also edit the message text once to
-      // show the thank-you prompt. Subsequent edits (vote changes) reuse the
-      // same text, so we rely on "message is not modified" suppression.
-      try {
-        await ctx.editMessageText(THANK_YOU_MESSAGE, { parse_mode: 'Markdown' });
-      } catch (editErr) {
-        const msg = editErr instanceof Error ? editErr.message : String(editErr);
-        if (!msg.includes('message is not modified')) {
-          logger.debug('editMessageText skipped', {
-            deliveryId,
-            error: msg,
-            service: 'survey-handler',
-          });
-        }
-      }
+      // gh-294 regression fix (2026-04-19): neither the keyboard nor the
+      // message text is edited after a vote. A Telegram message has ONE
+      // shared keyboard/text across all chat members; previous edits here
+      // overwrote the 5-star keyboard with User 1's per-user state, making
+      // the survey appear closed for other voters. Per-user feedback is
+      // now delivered strictly via `answerCbQuery` (a toast visible only
+      // to the acting user). See gh-294 comment 2026-04-18.
+      await ctx.answerCbQuery(
+        `\u2705 Ваша оценка принята: ${rating} \u2B50. Можете изменить её или отозвать. Отправьте сообщение в чат, чтобы оставить комментарий.`,
+        { show_alert: false }
+      );
 
       // Track per-user awaiting-comment state.
       if (chatId) {
@@ -284,25 +254,23 @@ export function registerSurveyHandler(): void {
         return;
       }
 
-      await removeVote({ deliveryId, telegramUserId, username: username ?? null });
+      const removed = await removeVote({
+        deliveryId,
+        telegramUserId,
+        username: username ?? null,
+      });
 
-      await ctx.answerCbQuery('Оценка отозвана');
-
-      // Rebuild keyboard without the active checkmark.
-      try {
-        await ctx.editMessageReplyMarkup(
-          buildPerUserSurveyKeyboard({ deliveryId, currentActiveRating: null }).reply_markup
-        );
-      } catch (editErr) {
-        const msg = editErr instanceof Error ? editErr.message : String(editErr);
-        if (!msg.includes('message is not modified')) {
-          logger.warn('Failed to edit survey keyboard on remove', {
-            deliveryId,
-            error: msg,
-            service: 'survey-handler',
-          });
-        }
-      }
+      // gh-294 regression fix (2026-04-19): no keyboard edit. The 5-star +
+      // "Отозвать оценку" keyboard is static so every chat member keeps a
+      // working survey UI. `removeVote` returns `null` when the user had no
+      // prior active vote — distinguish the two cases in the toast so the
+      // user gets precise feedback.
+      await ctx.answerCbQuery(
+        removed
+          ? '\u2705 Ваша оценка отозвана. Можно проголосовать снова.'
+          : '\u2139\uFE0F У вас пока нет оценки для отзыва в этом опросе.',
+        { show_alert: false }
+      );
 
       // Clear any pending awaitingComment entry for this user.
       if (chatId) {

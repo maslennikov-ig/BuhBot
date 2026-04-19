@@ -1,10 +1,17 @@
 /**
  * Survey Callback Handler Tests
  *
- * Validates that the survey rating callback produces the expected chat-visible
- * message after a user rates. gh-291 requires that the post-rating message
- * contain ONLY the thank-you text — no stars. The rating itself is persisted
- * via the vote service and visible to managers in the admin UI.
+ * Validates the chat-visible side effects of rating callbacks:
+ *
+ * - gh-291: confirmation text must not leak the rating value (stars).
+ *           The per-user toast may still mention it (see separate assertion)
+ *           because it's not chat-visible.
+ * - gh-294 regression fix (2026-04-19): the handler must NOT call
+ *           `editMessageText` or `editMessageReplyMarkup` on the success
+ *           path. A Telegram message has ONE keyboard/text shared across
+ *           all chat members; editing it overwrote the 5-star keyboard and
+ *           hid the survey from other voters. Per-user feedback is now
+ *           delivered strictly via `answerCbQuery`.
  *
  * Strategy: mock bot, logger, prisma, and the survey/vote services, import the
  * handler registration function, capture the rating action callback registered
@@ -80,7 +87,7 @@ vi.mock('../../../services/feedback/survey.service.js', () => mockSurveyService)
 vi.mock('../../../services/feedback/vote.service.js', () => mockVoteService);
 
 import { registerSurveyHandler } from '../survey.handler.js';
-import { THANK_YOU_MESSAGE, SURVEY_EXPIRED_MESSAGE } from '../../keyboards/survey.keyboard.js';
+import { SURVEY_EXPIRED_MESSAGE } from '../../keyboards/survey.keyboard.js';
 
 type ActionHandler = (ctx: unknown) => Promise<void>;
 
@@ -125,7 +132,11 @@ describe('registerSurveyHandler — rating callback', () => {
     vi.resetAllMocks();
   });
 
-  it('sends THANK_YOU_MESSAGE without ⭐ stars after successful rating (gh-291)', async () => {
+  it('does NOT edit the chat-visible message or keyboard after a successful rating (gh-294 regression fix)', async () => {
+    // gh-294 regression fix 2026-04-19: any `editMessageText` /
+    // `editMessageReplyMarkup` on the success path overwrites the shared
+    // keyboard for all chat members and effectively closes the survey for
+    // other voters. The handler must leave both untouched on success.
     const deliveryId = 'delivery-abc';
     const chatId = 12345;
 
@@ -144,15 +155,11 @@ describe('registerSurveyHandler — rating callback', () => {
     expect(mockVoteService.submitVote).toHaveBeenCalledWith(
       expect.objectContaining({ deliveryId, rating: 5, username: 'tester' })
     );
-    expect(ctx.editMessageText).toHaveBeenCalledTimes(1);
-
-    const [text, options] = ctx.editMessageText.mock.calls[0]!;
-    expect(text).toBe(THANK_YOU_MESSAGE);
-    expect(text).not.toContain('\u2B50'); // ⭐
-    expect(options).toEqual({ parse_mode: 'Markdown' });
+    expect(ctx.editMessageText).not.toHaveBeenCalled();
+    expect(ctx.editMessageReplyMarkup).not.toHaveBeenCalled();
   });
 
-  it('still awards toast reply via answerCbQuery showing rating (transient, not chat-visible)', async () => {
+  it('delivers per-user feedback via answerCbQuery toast containing the rating (gh-291 + gh-294)', async () => {
     mockSurveyService.getDeliveryById.mockResolvedValue({
       chatId: BigInt(42),
       status: 'sent',
@@ -165,7 +172,12 @@ describe('registerSurveyHandler — rating callback', () => {
 
     await handler(ctx);
 
-    expect(ctx.answerCbQuery).toHaveBeenCalledWith('Thank you! You rated 3 stars');
+    // Toast mentions the rating (per-user, not chat-visible → gh-291 OK).
+    expect(ctx.answerCbQuery).toHaveBeenCalledTimes(1);
+    const [toastText, toastOpts] = ctx.answerCbQuery.mock.calls[0]!;
+    expect(toastText).toContain('3');
+    expect(toastText).toMatch(/\u2B50|звезд|оценк/i);
+    expect(toastOpts).toEqual({ show_alert: false });
   });
 
   it('uses SURVEY_EXPIRED_MESSAGE when delivery not found (code-review F7)', async () => {

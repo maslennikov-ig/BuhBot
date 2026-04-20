@@ -398,7 +398,9 @@ export const feedbackRouter = router({
         id: z.string().uuid(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
+
       // 1. Legacy path.
       const feedback = await prisma.feedbackResponse.findUnique({
         where: { id: input.id },
@@ -425,6 +427,13 @@ export const feedbackRouter = router({
       });
 
       if (feedback) {
+        if (scopedChatIds && !scopedChatIds.includes(feedback.chatId)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Not authorized to access this feedback entry',
+          });
+        }
+
         const relatedRequest = await prisma.clientRequest.findFirst({
           where: {
             chatId: feedback.chatId,
@@ -485,6 +494,13 @@ export const feedbackRouter = router({
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Feedback not found',
+        });
+      }
+
+      if (scopedChatIds && !scopedChatIds.includes(vote.delivery.chatId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not authorized to access this feedback entry',
         });
       }
 

@@ -551,10 +551,14 @@ describe('feedback.getAll', () => {
 // ===========================================================================
 
 describe('feedback.getById', () => {
-  it('legacy UUID is resolved via feedbackResponse.findUnique', async () => {
+  it('manager can read in-scope legacy UUID', async () => {
+    store.state.userManagers.push({ managerId: 'mgr-1', accountantId: 'acc-1' });
+    store.state.chats.push({ id: 100n, assignedAccountantId: 'acc-1', deletedAt: null });
+
     const legacyId = seedLegacy({
       rating: 5,
       submittedAt: new Date('2025-03-01'),
+      chatId: 100n,
       chatTitle: 'Acme',
       accountantName: 'Alice',
       clientUsername: 'client-a',
@@ -569,10 +573,29 @@ describe('feedback.getById', () => {
     expect(result.rating).toBe(5);
   });
 
-  it('vote UUID is resolved via surveyVote.findUnique fallback', async () => {
+  it('manager gets FORBIDDEN for out-of-scope legacy UUID', async () => {
+    store.state.userManagers.push({ managerId: 'mgr-1', accountantId: 'acc-1' });
+    store.state.chats.push({ id: 100n, assignedAccountantId: 'acc-1', deletedAt: null });
+
+    const legacyId = seedLegacy({
+      rating: 4,
+      submittedAt: new Date('2025-03-01'),
+      chatId: 200n,
+      chatTitle: 'Other Tenant',
+    });
+
+    const caller = makeCaller({ id: 'mgr-1', role: 'manager' });
+    await expect(caller.getById({ id: legacyId })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('manager can read in-scope vote UUID via fallback', async () => {
+    store.state.userManagers.push({ managerId: 'mgr-1', accountantId: 'acc-1' });
+    store.state.chats.push({ id: 100n, assignedAccountantId: 'acc-1', deletedAt: null });
+
     const voteId = seedVote({
       rating: 3,
       updatedAt: new Date('2026-04-15'),
+      chatId: 100n,
       username: 'vote-user',
       accountantName: 'Bob',
       chatTitle: 'Vote Corp',
@@ -585,6 +608,36 @@ describe('feedback.getById', () => {
     expect(result.clientUsername).toBe('vote-user');
     expect(result.chatTitle).toBe('Vote Corp');
     expect(result.accountant?.fullName).toBe('Bob');
+  });
+
+  it('manager gets FORBIDDEN for out-of-scope vote UUID', async () => {
+    store.state.userManagers.push({ managerId: 'mgr-1', accountantId: 'acc-1' });
+    store.state.chats.push({ id: 100n, assignedAccountantId: 'acc-1', deletedAt: null });
+
+    const voteId = seedVote({
+      rating: 2,
+      updatedAt: new Date('2026-04-15'),
+      chatId: 200n,
+      username: 'outside-user',
+    });
+
+    const caller = makeCaller({ id: 'mgr-1', role: 'manager' });
+    await expect(caller.getById({ id: voteId })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('admin can read legacy UUID without scope restrictions', async () => {
+    const legacyId = seedLegacy({
+      rating: 5,
+      submittedAt: new Date('2025-03-01'),
+      chatId: 999n,
+      chatTitle: 'Admin Visible',
+    });
+
+    const caller = makeCaller({ id: 'admin-1', role: 'admin' });
+    const result = await caller.getById({ id: legacyId });
+
+    expect(result.id).toBe(legacyId);
+    expect(result.rating).toBe(5);
   });
 
   it('throws NOT_FOUND when UUID exists in neither table', async () => {

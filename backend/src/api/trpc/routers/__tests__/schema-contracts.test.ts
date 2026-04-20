@@ -150,7 +150,10 @@ const ChatsListInput = z.object({
   assignedTo: z.string().uuid().optional(),
   slaEnabled: z.boolean().optional(),
   includeDisabled: z.boolean().default(false),
-  limit: z.number().int().min(1).max(100).default(50),
+  // gh-313: max bumped 100 → 500 to match the survey audience picker's
+  // CHATS_PICKER_LIMIT on the frontend. Keep this mirror in sync with
+  // backend/src/api/trpc/routers/chats.ts:53.
+  limit: z.number().int().min(1).max(500).default(50),
   offset: z.number().int().min(0).default(0),
 });
 
@@ -1025,8 +1028,16 @@ describe('Chats router schemas', () => {
       expect(ChatsListInput.safeParse({ limit: 0 }).success).toBe(false);
     });
 
-    it('rejects limit above 100', () => {
-      expect(ChatsListInput.safeParse({ limit: 101 }).success).toBe(false);
+    it('accepts limit at upper bound 500 (gh-313 survey picker)', () => {
+      const result = ChatsListInput.safeParse({ limit: 500 });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.limit).toBe(500);
+      }
+    });
+
+    it('rejects limit above 500', () => {
+      expect(ChatsListInput.safeParse({ limit: 501 }).success).toBe(false);
     });
 
     it('rejects non-integer limit', () => {

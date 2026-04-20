@@ -39,10 +39,15 @@ export const chatsRouter = router({
    *
    * @param assignedTo - Filter by assigned accountant UUID
    * @param slaEnabled - Filter by SLA enabled status
-   * @param limit - Page size (default: 50, max: 100)
+   * @param limit - Page size (default: 50, max: 500)
    * @param offset - Pagination offset (default: 0)
    * @returns Paginated list of chats with total count
    * @authorization All authenticated users (read-only)
+   *
+   * gh-313: max bumped 100 → 500 so the survey audience picker
+   * (frontend/src/app/settings/survey/survey-list-content.tsx) can render
+   * the full chat list for medium-sized tenants. Tenants with >500 chats
+   * see a truncation banner in the picker (PR #320 M1).
    */
   list: authedProcedure
     .input(
@@ -50,7 +55,7 @@ export const chatsRouter = router({
         assignedTo: z.string().uuid().optional(),
         slaEnabled: z.boolean().optional(),
         includeDisabled: z.boolean().default(false),
-        limit: z.number().int().min(1).max(100).default(50),
+        limit: z.number().int().min(1).max(500).default(50),
         offset: z.number().int().min(0).default(0),
       })
     )

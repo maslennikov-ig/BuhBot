@@ -172,7 +172,7 @@ export const feedbackRouter = router({
    * with any external caller still invoking it. Do NOT use for new features.
    * Scheduled for removal once external callers are audited.
    *
-   * @authorization Public (called from bot handler)
+   * @authorization Bot webhook only (requires valid Telegram secret header)
    */
   submitRating: botProcedure
     .input(
@@ -261,7 +261,7 @@ export const feedbackRouter = router({
    * Internal procedure for bot handler.
    * Adds optional comment to a feedback response.
    *
-   * @authorization Public (called from bot handler)
+   * @authorization Bot webhook only (requires valid Telegram secret header)
    */
   addComment: botProcedure
     .input(

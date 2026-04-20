@@ -216,11 +216,11 @@ export async function fetchUnifiedEntries(
   opts: UnifiedEntryFilters & { page?: number; pageSize?: number }
 ): Promise<{ items: UnifiedEntryRow[]; total: number }> {
   const timeFilter = buildTimeFilter(opts.dateFrom, opts.dateTo);
-  const hasScopedChatIds = Array.isArray(opts.scopedChatIds);
+  const scopedChatIds = Array.isArray(opts.scopedChatIds) ? opts.scopedChatIds : undefined;
 
   // Intersection guard: when both scope and explicit chatId are supplied,
   // the explicit chat must belong to scope, otherwise return an empty result.
-  if (hasScopedChatIds && opts.chatId !== undefined && !opts.scopedChatIds.includes(opts.chatId)) {
+  if (scopedChatIds && opts.chatId !== undefined && !scopedChatIds.includes(opts.chatId)) {
     return { items: [], total: 0 };
   }
 
@@ -229,8 +229,8 @@ export async function fetchUnifiedEntries(
   if (opts.surveyId) legacyWhere.surveyId = opts.surveyId;
   if (opts.chatId !== undefined) {
     legacyWhere.chatId = opts.chatId;
-  } else if (hasScopedChatIds) {
-    legacyWhere.chatId = { in: opts.scopedChatIds };
+  } else if (scopedChatIds) {
+    legacyWhere.chatId = { in: scopedChatIds };
   }
   if (opts.minRating !== undefined || opts.maxRating !== undefined) {
     const ratingFilter: Prisma.IntFilter = {};
@@ -242,14 +242,14 @@ export async function fetchUnifiedEntries(
   const voteWhere: Prisma.SurveyVoteWhereInput = { state: 'active' };
   if (timeFilter) voteWhere.updatedAt = timeFilter;
   const needsDeliveryJoin =
-    opts.surveyId !== undefined || hasScopedChatIds || opts.chatId !== undefined;
+    opts.surveyId !== undefined || scopedChatIds !== undefined || opts.chatId !== undefined;
   if (needsDeliveryJoin) {
     const deliveryWhere: Prisma.SurveyDeliveryWhereInput = {};
     if (opts.surveyId) deliveryWhere.surveyId = opts.surveyId;
     if (opts.chatId !== undefined) {
       deliveryWhere.chatId = opts.chatId;
-    } else if (hasScopedChatIds) {
-      deliveryWhere.chatId = { in: opts.scopedChatIds };
+    } else if (scopedChatIds) {
+      deliveryWhere.chatId = { in: scopedChatIds };
     }
     voteWhere.delivery = deliveryWhere;
   }

@@ -116,6 +116,9 @@ function extractToken(authHeader: string | undefined): string | null {
 export async function createContext({ req }: CreateExpressContextOptions): Promise<Context> {
   const reqId = Math.random().toString(36).substring(7);
   const startTime = Date.now();
+  const requestHeaders = {
+    telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
+  };
 
   // DEV MODE: Bypass all authentication
   if (isDevMode) {
@@ -130,9 +133,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         accessToken: 'dev-mode-token',
         expiresAt: Math.floor(Date.now() / 1000) + 86400, // 24 hours
       },
-      requestHeaders: {
-        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
-      },
+      requestHeaders,
     };
   }
 
@@ -148,9 +149,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       prisma,
       user: null,
       session: null,
-      requestHeaders: {
-        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
-      },
+      requestHeaders,
     };
   }
 
@@ -161,9 +160,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       prisma,
       user: null,
       session: null,
-      requestHeaders: {
-        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
-      },
+      requestHeaders,
     };
   }
 
@@ -183,6 +180,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         prisma,
         user: null,
         session: null,
+        requestHeaders,
       };
     }
 
@@ -210,6 +208,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         prisma,
         user: null,
         session: null,
+        requestHeaders,
       };
     }
 
@@ -230,6 +229,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         // Default to current time + 1 hour if no exp claim available
         expiresAt: Math.floor(Date.now() / 1000) + 3600,
       },
+      requestHeaders,
     };
   } catch (error) {
     // Log error for debugging (production: use structured logging)
@@ -243,9 +243,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       prisma,
       user: null,
       session: null,
-      requestHeaders: {
-        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
-      },
+      requestHeaders,
     };
   }
 }

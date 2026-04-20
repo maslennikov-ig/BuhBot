@@ -179,6 +179,46 @@ describe('createCampaign', () => {
     expect(mockPrisma.feedbackSurvey.create).not.toHaveBeenCalled();
   });
 
+  it('allows Q2 (91d) with bypassMaxRangeCheck=true (buh-i4xx)', async () => {
+    // Q2 2026: Apr 1 00:00:00 UTC .. Jun 30 23:59:59.999 UTC = ~91d.
+    // With the default 90d cap the regular path would throw RANGE_INVALID.
+    freezeClock('2026-04-18T10:00:00.000Z');
+
+    const { startDate, endDate } = quarterToRange('2026-Q2');
+    mockPrisma.feedbackSurvey.create.mockResolvedValue(
+      buildCreatedSurvey({ startDate, endDate, quarter: '2026-Q2' })
+    );
+
+    const survey = await createCampaign({
+      startDate,
+      endDate,
+      quarter: '2026-Q2',
+      bypassMaxRangeCheck: true,
+    });
+
+    expect(survey.quarter).toBe('2026-Q2');
+    expect(mockPrisma.feedbackSurvey.create).toHaveBeenCalledTimes(1);
+    // Max-range settings should NOT have been fetched — guard was skipped.
+    expect(mockPrisma.globalSettings.findUnique).not.toHaveBeenCalledWith(
+      expect.objectContaining({ select: expect.objectContaining({ surveyMaxRangeDays: true }) })
+    );
+  });
+
+  it('still rejects a ~91d custom range WITHOUT bypass (buh-i4xx guard intact)', async () => {
+    // Regression: the bypass is opt-in only. Admin-typed custom ranges over
+    // the cap must still be rejected so the abuse guard stays effective.
+    freezeClock('2026-04-18T10:00:00.000Z');
+
+    const startDate = new Date('2026-04-01T00:00:00.000Z');
+    const endDate = new Date('2026-06-30T23:59:59.999Z'); // ~91d
+
+    await expect(createCampaign({ startDate, endDate })).rejects.toMatchObject({
+      name: 'RANGE_INVALID',
+      message: expect.stringMatching(/exceeds maximum 90d/),
+    });
+    expect(mockPrisma.feedbackSurvey.create).not.toHaveBeenCalled();
+  });
+
   it('allows historical ranges when they satisfy ordering and max-range rules', async () => {
     freezeClock('2026-04-18T10:00:00.000Z');
 

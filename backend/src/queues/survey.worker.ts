@@ -129,7 +129,7 @@ async function getDeliveryById(deliveryId: string) {
  *
  * gh-292 changes:
  *   1. BEFORE sending, consults `canSendSurveyToChat()` against the per-chat cooldown.
- *      When blocked, writes `status='failed'` + `skipReason='cooldown: ...'` and
+ *      When blocked, writes `status='skipped'` + `skipReason='cooldown: ...'` and
  *      RETURNS without throwing — so BullMQ does NOT retry and the job is a no-op.
  *   2. On success, wraps the delivery-status write + `Chat.lastSurveySentAt` write in
  *      a single `prisma.$transaction(...)` so the cooldown gate never sees a partial
@@ -163,7 +163,7 @@ export async function processSurveyDelivery(job: Job<SurveyDeliveryJobData>): Pr
       await prisma.surveyDelivery.update({
         where: { id: deliveryId },
         data: {
-          status: 'failed',
+          status: 'skipped',
           skipReason: `cooldown: next eligible ${nextEligibleIso}`,
         },
       });

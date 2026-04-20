@@ -97,6 +97,7 @@ const DeliveryStatusSchema = z.enum([
   'expired',
   'responded',
   'failed',
+  'skipped',
 ]);
 
 /**
@@ -226,6 +227,7 @@ export const surveyRouter = router({
         responded: 0,
         expired: 0,
         failed: 0,
+        skipped: 0,
       };
 
       for (const stat of deliveryStats) {
@@ -359,6 +361,9 @@ export const surveyRouter = router({
             endDate,
             scheduledFor: input.scheduledFor ?? new Date(),
             quarter: input.quarter,
+            // buh-i4xx: quarters are trusted bounded windows (Q2=91d, Q3/Q4=92d).
+            // The max-range guard only protects admin-typed custom ranges.
+            bypassMaxRangeCheck: true,
           };
           if (input.validityDays !== undefined) {
             campaignInput.validityDays = input.validityDays;
@@ -630,6 +635,9 @@ export const surveyRouter = router({
         managerNotifiedAt: d.managerNotifiedAt,
         retryCount: d.retryCount,
         errorMessage: d.errorMessage,
+        // buh-lmw2: expose cooldown/skip reason so the UI can render it as
+        // context next to the 'skipped' badge.
+        skipReason: d.skipReason,
         createdAt: d.createdAt,
       }));
 

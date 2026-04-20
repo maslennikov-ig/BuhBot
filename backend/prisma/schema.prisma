@@ -123,6 +123,7 @@ enum DeliveryStatus {
   expired
   failed
   responded
+  skipped
 
   @@schema("public")
 }
@@ -560,7 +561,7 @@ model SurveyDelivery {
   retryCount        Int            @default(0) @map("retry_count")
   errorMessage      String?        @map("error_message")
   /// gh-292: Human-readable reason why a pending delivery was skipped without retry
-  /// (e.g. "cooldown: next eligible 2026-04-19T09:00:00Z"). Set alongside status='failed'.
+  /// (e.g. "cooldown: next eligible 2026-04-19T09:00:00Z"). Set alongside status='skipped'.
   skipReason        String?        @map("skip_reason")
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 

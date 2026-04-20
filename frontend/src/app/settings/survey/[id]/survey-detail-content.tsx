@@ -36,7 +36,14 @@ import {
 // ============================================
 
 type SurveyStatus = 'scheduled' | 'sending' | 'active' | 'closed' | 'expired';
-type DeliveryStatus = 'pending' | 'delivered' | 'reminded' | 'expired' | 'responded' | 'failed';
+type DeliveryStatus =
+  | 'pending'
+  | 'delivered'
+  | 'reminded'
+  | 'expired'
+  | 'responded'
+  | 'failed'
+  | 'skipped';
 
 // ============================================
 // CONSTANTS
@@ -114,6 +121,13 @@ const deliveryStatusConfig: Record<
     color: 'var(--buh-error)',
     bgColor: 'var(--buh-error-muted)',
   },
+  // buh-lmw2: cooldown skips (gh-292 anti-spam) are NOT delivery failures.
+  // Render neutral-gray so admins don't mistake them for Telegram send errors.
+  skipped: {
+    label: 'Пропущен',
+    color: 'var(--buh-foreground-muted)',
+    bgColor: 'var(--buh-surface-elevated)',
+  },
 };
 
 const deliveryStatusFilterOptions: { value: DeliveryStatus | 'all'; label: string }[] = [
@@ -124,6 +138,7 @@ const deliveryStatusFilterOptions: { value: DeliveryStatus | 'all'; label: strin
   { value: 'responded', label: 'Ответили' },
   { value: 'expired', label: 'Истекли' },
   { value: 'failed', label: 'Ошибки' },
+  { value: 'skipped', label: 'Пропущены' },
 ];
 
 // ============================================
@@ -145,13 +160,26 @@ function SurveyStatusBadge({ status }: { status: SurveyStatus }) {
   );
 }
 
-function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
-  const config = deliveryStatusConfig[status];
+function DeliveryStatusBadge({
+  status,
+  tooltip,
+}: {
+  status: DeliveryStatus;
+  tooltip?: string | null;
+}) {
+  // Fallback for unknown status values (e.g., during a staged rollout where
+  // the backend has an enum value the frontend bundle doesn't know yet).
+  const config = deliveryStatusConfig[status] ?? {
+    label: status,
+    color: 'var(--buh-foreground-muted)',
+    bgColor: 'var(--buh-surface-elevated)',
+  };
 
   return (
     <div
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
       style={{ backgroundColor: config.bgColor, color: config.color }}
+      title={tooltip ?? undefined}
     >
       <span>{config.label}</span>
     </div>
@@ -545,7 +573,10 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
 
                     {/* Status */}
                     <td className="whitespace-nowrap px-6 py-4">
-                      <DeliveryStatusBadge status={delivery.status as DeliveryStatus} />
+                      <DeliveryStatusBadge
+                        status={delivery.status as DeliveryStatus}
+                        tooltip={delivery.skipReason ?? delivery.errorMessage}
+                      />
                       {delivery.errorMessage && (
                         <p
                           className="mt-1 text-xs text-[var(--buh-error)]"
@@ -554,6 +585,16 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
                           {delivery.errorMessage.length > 30
                             ? `${delivery.errorMessage.slice(0, 30)}...`
                             : delivery.errorMessage}
+                        </p>
+                      )}
+                      {delivery.status === 'skipped' && delivery.skipReason && (
+                        <p
+                          className="mt-1 text-xs text-[var(--buh-foreground-muted)]"
+                          title={delivery.skipReason}
+                        >
+                          {delivery.skipReason.length > 40
+                            ? `${delivery.skipReason.slice(0, 40)}...`
+                            : delivery.skipReason}
                         </p>
                       )}
                     </td>

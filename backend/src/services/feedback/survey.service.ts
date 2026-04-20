@@ -52,6 +52,14 @@ export interface CreateCampaignInput {
    * "blast every active client" behavior.
    */
   audience?: AudienceInput;
+  /**
+   * buh-i4xx: Skip the `surveyMaxRangeDays` guard (rule 2). The max-range
+   * check exists to bound admin-typed custom ranges; quarter presets are
+   * already trusted bounded windows (Q2 = 91d, Q3/Q4 = 92d in all years,
+   * Q1 = 90-91d on leap years — every case exceeds the 90d default).
+   * The router sets this to `true` when `mode === 'quarter'`.
+   */
+  bypassMaxRangeCheck?: boolean;
 }
 
 /**
@@ -262,13 +270,15 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Survey
     err.name = 'RANGE_INVALID';
     throw err;
   }
-  // 2. Max range guard
-  const maxRangeDays = await getSurveyMaxRangeDays();
-  const rangeDays = (input.endDate.getTime() - input.startDate.getTime()) / MS_PER_DAY;
-  if (rangeDays > maxRangeDays) {
-    const err = new Error(`Range span ${rangeDays.toFixed(1)}d exceeds maximum ${maxRangeDays}d`);
-    err.name = 'RANGE_INVALID';
-    throw err;
+  // 2. Max range guard (skip for trusted quarter presets — buh-i4xx).
+  if (!input.bypassMaxRangeCheck) {
+    const maxRangeDays = await getSurveyMaxRangeDays();
+    const rangeDays = (input.endDate.getTime() - input.startDate.getTime()) / MS_PER_DAY;
+    if (rangeDays > maxRangeDays) {
+      const err = new Error(`Range span ${rangeDays.toFixed(1)}d exceeds maximum ${maxRangeDays}d`);
+      err.name = 'RANGE_INVALID';
+      throw err;
+    }
   }
 
   // 3. Overlap guard — reject if any active/queued campaign overlaps.

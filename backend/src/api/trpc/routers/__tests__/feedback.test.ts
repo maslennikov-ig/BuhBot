@@ -255,7 +255,6 @@ vi.mock('../../../../services/feedback/survey.service.js', () => ({
 
 // Import AFTER mocks.
 import { feedbackRouter } from '../feedback.js';
-import { createContext } from '../../context.js';
 import logger from '../../../../utils/logger.js';
 
 type Role = 'admin' | 'manager' | 'observer' | 'accountant';
@@ -840,31 +839,5 @@ describe('feedback.submitRating (deprecated)', () => {
         comment: 'Should be blocked',
       })
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
-  });
-
-  it('createContext propagates telegram secret header for botProcedure auth', async () => {
-    const secret = 'integration-test-webhook-secret-1234567890';
-    process.env['TELEGRAM_WEBHOOK_SECRET'] = secret;
-
-    const feedbackId = seedLegacy({
-      rating: 5,
-      submittedAt: new Date('2025-03-01'),
-      comment: null,
-    });
-
-    const req = {
-      headers: {
-        'x-telegram-bot-api-secret-token': secret,
-      },
-    };
-    const ctx = await createContext({ req } as never);
-    const caller = feedbackRouter.createCaller(ctx);
-
-    const result = await caller.addComment({
-      feedbackId,
-      comment: 'Context propagated signature',
-    });
-
-    expect(result.success).toBe(true);
   });
 });

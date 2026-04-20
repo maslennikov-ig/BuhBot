@@ -71,7 +71,7 @@ export interface Context {
   user: ContextUser | null; // Authenticated user (null if unauthenticated)
   session: ContextSession | null; // Session info (null if unauthenticated)
   requestHeaders?: {
-    telegramSecretToken?: string;
+    telegramSecretToken?: string | undefined;
   };
 }
 

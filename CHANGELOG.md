@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.33.0...buhbot-v0.34.0) (2026-04-20)
+
+
+### Features
+
+* **surveys:** fix picker 400, skipped status, quarter bypass (gh-313, gh-294, buh-i4xx) ([58b5c54](https://github.com/maslennikov-ig/BuhBot/commit/58b5c54121426ed46f2d2c7a0af5e2897c71ccc9))
+
 ## [0.33.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.32.2...buhbot-v0.33.0) (2026-04-19)
 
 

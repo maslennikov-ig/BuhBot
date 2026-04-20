@@ -632,6 +632,9 @@ export const surveyRouter = router({
         managerNotifiedAt: d.managerNotifiedAt,
         retryCount: d.retryCount,
         errorMessage: d.errorMessage,
+        // buh-lmw2: expose cooldown/skip reason so the UI can render it as
+        // context next to the 'skipped' badge.
+        skipReason: d.skipReason,
         createdAt: d.createdAt,
       }));
 

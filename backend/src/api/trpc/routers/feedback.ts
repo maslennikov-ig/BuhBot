@@ -5,9 +5,12 @@
  * - getAggregates: Get aggregate feedback statistics (all roles)
  * - getAll: Get full feedback details (manager only)
  * - getById: Get single feedback entry (manager only)
- * - submitRating: Record client rating from Telegram callback
+ * - submitRating: Record client rating from Telegram callback (DEPRECATED — ADR-007)
  * - addComment: Add comment to existing feedback
  * - exportCsv: Export feedback data as CSV (manager only)
+ *
+ * Read-path is unified across `feedbackResponse` (legacy) and
+ * `surveyVote (state='active')` (canonical post-gh-294). See ADR-007.
  *
  * Role-Based Access Control (RBAC):
  * ┌─────────────────────┬───────────┬─────────┬──────────┐
@@ -33,13 +36,15 @@
 import { router, publicProcedure, managerProcedure, staffProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import type { Prisma } from '@prisma/client';
 import {
   getAggregates,
   getRecentComments,
   getTrendData,
   calculateNPS,
   calculateDistribution,
+  fetchUnifiedRatings,
+  fetchUnifiedEntries,
+  fetchUnifiedComments,
 } from '../../../services/feedback/analytics.service.js';
 import { getScopedChatIds } from '../helpers/scoping.js';
 import { recordResponse, getDeliveryById } from '../../../services/feedback/survey.service.js';
@@ -52,7 +57,10 @@ import logger from '../../../utils/logger.js';
  */
 export const feedbackRouter = router({
   /**
-   * Get aggregate feedback statistics
+   * Get aggregate feedback statistics.
+   *
+   * Reads from the unified view (`feedbackResponse ∪ surveyVote(active)`).
+   * Scoping is applied to both sources via `getScopedChatIds`.
    *
    * Available to staff: admin, manager, observer (not accountant).
    * Returns anonymized data without client-identifying information.
@@ -70,10 +78,11 @@ export const feedbackRouter = router({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      // Apply role-based chat scoping
+      // Apply role-based chat scoping. `null` = unrestricted (admin).
       const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
 
-      // If user has unrestricted access, use the existing service functions
+      // Unrestricted path uses the existing service functions unchanged so the
+      // trend-data behavior is preserved (cross-tenant quarterly buckets).
       if (scopedChatIds === null) {
         const dateRange =
           input?.dateFrom && input?.dateTo
@@ -102,27 +111,24 @@ export const feedbackRouter = router({
         };
       }
 
-      // Scoped path: query with chatId filter
-      const feedbackWhere: Prisma.FeedbackResponseWhereInput = {
-        chatId: { in: scopedChatIds },
-      };
-      if (input?.dateFrom || input?.dateTo) {
-        feedbackWhere.submittedAt = {
-          ...(input.dateFrom && { gte: input.dateFrom }),
-          ...(input.dateTo && { lte: input.dateTo }),
-        };
-      }
-      if (input?.surveyId) {
-        feedbackWhere.surveyId = input.surveyId;
-      }
+      // Scoped path: unified read restricted to the user's chats.
+      const [ratingRows, commentRows] = await Promise.all([
+        fetchUnifiedRatings({
+          dateFrom: input?.dateFrom,
+          dateTo: input?.dateTo,
+          surveyId: input?.surveyId,
+          scopedChatIds,
+        }),
+        fetchUnifiedComments({
+          dateFrom: input?.dateFrom,
+          dateTo: input?.dateTo,
+          surveyId: input?.surveyId,
+          scopedChatIds,
+          limit: 10,
+        }),
+      ]);
 
-      const responses = await ctx.prisma.feedbackResponse.findMany({
-        where: feedbackWhere,
-        select: { rating: true, comment: true, submittedAt: true },
-        orderBy: { submittedAt: 'desc' },
-      });
-
-      const ratings = responses.map((r) => r.rating);
+      const ratings = ratingRows.map((r) => r.rating);
       const totalResponses = ratings.length;
       const averageRating =
         totalResponses > 0
@@ -131,14 +137,11 @@ export const feedbackRouter = router({
       const nps = calculateNPS(ratings);
       const distribution = calculateDistribution(ratings);
 
-      const recentComments = responses
-        .filter((r) => r.comment !== null)
-        .slice(0, 10)
-        .map((r) => ({
-          comment: r.comment!,
-          rating: r.rating,
-          submittedAt: r.submittedAt,
-        }));
+      const recentComments = commentRows.map((c) => ({
+        comment: c.comment!,
+        rating: c.rating,
+        submittedAt: c.submittedAt,
+      }));
 
       // Trend data is cross-chat aggregate; return empty for scoped users
       // (per-chat trend would require significant per-quarter queries)
@@ -160,10 +163,14 @@ export const feedbackRouter = router({
     }),
 
   /**
-   * Submit rating from Telegram callback (T018)
+   * Submit rating from Telegram callback.
    *
-   * Internal procedure for bot callback handler.
-   * Records client rating and triggers low-rating alert if needed.
+   * @deprecated As of ADR-007 / gh-324 the canonical write target for survey
+   * responses is `SurveyVote` via the bot voting flow (see
+   * `bot/handlers/survey.handler.ts:submitVote`). This mutation continues to
+   * write to the legacy `feedbackResponse` table for backward compatibility
+   * with any external caller still invoking it. Do NOT use for new features.
+   * Scheduled for removal once external callers are audited.
    *
    * @authorization Public (called from bot handler)
    */
@@ -177,6 +184,13 @@ export const feedbackRouter = router({
     )
     .mutation(async ({ input }) => {
       const { deliveryId, rating, telegramUsername } = input;
+
+      logger.warn('[deprecated] feedback.submitRating called — prefer SurveyVote flow', {
+        deliveryId,
+        rating,
+        service: 'feedback-router',
+        adr: 'ADR-007',
+      });
 
       // Verify delivery exists and is valid
       const delivery = await getDeliveryById(deliveryId);
@@ -283,11 +297,15 @@ export const feedbackRouter = router({
     }),
 
   /**
-   * Get all feedback entries with full details (T023)
+   * Get all feedback entries with full details.
    *
    * Manager-only procedure for viewing feedback with client identifiers.
    * Supports filtering by date, rating, survey, and chat.
    * Returns paginated results with chat and survey details.
+   *
+   * Reads from `feedbackResponse ∪ surveyVote(active)` (ADR-007). Pagination
+   * is applied in memory after the union + merge-sort — see
+   * `fetchUnifiedEntries`. Scoping is forwarded to both sources.
    *
    * @authorization Manager only
    */
@@ -306,83 +324,51 @@ export const feedbackRouter = router({
         })
         .optional()
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const page = input?.page ?? 1;
       const pageSize = input?.pageSize ?? 20;
-      const skip = (page - 1) * pageSize;
 
-      // Build where clause
-      const where: Prisma.FeedbackResponseWhereInput = {};
+      // Apply role-based scoping (admin: null = unrestricted).
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
 
-      if (input?.dateFrom || input?.dateTo) {
-        where.submittedAt = {};
-        if (input.dateFrom) {
-          where.submittedAt.gte = input.dateFrom;
+      // Parse `chatId` filter (string in, BigInt out). Must be numeric; reject
+      // otherwise to mirror the previous BigInt(input.chatId) behavior.
+      let chatIdFilter: bigint | undefined;
+      if (input?.chatId !== undefined) {
+        if (!/^-?\d+$/.test(input.chatId)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'chatId must be a numeric string',
+          });
         }
-        if (input.dateTo) {
-          where.submittedAt.lte = input.dateTo;
-        }
+        chatIdFilter = BigInt(input.chatId);
       }
 
-      if (input?.surveyId) {
-        where.surveyId = input.surveyId;
-      }
-
-      if (input?.minRating || input?.maxRating) {
-        where.rating = {};
-        if (input.minRating) {
-          where.rating.gte = input.minRating;
-        }
-        if (input.maxRating) {
-          where.rating.lte = input.maxRating;
-        }
-      }
-
-      if (input?.chatId) {
-        where.chatId = BigInt(input.chatId);
-      }
-
-      // Get total count for pagination
-      const totalItems = await prisma.feedbackResponse.count({ where });
-      const totalPages = Math.ceil(totalItems / pageSize);
-
-      // Get feedback entries with relations
-      const responses = await prisma.feedbackResponse.findMany({
-        where,
-        include: {
-          chat: {
-            include: {
-              assignedAccountant: {
-                select: {
-                  fullName: true,
-                },
-              },
-            },
-          },
-          survey: {
-            select: {
-              quarter: true,
-            },
-          },
-        },
-        orderBy: {
-          submittedAt: 'desc',
-        },
-        skip,
-        take: pageSize,
+      const { items: rows, total: totalItems } = await fetchUnifiedEntries({
+        dateFrom: input?.dateFrom,
+        dateTo: input?.dateTo,
+        surveyId: input?.surveyId,
+        minRating: input?.minRating,
+        maxRating: input?.maxRating,
+        chatId: chatIdFilter,
+        scopedChatIds,
+        page,
+        pageSize,
       });
 
-      const items = responses.map((r) => ({
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      const items = rows.map((r) => ({
         id: r.id,
         chatId: r.chatId.toString(),
-        chatTitle: r.chat?.title ?? null,
+        chatTitle: r.chatTitle,
         clientUsername: r.clientUsername,
-        accountantUsername: r.chat?.assignedAccountant?.fullName ?? null,
+        accountantUsername: r.accountantName,
         rating: r.rating,
         comment: r.comment,
         submittedAt: r.submittedAt,
         surveyId: r.surveyId,
-        surveyQuarter: r.survey?.quarter ?? null,
+        surveyQuarter: r.surveyQuarter,
       }));
 
       return {
@@ -397,10 +383,12 @@ export const feedbackRouter = router({
     }),
 
   /**
-   * Get single feedback entry by ID (T024)
+   * Get single feedback entry by ID.
    *
-   * Manager-only procedure for viewing full feedback details.
-   * Includes client info, accountant info, survey details, and related request.
+   * Tries the legacy `feedbackResponse` table first (the historically
+   * authoritative source for individual DTOs). If not found, falls back to
+   * `surveyVote` by UUID — required because post-gh-294 entries live in the
+   * vote table. DTO shape is identical for both sources.
    *
    * @authorization Manager only
    */
@@ -411,6 +399,7 @@ export const feedbackRouter = router({
       })
     )
     .query(async ({ input }) => {
+      // 1. Legacy path.
       const feedback = await prisma.feedbackResponse.findUnique({
         where: { id: input.id },
         include: {
@@ -435,24 +424,77 @@ export const feedbackRouter = router({
         },
       });
 
-      if (!feedback) {
+      if (feedback) {
+        const relatedRequest = await prisma.clientRequest.findFirst({
+          where: {
+            chatId: feedback.chatId,
+            receivedAt: { lte: feedback.submittedAt },
+          },
+          orderBy: { receivedAt: 'desc' },
+          select: {
+            id: true,
+            messageText: true,
+            receivedAt: true,
+          },
+        });
+
+        return {
+          id: feedback.id,
+          chatId: feedback.chatId.toString(),
+          chatTitle: feedback.chat?.title ?? null,
+          clientUsername: feedback.clientUsername,
+          accountant: feedback.chat?.assignedAccountant ?? null,
+          rating: feedback.rating,
+          comment: feedback.comment,
+          submittedAt: feedback.submittedAt,
+          survey: feedback.survey,
+          relatedRequest,
+        };
+      }
+
+      // 2. Vote fallback (post-gh-294 canonical source).
+      const vote = await prisma.surveyVote.findUnique({
+        where: { id: input.id },
+        include: {
+          delivery: {
+            include: {
+              chat: {
+                include: {
+                  assignedAccountant: {
+                    select: {
+                      id: true,
+                      fullName: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
+              survey: {
+                select: {
+                  id: true,
+                  quarter: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!vote) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Feedback not found',
         });
       }
 
-      // Try to find related request (most recent before feedback submission)
+      const voteSubmittedAt = vote.updatedAt;
       const relatedRequest = await prisma.clientRequest.findFirst({
         where: {
-          chatId: feedback.chatId,
-          receivedAt: {
-            lte: feedback.submittedAt,
-          },
+          chatId: vote.delivery.chatId,
+          receivedAt: { lte: voteSubmittedAt },
         },
-        orderBy: {
-          receivedAt: 'desc',
-        },
+        orderBy: { receivedAt: 'desc' },
         select: {
           id: true,
           messageText: true,
@@ -461,24 +503,24 @@ export const feedbackRouter = router({
       });
 
       return {
-        id: feedback.id,
-        chatId: feedback.chatId.toString(),
-        chatTitle: feedback.chat?.title ?? null,
-        clientUsername: feedback.clientUsername,
-        accountant: feedback.chat?.assignedAccountant ?? null,
-        rating: feedback.rating,
-        comment: feedback.comment,
-        submittedAt: feedback.submittedAt,
-        survey: feedback.survey,
+        id: vote.id,
+        chatId: vote.delivery.chatId.toString(),
+        chatTitle: vote.delivery.chat?.title ?? null,
+        clientUsername: vote.username,
+        accountant: vote.delivery.chat?.assignedAccountant ?? null,
+        rating: vote.rating,
+        comment: vote.comment,
+        submittedAt: voteSubmittedAt,
+        survey: vote.delivery.survey,
         relatedRequest,
       };
     }),
 
   /**
-   * Export feedback data as CSV (T025)
+   * Export feedback data as CSV.
    *
-   * Manager-only procedure for exporting feedback to CSV.
-   * Includes all feedback details with optional date/survey filters.
+   * Reads from `feedbackResponse ∪ surveyVote(active)` (ADR-007). No
+   * pagination — the CSV contains the full filtered set.
    *
    * @authorization Manager only
    */
@@ -492,45 +534,15 @@ export const feedbackRouter = router({
         })
         .optional()
     )
-    .query(async ({ input }) => {
-      // Build where clause
-      const where: Prisma.FeedbackResponseWhereInput = {};
+    .query(async ({ ctx, input }) => {
+      const scopedChatIds = await getScopedChatIds(ctx.prisma, ctx.user.id, ctx.user.role);
 
-      if (input?.dateFrom || input?.dateTo) {
-        where.submittedAt = {};
-        if (input.dateFrom) {
-          where.submittedAt.gte = input.dateFrom;
-        }
-        if (input.dateTo) {
-          where.submittedAt.lte = input.dateTo;
-        }
-      }
-
-      if (input?.surveyId) {
-        where.surveyId = input.surveyId;
-      }
-
-      const responses = await prisma.feedbackResponse.findMany({
-        where,
-        include: {
-          chat: {
-            include: {
-              assignedAccountant: {
-                select: {
-                  fullName: true,
-                },
-              },
-            },
-          },
-          survey: {
-            select: {
-              quarter: true,
-            },
-          },
-        },
-        orderBy: {
-          submittedAt: 'desc',
-        },
+      const { items: rows } = await fetchUnifiedEntries({
+        dateFrom: input?.dateFrom,
+        dateTo: input?.dateTo,
+        surveyId: input?.surveyId,
+        scopedChatIds,
+        // No pagination — export all matching rows.
       });
 
       // Build CSV header
@@ -548,21 +560,21 @@ export const feedbackRouter = router({
       ];
 
       // Build CSV rows
-      const rows = responses.map((r) => [
+      const csvRows = rows.map((r) => [
         r.id,
         r.chatId.toString(),
-        escapeCSV(r.chat?.title ?? ''),
+        escapeCSV(r.chatTitle ?? ''),
         escapeCSV(r.clientUsername ?? ''),
-        escapeCSV(r.chat?.assignedAccountant?.fullName ?? ''),
+        escapeCSV(r.accountantName ?? ''),
         r.rating.toString(),
         escapeCSV(r.comment ?? ''),
         r.submittedAt.toISOString(),
         r.surveyId ?? '',
-        r.survey?.quarter ?? '',
+        r.surveyQuarter ?? '',
       ]);
 
       // Combine into CSV content
-      const content = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+      const content = [headers.join(','), ...csvRows.map((row) => row.join(','))].join('\n');
 
       // Generate filename with date range
       const dateStr = new Date().toISOString().split('T')[0];
@@ -571,7 +583,7 @@ export const feedbackRouter = router({
       return {
         filename,
         content,
-        rowCount: responses.length,
+        rowCount: rows.length,
       };
     }),
 });

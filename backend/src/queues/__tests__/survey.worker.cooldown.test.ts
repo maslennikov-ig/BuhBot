@@ -3,7 +3,7 @@
  *
  * Covers the three contracts for `processSurveyDelivery`:
  *   1. Cooldown BLOCKED → no `bot.telegram.sendMessage`, delivery row gets
- *      status='failed' + skipReason starting with 'cooldown:', and the handler
+ *      status='skipped' + skipReason starting with 'cooldown:', and the handler
  *      RETURNS (no throw) so BullMQ does not retry.
  *   2. Cooldown MISS → sendMessage called once, delivery row and
  *      Chat.lastSurveySentAt updated atomically inside prisma.$transaction.
@@ -169,11 +169,11 @@ describe('survey.worker — gh-292 cooldown gate', () => {
     // sendMessage must NEVER be called when blocked.
     expect(mockBot.telegram.sendMessage).not.toHaveBeenCalled();
 
-    // Delivery row must be marked failed with a cooldown skipReason.
+    // Delivery row must be marked skipped with a cooldown skipReason.
     expect(mockPrisma.surveyDelivery.update).toHaveBeenCalledTimes(1);
     const updateArgs = mockPrisma.surveyDelivery.update.mock.calls[0]![0]!;
     expect(updateArgs.where.id).toBe('delivery-uuid');
-    expect(updateArgs.data.status).toBe('failed');
+    expect(updateArgs.data.status).toBe('skipped');
     expect(updateArgs.data.skipReason).toMatch(/^cooldown: next eligible /);
     // ISO timestamp must be included.
     expect(updateArgs.data.skipReason).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);

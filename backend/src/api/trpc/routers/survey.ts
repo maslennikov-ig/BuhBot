@@ -97,6 +97,7 @@ const DeliveryStatusSchema = z.enum([
   'expired',
   'responded',
   'failed',
+  'skipped',
 ]);
 
 /**
@@ -226,6 +227,7 @@ export const surveyRouter = router({
         responded: 0,
         expired: 0,
         failed: 0,
+        skipped: 0,
       };
 
       for (const stat of deliveryStats) {

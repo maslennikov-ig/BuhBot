@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.0...buhbot-v0.34.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* **feedback:** unify /feedback read path on surveyVote (gh-324) ([#327](https://github.com/maslennikov-ig/BuhBot/issues/327)) ([1a02ee6](https://github.com/maslennikov-ig/BuhBot/commit/1a02ee6a44e4e6939383cb83ff262f1b31922694))
+
 ## [0.34.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.33.0...buhbot-v0.34.0) (2026-04-20)
 
 

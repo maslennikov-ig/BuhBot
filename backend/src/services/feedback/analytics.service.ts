@@ -216,12 +216,22 @@ export async function fetchUnifiedEntries(
   opts: UnifiedEntryFilters & { page?: number; pageSize?: number }
 ): Promise<{ items: UnifiedEntryRow[]; total: number }> {
   const timeFilter = buildTimeFilter(opts.dateFrom, opts.dateTo);
+  const hasScopedChatIds = Array.isArray(opts.scopedChatIds);
+
+  // Intersection guard: when both scope and explicit chatId are supplied,
+  // the explicit chat must belong to scope, otherwise return an empty result.
+  if (hasScopedChatIds && opts.chatId !== undefined && !opts.scopedChatIds.includes(opts.chatId)) {
+    return { items: [], total: 0 };
+  }
 
   const legacyWhere: Prisma.FeedbackResponseWhereInput = {};
   if (timeFilter) legacyWhere.submittedAt = timeFilter;
   if (opts.surveyId) legacyWhere.surveyId = opts.surveyId;
-  if (opts.scopedChatIds) legacyWhere.chatId = { in: opts.scopedChatIds };
-  if (opts.chatId !== undefined) legacyWhere.chatId = opts.chatId;
+  if (opts.chatId !== undefined) {
+    legacyWhere.chatId = opts.chatId;
+  } else if (hasScopedChatIds) {
+    legacyWhere.chatId = { in: opts.scopedChatIds };
+  }
   if (opts.minRating !== undefined || opts.maxRating !== undefined) {
     const ratingFilter: Prisma.IntFilter = {};
     if (opts.minRating !== undefined) ratingFilter.gte = opts.minRating;
@@ -232,12 +242,15 @@ export async function fetchUnifiedEntries(
   const voteWhere: Prisma.SurveyVoteWhereInput = { state: 'active' };
   if (timeFilter) voteWhere.updatedAt = timeFilter;
   const needsDeliveryJoin =
-    opts.surveyId !== undefined || opts.scopedChatIds !== undefined || opts.chatId !== undefined;
+    opts.surveyId !== undefined || hasScopedChatIds || opts.chatId !== undefined;
   if (needsDeliveryJoin) {
     const deliveryWhere: Prisma.SurveyDeliveryWhereInput = {};
     if (opts.surveyId) deliveryWhere.surveyId = opts.surveyId;
-    if (opts.scopedChatIds) deliveryWhere.chatId = { in: opts.scopedChatIds };
-    if (opts.chatId !== undefined) deliveryWhere.chatId = opts.chatId;
+    if (opts.chatId !== undefined) {
+      deliveryWhere.chatId = opts.chatId;
+    } else if (hasScopedChatIds) {
+      deliveryWhere.chatId = { in: opts.scopedChatIds };
+    }
     voteWhere.delivery = deliveryWhere;
   }
   if (opts.minRating !== undefined || opts.maxRating !== undefined) {

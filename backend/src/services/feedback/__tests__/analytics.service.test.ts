@@ -533,6 +533,38 @@ describe('fetchUnifiedEntries', () => {
     expect(items).toHaveLength(2);
     expect(items.map((i) => i.rating).sort()).toEqual([3, 5]);
   });
+
+  it('chatId+scope intersection keeps in-scope chat results', async () => {
+    legacy({ rating: 5, submittedAt: new Date('2025-03-01'), chatId: 100n });
+    legacy({ rating: 4, submittedAt: new Date('2025-03-02'), chatId: 200n });
+    vote({ rating: 3, updatedAt: new Date('2026-04-01'), chatId: 100n });
+    vote({ rating: 2, updatedAt: new Date('2026-04-02'), chatId: 200n });
+
+    const { items, total } = await fetchUnifiedEntries({
+      scopedChatIds: [100n],
+      chatId: 100n,
+    });
+
+    expect(total).toBe(2);
+    expect(items).toHaveLength(2);
+    expect(items.every((i) => i.chatId === 100n)).toBe(true);
+    expect(items.map((i) => i.rating).sort()).toEqual([3, 5]);
+  });
+
+  it('chatId+scope intersection returns empty for out-of-scope chat', async () => {
+    legacy({ rating: 5, submittedAt: new Date('2025-03-01'), chatId: 100n });
+    vote({ rating: 3, updatedAt: new Date('2026-04-01'), chatId: 100n });
+    legacy({ rating: 4, submittedAt: new Date('2025-03-02'), chatId: 200n });
+    vote({ rating: 2, updatedAt: new Date('2026-04-02'), chatId: 200n });
+
+    const { items, total } = await fetchUnifiedEntries({
+      scopedChatIds: [100n],
+      chatId: 200n,
+    });
+
+    expect(total).toBe(0);
+    expect(items).toHaveLength(0);
+  });
 });
 
 // ===========================================================================

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { NPSWidget, FeedbackTable } from '@/components/feedback';
-import type { FeedbackEntry, FeedbackFilters } from '@/components/feedback';
+import type { FeedbackFilters } from '@/components/feedback';
 import { trpc } from '@/lib/trpc';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -13,92 +13,6 @@ import { useRoleGuard } from '@/hooks/useRoleGuard';
 // ============================================
 
 const POLLING_INTERVAL_MS = 60 * 1000; // 1 minute refresh
-
-// ============================================
-// MOCK DATA (fallback)
-// ============================================
-
-const mockAggregatesData = {
-  npsScore: 45,
-  totalResponses: 156,
-  averageRating: 4.2,
-  ratingDistribution: [
-    { rating: 5, count: 68, percentage: 43.6 },
-    { rating: 4, count: 52, percentage: 33.3 },
-    { rating: 3, count: 20, percentage: 12.8 },
-    { rating: 2, count: 10, percentage: 6.4 },
-    { rating: 1, count: 6, percentage: 3.8 },
-  ],
-  trendData: [
-    { period: '2024-Q2', averageRating: 4.0, responseCount: 35, npsScore: 38 },
-    { period: '2024-Q3', averageRating: 4.1, responseCount: 42, npsScore: 42 },
-    { period: '2024-Q4', averageRating: 4.2, responseCount: 48, npsScore: 45 },
-    { period: '2025-Q1', averageRating: 4.2, responseCount: 31, npsScore: 45 },
-  ],
-};
-
-const mockFeedbackEntries: FeedbackEntry[] = [
-  {
-    id: '1',
-    chatId: '123',
-    chatTitle: 'ООО "Ромашка"',
-    clientUsername: 'Иванов И.И.',
-    accountantUsername: 'Петрова А.С.',
-    rating: 5,
-    comment: 'Отличная работа, очень быстро ответили на все вопросы!',
-    submittedAt: new Date('2025-01-15T10:30:00'),
-    surveyId: 'survey-1',
-    surveyQuarter: '2025-Q1',
-  },
-  {
-    id: '2',
-    chatId: '456',
-    chatTitle: 'ИП Сидоров',
-    clientUsername: 'Сидоров С.С.',
-    accountantUsername: 'Козлова М.В.',
-    rating: 4,
-    comment: 'Хорошо, но хотелось бы быстрее получать ответы.',
-    submittedAt: new Date('2025-01-14T14:45:00'),
-    surveyId: 'survey-1',
-    surveyQuarter: '2025-Q1',
-  },
-  {
-    id: '3',
-    chatId: '789',
-    chatTitle: 'АО "Техно"',
-    clientUsername: 'Новиков Н.Н.',
-    accountantUsername: 'Петрова А.С.',
-    rating: 5,
-    comment: null,
-    submittedAt: new Date('2025-01-13T09:15:00'),
-    surveyId: 'survey-1',
-    surveyQuarter: '2025-Q1',
-  },
-  {
-    id: '4',
-    chatId: '101',
-    chatTitle: 'ООО "Строй"',
-    clientUsername: 'Морозов М.М.',
-    accountantUsername: 'Иванова Е.К.',
-    rating: 2,
-    comment: 'Долго ждал ответа, очень недоволен.',
-    submittedAt: new Date('2025-01-12T16:20:00'),
-    surveyId: 'survey-1',
-    surveyQuarter: '2025-Q1',
-  },
-  {
-    id: '5',
-    chatId: '102',
-    chatTitle: 'ИП Волков',
-    clientUsername: 'Волков В.В.',
-    accountantUsername: 'Козлова М.В.',
-    rating: 4,
-    comment: 'В целом хорошо.',
-    submittedAt: new Date('2025-01-11T11:00:00'),
-    surveyId: 'survey-1',
-    surveyQuarter: '2025-Q1',
-  },
-];
 
 // ============================================
 // LOADING SKELETON COMPONENT
@@ -213,10 +127,11 @@ export function FeedbackContent() {
     }
   }, [aggregatesError, feedbackError]);
 
-  // Transform data or use mocks
+  // gh-324 / ADR-007: no mock fallback — render empty state instead when the
+  // APIs legitimately return nothing. Hiding the "no data" case behind demo
+  // numbers is exactly what masked the original read/write mismatch bug.
   const npsWidgetData = React.useMemo(() => {
-    if (!aggregatesData) return mockAggregatesData;
-
+    if (!aggregatesData) return null;
     return {
       npsScore: aggregatesData.npsScore,
       totalResponses: aggregatesData.totalResponses,
@@ -229,16 +144,10 @@ export function FeedbackContent() {
   const feedbackTableData = React.useMemo(() => {
     if (!feedbackData) {
       return {
-        entries: mockFeedbackEntries,
-        pagination: {
-          page: 1,
-          pageSize: 20,
-          totalItems: mockFeedbackEntries.length,
-          totalPages: 1,
-        },
+        entries: [],
+        pagination: { page: 1, pageSize, totalItems: 0, totalPages: 0 },
       };
     }
-
     return {
       entries: feedbackData.items.map((item) => ({
         ...item,
@@ -246,7 +155,7 @@ export function FeedbackContent() {
       })),
       pagination: feedbackData.pagination,
     };
-  }, [feedbackData]);
+  }, [feedbackData, pageSize]);
 
   // Check if user is manager (has access to feedback list)
   const isManager = !feedbackError || feedbackError.data?.code !== 'FORBIDDEN';
@@ -284,13 +193,21 @@ export function FeedbackContent() {
 
       {/* NPS Widget - Visible to all authenticated users */}
       <div className="mb-8">
-        <NPSWidget
-          npsScore={npsWidgetData.npsScore}
-          totalResponses={npsWidgetData.totalResponses}
-          averageRating={npsWidgetData.averageRating}
-          ratingDistribution={npsWidgetData.ratingDistribution}
-          trendData={npsWidgetData.trendData}
-        />
+        {npsWidgetData ? (
+          <NPSWidget
+            npsScore={npsWidgetData.npsScore}
+            totalResponses={npsWidgetData.totalResponses}
+            averageRating={npsWidgetData.averageRating}
+            ratingDistribution={npsWidgetData.ratingDistribution}
+            trendData={npsWidgetData.trendData}
+          />
+        ) : (
+          <div className="rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface)] p-8 text-center">
+            <p className="text-[var(--buh-foreground-muted)]">
+              Ещё нет отзывов — аналитика NPS появится после первых ответов клиентов.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Feedback Table - Manager only */}

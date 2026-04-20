@@ -259,10 +259,15 @@ import logger from '../../../../utils/logger.js';
 
 type Role = 'admin' | 'manager' | 'observer' | 'accountant';
 
-function makeCaller(user: {
-  id: string;
-  role: Role;
-}): ReturnType<typeof feedbackRouter.createCaller> {
+function makeCaller(
+  user: {
+    id: string;
+    role: Role;
+  },
+  opts?: {
+    telegramSecretToken?: string;
+  }
+): ReturnType<typeof feedbackRouter.createCaller> {
   return feedbackRouter.createCaller({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mocked Prisma surface
     prisma: mockPrisma as any,
@@ -276,6 +281,9 @@ function makeCaller(user: {
     session: {
       accessToken: 'test',
       expiresAt: Math.floor(Date.now() / 1000) + 3600,
+    },
+    requestHeaders: {
+      telegramSecretToken: opts?.telegramSecretToken,
     },
   });
 }
@@ -385,6 +393,7 @@ beforeEach(() => {
   store.state.reset();
   seq = 0;
   vi.clearAllMocks();
+  process.env['TELEGRAM_WEBHOOK_SECRET'] = 'test-webhook-secret-token-1234567890';
 });
 
 // ===========================================================================
@@ -730,8 +739,11 @@ describe('feedback.getAggregates', () => {
 // ===========================================================================
 
 describe('feedback.submitRating (deprecated)', () => {
-  it('still processes the request but logs a deprecation warning', async () => {
-    const caller = makeCaller({ id: 'admin-1', role: 'admin' });
+  it('still processes the request with valid bot signature and logs deprecation warning', async () => {
+    const caller = makeCaller(
+      { id: 'admin-1', role: 'admin' },
+      { telegramSecretToken: process.env['TELEGRAM_WEBHOOK_SECRET'] }
+    );
     const result = await caller.submitRating({
       deliveryId: '00000000-0000-4000-a000-000000000001',
       rating: 5,
@@ -743,5 +755,89 @@ describe('feedback.submitRating (deprecated)', () => {
       expect.stringContaining('[deprecated]'),
       expect.objectContaining({ adr: 'ADR-007' })
     );
+  });
+
+  it('rejects submitRating without bot signature', async () => {
+    const caller = makeCaller({ id: 'admin-1', role: 'admin' });
+
+    await expect(
+      caller.submitRating({
+        deliveryId: '00000000-0000-4000-a000-000000000001',
+        rating: 5,
+        telegramUsername: 'x',
+      })
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('rejects submitRating with invalid bot signature', async () => {
+    const caller = makeCaller(
+      { id: 'admin-1', role: 'admin' },
+      { telegramSecretToken: 'invalid-secret' }
+    );
+
+    await expect(
+      caller.submitRating({
+        deliveryId: '00000000-0000-4000-a000-000000000001',
+        rating: 5,
+        telegramUsername: 'x',
+      })
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('allows addComment with valid bot signature', async () => {
+    const feedbackId = seedLegacy({
+      rating: 4,
+      submittedAt: new Date('2025-03-01'),
+      comment: null,
+    });
+
+    const caller = makeCaller(
+      { id: 'admin-1', role: 'admin' },
+      { telegramSecretToken: process.env['TELEGRAM_WEBHOOK_SECRET'] }
+    );
+
+    const result = await caller.addComment({
+      feedbackId,
+      comment: 'Thanks for the service',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects addComment without bot signature', async () => {
+    const feedbackId = seedLegacy({
+      rating: 4,
+      submittedAt: new Date('2025-03-01'),
+      comment: null,
+    });
+
+    const caller = makeCaller({ id: 'admin-1', role: 'admin' });
+
+    await expect(
+      caller.addComment({
+        feedbackId,
+        comment: 'Should be blocked',
+      })
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('rejects addComment with invalid bot signature', async () => {
+    const feedbackId = seedLegacy({
+      rating: 4,
+      submittedAt: new Date('2025-03-01'),
+      comment: null,
+    });
+
+    const caller = makeCaller(
+      { id: 'admin-1', role: 'admin' },
+      { telegramSecretToken: 'invalid-secret' }
+    );
+
+    await expect(
+      caller.addComment({
+        feedbackId,
+        comment: 'Should be blocked',
+      })
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 });

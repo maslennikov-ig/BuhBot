@@ -33,7 +33,7 @@
  * @module api/trpc/routers/feedback
  */
 
-import { router, publicProcedure, managerProcedure, staffProcedure } from '../trpc.js';
+import { router, botProcedure, managerProcedure, staffProcedure } from '../trpc.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import {
@@ -174,7 +174,7 @@ export const feedbackRouter = router({
    *
    * @authorization Public (called from bot handler)
    */
-  submitRating: publicProcedure
+  submitRating: botProcedure
     .input(
       z.object({
         deliveryId: z.string().uuid(),
@@ -263,7 +263,7 @@ export const feedbackRouter = router({
    *
    * @authorization Public (called from bot handler)
    */
-  addComment: publicProcedure
+  addComment: botProcedure
     .input(
       z.object({
         feedbackId: z.string().uuid(),

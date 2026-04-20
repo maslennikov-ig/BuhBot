@@ -70,6 +70,9 @@ export interface Context {
   prisma: PrismaClient; // Database client
   user: ContextUser | null; // Authenticated user (null if unauthenticated)
   session: ContextSession | null; // Session info (null if unauthenticated)
+  requestHeaders?: {
+    telegramSecretToken?: string;
+  };
 }
 
 /**
@@ -127,6 +130,9 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         accessToken: 'dev-mode-token',
         expiresAt: Math.floor(Date.now() / 1000) + 86400, // 24 hours
       },
+      requestHeaders: {
+        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
+      },
     };
   }
 
@@ -142,6 +148,9 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       prisma,
       user: null,
       session: null,
+      requestHeaders: {
+        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
+      },
     };
   }
 
@@ -152,6 +161,9 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       prisma,
       user: null,
       session: null,
+      requestHeaders: {
+        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
+      },
     };
   }
 
@@ -231,6 +243,9 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
       prisma,
       user: null,
       session: null,
+      requestHeaders: {
+        telegramSecretToken: req.headers['x-telegram-bot-api-secret-token'] as string | undefined,
+      },
     };
   }
 }

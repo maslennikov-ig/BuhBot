@@ -19,6 +19,7 @@
  */
 
 import { initTRPC, TRPCError } from '@trpc/server';
+import { timingSafeEqual } from 'crypto';
 import type { Context } from './context.js';
 
 /**
@@ -182,6 +183,44 @@ const isAdmin = t.middleware(({ ctx, next }) => {
  */
 export const authedProcedure = publicProcedure.use(isAuthed);
 
+const isBotWebhook = t.middleware(({ ctx, next }) => {
+  const expected = process.env['TELEGRAM_WEBHOOK_SECRET'];
+
+  if (!expected) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Bot webhook secret is not configured.',
+    });
+  }
+
+  const received = ctx.requestHeaders?.telegramSecretToken;
+  if (!received) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Bot webhook signature is required.',
+    });
+  }
+
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+
+  if (expectedBuffer.length !== receivedBuffer.length) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Invalid bot webhook signature.',
+    });
+  }
+
+  if (!timingSafeEqual(expectedBuffer, receivedBuffer)) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Invalid bot webhook signature.',
+    });
+  }
+
+  return next();
+});
+
 /**
  * Manager procedure (requires admin or manager role)
  *
@@ -245,3 +284,12 @@ export const accountantProcedure = authedProcedure.use(isAccountant);
  * - User management
  */
 export const adminProcedure = authedProcedure.use(isAdmin);
+
+/**
+ * Bot webhook procedure (requires valid Telegram webhook secret header)
+ *
+ * Available to: Telegram webhook requests only
+ *
+ * Use for bot callback write operations exposed via tRPC.
+ */
+export const botProcedure = publicProcedure.use(isBotWebhook);

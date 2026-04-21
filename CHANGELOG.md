@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.1...buhbot-v0.34.2) (2026-04-21)
+
+
+### Bug Fixes
+
+* **feedback:** add details route and explicit error states ([#329](https://github.com/maslennikov-ig/BuhBot/issues/329)) ([f722edc](https://github.com/maslennikov-ig/BuhBot/commit/f722edc626a2db568fb3c93a5b3207fef7ec926c))
+
 ## [0.34.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.0...buhbot-v0.34.1) (2026-04-20)
 
 

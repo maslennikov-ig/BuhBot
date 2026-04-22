@@ -32,7 +32,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
     weekdays: 'grid grid-cols-7',
     weekday: 'text-muted-foreground h-9 w-9 text-center text-[0.8rem] font-normal',
     week: 'grid grid-cols-7',
-    day: 'h-9 w-9 p-0 text-center text-sm',
+    day: 'h-9 w-9 p-0 text-center text-sm flex items-center justify-center',
     day_button: cn(
       buttonBaseClasses,
       'h-9 w-9 p-0 font-normal hover:bg-accent hover:text-accent-foreground aria-selected:opacity-100'

@@ -78,6 +78,8 @@ export interface SurveyAggregate {
   count: number;
   /** Arithmetic mean of effective rating values; null when count is 0. */
   average: number | null;
+  /** Count of distinct deliveries that have at least one active vote (for response rate calculation). */
+  respondedDeliveryCount?: number;
   /**
    * Per-rating histogram. Keys are rating values 1..5; values are counts of
    * effective (active) votes at that rating.
@@ -342,6 +344,127 @@ export async function aggregateSurvey(surveyId: string): Promise<SurveyAggregate
   return aggregateInternal({ surveyId });
 }
 
+/**
+ * Batch aggregate surveys by ID. Returns a Map<surveyId, SurveyAggregate>
+ * with live vote counts. Surveys with no votes will be absent from the map.
+ * (gh-333: used by list procedure to overlay aggregates)
+ *
+ * Implements chunked processing (H-2) to prevent OOM when aggregating large
+ * numbers of surveys. Splits surveyIds into batches and executes aggregation
+ * in parallel, then merges results.
+ *
+ * @param surveyIds Survey IDs to aggregate
+ * @param batchSize Maximum surveys per batch (default: 100). Tune based on
+ *   expected vote count and available memory.
+ */
+export async function aggregateSurveys(
+  surveyIds: string[],
+  batchSize: number = 100
+): Promise<Map<string, SurveyAggregate>> {
+  if (!Number.isInteger(batchSize) || batchSize < 1) {
+    throw new Error(`batchSize must be a positive integer, got ${batchSize}`);
+  }
+
+  if (surveyIds.length === 0) return new Map();
+
+  // Split surveyIds into chunks to prevent unbounded memory growth
+  const chunks: string[][] = [];
+  for (let i = 0; i < surveyIds.length; i += batchSize) {
+    chunks.push(surveyIds.slice(i, i + batchSize));
+  }
+
+  // Aggregate each chunk in parallel with error resilience (buh-8bad)
+  const results = await Promise.allSettled(chunks.map((chunk) => aggregateSurveysInternal(chunk)));
+
+  // Merge results from all chunks into a single map, skipping failed chunks
+  const merged = new Map<string, SurveyAggregate>();
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      for (const [surveyId, aggregate] of result.value) {
+        merged.set(surveyId, aggregate);
+      }
+    } else {
+      logger.error('Chunk aggregation failed, skipping partial batch', {
+        error: result.reason,
+        service: 'vote-service',
+      });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Internal batch aggregation for a single chunk of surveys.
+ * Does not enforce batch size limits; caller is responsible for chunking.
+ *
+ * Query strategy (buh-lako): Selects only necessary columns with delivery join
+ * to enable database-level filtering and sorting before JS aggregation.
+ * Single findMany query with careful select minimizes data transfer and
+ * memory footprint.
+ *
+ * @internal
+ */
+async function aggregateSurveysInternal(
+  surveyIds: string[]
+): Promise<Map<string, SurveyAggregate>> {
+  // Query all active votes with delivery info for given surveys
+  // The database handles filtering (state, surveyId) before JS receives results
+  const votes = await prisma.surveyVote.findMany({
+    where: {
+      state: 'active',
+      delivery: { surveyId: { in: surveyIds } },
+    },
+    select: {
+      rating: true,
+      delivery: { select: { id: true, surveyId: true } },
+    },
+  });
+
+  // Accumulate per-survey and track distinct deliveries with votes
+  const sums = new Map<
+    string,
+    {
+      sum: number;
+      count: number;
+      dist: ReturnType<typeof emptyDistribution>;
+      deliveryIds: Set<string>;
+    }
+  >();
+
+  for (const v of votes) {
+    const sid = v.delivery.surveyId;
+    if (!sums.has(sid)) {
+      sums.set(sid, {
+        sum: 0,
+        count: 0,
+        dist: emptyDistribution(),
+        deliveryIds: new Set(),
+      });
+    }
+    const s = sums.get(sid)!;
+    s.deliveryIds.add(v.delivery.id);
+    const rating = v.rating as 1 | 2 | 3 | 4 | 5;
+    if (rating >= 1 && rating <= 5) {
+      s.count += 1;
+      s.sum += rating;
+      s.dist[rating] += 1;
+    }
+  }
+
+  // Convert to SurveyAggregate map (buh-5jpa: type-safe)
+  const result = new Map<string, SurveyAggregate>();
+  for (const [sid, s] of sums) {
+    result.set(sid, {
+      count: s.count,
+      average: s.count > 0 ? s.sum / s.count : null,
+      respondedDeliveryCount: s.deliveryIds.size,
+      distribution: s.dist,
+    });
+  }
+  return result;
+}
+
 async function aggregateInternal(
   scope: { deliveryId: string } | { surveyId: string }
 ): Promise<SurveyAggregate> {
@@ -405,6 +528,7 @@ export default {
   getEffectiveVote,
   aggregateDelivery,
   aggregateSurvey,
+  aggregateSurveys,
   getVoteHistory,
   SurveyClosedError,
   DeliveryNotFoundError,

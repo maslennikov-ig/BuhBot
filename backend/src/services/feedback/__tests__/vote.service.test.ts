@@ -122,23 +122,58 @@ const mockPrisma = vi.hoisted(() => {
       findMany: vi.fn(
         async ({
           where,
+          select,
         }: {
           where?: {
             state?: string;
             deliveryId?: string;
-            delivery?: { surveyId?: string };
+            delivery?: { surveyId?: string | { in?: string[] } };
           };
-          select?: unknown;
+          select?: {
+            rating?: boolean;
+            delivery?: { select?: { surveyId?: boolean; id?: boolean } };
+            deliveryId?: boolean;
+            telegramUserId?: boolean;
+            state?: boolean;
+          };
         } = {}) => {
-          return store.state.votes.filter((v) => {
+          const filtered = store.state.votes.filter((v) => {
             if (where?.state && v.state !== where.state) return false;
             if (where?.deliveryId && v.deliveryId !== where.deliveryId) return false;
             if (where?.delivery?.surveyId) {
+              const surveyIdFilter = where.delivery.surveyId;
               const d = store.state.deliveries.find((x) => x.id === v.deliveryId);
-              if (!d || d.surveyId !== where.delivery.surveyId) return false;
+              if (!d) return false;
+              if (typeof surveyIdFilter === 'string') {
+                if (d.surveyId !== surveyIdFilter) return false;
+              } else if (
+                surveyIdFilter &&
+                typeof surveyIdFilter === 'object' &&
+                surveyIdFilter.in
+              ) {
+                if (!surveyIdFilter.in.includes(d.surveyId)) return false;
+              }
             }
             return true;
           });
+          // When caller requests `select` with a `delivery` sub-select, enrich
+          // each row with the delivery object so aggregateSurveys can read
+          // v.delivery.surveyId and v.delivery.id.
+          if (select?.delivery) {
+            return filtered.map((v) => {
+              const d = store.state.deliveries.find((x) => x.id === v.deliveryId);
+              return {
+                ...v,
+                delivery: d
+                  ? {
+                      id: d.id,
+                      surveyId: d.surveyId,
+                    }
+                  : { id: v.deliveryId, surveyId: '' },
+              };
+            });
+          }
+          return filtered;
         }
       ),
       upsert: vi.fn(
@@ -289,6 +324,7 @@ import {
   submitVote,
   removeVote,
   aggregateSurvey,
+  aggregateSurveys,
   aggregateDelivery,
   getVoteHistory,
   getEffectiveVote,
@@ -580,5 +616,420 @@ describe('getEffectiveVote', () => {
     expect(await getEffectiveVote('delivery-1', BigInt(7))).toBeNull();
 
     expect(await getEffectiveVote('delivery-1', BigInt(999))).toBeNull();
+  });
+});
+
+// ============================================================================
+// aggregateSurveys (gh-333)
+// ============================================================================
+describe('aggregateSurveys', () => {
+  // ── TC-1: empty input ─────────────────────────────────────────────────────
+  it('returns empty Map for empty input array', async () => {
+    const result = await aggregateSurveys([]);
+
+    expect(result).toBeInstanceOf(Map);
+    expect(result.size).toBe(0);
+  });
+
+  // ── TC-2: survey exists but has no SurveyVote records ────────────────────
+  it('returns empty Map when the requested survey has no votes', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    // Surveys with no active votes are absent from the map (by spec)
+    expect(result.size).toBe(0);
+  });
+
+  // ── TC-3: single survey, multiple votes ───────────────────────────────────
+  it('computes correct count / average / distribution for a single survey', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(1), rating: 5 });
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(2), rating: 5 });
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(3), rating: 4 });
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(4), rating: 3 });
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(5), rating: 3 });
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    expect(result.size).toBe(1);
+    const agg = result.get('survey-1')!;
+    expect(agg.count).toBe(5);
+    // average = (5+5+4+3+3)/5 = 20/5 = 4
+    expect(agg.average).toBeCloseTo(4);
+    expect(agg.distribution).toEqual({ 1: 0, 2: 0, 3: 2, 4: 1, 5: 2 });
+    // All votes came from one delivery → respondedDeliveryCount=1
+    expect(agg.respondedDeliveryCount).toBe(1);
+  });
+
+  // ── TC-4: multiple surveys, votes split across them ───────────────────────
+  it('isolates aggregates per survey when multiple surveys share the batch', async () => {
+    seedDelivery('delivery-A', 'survey-A');
+    seedDelivery('delivery-B', 'survey-B');
+    seedDelivery('delivery-C', 'survey-C');
+
+    // survey-A: 2 votes (ratings 5, 3)
+    await submitVote({ deliveryId: 'delivery-A', telegramUserId: BigInt(1), rating: 5 });
+    await submitVote({ deliveryId: 'delivery-A', telegramUserId: BigInt(2), rating: 3 });
+
+    // survey-B: 1 vote (rating 4)
+    await submitVote({ deliveryId: 'delivery-B', telegramUserId: BigInt(3), rating: 4 });
+
+    // survey-C: no votes
+
+    const result = await aggregateSurveys(['survey-A', 'survey-B', 'survey-C']);
+
+    // survey-A
+    expect(result.has('survey-A')).toBe(true);
+    const aggA = result.get('survey-A')!;
+    expect(aggA.count).toBe(2);
+    expect(aggA.average).toBeCloseTo(4);
+    expect(aggA.distribution[5]).toBe(1);
+    expect(aggA.distribution[3]).toBe(1);
+    expect(aggA.respondedDeliveryCount).toBe(1);
+
+    // survey-B
+    expect(result.has('survey-B')).toBe(true);
+    const aggB = result.get('survey-B')!;
+    expect(aggB.count).toBe(1);
+    expect(aggB.average).toBe(4);
+
+    // survey-C has no votes → absent from map
+    expect(result.has('survey-C')).toBe(false);
+  });
+
+  // ── TC-5: invalid ratings filtered out (only 1-5 count) ──────────────────
+  it('excludes out-of-range ratings from count and distribution but still tracks delivery', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+
+    // Inject out-of-range vote rows directly into store (bypassing assertRating
+    // in submitVote which would throw). This simulates corrupt / legacy data
+    // that could exist in the DB, ensuring the guard in aggregateSurveys works.
+    store.state.votes.push(
+      {
+        id: store.nextId(),
+        deliveryId: 'delivery-1',
+        telegramUserId: BigInt(10),
+        username: null,
+        rating: 0, // invalid
+        comment: null,
+        state: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: store.nextId(),
+        deliveryId: 'delivery-1',
+        telegramUserId: BigInt(11),
+        username: null,
+        rating: 6, // invalid
+        comment: null,
+        state: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: store.nextId(),
+        deliveryId: 'delivery-1',
+        telegramUserId: BigInt(12),
+        username: null,
+        rating: 3, // valid
+        comment: null,
+        state: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    );
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    expect(result.size).toBe(1);
+    const agg = result.get('survey-1')!;
+    // Only rating=3 is in range
+    expect(agg.count).toBe(1);
+    expect(agg.average).toBe(3);
+    expect(agg.distribution[3]).toBe(1);
+    // All 3 active rows are from the same delivery → respondedDeliveryCount=1
+    // (the delivery is tracked before the rating guard, so out-of-range rows
+    // still increment the responded set — they are "responded" just with bad data)
+    expect(agg.respondedDeliveryCount).toBe(1);
+  });
+
+  // ── TC-6: inactive (removed) votes excluded ───────────────────────────────
+  it('excludes state=removed votes from aggregate', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(1), rating: 5 });
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(2), rating: 4 });
+    await removeVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(2) }); // flipped to removed
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    const agg = result.get('survey-1')!;
+    // Only the active vote for user-1 should be counted
+    expect(agg.count).toBe(1);
+    expect(agg.average).toBe(5);
+    expect(agg.distribution[5]).toBe(1);
+    expect(agg.distribution[4]).toBe(0);
+  });
+
+  // ── TC-7: distinct deliveries tracked – same deliveryId in N votes ────────
+  it('counts respondedDeliveryCount=1 when all active votes share one delivery', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+
+    // 5 different users, same delivery
+    for (let i = 1; i <= 5; i++) {
+      await submitVote({
+        deliveryId: 'delivery-1',
+        telegramUserId: BigInt(100 + i),
+        rating: ((i % 5) + 1) as 1 | 2 | 3 | 4 | 5,
+      });
+    }
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    const agg = result.get('survey-1')!;
+    expect(agg.count).toBe(5);
+    expect(agg.respondedDeliveryCount).toBe(1);
+  });
+
+  // ── TC-8: multiple deliveries per survey ──────────────────────────────────
+  it('counts respondedDeliveryCount=3 when votes come from 3 distinct deliveries', async () => {
+    // Same survey distributed to 3 separate deliveries (e.g. 3 client groups)
+    seedDelivery('delivery-X', 'survey-multi');
+    seedDelivery('delivery-Y', 'survey-multi');
+    seedDelivery('delivery-Z', 'survey-multi');
+
+    await submitVote({ deliveryId: 'delivery-X', telegramUserId: BigInt(1), rating: 5 });
+    await submitVote({ deliveryId: 'delivery-X', telegramUserId: BigInt(2), rating: 4 });
+    await submitVote({ deliveryId: 'delivery-Y', telegramUserId: BigInt(3), rating: 3 });
+    await submitVote({ deliveryId: 'delivery-Z', telegramUserId: BigInt(4), rating: 2 });
+
+    const result = await aggregateSurveys(['survey-multi']);
+
+    expect(result.size).toBe(1);
+    const agg = result.get('survey-multi')!;
+    expect(agg.count).toBe(4);
+    // average = (5+4+3+2)/4 = 3.5
+    expect(agg.average).toBeCloseTo(3.5);
+    expect(agg.respondedDeliveryCount).toBe(3);
+  });
+
+  // ── TC-9: concurrent calls do not interfere ───────────────────────────────
+  it('two parallel aggregateSurveys calls return consistent independent results', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+    seedDelivery('delivery-2', 'survey-2');
+
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(1), rating: 5 });
+    await submitVote({ deliveryId: 'delivery-2', telegramUserId: BigInt(2), rating: 2 });
+
+    // Fire both calls in parallel
+    const [result1, result2] = await Promise.all([
+      aggregateSurveys(['survey-1']),
+      aggregateSurveys(['survey-2']),
+    ]);
+
+    expect(result1.get('survey-1')!.count).toBe(1);
+    expect(result1.get('survey-1')!.average).toBe(5);
+    expect(result1.has('survey-2')).toBe(false);
+
+    expect(result2.get('survey-2')!.count).toBe(1);
+    expect(result2.get('survey-2')!.average).toBe(2);
+    expect(result2.has('survey-1')).toBe(false);
+  });
+
+  // ── TC-9b: parallel calls on overlapping ID sets stay isolated ────────────
+  it('parallel calls with overlapping survey sets both return correct aggregates', async () => {
+    seedDelivery('delivery-shared', 'survey-shared');
+    seedDelivery('delivery-only1', 'survey-only1');
+    seedDelivery('delivery-only2', 'survey-only2');
+
+    await submitVote({ deliveryId: 'delivery-shared', telegramUserId: BigInt(1), rating: 4 });
+    await submitVote({ deliveryId: 'delivery-only1', telegramUserId: BigInt(2), rating: 3 });
+    await submitVote({ deliveryId: 'delivery-only2', telegramUserId: BigInt(3), rating: 5 });
+
+    const [resA, resB] = await Promise.all([
+      aggregateSurveys(['survey-shared', 'survey-only1']),
+      aggregateSurveys(['survey-shared', 'survey-only2']),
+    ]);
+
+    // Both should see survey-shared with count=1
+    expect(resA.get('survey-shared')!.count).toBe(1);
+    expect(resB.get('survey-shared')!.count).toBe(1);
+    // Each sees only its own exclusive survey
+    expect(resA.has('survey-only2')).toBe(false);
+    expect(resB.has('survey-only1')).toBe(false);
+  });
+
+  // ── TC-10: large batch (100+ survey IDs) ─────────────────────────────────
+  it('handles a large batch of 100 survey IDs without errors', async () => {
+    // Seed 5 surveys with votes; the rest are no-op ghost IDs
+    const activeSurveyIds: string[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const sid = `survey-large-${i}`;
+      const did = `delivery-large-${i}`;
+      seedDelivery(did, sid);
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(200 + i),
+        rating: i as 1 | 2 | 3 | 4 | 5,
+      });
+      activeSurveyIds.push(sid);
+    }
+
+    // Build a 100-element array: 5 real + 95 ghost IDs
+    const ghostIds = Array.from({ length: 95 }, (_, k) => `ghost-survey-${k}`);
+    const allIds = [...activeSurveyIds, ...ghostIds];
+    expect(allIds).toHaveLength(100);
+
+    const result = await aggregateSurveys(allIds);
+
+    // Only the 5 seeded surveys should appear
+    expect(result.size).toBe(5);
+    for (const sid of activeSurveyIds) {
+      expect(result.has(sid)).toBe(true);
+      expect(result.get(sid)!.count).toBe(1);
+    }
+    // Ghost IDs produce no entries
+    for (const gid of ghostIds) {
+      expect(result.has(gid)).toBe(false);
+    }
+  });
+
+  // ── TC-11: average is null when count is 0 ────────────────────────────────
+  it('sets average to null when a survey entry has count=0 (all votes invalid range)', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+
+    // All out-of-range: rating=0
+    store.state.votes.push({
+      id: store.nextId(),
+      deliveryId: 'delivery-1',
+      telegramUserId: BigInt(20),
+      username: null,
+      rating: 0,
+      comment: null,
+      state: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    // Entry exists because the delivery is "responded" even though rating is bad
+    if (result.has('survey-1')) {
+      const agg = result.get('survey-1')!;
+      // count excludes the bad rating
+      expect(agg.count).toBe(0);
+      // average must be null, not NaN, when count=0
+      expect(agg.average).toBeNull();
+    }
+    // It's equally valid for the implementation to omit the survey entirely
+    // (no valid votes → no entry). Both behaviours are acceptable.
+    // The critical assertion is that if it IS present, average is not NaN.
+    if (!result.has('survey-1')) {
+      expect(result.size).toBe(0);
+    }
+  });
+
+  // ── TC-12: distribution keys always cover 1..5 ────────────────────────────
+  it('returns a complete 1-5 distribution object even when only some ratings present', async () => {
+    seedDelivery('delivery-1', 'survey-1');
+    await submitVote({ deliveryId: 'delivery-1', telegramUserId: BigInt(1), rating: 5 });
+
+    const result = await aggregateSurveys(['survey-1']);
+
+    const agg = result.get('survey-1')!;
+    expect(Object.keys(agg.distribution).map(Number).sort()).toEqual([1, 2, 3, 4, 5]);
+    expect(agg.distribution[1]).toBe(0);
+    expect(agg.distribution[2]).toBe(0);
+    expect(agg.distribution[3]).toBe(0);
+    expect(agg.distribution[4]).toBe(0);
+    expect(agg.distribution[5]).toBe(1);
+  });
+
+  // ── TC-13: chunked batch processing (H-2 optimization) ─────────────────────
+  it('correctly aggregates surveys split across multiple chunks with custom batchSize', async () => {
+    // Create 250 survey IDs: 10 with votes, 240 without
+    const surveyIds: string[] = [];
+    const surveysWithVotes: string[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const sid = `survey-chunk-${i}`;
+      const did = `delivery-chunk-${i}`;
+      seedDelivery(did, sid);
+      // Add 2 votes per survey
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(1000 + i * 2),
+        rating: (i % 5) + 1,
+      });
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(1000 + i * 2 + 1),
+        rating: ((i + 1) % 5) + 1,
+      });
+      surveyIds.push(sid);
+      surveysWithVotes.push(sid);
+    }
+
+    // Add 240 ghost IDs
+    for (let i = 0; i < 240; i++) {
+      surveyIds.push(`ghost-chunk-${i}`);
+    }
+
+    expect(surveyIds).toHaveLength(250);
+
+    // Call with custom batchSize=50 to force 5 chunks
+    // (250 IDs / 50 = 5 chunks)
+    const result = await aggregateSurveys(surveyIds, 50);
+
+    // Should find exactly 10 surveys (only those with votes)
+    expect(result.size).toBe(10);
+
+    // Verify all seeded surveys are present with correct counts
+    for (const sid of surveysWithVotes) {
+      expect(result.has(sid)).toBe(true);
+      const agg = result.get(sid)!;
+      expect(agg.count).toBe(2);
+      expect(agg.respondedDeliveryCount).toBe(1);
+    }
+
+    // Verify ghost IDs produce no entries
+    for (let i = 0; i < 240; i++) {
+      expect(result.has(`ghost-chunk-${i}`)).toBe(false);
+    }
+  });
+
+  // ── TC-14: default batchSize of 100 ──────────────────────────────────────
+  it('uses default batchSize of 100 when not specified', async () => {
+    // Create 150 survey IDs to trigger chunking with default batchSize=100
+    const surveyIds: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const sid = `survey-default-${i}`;
+      const did = `delivery-default-${i}`;
+      seedDelivery(did, sid);
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(2000 + i),
+        rating: 3,
+      });
+      surveyIds.push(sid);
+    }
+
+    // Add 147 ghost IDs (total 150, which triggers 2 chunks with batchSize=100)
+    for (let i = 0; i < 147; i++) {
+      surveyIds.push(`ghost-default-${i}`);
+    }
+
+    expect(surveyIds).toHaveLength(150);
+
+    // Call without batchSize parameter to use default
+    const result = await aggregateSurveys(surveyIds);
+
+    // Should find exactly 3 surveys
+    expect(result.size).toBe(3);
+    for (let i = 0; i < 3; i++) {
+      expect(result.has(`survey-default-${i}`)).toBe(true);
+    }
   });
 });

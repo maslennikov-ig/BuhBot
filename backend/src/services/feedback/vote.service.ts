@@ -342,6 +342,66 @@ export async function aggregateSurvey(surveyId: string): Promise<SurveyAggregate
   return aggregateInternal({ surveyId });
 }
 
+/**
+ * Batch aggregate surveys by ID. Returns a Map<surveyId, SurveyAggregate>
+ * with live vote counts. Surveys with no votes will be absent from the map.
+ * (gh-333: used by list procedure to overlay aggregates)
+ */
+export async function aggregateSurveys(surveyIds: string[]): Promise<Map<string, SurveyAggregate>> {
+  if (surveyIds.length === 0) return new Map();
+
+  // Query all active votes for the given surveys in a single batch
+  const votes = await prisma.surveyVote.findMany({
+    where: {
+      state: 'active',
+      delivery: { surveyId: { in: surveyIds } },
+    },
+    select: {
+      rating: true,
+      delivery: { select: { surveyId: true } },
+    },
+  });
+
+  // Accumulate per-survey
+  const sums = new Map<
+    string,
+    {
+      sum: number;
+      count: number;
+      dist: ReturnType<typeof emptyDistribution>;
+    }
+  >();
+
+  for (const v of votes) {
+    const sid = v.delivery.surveyId;
+    if (!sums.has(sid)) {
+      sums.set(sid, {
+        sum: 0,
+        count: 0,
+        dist: emptyDistribution(),
+      });
+    }
+    const s = sums.get(sid)!;
+    const rating = v.rating as 1 | 2 | 3 | 4 | 5;
+    if (rating >= 1 && rating <= 5) {
+      s.count += 1;
+      s.sum += rating;
+      s.dist[rating] += 1;
+    }
+  }
+
+  // Convert to SurveyAggregate map
+  const result = new Map<string, SurveyAggregate>();
+  for (const [sid, s] of sums) {
+    result.set(sid, {
+      count: s.count,
+      average: s.count > 0 ? s.sum / s.count : null,
+      distribution: s.dist,
+    });
+  }
+  return result;
+}
+
 async function aggregateInternal(
   scope: { deliveryId: string } | { surveyId: string }
 ): Promise<SurveyAggregate> {
@@ -405,6 +465,7 @@ export default {
   getEffectiveVote,
   aggregateDelivery,
   aggregateSurvey,
+  aggregateSurveys,
   getVoteHistory,
   SurveyClosedError,
   DeliveryNotFoundError,

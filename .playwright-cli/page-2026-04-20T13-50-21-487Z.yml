@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+    - generic [ref=e2]:
+        - button "Toggle theme" [ref=e4] [cursor=pointer]:
+            - img [ref=e6]
+        - generic [ref=e11]:
+            - link "BuhBot" [ref=e13] [cursor=pointer]:
+                - /url: /
+                - img "BuhBot" [ref=e15]
+            - generic [ref=e16]:
+                - generic [ref=e17]:
+                    - heading "Welcome Back" [level=1] [ref=e18]
+                    - paragraph [ref=e19]: Sign in to your accountant dashboard
+                - generic [ref=e20]:
+                    - generic [ref=e21]:
+                        - text: Email
+                        - textbox "Email" [ref=e22]:
+                            - /placeholder: name@example.com
+                    - generic [ref=e23]:
+                        - text: Password
+                        - generic [ref=e24]:
+                            - textbox "••••••••" [ref=e25]
+                            - button "Show password" [ref=e26] [cursor=pointer]:
+                                - img
+                                - generic [ref=e27]: Show password
+                    - button "Sign In" [ref=e28] [cursor=pointer]
+    - region "Notifications alt+T"
+    - alert [ref=e29]

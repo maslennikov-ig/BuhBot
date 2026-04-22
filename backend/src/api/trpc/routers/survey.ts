@@ -56,6 +56,7 @@ import {
   getVoteHistory,
 } from '../../../services/feedback/vote.service.js';
 import { queueSurveyDelivery } from '../../../queues/survey.queue.js';
+import logger from '../../../utils/logger.js';
 
 /**
  * Survey status enum for input validation
@@ -151,7 +152,13 @@ export const surveyRouter = router({
 
       // gh-333: Fetch live vote aggregates for all surveys in one batch query to avoid N+1
       const surveyIds = surveys.map((s) => s.id);
-      const aggMap = await aggregateSurveys(surveyIds);
+      let aggMap: Map<string, any> = new Map();
+      try {
+        aggMap = await aggregateSurveys(surveyIds);
+      } catch (error) {
+        // If aggregation fails, fall back to legacy snapshot values
+        logger.warn('aggregateSurveys failed, falling back to snapshot columns', { error });
+      }
 
       // Calculate response rate for each survey
       const items = surveys.map((survey) => {

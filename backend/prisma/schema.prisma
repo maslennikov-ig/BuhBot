@@ -600,6 +600,7 @@ model SurveyVote {
   @@unique([deliveryId, telegramUserId], name: "survey_votes_delivery_user_unique")
   @@index([deliveryId])
   @@index([telegramUserId])
+  @@index([state, deliveryId], name: "idx_survey_votes_state_delivery")
   @@map("survey_votes")
   @@schema("public")
 }

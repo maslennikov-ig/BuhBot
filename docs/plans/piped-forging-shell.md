@@ -1,208 +1,147 @@
-# План: исправление багов опросов (gh-313 / gh-294) + E2E-промт для агента
+# План: унификация /feedback на surveyVote (gh-324 / buh-s71c)
 
 ## Context
 
-Пользователь репортит два бага на production (`buhbot.aidevteam.ru`) после feature-ветки `feat/gh-313-targeted-survey-audience` (3 коммита ahead of main, PR ещё не создан):
+После gh-294 PR #304 голосование в опросах мигрировало на `surveyVote` + `surveyVoteHistory` (multi-user voting с историей). Но read-path страницы `/feedback` (аналитика, таблица, экспорт) остался на legacy `feedbackResponse`. В итоге новые голоса НЕ видны в UI менеджера, а на проде фронт дополнительно маскирует пустое состояние mock-данными (`frontend/src/app/feedback/feedback-content.tsx:216-240`), скрывая bug.
 
-**Баг A — chats.list 400 Bad Request** ([#313 comment 4277009667](https://github.com/maslennikov-ig/BuhBot/issues/313#issuecomment-4277009667))
-При создании опроса → «Выбрать чаты» фронт шлёт `GET /api/trpc/chats.list?input={"limit":500,"offset":0}` и получает `400`. UI показывает «Нет доступных чатов».
+Issue: https://github.com/maslennikov-ig/BuhBot/issues/324
+Beads: `buh-s71c` (P1, in_progress)
+Branch: `fix/gh-324-feedback-survey-vote-read-path`
 
-Причина (verified): в code-review M1 (коммит `bef695d`) лимит на фронте подняли со 100 → 500 в `frontend/src/app/settings/survey/survey-list-content.tsx:183-185`, но **Zod-схему на бэке не обновили** — `backend/src/api/trpc/routers/chats.ts:53` всё ещё `z.number().int().min(1).max(100)`, поэтому 500 не проходит валидацию → `BAD_REQUEST`.
+Цель: `/feedback` должен показывать и исторические (legacy) ответы, и все новые голоса, без двойного счёта, со scoping-правами и без silent-mock.
 
-**Баг B — опросы показывают «Ошибка»** ([#294 comment 4277016473](https://github.com/maslennikov-ig/BuhBot/issues/294#issuecomment-4277016473))
-На страницах `settings/survey/<id>` все доставки красные со статусом «Ошибка», хотя в DevTools чисто.
+## Strategy: UNION ALL in-memory
 
-Причина (verified через `supabase execute_sql` на prod):
-```
-status=failed  has_skip=true   → 8 строк (все доставки обоих примеров)
-status=delivered / responded   → 10 строк без skip_reason
-```
-Все `failed`-строки имеют `skip_reason = 'cooldown: next eligible …'`. Это не реальная ошибка отправки в Telegram — это **мисклассификация cooldown-skip'а как failure** в `backend/src/queues/survey.worker.ts:160-181` (`status: 'failed'` при блокировке антиспам-кулдауна gh-292). UI `frontend/src/app/settings/survey/[id]/survey-detail-content.tsx:112-116` рендерит `failed` как красную «Ошибка».
+Читаем оба источника параллельно через `Promise.all`, объединяем в памяти, сортируем. **Никакого backfill** (riск порчи legacy-таблицы, два source of truth для write). Pure cutover отвергнут — теряем ~месяц исторических ответов.
 
-Намерение: внести оба фикса в текущую ветку, создать PR в `main`, после мерджа Release Please и Deploy to Production выкатят в prod. Плюс — отдельный MD-файл-промт, который Игорь сможет передать E2E-агенту для полной ручной/автоматизированной валидации.
+Dedup не требуется: legacy бот писал ТОЛЬКО в `feedbackResponse`, новый бот (после PR #304 merge) ТОЛЬКО в `surveyVote`. Хронологические периоды write не пересекаются. Для страховки — invariant-тест: запрос «есть ли deliveryId одновременно и в feedback_responses, и в survey_votes(active)?» должен возвращать 0 строк.
 
----
+Prisma не поддерживает UNION нативно — используем `Promise.all([findMany legacy, findMany votes])` с последующим merge/sort в JS. Для /feedback-объёмов (<10k строк на клиента) это <10ms overhead. Если вырастет — отдельным тикетом перевести в `$queryRaw UNION ALL`.
 
 ## Critical files to modify
 
-| Файл | Роль |
+| Файл | Изменения |
 |---|---|
-| `backend/src/api/trpc/routers/chats.ts:53` | Zod-схема `chats.list`: поднять `max(100)` → `max(500)` |
-| `backend/prisma/schema.prisma:556` (`DeliveryStatus` enum) | добавить значение `skipped` |
-| `backend/prisma/migrations/<timestamp>_add_skipped_delivery_status/migration.sql` | новая миграция: `ALTER TYPE`, + backfill `UPDATE survey_deliveries SET status='skipped' WHERE status='failed' AND skip_reason LIKE 'cooldown:%'` (в транзакции) |
-| `backend/src/queues/survey.worker.ts:132, 166, JSDoc` | cooldown-гейт пишет `status: 'skipped'` (не `'failed'`), обновить JSDoc |
-| `backend/src/queues/__tests__/survey.worker.cooldown.test.ts` | обновить ожидаемый `status` в тестах |
-| `frontend/src/app/settings/survey/[id]/survey-detail-content.tsx:39, 83-117, 119-127` | `DeliveryStatus` type + config + filter options — добавить `skipped` (нейтрально-серый с подписью «Пропущен (cooldown)») |
-| `frontend/src/app/settings/survey/[id]/__tests__/*.test.tsx` (если есть) | snapshot/unit — учесть новый статус |
-| `docs/agents/e2e-survey-smoke-test.md` | **новый файл**: промт-инструкция для E2E-агента |
+| `backend/src/services/feedback/analytics.service.ts` | Добавить helpers `fetchUnifiedRatings`, `fetchUnifiedEntries`, `fetchUnifiedComments`. Переписать `getAggregates`, `getTrendData`, `getRecentComments` поверх них. |
+| `backend/src/api/trpc/routers/feedback.ts` | `getAggregates` (unscoped+scoped), `getAll`, `getById`, `exportCsv` — заменить прямые `prisma.feedbackResponse.findMany` на helpers. `submitRating` → `@deprecated` JSDoc + warn-log, НЕ удалять. |
+| `backend/src/services/feedback/__tests__/analytics.service.test.ts` | Расширить — legacy-only, vote-only, mixed, removed, multi-user, scoping, date-bounds, dedup-invariant, trend quarters. |
+| `backend/src/api/trpc/routers/__tests__/feedback.test.ts` | Регрессия на router-уровне. |
+| `frontend/src/app/feedback/feedback-content.tsx` | Удалить `mockAggregatesData` / `mockFeedbackEntries` (строки ~21-101) и fallback-логику (строки ~216-249). Добавить proper empty states: `totalResponses === 0` → «Ещё нет отзывов», таблица пустая → «Ответов не получено». |
+| `docs/adr/0012-survey-feedback-data-source.md` (NEW) | ADR фиксирует: write-canonical = `surveyVote`, read = `feedbackResponse ∪ surveyVote(active)`, aggregation semantics (latest-active vote per (delivery, user)), future path — backfill+drop в отдельной эпопее. |
 
-Reuse existing utilities — не создавать новое:
-- `canSendSurveyToChat()` / `getSurveyCooldownHours()` уже есть, их не трогаем.
-- `DeliveryStatusBadge` уже есть — только расширить конфиг.
-- Zod `chatIdStringSchema` — shared schema уже вынесена в `bef695d` (`backend/src/api/trpc/schemas/*` или утилита), новую не создавать.
+## Reusable utilities (не создавать заново)
 
----
+- `aggregateSurvey(surveyId)` — `backend/src/services/feedback/vote.service.ts:341-374` — уже агрегирует `surveyVote` по `state='active'`, паттерн для копирования.
+- `getScopedChatIds(prisma, userId, role)` — `backend/src/api/trpc/helpers/scoping.ts` — применяется к обеим веткам UNION.
+- Context7: `mcp__context7__query-docs` с `/prisma/prisma` по запросам «findMany include nested relations» и «BigInt serialization tRPC» перед имплементацией.
 
-## Approach (TDD-порядок, коммитим по шагам)
+## SurveyVote → DTO mapping
 
-### Шаг 1. Fix A — поднять лимит `chats.list`
-1. Тест RED: добавить тест-кейс в contract/unit-тесты `chats.ts` (или `tRPC` contract test) — запрос с `limit: 500` должен пройти.
-2. GREEN: `backend/src/api/trpc/routers/chats.ts:53` → `limit: z.number().int().min(1).max(500).default(50)`. Обновить JSDoc на строках 41-42.
-3. Commit: `fix(chats): raise list limit to 500 to match frontend picker (gh-313)`.
+Фронт-контракт НЕ менять. Поля DTO (`getAll items[i]`):
 
-### Шаг 2. Fix B — корректная классификация cooldown-skip
-1. **Миграция**: `npx prisma migrate dev --name add_skipped_delivery_status` в `backend/`. Prisma сгенерирует `ALTER TYPE "DeliveryStatus" ADD VALUE 'skipped'`. В сгенерированный файл вручную добавить транзакцию с backfill:
-   ```sql
-   BEGIN;
-   ALTER TYPE "public"."DeliveryStatus" ADD VALUE IF NOT EXISTS 'skipped';
-   COMMIT;
+| DTO поле | Legacy source | Vote source |
+|---|---|---|
+| `id` | `response.id` | `vote.id` (голый UUID) |
+| `chatId` | `response.chatId.toString()` | `vote.delivery.chatId.toString()` |
+| `chatTitle` | `response.chat.title` | `vote.delivery.chat.title` |
+| `clientUsername` | `response.clientUsername` | `vote.username` |
+| `accountantUsername` | `response.chat.assignedAccountant.fullName` | `vote.delivery.chat.assignedAccountant.fullName` |
+| `rating` | `response.rating` | `vote.rating` |
+| `comment` | `response.comment` | `vote.comment` |
+| **`submittedAt`** | `response.submittedAt` | **`vote.updatedAt`** (отражает смены голоса; re-vote поднимается вверх сортировки) |
+| `surveyId` | `response.surveyId` | `vote.delivery.surveyId` |
+| `surveyQuarter` | `response.survey.quarter` | `vote.delivery.survey.quarter` |
 
-   -- отдельной миграцией после коммита типа (требование PostgreSQL):
-   BEGIN;
-   UPDATE "public"."survey_deliveries"
-   SET "status" = 'skipped'
-   WHERE "status" = 'failed' AND "skip_reason" LIKE 'cooldown:%';
-   COMMIT;
-   ```
-   ⚠️ PostgreSQL не позволяет использовать новый enum-value в той же транзакции, где он добавлен → **две отдельные миграции** (или `COMMIT` между `ALTER TYPE` и `UPDATE`).
-2. Обновить `schema.prisma`: добавить `skipped` в enum `DeliveryStatus`.
-3. **Тест RED**: обновить `survey.worker.cooldown.test.ts` — мокнуть cooldown-блок, ожидать `status: 'skipped'`. Запустить → упадёт.
-4. **GREEN**: `survey.worker.ts:166` → `status: 'skipped'`; JSDoc на строке 132 → `writes status='skipped'`.
-5. Commit: `fix(surveys): mark cooldown-blocked deliveries as 'skipped' not 'failed' (gh-294)`.
+ID-префикс не добавляем: UUID-коллизия между таблицами практически невозможна, а префикс ломает backward-compat URL/bookmark.
 
-### Шаг 3. Fix B — UI
-1. `survey-detail-content.tsx`:
-   - `type DeliveryStatus` → добавить `'skipped'`.
-   - `deliveryStatusConfig.skipped` → `{ label: 'Пропущен', color: 'var(--buh-foreground-muted)', bgColor: 'var(--buh-surface-elevated)' }`.
-   - `deliveryStatusFilterOptions` → добавить `{ value: 'skipped', label: 'Пропущены' }`.
-   - Если в колонке таблицы отображается причина — показывать `skipReason` в tooltip или второй строкой для `skipped`.
-2. Обновить tRPC output-схему `survey.ts` если там ещё `z.enum([...])` без `skipped`.
-3. Commit: `fix(surveys): add 'skipped' delivery status to UI (gh-294)`.
+## Scoping (staff/observer)
 
-### Шаг 4. E2E-промт для агента
-Создать `docs/agents/e2e-survey-smoke-test.md` — самодостаточный промт, который Игорь передаст Claude-агенту для **полной E2E-валидации** после деплоя.
+Оба leg'а UNION фильтруются через `getScopedChatIds`:
+- legacy: `where.chatId = { in: scopedChatIds }`
+- votes: `where.delivery = { chatId: { in: scopedChatIds } }` (через relation)
 
-Содержимое файла (скелет):
-```markdown
-# E2E smoke test: Surveys (gh-313 + gh-294 post-deploy)
+Для admin `scopedChatIds === null` → оба фильтра отсутствуют.
 
-## Context (агенту)
-Протестировать полный flow опросов на production `https://buhbot.aidevteam.ru`
-после выкатки фикса chats.list limit + skipped-статуса. Цель — убедиться, что
-баги #313 и #294 действительно устранены, и что никаких регрессий нет
-в существующих сценариях.
+## Paging semantics
 
-## Инструменты
-- Playwright MCP (`mcp__playwright__browser_*`)
-- Supabase MCP (`mcp__supabase__execute_sql`) для проверки БД
-- Credentials: см. e2e/.env.example / e2e/fixtures/index.ts (admin@test.com)
+`getAll` берёт total по обеим таблицам (`count` + `count`), получает полные result sets (до max `pageSize=100`), сортирует объединённый массив по `submittedAt desc`, отрезает `skip/take`. При росте >10k — отдельный тикет на `$queryRaw UNION ALL` с DB-level offset.
 
-## Чек-лист (отметить каждый пункт)
+## Tests matrix (12 сценариев)
 
-### A. chats.list (баг #313)
-1. Login как admin, переход на /settings/survey.
-2. Click «Создать опрос» → выбрать radio «Выбрать чаты».
-3. **Ожидаемо**: список чатов грузится без 400 в Network tab.
-4. Сделать скриншот `artifacts/01-chat-picker-loaded.png`.
-5. Network → найти запрос `chats.list?batch=1&input=...limit:500...` → status 200.
-6. Если ≥500 чатов — баннер truncation виден; иначе — полный список.
+| # | Сценарий | Файл |
+|---|---|---|
+| 1 | Legacy-only: regression baseline не сломан | router test |
+| 2 | Vote-only (нет legacy): появляется в getAll, getAggregates, exportCsv | router test |
+| 3 | Mixed: обе ветки — правильная сортировка desc | router test |
+| 4 | `state='removed'` исключён из агрегатов и списка | analytics test |
+| 5 | Multi-user per delivery (N разных telegramUserId) → N entries | router test |
+| 6 | Re-vote обновляет `updatedAt` — поднимает вверх сортировки | analytics test |
+| 7 | Scoping: staff видит только свои чаты в обеих ветках | router test |
+| 8 | Date bounds: `submittedAt` legacy vs `updatedAt` votes | analytics test |
+| 9 | Dedup invariant: `deliveryId` не пересекается (guardrail) | analytics test |
+| 10 | TrendData по кварталам — оба источника | analytics test |
+| 11 | exportCsv содержит vote-строки с правильными escapes | router test |
+| 12 | Frontend: пустое состояние вместо mock | vitest+RTL test |
 
-### B. skipped-статус (баг #294)
-1. Открыть существующий опрос `/settings/survey/d1667780-3f16-48cb-900a-762de1669ec7`.
-2. **Ожидаемо**: строки со skip_reason отображаются серым «Пропущен»,
-   НЕ красным «Ошибка».
-3. Скриншот `artifacts/02-skipped-status.png`.
-4. Фильтр статуса → выбрать «Пропущены» → видны только skipped-строки.
-5. Supabase query: `SELECT count(*) FROM survey_deliveries WHERE status='skipped'`
-   → должно быть ≥8 (backfill).
+## Commit order (атомарно для reviewer)
 
-### C. Полный happy-path (регрессия)
-1. Создать новый опрос audience=all, immediate=true, quarter=current.
-2. Дождаться status=active в списке (poll 15s, timeout 2 min).
-3. Открыть детальную страницу — доставки пошли (status=pending/delivered).
-4. **Не ждём реальной отправки в Telegram** — верифицируем только UI и БД.
-
-### D. audience=specific_chats (gh-313 happy path)
-1. Создать опрос → «Выбрать чаты» → выбрать 2 конкретных чата.
-2. Submit → созданный опрос в списке.
-3. В БД: SELECT audience_type, audience_chat_ids → 'specific_chats' + 2 элемента.
-4. Доставки созданы только для этих 2 чатов.
-
-### E. audience=segments (gh-313 happy path)
-1. Создать сегмент (если нет), добавить туда чат.
-2. Создать опрос → «Сегменты» → выбрать сегмент → submit.
-3. Верифицировать: audience_type=segments + audience_segment_ids содержит id.
-
-### F. Негативные кейсы
-1. Попытка создать опрос audience=specific_chats с пустым списком → UI блокирует submit.
-2. Попытка зарегаться как не-admin и зайти на /settings/survey → redirect/403.
-
-## Критерии успеха
-- Все A-F выполнены без ручных правок.
-- Скриншоты сохранены в artifacts/.
-- Отчёт: кол-во пройденных/упавших шагов + причины.
-
-## Формат отчёта
-Markdown-файл `docs/reports/e2e/<date>-survey-smoke.md` со структурой:
-- Executive summary (PASS/FAIL)
-- Per-step results с скриншотами
-- Bugs discovered (если есть) → создать `bd create -t bug` для каждого.
-```
-
-Commit: `docs(e2e): add survey smoke test prompt for E2E agent (gh-313, gh-294)`.
-
-### Шаг 5. PR + merge + deploy
-1. `/push` после каждого шага (backend/fix-A, backend/fix-B migration+worker, frontend/fix-B, docs/e2e).
-2. После последнего коммита — `gh pr create` в `main` (если ещё нет).
-3. Ждать зелёный CI, squash-merge → Release Please PR → merge → Deploy to Production (GH Actions).
-4. Post-deploy — запустить E2E-промт из шага 4.
-
----
+1. `docs: add ADR-0012 survey feedback data source`
+2. `feat(feedback/analytics): add unified read helpers over feedbackResponse ∪ surveyVote`
+3. `refactor(feedback router): use unified helpers; deprecate submitRating`
+4. `test(feedback): regression + union semantics + scoping + dedup invariant`
+5. `refactor(frontend/feedback): remove mock fallback, add empty states`
+6. `test(frontend/feedback): empty state, union data render`
 
 ## Verification
 
-### Локально перед пушем
+### Локально
 ```bash
-# Backend
 cd backend
+npx prisma validate
 npm run type-check
-npm run test -- survey.worker.cooldown
-npm run test -- chats
+npx vitest run src/services/feedback/__tests__ src/api/trpc/routers/__tests__/feedback.test.ts
 
-# Frontend
 cd ../frontend
 npm run type-check
 npm run build
-
-# Prisma
-cd ../backend
-npx prisma validate
-npx prisma migrate dev --name add_skipped_delivery_status --create-only  # review SQL
+npm run test -- feedback
 ```
 
-### На production после деплоя
-1. **Fix A**: открыть `/survey` → «Создать опрос» → «Выбрать чаты» → список грузится без 400 в DevTools.
-2. **Fix B**: открыть `/settings/survey/d1667780-3f16-48cb-900a-762de1669ec7` → доставки серые «Пропущен», не красные «Ошибка».
-3. **БД-проверка** через `supabase.execute_sql`:
+### На production после deploy
+1. Открыть `/feedback` — в таблице видны и legacy-ответы, и новые `surveyVote` после gh-294.
+2. Supabase SQL invariant (никаких дублей):
    ```sql
-   SELECT status, count(*) FROM public.survey_deliveries GROUP BY status;
-   -- ожидаемо: skipped >= 8, failed только с error_message != null
+   SELECT fr.delivery_id
+   FROM public.feedback_responses fr
+   JOIN public.survey_votes sv ON sv.delivery_id = fr.delivery_id AND sv.state = 'active';
+   -- ожидаем: 0 строк
    ```
-4. Запустить E2E-агента с промтом `docs/agents/e2e-survey-smoke-test.md`.
-
----
+3. Supabase SQL (новые данные видны):
+   ```sql
+   SELECT count(*) FROM public.survey_votes WHERE state = 'active';
+   SELECT count(*) FROM public.feedback_responses;
+   -- сумма должна совпасть с count в UI на /feedback (без фильтров по датам)
+   ```
+4. E2E smoke: отдельный промт `docs/agents/e2e-feedback-unified-read.md` (будет создан как buh-sub — retry-паттерн из gh-313 работы).
 
 ## Risks & mitigations
 
-- **Prisma enum ALTER TYPE не поддерживает rollback** — если что-то пойдёт не так, новая миграция с `ALTER TYPE ... RENAME VALUE` или точечный UPDATE обратно в `failed`. Backfill делаем отдельной миграцией (не в одной транзакции с `ALTER TYPE`).
-- **Старые «failed»-строки с реальной Telegram-ошибкой** могут попасть под backfill если у них тоже есть `skip_reason LIKE 'cooldown:%'` — но по данным prod таких нет (все 8 строк действительно cooldown-skip). Условие WHERE точно фильтрует.
-- **500 чатов всё ещё мало для крупных тенантов** — уже есть truncation warning (PR #320 M1). Дальнейшее решение — пагинация/поиск — отдельный тикет, не блокер.
-- **Сломать существующих пользователей** с кэшированным фронтом на статике, не знающим про `skipped` — fallback в JSX: если `deliveryStatusConfig[status]` undefined, рендерить нейтральный бейдж.
-
----
+| Risk | Mitigation |
+|---|---|
+| Pagination O(N) memory при >10k | `pageSize max 100` уже в router; отдельный тикет при росте |
+| UUID collision ломает React keys | Invariant-тест на unique IDs; префикс — только если сломается в будущем |
+| `getById` без префикса | Fallback: `feedbackResponse.findUnique` → `surveyVote.findUnique` по голому UUID |
+| Breaking для внешних клиентов `submitRating` | Deprecated, warn-log в консоль; удаление — отдельным тикетом позже |
+| Performance: UNION добавляет второй DB roundtrip | `Promise.all` — параллельно, net добавка ~1 RTT (~20ms) |
+| Dedup инвариант нарушен в будущем | ADR-0012 явно запрещает write в feedbackResponse; CI-тест проверяет в тестовой БД |
 
 ## Out of scope
 
-- Перевод `failed` статуса с реальными Telegram-ошибками (NFR #294 про таксономию failures) — не трогаем, только cooldown-skip.
-- `retry failed` / `cancel pending` UI-actions из спека #313 — не реализуем сейчас, отдельный тикет.
-- Multi-segment picker (сейчас single-select) — документировано в PR #320 code-review, отдельный тикет.
+- Удаление legacy `feedbackResponse` таблицы — отдельным тикетом через 1-2 квартала.
+- Полное удаление `submitRating` tRPC mutation — ждёт подтверждения что нет внешних клиентов.
+- Pagination на DB-level UNION — пока не нужно (объёмы мизерные).
+- Редизайн NPS widget / trend chart — в scope только data source, не визуал.
+
+## Estimate
+
+~700 строк diff (backend ~390, frontend ~90, tests ~300, ADR ~120). 6-9 часов работы + E2E smoke.

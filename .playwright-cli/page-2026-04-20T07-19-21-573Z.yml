@@ -1,0 +1,108 @@
+- generic [active] [ref=e1]:
+    - generic [ref=e31]:
+        - complementary [ref=e32]:
+            - link "BuhBot" [ref=e34] [cursor=pointer]:
+                - /url: /dashboard
+                - img "BuhBot" [ref=e36]
+            - navigation [ref=e37]:
+                - list [ref=e38]:
+                    - listitem [ref=e39]:
+                        - link "Панель управления" [ref=e40] [cursor=pointer]:
+                            - /url: /dashboard
+                            - img [ref=e42]
+                            - generic [ref=e47]: Панель управления
+                    - listitem [ref=e48]:
+                        - link "Запросы" [ref=e49] [cursor=pointer]:
+                            - /url: /requests
+                            - img [ref=e50]
+                            - generic [ref=e52]: Запросы
+                    - listitem [ref=e53]:
+                        - link "Чаты" [ref=e54] [cursor=pointer]:
+                            - /url: /chats
+                            - img [ref=e55]
+                            - generic [ref=e60]: Чаты
+                    - listitem [ref=e61]:
+                        - link "SLA Мониторинг" [ref=e62] [cursor=pointer]:
+                            - /url: /sla
+                            - img [ref=e63]
+                            - generic [ref=e66]: SLA Мониторинг
+                    - listitem [ref=e67]:
+                        - link "Нарушения" [ref=e68] [cursor=pointer]:
+                            - /url: /violations
+                            - img [ref=e69]
+                            - generic [ref=e71]: Нарушения
+                    - listitem [ref=e72]:
+                        - link "Алерты" [ref=e73] [cursor=pointer]:
+                            - /url: /alerts
+                            - img [ref=e74]
+                            - generic [ref=e76]: Алерты
+                    - listitem [ref=e77]:
+                        - link "Аналитика" [ref=e78] [cursor=pointer]:
+                            - /url: /analytics
+                            - img [ref=e79]
+                            - generic [ref=e81]: Аналитика
+                    - listitem [ref=e82]:
+                        - link "Отчёты" [ref=e83] [cursor=pointer]:
+                            - /url: /reports
+                            - img [ref=e84]
+                            - generic [ref=e86]: Отчёты
+                    - listitem [ref=e87]:
+                        - link "Обратная связь" [ref=e88] [cursor=pointer]:
+                            - /url: /feedback
+                            - img [ref=e89]
+                            - generic [ref=e91]: Обратная связь
+                    - listitem [ref=e92]:
+                        - link "Опросы" [ref=e93] [cursor=pointer]:
+                            - /url: /settings/survey
+                            - img [ref=e94]
+                            - generic [ref=e97]: Опросы
+                    - listitem [ref=e98]:
+                        - link "Пользователи" [ref=e99] [cursor=pointer]:
+                            - /url: /settings/users
+                            - img [ref=e100]
+                            - generic [ref=e105]: Пользователи
+                    - listitem [ref=e106]:
+                        - link "Системные логи" [ref=e107] [cursor=pointer]:
+                            - /url: /logs
+                            - img [ref=e108]
+                            - generic [ref=e110]: Системные логи
+                    - listitem [ref=e111]:
+                        - link "Настройки" [ref=e112] [cursor=pointer]:
+                            - /url: /settings
+                            - img [ref=e113]
+                            - generic [ref=e116]: Настройки
+                    - listitem [ref=e117]:
+                        - link "Справка" [ref=e118] [cursor=pointer]:
+                            - /url: /help
+                            - img [ref=e119]
+                            - generic [ref=e121]: Справка
+            - button "Collapse sidebar" [ref=e123] [cursor=pointer]:
+                - img [ref=e124]
+                - generic [ref=e126]: Свернуть
+        - generic [ref=e127]:
+            - banner [ref=e128]:
+                - generic [ref=e130]:
+                    - img
+                    - textbox "Search" [ref=e131]:
+                        - /placeholder: Поиск...
+                    - 'generic "Keyboard shortcut: Ctrl + K" [ref=e132]':
+                        - generic [ref=e133]: Ctrl
+                        - generic [ref=e134]: K
+                - generic [ref=e135]:
+                    - button "Toggle theme" [ref=e136] [cursor=pointer]:
+                        - img [ref=e137]
+                    - button "Уведомления" [ref=e140] [cursor=pointer]:
+                        - img [ref=e141]
+                    - button "admin" [ref=e146] [cursor=pointer]:
+                        - img [ref=e148]
+                        - generic [ref=e152]: admin
+                        - img [ref=e153]
+            - main [ref=e155]
+            - contentinfo [ref=e167]:
+                - paragraph [ref=e168]: © 2026BuhBot. Все права защищены. · v0.33.0
+    - region "Notifications alt+T":
+        - list:
+            - listitem [ref=e169]:
+                - img [ref=e171]
+                - generic [ref=e174]: Successfully logged in
+    - alert [ref=e30]: Панель управления | BuhBot

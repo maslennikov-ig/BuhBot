@@ -946,4 +946,90 @@ describe('aggregateSurveys', () => {
     expect(agg.distribution[4]).toBe(0);
     expect(agg.distribution[5]).toBe(1);
   });
+
+  // ── TC-13: chunked batch processing (H-2 optimization) ─────────────────────
+  it('correctly aggregates surveys split across multiple chunks with custom batchSize', async () => {
+    // Create 250 survey IDs: 10 with votes, 240 without
+    const surveyIds: string[] = [];
+    const surveysWithVotes: string[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const sid = `survey-chunk-${i}`;
+      const did = `delivery-chunk-${i}`;
+      seedDelivery(did, sid);
+      // Add 2 votes per survey
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(1000 + i * 2),
+        rating: (i % 5) + 1,
+      });
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(1000 + i * 2 + 1),
+        rating: ((i + 1) % 5) + 1,
+      });
+      surveyIds.push(sid);
+      surveysWithVotes.push(sid);
+    }
+
+    // Add 240 ghost IDs
+    for (let i = 0; i < 240; i++) {
+      surveyIds.push(`ghost-chunk-${i}`);
+    }
+
+    expect(surveyIds).toHaveLength(250);
+
+    // Call with custom batchSize=50 to force 5 chunks
+    // (250 IDs / 50 = 5 chunks)
+    const result = await aggregateSurveys(surveyIds, 50);
+
+    // Should find exactly 10 surveys (only those with votes)
+    expect(result.size).toBe(10);
+
+    // Verify all seeded surveys are present with correct counts
+    for (const sid of surveysWithVotes) {
+      expect(result.has(sid)).toBe(true);
+      const agg = result.get(sid)!;
+      expect(agg.count).toBe(2);
+      expect(agg.respondedDeliveryCount).toBe(1);
+    }
+
+    // Verify ghost IDs produce no entries
+    for (let i = 0; i < 240; i++) {
+      expect(result.has(`ghost-chunk-${i}`)).toBe(false);
+    }
+  });
+
+  // ── TC-14: default batchSize of 100 ──────────────────────────────────────
+  it('uses default batchSize of 100 when not specified', async () => {
+    // Create 150 survey IDs to trigger chunking with default batchSize=100
+    const surveyIds: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const sid = `survey-default-${i}`;
+      const did = `delivery-default-${i}`;
+      seedDelivery(did, sid);
+      await submitVote({
+        deliveryId: did,
+        telegramUserId: BigInt(2000 + i),
+        rating: 3,
+      });
+      surveyIds.push(sid);
+    }
+
+    // Add 147 ghost IDs (total 150, which triggers 2 chunks with batchSize=100)
+    for (let i = 0; i < 147; i++) {
+      surveyIds.push(`ghost-default-${i}`);
+    }
+
+    expect(surveyIds).toHaveLength(150);
+
+    // Call without batchSize parameter to use default
+    const result = await aggregateSurveys(surveyIds);
+
+    // Should find exactly 3 surveys
+    expect(result.size).toBe(3);
+    for (let i = 0; i < 3; i++) {
+      expect(result.has(`survey-default-${i}`)).toBe(true);
+    }
+  });
 });

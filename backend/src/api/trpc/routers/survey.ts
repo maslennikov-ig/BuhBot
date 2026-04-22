@@ -156,7 +156,10 @@ export const surveyRouter = router({
       // Calculate response rate for each survey
       const items = surveys.map((survey) => {
         const agg = aggMap.get(survey.id);
-        const effectiveResponseCount = agg && agg.count > 0 ? agg.count : survey.responseCount;
+        const effectiveResponseCount = agg !== undefined ? agg.count : survey.responseCount;
+        // gh-334: Use respondedDeliveryCount (distinct deliveries with votes) for responseRate
+        // to match getById calculation and ensure consistency across list/detail views
+        const respondedCount = agg?.respondedDeliveryCount ?? 0;
 
         return {
           id: survey.id,
@@ -178,7 +181,7 @@ export const surveyRouter = router({
           audienceSegmentIds: survey.audienceSegmentIds,
           responseRate:
             survey.deliveredCount > 0
-              ? Math.round((effectiveResponseCount / survey.deliveredCount) * 100 * 10) / 10
+              ? Math.round((respondedCount / survey.deliveredCount) * 100 * 10) / 10
               : 0,
         };
       });

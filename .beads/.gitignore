@@ -13,6 +13,8 @@ daemon.pid
 bd.sock
 sync-state.json
 last-touched
+# Local credential key material (never commit)
+.beads-credential-key
 
 # Local version tracking (prevents upgrade notification spam after git ops)
 .local_version

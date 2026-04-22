@@ -369,14 +369,21 @@ export async function aggregateSurveys(
     chunks.push(surveyIds.slice(i, i + batchSize));
   }
 
-  // Aggregate each chunk in parallel
-  const results = await Promise.all(chunks.map((chunk) => aggregateSurveysInternal(chunk)));
+  // Aggregate each chunk in parallel with error resilience (buh-8bad)
+  const results = await Promise.allSettled(chunks.map((chunk) => aggregateSurveysInternal(chunk)));
 
-  // Merge results from all chunks into a single map
+  // Merge results from all chunks into a single map, skipping failed chunks
   const merged = new Map<string, SurveyAggregate>();
   for (const result of results) {
-    for (const [surveyId, aggregate] of result) {
-      merged.set(surveyId, aggregate);
+    if (result.status === 'fulfilled') {
+      for (const [surveyId, aggregate] of result.value) {
+        merged.set(surveyId, aggregate);
+      }
+    } else {
+      logger.error('Chunk aggregation failed, skipping partial batch', {
+        error: result.reason,
+        service: 'vote-service',
+      });
     }
   }
 
@@ -387,12 +394,18 @@ export async function aggregateSurveys(
  * Internal batch aggregation for a single chunk of surveys.
  * Does not enforce batch size limits; caller is responsible for chunking.
  *
+ * Query strategy (buh-lako): Selects only necessary columns with delivery join
+ * to enable database-level filtering and sorting before JS aggregation.
+ * Single findMany query with careful select minimizes data transfer and
+ * memory footprint.
+ *
  * @internal
  */
 async function aggregateSurveysInternal(
   surveyIds: string[]
 ): Promise<Map<string, SurveyAggregate>> {
-  // Query all active votes for the given surveys in a single batch
+  // Query all active votes with delivery info for given surveys
+  // The database handles filtering (state, surveyId) before JS receives results
   const votes = await prisma.surveyVote.findMany({
     where: {
       state: 'active',
@@ -435,7 +448,7 @@ async function aggregateSurveysInternal(
     }
   }
 
-  // Convert to SurveyAggregate map
+  // Convert to SurveyAggregate map (buh-5jpa: type-safe)
   const result = new Map<string, SurveyAggregate>();
   for (const [sid, s] of sums) {
     result.set(sid, {

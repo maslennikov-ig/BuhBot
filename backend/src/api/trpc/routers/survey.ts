@@ -50,7 +50,11 @@ import {
   quarterToRange,
   QUARTER_REGEX,
 } from '../../../services/feedback/survey.service.js';
-import { aggregateSurvey, getVoteHistory } from '../../../services/feedback/vote.service.js';
+import {
+  aggregateSurvey,
+  aggregateSurveys,
+  getVoteHistory,
+} from '../../../services/feedback/vote.service.js';
 import { queueSurveyDelivery } from '../../../queues/survey.queue.js';
 
 /**
@@ -145,30 +149,39 @@ export const surveyRouter = router({
         take: pageSize,
       });
 
+      // gh-333: Fetch live vote aggregates for all surveys in one batch query to avoid N+1
+      const surveyIds = surveys.map((s) => s.id);
+      const aggMap = await aggregateSurveys(surveyIds);
+
       // Calculate response rate for each survey
-      const items = surveys.map((survey) => ({
-        id: survey.id,
-        quarter: survey.quarter,
-        startDate: survey.startDate,
-        endDate: survey.endDate,
-        status: survey.status,
-        scheduledAt: survey.scheduledAt,
-        sentAt: survey.sentAt,
-        expiresAt: survey.expiresAt,
-        closedAt: survey.closedAt,
-        totalClients: survey.totalClients,
-        deliveredCount: survey.deliveredCount,
-        responseCount: survey.responseCount,
-        averageRating: survey.averageRating,
-        // gh-313: surface audience selector so the UI can render a badge/summary.
-        audienceType: survey.audienceType,
-        audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
-        audienceSegmentIds: survey.audienceSegmentIds,
-        responseRate:
-          survey.deliveredCount > 0
-            ? Math.round((survey.responseCount / survey.deliveredCount) * 100 * 10) / 10
-            : 0,
-      }));
+      const items = surveys.map((survey) => {
+        const agg = aggMap.get(survey.id);
+        const effectiveResponseCount = agg && agg.count > 0 ? agg.count : survey.responseCount;
+
+        return {
+          id: survey.id,
+          quarter: survey.quarter,
+          startDate: survey.startDate,
+          endDate: survey.endDate,
+          status: survey.status,
+          scheduledAt: survey.scheduledAt,
+          sentAt: survey.sentAt,
+          expiresAt: survey.expiresAt,
+          closedAt: survey.closedAt,
+          totalClients: survey.totalClients,
+          deliveredCount: survey.deliveredCount,
+          responseCount: effectiveResponseCount,
+          averageRating: agg?.average ?? survey.averageRating,
+          // gh-313: surface audience selector so the UI can render a badge/summary.
+          audienceType: survey.audienceType,
+          audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
+          audienceSegmentIds: survey.audienceSegmentIds,
+          responseRate:
+            survey.deliveredCount > 0
+              ? Math.round((effectiveResponseCount / survey.deliveredCount) * 100 * 10) / 10
+              : 0,
+        };
+      });
 
       return {
         items,
@@ -266,7 +279,7 @@ export const surveyRouter = router({
         audienceSegmentIds: survey.audienceSegmentIds,
         responseRate:
           survey.deliveredCount > 0
-            ? Math.round((effectiveResponseCount / survey.deliveredCount) * 100 * 10) / 10
+            ? Math.round((stats.responded / survey.deliveredCount) * 100 * 10) / 10
             : 0,
         deliveryStats: stats,
         distribution: agg.distribution,

@@ -361,6 +361,10 @@ export async function aggregateSurveys(
   surveyIds: string[],
   batchSize: number = 100
 ): Promise<Map<string, SurveyAggregate>> {
+  if (!Number.isInteger(batchSize) || batchSize < 1) {
+    throw new Error(`batchSize must be a positive integer, got ${batchSize}`);
+  }
+
   if (surveyIds.length === 0) return new Map();
 
   // Split surveyIds into chunks to prevent unbounded memory growth

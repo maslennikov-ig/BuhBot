@@ -167,10 +167,11 @@ export const surveyRouter = router({
         const effectiveResponseCount = agg !== undefined ? agg.count : survey.responseCount;
         // gh-334: Use respondedDeliveryCount (distinct deliveries with votes) for responseRate
         // to match getById calculation and ensure consistency across list/detail views.
-        // If live aggregation is unavailable, fall back to persisted survey.responseRate
-        // to avoid internally inconsistent metrics (non-zero count with forced 0%).
-        const fallbackRespondedCount = Math.round(
-          (survey.responseRate / 100) * survey.deliveredCount
+        // If live aggregation is unavailable, derive a bounded fallback from persisted
+        // counters so responseRate doesn't silently drop to 0 while responseCount > 0.
+        const fallbackRespondedCount = Math.min(
+          Math.max(survey.responseCount, 0),
+          survey.deliveredCount
         );
         const respondedCount = agg?.respondedDeliveryCount ?? fallbackRespondedCount;
 

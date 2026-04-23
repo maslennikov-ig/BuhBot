@@ -480,13 +480,15 @@ async function aggregateSurveysInternal(
   // Convert to SurveyAggregate map (buh-5jpa: type-safe)
   const result = new Map<string, SurveyAggregate>();
   for (const [sid, s] of sums) {
-    result.set(sid, {
+    const totalRecipients = totalRecipientsMap.get(sid);
+    const agg: SurveyAggregate = {
       count: s.count,
       average: s.count > 0 ? s.sum / s.count : null,
       respondedDeliveryCount: s.deliveryIds.size,
-      totalRecipientsCount: totalRecipientsMap.get(sid),
       distribution: s.dist,
-    });
+      totalRecipientsCount: totalRecipients,
+    };
+    result.set(sid, agg);
   }
   return result;
 }
@@ -543,7 +545,8 @@ async function aggregateInternal(
     totalRecipientsCount = recipients.length;
   }
 
-  return { count, average, distribution, totalRecipientsCount };
+  const result: SurveyAggregate = { count, average, distribution, totalRecipientsCount };
+  return result;
 }
 
 /**

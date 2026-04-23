@@ -1,1 +1,7 @@
 pnpm exec lint-staged
+
+# Detect common secrets in staged changes (exclude .husky directory which documents patterns)
+if git diff --cached -- ':!.husky' | grep -qiE '(service_role[_A-Za-z0-9]{20}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}|AAAB[0-9A-Za-z]{3}[0-9A-Za-z+/]{178}|sk_[a-z]+_[A-Za-z0-9]{20}|pk_[a-z]+_[A-Za-z0-9]{20})'; then
+  echo "⛔ Possible secret detected in staged changes. Aborting."
+  exit 1
+fi

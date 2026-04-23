@@ -486,7 +486,7 @@ async function aggregateSurveysInternal(
       average: s.count > 0 ? s.sum / s.count : null,
       respondedDeliveryCount: s.deliveryIds.size,
       distribution: s.dist,
-      totalRecipientsCount: totalRecipients,
+      ...(totalRecipients !== undefined && { totalRecipientsCount: totalRecipients }),
     };
     result.set(sid, agg);
   }
@@ -545,7 +545,12 @@ async function aggregateInternal(
     totalRecipientsCount = recipients.length;
   }
 
-  const result: SurveyAggregate = { count, average, distribution, totalRecipientsCount };
+  const result: SurveyAggregate = {
+    count,
+    average,
+    distribution,
+    ...(totalRecipientsCount !== undefined && { totalRecipientsCount }),
+  };
   return result;
 }
 

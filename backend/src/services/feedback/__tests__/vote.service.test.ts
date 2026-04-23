@@ -642,6 +642,23 @@ describe('aggregateSurvey / aggregateDelivery', () => {
     expect(agg.count).toBe(0);
     expect(agg.average).toBeNull();
   });
+
+  // buh-c4ya (m-2): cover the getById path independently — aggregateInternal has its
+  // own chatMessage.findMany call separate from the batch path tested by TC-15.
+  it('returns totalRecipientsCount for aggregateSurvey (getById path)', async () => {
+    const chatId = BigInt(300);
+    seedChatMessage(chatId, BigInt(10), false);
+    seedChatMessage(chatId, BigInt(11), false);
+    seedChatMessage(chatId, BigInt(99), true); // accountant, excluded
+
+    seedDelivery('delivery-300', 'survey-300', 'active', chatId);
+    await submitVote({ deliveryId: 'delivery-300', telegramUserId: BigInt(10), rating: 4 });
+
+    const agg = await aggregateSurvey('survey-300');
+    expect(agg.count).toBe(1);
+    // 2 non-accountant users in the chat; the accountant (id=99) is excluded.
+    expect(agg.totalRecipientsCount).toBe(2);
+  });
 });
 
 // ============================================================================

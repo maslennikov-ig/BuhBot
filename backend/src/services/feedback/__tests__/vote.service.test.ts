@@ -45,8 +45,15 @@ const store = vi.hoisted(() => {
   type DeliveryRow = {
     id: string;
     surveyId: string;
+    chatId: bigint;
     status: string;
     survey: { id: string; status: string };
+  };
+  type ChatMessageRow = {
+    id: string;
+    chatId: bigint;
+    telegramUserId: bigint;
+    isAccountant: boolean;
   };
 
   let idCounter = 0;
@@ -56,15 +63,21 @@ const store = vi.hoisted(() => {
     votes: [] as VoteRow[],
     history: [] as HistoryRow[],
     deliveries: [] as DeliveryRow[],
+    chatMessages: [] as ChatMessageRow[],
     reset(): void {
       state.votes = [];
       state.history = [];
       state.deliveries = [];
+      state.chatMessages = [];
       idCounter = 0;
     },
   };
 
-  return { state, nextId, type: {} as { VoteRow: VoteRow; HistoryRow: HistoryRow } };
+  return {
+    state,
+    nextId,
+    type: {} as { VoteRow: VoteRow; HistoryRow: HistoryRow; ChatMessageRow: ChatMessageRow },
+  };
 });
 
 // ----------------------------------------------------------------------------
@@ -92,6 +105,24 @@ const mockPrisma = vi.hoisted(() => {
                 surveyId: d.surveyId,
                 status: d.status,
               };
+        }
+      ),
+      findMany: vi.fn(
+        async ({
+          where,
+          select,
+        }: {
+          where?: { surveyId?: string };
+          select?: { chatId?: boolean };
+        } = {}) => {
+          let filtered = store.state.deliveries;
+          if (where?.surveyId) {
+            filtered = filtered.filter((d) => d.surveyId === where.surveyId);
+          }
+          if (select?.chatId) {
+            return filtered.map((d) => ({ chatId: d.chatId }));
+          }
+          return filtered;
         }
       ),
     },
@@ -131,7 +162,7 @@ const mockPrisma = vi.hoisted(() => {
           };
           select?: {
             rating?: boolean;
-            delivery?: { select?: { surveyId?: boolean; id?: boolean } };
+            delivery?: { select?: { surveyId?: boolean; id?: boolean; chatId?: boolean } };
             deliveryId?: boolean;
             telegramUserId?: boolean;
             state?: boolean;
@@ -158,7 +189,7 @@ const mockPrisma = vi.hoisted(() => {
           });
           // When caller requests `select` with a `delivery` sub-select, enrich
           // each row with the delivery object so aggregateSurveys can read
-          // v.delivery.surveyId and v.delivery.id.
+          // v.delivery.surveyId, v.delivery.id, and v.delivery.chatId.
           if (select?.delivery) {
             return filtered.map((v) => {
               const d = store.state.deliveries.find((x) => x.id === v.deliveryId);
@@ -168,8 +199,9 @@ const mockPrisma = vi.hoisted(() => {
                   ? {
                       id: d.id,
                       surveyId: d.surveyId,
+                      chatId: d.chatId,
                     }
-                  : { id: v.deliveryId, surveyId: '' },
+                  : { id: v.deliveryId, surveyId: '', chatId: BigInt(0) },
               };
             });
           }
@@ -303,6 +335,47 @@ const mockPrisma = vi.hoisted(() => {
         }
       ),
     },
+    chatMessage: {
+      findMany: vi.fn(
+        async ({
+          where,
+          select,
+          distinct,
+        }: {
+          where?: {
+            chatId?: { in?: bigint[] };
+            isAccountant?: boolean;
+          };
+          select?: {
+            telegramUserId?: boolean;
+          };
+          distinct?: string[];
+        } = {}) => {
+          let filtered = store.state.chatMessages;
+          if (where?.chatId?.in) {
+            filtered = filtered.filter((m) => where.chatId!.in!.includes(m.chatId));
+          }
+          if (where?.isAccountant !== undefined) {
+            filtered = filtered.filter((m) => m.isAccountant === where.isAccountant);
+          }
+          // When distinct=['telegramUserId'] is requested, return unique telegramUserIds
+          if (distinct?.includes('telegramUserId')) {
+            const seen = new Set<bigint>();
+            const unique = [];
+            for (const m of filtered) {
+              if (!seen.has(m.telegramUserId)) {
+                seen.add(m.telegramUserId);
+                unique.push({ telegramUserId: m.telegramUserId });
+              }
+            }
+            return unique;
+          }
+          return filtered.map((m) =>
+            select?.telegramUserId ? { telegramUserId: m.telegramUserId } : m
+          );
+        }
+      ),
+    },
   };
 });
 
@@ -337,13 +410,28 @@ import {
 function seedDelivery(
   deliveryId = 'delivery-1',
   surveyId = 'survey-1',
-  status: string = 'active'
+  status: string = 'active',
+  chatId: bigint = BigInt(100)
 ): void {
   store.state.deliveries.push({
     id: deliveryId,
     surveyId,
+    chatId,
     status: 'delivered',
     survey: { id: surveyId, status },
+  });
+}
+
+function seedChatMessage(
+  chatId: bigint,
+  telegramUserId: bigint,
+  isAccountant: boolean = false
+): void {
+  store.state.chatMessages.push({
+    id: store.nextId(),
+    chatId,
+    telegramUserId,
+    isAccountant,
   });
 }
 
@@ -1031,5 +1119,47 @@ describe('aggregateSurveys', () => {
     for (let i = 0; i < 3; i++) {
       expect(result.has(`survey-default-${i}`)).toBe(true);
     }
+  });
+
+  // ── TC-15: totalRecipientsCount = distinct users in chats (gh-334) ────────
+  it('calculates totalRecipientsCount as unique users in delivery chats (not voters)', async () => {
+    // Chat A has users, Survey sent to 1 delivery in chat A
+    const chatA = BigInt(100);
+    seedChatMessage(chatA, BigInt(1), false); // user 1
+    seedChatMessage(chatA, BigInt(2), false); // user 2
+    seedChatMessage(chatA, BigInt(3), false); // user 3
+    seedChatMessage(chatA, BigInt(4), false); // user 4
+    seedChatMessage(chatA, BigInt(5), false); // user 5
+    seedChatMessage(chatA, BigInt(7), false); // user 7
+    seedChatMessage(chatA, BigInt(999), true); // accountant (should be excluded)
+
+    // Chat B has users, Survey sent to 1 delivery in chat B
+    const chatB = BigInt(200);
+    seedChatMessage(chatB, BigInt(6), false); // user 6
+    seedChatMessage(chatB, BigInt(8), false); // user 8
+
+    // Create survey with 2 deliveries (one per chat)
+    seedDelivery('delivery-A', 'survey-multi-chat', 'active', chatA);
+    seedDelivery('delivery-B', 'survey-multi-chat', 'active', chatB);
+
+    // Only 1 user votes in chat A delivery
+    await submitVote({ deliveryId: 'delivery-A', telegramUserId: BigInt(1), rating: 5 });
+
+    // Only 1 user votes in chat B delivery
+    await submitVote({ deliveryId: 'delivery-B', telegramUserId: BigInt(6), rating: 4 });
+
+    const result = await aggregateSurveys(['survey-multi-chat']);
+
+    const agg = result.get('survey-multi-chat')!;
+    expect(agg.count).toBe(2); // 2 actual votes
+    expect(agg.respondedDeliveryCount).toBe(2); // 2 deliveries have votes
+
+    // CRITICAL (gh-334): totalRecipientsCount should be the count of unique users
+    // in the chats that received this survey, excluding accountants.
+    // Chat A: users 1,2,3,4,5,7 (6 users, user 999 excluded as accountant)
+    // Chat B: users 6,8 (2 users)
+    // Total unique users: 1,2,3,4,5,6,7,8 = 8 unique users
+    // responseRate = 2 voters / 8 total = 25%
+    expect(agg.totalRecipientsCount).toBe(8);
   });
 });

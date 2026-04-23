@@ -165,9 +165,9 @@ export const surveyRouter = router({
       const items = surveys.map((survey) => {
         const agg = aggMap.get(survey.id);
         const effectiveResponseCount = agg !== undefined ? agg.count : survey.responseCount;
-        // gh-334: Use respondedDeliveryCount (distinct deliveries with votes) for responseRate
-        // to match getById calculation and ensure consistency across list/detail views
-        const respondedCount = agg?.respondedDeliveryCount ?? 0;
+        // gh-334: Use totalRecipientsCount (distinct users in delivery chats) for responseRate.
+        // This gives the true user-level response rate: (voters) / (users in chats).
+        const totalRecipients = agg?.totalRecipientsCount ?? 0;
 
         return {
           id: survey.id,
@@ -188,8 +188,8 @@ export const surveyRouter = router({
           audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
           audienceSegmentIds: survey.audienceSegmentIds,
           responseRate:
-            survey.deliveredCount > 0
-              ? Math.round((respondedCount / survey.deliveredCount) * 100 * 10) / 10
+            totalRecipients > 0
+              ? Math.round(((agg?.count ?? 0) / totalRecipients) * 100 * 10) / 10
               : 0,
         };
       });
@@ -288,9 +288,10 @@ export const surveyRouter = router({
         audienceType: survey.audienceType,
         audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
         audienceSegmentIds: survey.audienceSegmentIds,
+        // gh-334: responseRate is now user-level: (voters) / (total users in chats)
         responseRate:
-          survey.deliveredCount > 0
-            ? Math.round((stats.responded / survey.deliveredCount) * 100 * 10) / 10
+          (agg.totalRecipientsCount ?? 0) > 0
+            ? Math.round((effectiveResponseCount / (agg.totalRecipientsCount ?? 1)) * 100 * 10) / 10
             : 0,
         deliveryStats: stats,
         distribution: agg.distribution,

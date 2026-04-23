@@ -81,6 +81,13 @@ export interface SurveyAggregate {
   /** Count of distinct deliveries that have at least one active vote (for response rate calculation). */
   respondedDeliveryCount?: number;
   /**
+   * Count of distinct users (by telegramUserId) in all chats that received this
+   * survey, excluding accountants (isAccountant=false). Used to calculate
+   * user-level response rate as: (voters) / (totalRecipientsCount) * 100.
+   * gh-334: responseRate should be % of unique users who voted, not % of chats.
+   */
+  totalRecipientsCount?: number;
+  /**
    * Per-rating histogram. Keys are rating values 1..5; values are counts of
    * effective (active) votes at that rating.
    */
@@ -413,7 +420,7 @@ async function aggregateSurveysInternal(
     },
     select: {
       rating: true,
-      delivery: { select: { id: true, surveyId: true } },
+      delivery: { select: { id: true, surveyId: true, chatId: true } },
     },
   });
 
@@ -425,6 +432,7 @@ async function aggregateSurveysInternal(
       count: number;
       dist: ReturnType<typeof emptyDistribution>;
       deliveryIds: Set<string>;
+      chatIds: Set<bigint>;
     }
   >();
 
@@ -436,15 +444,36 @@ async function aggregateSurveysInternal(
         count: 0,
         dist: emptyDistribution(),
         deliveryIds: new Set(),
+        chatIds: new Set(),
       });
     }
     const s = sums.get(sid)!;
     s.deliveryIds.add(v.delivery.id);
+    s.chatIds.add(v.delivery.chatId);
     const rating = v.rating as 1 | 2 | 3 | 4 | 5;
     if (rating >= 1 && rating <= 5) {
       s.count += 1;
       s.sum += rating;
       s.dist[rating] += 1;
+    }
+  }
+
+  // gh-334: For each survey, get count of distinct users in all chats that
+  // received it, excluding accountants. This is the denominator for user-level
+  // response rate calculation.
+  const totalRecipientsMap = new Map<string, number>();
+  for (const [sid, s] of sums) {
+    if (s.chatIds.size > 0) {
+      // Get all distinct users in these chats, excluding accountants
+      const recipients = await prisma.chatMessage.findMany({
+        where: {
+          chatId: { in: Array.from(s.chatIds) },
+          isAccountant: false,
+        },
+        select: { telegramUserId: true },
+        distinct: ['telegramUserId'],
+      });
+      totalRecipientsMap.set(sid, recipients.length);
     }
   }
 
@@ -455,6 +484,7 @@ async function aggregateSurveysInternal(
       count: s.count,
       average: s.count > 0 ? s.sum / s.count : null,
       respondedDeliveryCount: s.deliveryIds.size,
+      totalRecipientsCount: totalRecipientsMap.get(sid),
       distribution: s.dist,
     });
   }
@@ -470,6 +500,16 @@ async function aggregateInternal(
       ? { deliveryId: scope.deliveryId }
       : { delivery: { surveyId: scope.surveyId } }),
   };
+
+  // For surveyId scope, also fetch deliveries to get chatIds
+  let chatIds: Set<bigint> | null = null;
+  if ('surveyId' in scope) {
+    const deliveries = await prisma.surveyDelivery.findMany({
+      where: { surveyId: scope.surveyId },
+      select: { chatId: true },
+    });
+    chatIds = new Set(deliveries.map((d) => d.chatId));
+  }
 
   const votes = await prisma.surveyVote.findMany({
     where,
@@ -489,7 +529,21 @@ async function aggregateInternal(
   const count = votes.length;
   const average = count > 0 ? sum / count : null;
 
-  return { count, average, distribution };
+  // gh-334: Calculate totalRecipientsCount for surveyId scope
+  let totalRecipientsCount: number | undefined;
+  if (chatIds && chatIds.size > 0) {
+    const recipients = await prisma.chatMessage.findMany({
+      where: {
+        chatId: { in: Array.from(chatIds) },
+        isAccountant: false,
+      },
+      select: { telegramUserId: true },
+      distinct: ['telegramUserId'],
+    });
+    totalRecipientsCount = recipients.length;
+  }
+
+  return { count, average, distribution, totalRecipientsCount };
 }
 
 /**

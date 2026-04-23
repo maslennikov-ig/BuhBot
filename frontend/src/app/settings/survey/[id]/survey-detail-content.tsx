@@ -450,9 +450,10 @@ export function SurveyDetailContent({ surveyId }: { surveyId: string }) {
           change={
             surveyData.averageRating
               ? {
-                  value: Math.round(surveyData.averageRating * 10),
+                  value: surveyData.averageRating.toFixed(1),
                   label: 'ср. оценка',
                   type: surveyData.averageRating >= 4 ? 'increase' : 'neutral',
+                  suffix: ' ★',
                 }
               : undefined
           }

@@ -402,6 +402,11 @@ export async function stopSlaTimer(
     const responseMessageIdBigInt =
       options.responseMessageId != null ? BigInt(options.responseMessageId) : null;
 
+    // gh-290: compute excess in working minutes so /violations page columns
+    // (ВРЕМЯ ОТВЕТА and ПРЕВЫШЕНИЕ СЛА) use the same unit.
+    // Only meaningful when breach occurred; clamp to 0 for on-time responses.
+    const slaExcessMinutes = Math.max(0, Math.round(elapsedMinutes - thresholdMinutes));
+
     // Update request with response details
     await prisma.clientRequest.update({
       where: { id: requestId },
@@ -412,6 +417,7 @@ export async function stopSlaTimer(
         responseMessageId: responseMessageIdBigInt,
         responseTimeMinutes: elapsedMinutes,
         slaWorkingMinutes: elapsedMinutes,
+        slaExcessMinutes,
       },
     });
 

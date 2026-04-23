@@ -352,6 +352,7 @@ model ClientRequest {
   slaWorkingMinutes Int?      @map("sla_working_minutes") // Calculated working minutes
   slaBreached       Boolean   @default(false) @map("sla_breached") // SLA violation flag
   slaBreachedAt     DateTime? @map("sla_breached_at") @db.Timestamptz(6) // When breach was recorded (gh-290)
+  slaExcessMinutes  Int?      @map("sla_excess_minutes") // Working minutes beyond SLA threshold (gh-290)
 
   // Response tracking (T008)
   respondedBy       String? @map("responded_by") @db.Uuid // Who responded

@@ -22,6 +22,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { formatDuration, computeSlaExcessMinutes, isSlaExcessSevere } from '@/lib/format-duration';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MessageViewerDialog } from '@/components/violations/MessageViewerDialog';
 
 // ============================================
@@ -199,18 +200,21 @@ export default function ViolationsPage() {
       // the backend SLA calculator.
       const slaMinutes = req.slaThresholdMinutes;
 
-      // gh-290: Excess = (x − receivedAt) − slaMinutes, where
-      // x = responseAt || slaBreachedAt || now. This keeps the counter
-      // ticking for unanswered breaches (previously always showed +0m when
-      // responseTimeMinutes was null) and stays stable after a response.
+      // gh-290: For resolved violations use the backend-stored slaExcessMinutes
+      // (working minutes, calculated by stopSlaTimer). This aligns the
+      // ПРЕВЫШЕНИЕ СЛА column with ВРЕМЯ ОТВЕТА which also shows working minutes.
+      // For open/active breaches fall back to computeSlaExcessMinutes (wall-clock)
+      // so the counter keeps ticking without a page reload.
       const excessMinutes =
-        computeSlaExcessMinutes({
-          receivedAt: req.receivedAt,
-          responseAt: req.responseAt,
-          slaBreachedAt: req.slaBreachedAt,
-          slaMinutes,
-          now: nowTick,
-        }) ?? 0;
+        req.responseAt != null && req.slaExcessMinutes != null
+          ? req.slaExcessMinutes
+          : (computeSlaExcessMinutes({
+              receivedAt: req.receivedAt,
+              responseAt: req.responseAt,
+              slaBreachedAt: req.slaBreachedAt,
+              slaMinutes,
+              now: nowTick,
+            }) ?? 0);
 
       return {
         id: req.id,
@@ -393,11 +397,22 @@ export default function ViolationsPage() {
                       sortDirection={getSortIcon('respondedAt')}
                       onClick={() => requestSort('respondedAt')}
                     />
-                    <SortableHeader
-                      label="Превышение SLA"
-                      sortDirection={getSortIcon('excessMinutes')}
-                      onClick={() => requestSort('excessMinutes')}
-                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <SortableHeader
+                              label="Превышение SLA"
+                              sortDirection={getSortIcon('excessMinutes')}
+                              onClick={() => requestSort('excessMinutes')}
+                            />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          в рабочих минутах (без выходных и нерабочих часов)
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <SortableHeader
                       label="Бухгалтер"
                       sortDirection={getSortIcon('accountantName')}

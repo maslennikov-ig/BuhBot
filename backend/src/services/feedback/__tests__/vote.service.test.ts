@@ -347,6 +347,7 @@ const mockPrisma = vi.hoisted(() => {
             isAccountant?: boolean;
           };
           select?: {
+            chatId?: boolean;
             telegramUserId?: boolean;
           };
           distinct?: string[];
@@ -358,21 +359,38 @@ const mockPrisma = vi.hoisted(() => {
           if (where?.isAccountant !== undefined) {
             filtered = filtered.filter((m) => m.isAccountant === where.isAccountant);
           }
-          // When distinct=['telegramUserId'] is requested, return unique telegramUserIds
-          if (distinct?.includes('telegramUserId')) {
-            const seen = new Set<bigint>();
-            const unique = [];
+
+          // Project row to selected columns.
+          const project = (m: { chatId: bigint; telegramUserId: bigint }) => {
+            const row: { chatId?: bigint; telegramUserId?: bigint } = {};
+            if (!select || select.chatId) row.chatId = m.chatId;
+            if (!select || select.telegramUserId) row.telegramUserId = m.telegramUserId;
+            return row;
+          };
+
+          // buh-8moj (M-1): the batch path now uses distinct: ['chatId', 'telegramUserId']
+          // to return one row per unique (chat, user) pair. Keep legacy
+          // distinct: ['telegramUserId'] working for aggregateInternal (single-scope path).
+          if (distinct && distinct.length > 0) {
+            const seen = new Set<string>();
+            const unique: Array<{ chatId?: bigint; telegramUserId?: bigint }> = [];
             for (const m of filtered) {
-              if (!seen.has(m.telegramUserId)) {
-                seen.add(m.telegramUserId);
-                unique.push({ telegramUserId: m.telegramUserId });
+              const key = distinct
+                .map((field) => {
+                  if (field === 'chatId') return m.chatId.toString();
+                  if (field === 'telegramUserId') return m.telegramUserId.toString();
+                  return '';
+                })
+                .join('|');
+              if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(project(m));
               }
             }
             return unique;
           }
-          return filtered.map((m) =>
-            select?.telegramUserId ? { telegramUserId: m.telegramUserId } : m
-          );
+
+          return filtered.map((m) => project(m));
         }
       ),
     },

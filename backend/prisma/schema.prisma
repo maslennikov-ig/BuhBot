@@ -895,6 +895,11 @@ model ChatMessage {
   @@index([chatId, telegramDate(sort: Desc)], name: "idx_chat_messages_chat_telegram_date")
   @@index([chatId, messageId, editVersion(sort: Desc)], name: "idx_chat_messages_chat_msg_version")
   @@index([chatId, isAccountant, telegramDate], name: "idx_chat_messages_chat_accountant_tgdate")
+  // buh-b4w2 (M-2): Covering index for the DISTINCT telegram_user_id query used by
+  // aggregateSurveysInternal / aggregateInternal (gh-334 response-rate denominator).
+  // Including telegramUserId makes the DISTINCT computable as an index-only scan,
+  // eliminating the heap fetch + sort on the existing idx_chat_messages_chat_accountant_tgdate.
+  @@index([chatId, isAccountant, telegramUserId], name: "idx_chat_messages_recipients")
   @@map("chat_messages")
   @@schema("public")
 }

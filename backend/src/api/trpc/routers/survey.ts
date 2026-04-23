@@ -288,10 +288,15 @@ export const surveyRouter = router({
         audienceType: survey.audienceType,
         audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
         audienceSegmentIds: survey.audienceSegmentIds,
-        // gh-334: responseRate is now user-level: (voters) / (total users in chats)
+        // gh-334: responseRate is now user-level: (voters) / (total users in chats).
+        // buh-fcpd (M-3): Unified with the list procedure — both use `agg.count`
+        // (live SurveyVote rows) as the numerator. Legacy pre-gh-294 surveys
+        // with no SurveyVote rows therefore show responseRate=0 here and in the
+        // list view, consistently. The outer `> 0` guard already protects the
+        // denominator, so no `?? 1` fallback is needed in the division.
         responseRate:
-          (agg.totalRecipientsCount ?? 0) > 0
-            ? Math.round((effectiveResponseCount / (agg.totalRecipientsCount ?? 1)) * 100 * 10) / 10
+          agg.count > 0 && (agg.totalRecipientsCount ?? 0) > 0
+            ? Math.round((agg.count / agg.totalRecipientsCount!) * 100 * 10) / 10
             : 0,
         deliveryStats: stats,
         distribution: agg.distribution,

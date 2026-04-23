@@ -461,20 +461,44 @@ async function aggregateSurveysInternal(
   // gh-334: For each survey, get count of distinct users in all chats that
   // received it, excluding accountants. This is the denominator for user-level
   // response rate calculation.
+  //
+  // buh-8moj (M-1): Batch all chatIds across all surveys into a single query
+  // to avoid N+1 (one findMany per survey). We then build a
+  // chatId → Set<telegramUserId> map and union per-survey in JS.
+  // DB round-trips: 1+N → 2, regardless of page size.
+  const allChatIds = new Set<bigint>();
+  for (const s of sums.values()) {
+    for (const cid of s.chatIds) allChatIds.add(cid);
+  }
+
+  const allRecipients =
+    allChatIds.size > 0
+      ? await prisma.chatMessage.findMany({
+          where: {
+            chatId: { in: Array.from(allChatIds) },
+            isAccountant: false,
+          },
+          select: { chatId: true, telegramUserId: true },
+          distinct: ['chatId', 'telegramUserId'],
+        })
+      : [];
+
+  // Build chatId → Set<telegramUserId> map for per-survey union below.
+  const chatUserMap = new Map<bigint, Set<bigint>>();
+  for (const row of allRecipients) {
+    if (!chatUserMap.has(row.chatId)) chatUserMap.set(row.chatId, new Set());
+    chatUserMap.get(row.chatId)!.add(row.telegramUserId);
+  }
+
+  // Per-survey count: union of distinct users across all its chats.
+  // A user in two chats of the same survey counts once.
   const totalRecipientsMap = new Map<string, number>();
   for (const [sid, s] of sums) {
-    if (s.chatIds.size > 0) {
-      // Get all distinct users in these chats, excluding accountants
-      const recipients = await prisma.chatMessage.findMany({
-        where: {
-          chatId: { in: Array.from(s.chatIds) },
-          isAccountant: false,
-        },
-        select: { telegramUserId: true },
-        distinct: ['telegramUserId'],
-      });
-      totalRecipientsMap.set(sid, recipients.length);
+    const uniqueUsers = new Set<bigint>();
+    for (const cid of s.chatIds) {
+      for (const uid of chatUserMap.get(cid) ?? []) uniqueUsers.add(uid);
     }
+    if (uniqueUsers.size > 0) totalRecipientsMap.set(sid, uniqueUsers.size);
   }
 
   // Convert to SurveyAggregate map (buh-5jpa: type-safe)

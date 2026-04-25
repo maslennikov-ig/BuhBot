@@ -12,9 +12,11 @@ type StatCardProps = {
   title: string;
   value: string | number;
   change?: {
-    value: number;
+    value: number | string;
     type: 'increase' | 'decrease' | 'neutral';
     label?: string;
+    /** Unit suffix appended to value (defaults to '%'). Use '' to omit. */
+    suffix?: string;
   };
   icon?: React.ReactNode;
   className?: string;
@@ -91,8 +93,9 @@ export function StatCard({
             >
               {ChangeIcon && <ChangeIcon className="h-3 w-3" />}
               <span>
-                {change.type === 'increase' && '+'}
-                {change.value}%
+                {change.type === 'increase' && change.suffix !== '' && '+'}
+                {change.value}
+                {change.suffix ?? '%'}
               </span>
               {change.label && (
                 <span className="text-[var(--buh-foreground-subtle)]">{change.label}</span>

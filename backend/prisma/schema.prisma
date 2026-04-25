@@ -352,6 +352,7 @@ model ClientRequest {
   slaWorkingMinutes Int?      @map("sla_working_minutes") // Calculated working minutes
   slaBreached       Boolean   @default(false) @map("sla_breached") // SLA violation flag
   slaBreachedAt     DateTime? @map("sla_breached_at") @db.Timestamptz(6) // When breach was recorded (gh-290)
+  slaExcessMinutes  Int?      @map("sla_excess_minutes") // Working minutes beyond SLA threshold (gh-290)
 
   // Response tracking (T008)
   respondedBy       String? @map("responded_by") @db.Uuid // Who responded
@@ -600,6 +601,7 @@ model SurveyVote {
   @@unique([deliveryId, telegramUserId], name: "survey_votes_delivery_user_unique")
   @@index([deliveryId])
   @@index([telegramUserId])
+  @@index([state, deliveryId], name: "idx_survey_votes_state_delivery")
   @@map("survey_votes")
   @@schema("public")
 }
@@ -894,6 +896,11 @@ model ChatMessage {
   @@index([chatId, telegramDate(sort: Desc)], name: "idx_chat_messages_chat_telegram_date")
   @@index([chatId, messageId, editVersion(sort: Desc)], name: "idx_chat_messages_chat_msg_version")
   @@index([chatId, isAccountant, telegramDate], name: "idx_chat_messages_chat_accountant_tgdate")
+  // buh-b4w2 (M-2): Covering index for the DISTINCT telegram_user_id query used by
+  // aggregateSurveysInternal / aggregateInternal (gh-334 response-rate denominator).
+  // Including telegramUserId makes the DISTINCT computable as an index-only scan,
+  // eliminating the heap fetch + sort on the existing idx_chat_messages_chat_accountant_tgdate.
+  @@index([chatId, isAccountant, telegramUserId], name: "idx_chat_messages_recipients")
   @@map("chat_messages")
   @@schema("public")
 }

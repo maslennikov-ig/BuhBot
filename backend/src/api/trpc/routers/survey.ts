@@ -165,15 +165,9 @@ export const surveyRouter = router({
       const items = surveys.map((survey) => {
         const agg = aggMap.get(survey.id);
         const effectiveResponseCount = agg !== undefined ? agg.count : survey.responseCount;
-        // gh-334: Use respondedDeliveryCount (distinct deliveries with votes) for responseRate
-        // to match getById calculation and ensure consistency across list/detail views.
-        // If live aggregation is unavailable, derive a bounded fallback from persisted
-        // counters so responseRate doesn't silently drop to 0 while responseCount > 0.
-        const fallbackRespondedCount = Math.min(
-          Math.max(survey.responseCount, 0),
-          survey.deliveredCount
-        );
-        const respondedCount = agg?.respondedDeliveryCount ?? fallbackRespondedCount;
+        // gh-334: Use totalRecipientsCount (distinct users in delivery chats) for responseRate.
+        // This gives the true user-level response rate: (voters) / (users in chats).
+        const totalRecipients = agg?.totalRecipientsCount ?? 0;
 
         return {
           id: survey.id,
@@ -194,8 +188,8 @@ export const surveyRouter = router({
           audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
           audienceSegmentIds: survey.audienceSegmentIds,
           responseRate:
-            survey.deliveredCount > 0
-              ? Math.round((respondedCount / survey.deliveredCount) * 100 * 10) / 10
+            totalRecipients > 0
+              ? Math.round(((agg?.count ?? 0) / totalRecipients) * 100 * 10) / 10
               : 0,
         };
       });
@@ -294,9 +288,15 @@ export const surveyRouter = router({
         audienceType: survey.audienceType,
         audienceChatIds: survey.audienceChatIds.map((id) => id.toString()),
         audienceSegmentIds: survey.audienceSegmentIds,
+        // gh-334: responseRate is now user-level: (voters) / (total users in chats).
+        // buh-fcpd (M-3): Unified with the list procedure — both use `agg.count`
+        // (live SurveyVote rows) as the numerator. Legacy pre-gh-294 surveys
+        // with no SurveyVote rows therefore show responseRate=0 here and in the
+        // list view, consistently. The outer `> 0` guard already protects the
+        // denominator, so no `?? 1` fallback is needed in the division.
         responseRate:
-          survey.deliveredCount > 0
-            ? Math.round((stats.responded / survey.deliveredCount) * 100 * 10) / 10
+          agg.count > 0 && (agg.totalRecipientsCount ?? 0) > 0
+            ? Math.round((agg.count / agg.totalRecipientsCount!) * 100 * 10) / 10
             : 0,
         deliveryStats: stats,
         distribution: agg.distribution,

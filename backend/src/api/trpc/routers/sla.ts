@@ -167,6 +167,12 @@ const RequestOutput = z.object({
   slaThresholdMinutes: z.number(),
   slaBreached: z.boolean(),
   slaBreachedAt: z.date().nullable(), // gh-290: when breach was recorded
+  /**
+   * gh-290: SLA excess in working minutes, calculated at timer stop.
+   * Non-null only for resolved (answered) requests. For open/active breaches,
+   * the frontend uses computeSlaExcessMinutes (wall-clock) to keep ticking.
+   */
+  slaExcessMinutes: z.number().nullable(),
 
   // Response
   responseAt: z.date().nullable(),
@@ -259,6 +265,7 @@ function formatRequestOutput(
     slaThresholdMinutes: chat?.slaThresholdMinutes ?? 60,
     slaBreached: request.slaBreached,
     slaBreachedAt: request.slaBreachedAt,
+    slaExcessMinutes: request.slaExcessMinutes ?? null,
     responseAt: request.responseAt,
     responseTimeMinutes: request.responseTimeMinutes,
     respondedBy: request.respondedBy,

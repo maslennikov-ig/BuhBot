@@ -5,6 +5,29 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.4](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.3...buhbot-v0.34.4) (2026-04-25)
+
+
+### Bug Fixes
+
+* convert both date and holidays to the schedule timezone using toZonedTime() before comparing year/month/day components. ([562be1e](https://github.com/maslennikov-ig/BuhBot/commit/562be1e136267e01cb7341462b8db22c36250c64))
+* **security:** gitignore auth artifacts + add missing early return guard ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **sla:** align excess minutes with working minutes for resolved violations (gh-290) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **sla:** fix missed isHoliday call site and add holiday delay test (gh-338) ([562be1e](https://github.com/maslennikov-ig/BuhBot/commit/562be1e136267e01cb7341462b8db22c36250c64))
+* **sla:** make holiday date comparison timezone-aware (gh-338) ([562be1e](https://github.com/maslennikov-ig/BuhBot/commit/562be1e136267e01cb7341462b8db22c36250c64)), closes [#338](https://github.com/maslennikov-ig/BuhBot/issues/338)
+* **sla:** make holiday date comparison timezone-aware (gh-338) ([#340](https://github.com/maslennikov-ig/BuhBot/issues/340)) ([562be1e](https://github.com/maslennikov-ig/BuhBot/commit/562be1e136267e01cb7341462b8db22c36250c64))
+* **survey:** add error handling for aggregateSurveys with fallback (M-3) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** add totalRecipientsCount to aggregateDelivery (deliveryId scope) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** align response metrics, add respondedDeliveryCount and test coverage ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** batch chatMessage queries + unify responseRate formula (M-1, M-2, M-3) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** calculate response rate as user-level percentage (gh-334) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** calculate response rate as user-level percentage (gh-334) ([#337](https://github.com/maslennikov-ig/BuhBot/issues/337)) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** correct calendar and response metrics (gh-332, [#333](https://github.com/maslennikov-ig/BuhBot/issues/333), [#334](https://github.com/maslennikov-ig/BuhBot/issues/334)) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** improve resilience and type safety in batch aggregation ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **survey:** update backend/src/services/feedback/vote.service.ts ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **types:** resolve exactOptionalPropertyTypes errors in SurveyAggregate ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+* **ui:** display average rating correctly as '4.5 ★' not '+45%' (buh-wwwt) ([096162a](https://github.com/maslennikov-ig/BuhBot/commit/096162a2a83279e3565bfe9b0155946af9556e73))
+
 ## [0.34.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.2...buhbot-v0.34.3) (2026-04-22)
 
 

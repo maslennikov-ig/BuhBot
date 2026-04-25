@@ -98,12 +98,24 @@ function jsToIsoWeekday(jsDay: number): number {
 /**
  * Check if a date is a holiday
  *
- * @param date - Date to check (in schedule timezone)
+ * Uses timezone-aware comparison: both the date and holidays are converted
+ * to the schedule timezone before comparing calendar dates.
+ *
+ * @param date - Date to check
  * @param holidays - Array of holiday dates
+ * @param timezone - IANA timezone identifier for the schedule
  * @returns True if date is a holiday
  */
-function isHoliday(date: Date, holidays: Date[]): boolean {
-  return holidays.some((holiday) => isSameDay(date, holiday));
+function isHoliday(date: Date, holidays: Date[], timezone: string): boolean {
+  const zonedDate = toZonedTime(date, timezone);
+  return holidays.some((holiday) => {
+    const zonedHoliday = toZonedTime(holiday, timezone);
+    return (
+      zonedDate.getFullYear() === zonedHoliday.getFullYear() &&
+      zonedDate.getMonth() === zonedHoliday.getMonth() &&
+      zonedDate.getDate() === zonedHoliday.getDate()
+    );
+  });
 }
 
 /**
@@ -152,7 +164,7 @@ export function isWorkingTime(
   }
 
   // Check if holiday
-  if (isHoliday(zonedDate, schedule.holidays)) {
+  if (isHoliday(zonedDate, schedule.holidays, schedule.timezone)) {
     return false;
   }
 
@@ -211,7 +223,7 @@ export function getNextWorkingTime(
   const jsDay = getDay(zonedFrom);
   const isoDay = jsToIsoWeekday(jsDay);
   const dayInSchedule = schedule.workingDays.includes(isoDay === 7 ? 0 : isoDay);
-  const notHoliday = !isHoliday(zonedFrom, schedule.holidays);
+  const notHoliday = !isHoliday(zonedFrom, schedule.holidays, schedule.timezone);
 
   // If on a working day, before work starts
   if (dayInSchedule && notHoliday) {
@@ -230,7 +242,7 @@ export function getNextWorkingTime(
     const nextJsDay = getDay(nextDay);
     const nextIsoDay = jsToIsoWeekday(nextJsDay);
     const nextDayInSchedule = schedule.workingDays.includes(nextIsoDay === 7 ? 0 : nextIsoDay);
-    const nextNotHoliday = !isHoliday(nextDay, schedule.holidays);
+    const nextNotHoliday = !isHoliday(nextDay, schedule.holidays, schedule.timezone);
 
     if (nextDayInSchedule && nextNotHoliday) {
       // Found next working day
@@ -311,7 +323,7 @@ export function calculateWorkingMinutes(
     const jsDay = getDay(currentDay);
     const isoDay = jsToIsoWeekday(jsDay);
     const dayInSchedule = schedule.workingDays.includes(isoDay === 7 ? 0 : isoDay);
-    const notHoliday = !isHoliday(currentDay, schedule.holidays);
+    const notHoliday = !isHoliday(currentDay, schedule.holidays, schedule.timezone);
 
     if (dayInSchedule && notHoliday) {
       // This is a working day
@@ -498,7 +510,7 @@ function getNextWorkingTimeZoned(zonedDate: Date, schedule: WorkingSchedule): Da
     const nextJsDay = getDay(nextDay);
     const nextIsoDay = jsToIsoWeekday(nextJsDay);
     const nextDayInSchedule = schedule.workingDays.includes(nextIsoDay === 7 ? 0 : nextIsoDay);
-    const nextNotHoliday = !isHoliday(nextDay, schedule.holidays);
+    const nextNotHoliday = !isHoliday(nextDay, schedule.holidays, schedule.timezone);
 
     if (nextDayInSchedule && nextNotHoliday) {
       return setTime(nextDay, startParsed.hours, startParsed.minutes);

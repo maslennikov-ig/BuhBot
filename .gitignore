@@ -70,9 +70,6 @@ test-results/
 playwright-report/
 playwright/.cache/
 e2e/.env
-# Local Playwright auth/session state artifacts
-output/playwright/
-
 # Local Playwright auth/session state artifacts (never commit credentials)
 output/playwright/
 .playwright-cli/

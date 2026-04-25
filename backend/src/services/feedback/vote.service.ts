@@ -372,6 +372,8 @@ export async function aggregateSurveys(
     throw new Error(`batchSize must be a positive integer, got ${batchSize}`);
   }
 
+  if (surveyIds.length === 0) return new Map();
+
   // Split surveyIds into chunks to prevent unbounded memory growth
   const chunks: string[][] = [];
   for (let i = 0; i < surveyIds.length; i += batchSize) {

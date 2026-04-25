@@ -529,7 +529,9 @@ async function aggregateInternal(
       : { delivery: { surveyId: scope.surveyId } }),
   };
 
-  // For surveyId scope, also fetch deliveries to get chatIds
+  // gh-334: Fetch chatIds for recipient count calculation.
+  // surveyId scope: all deliveries for the survey.
+  // deliveryId scope: the single delivery's chat.
   let chatIds: Set<bigint> | null = null;
   if ('surveyId' in scope) {
     const deliveries = await prisma.surveyDelivery.findMany({
@@ -537,6 +539,12 @@ async function aggregateInternal(
       select: { chatId: true },
     });
     chatIds = new Set(deliveries.map((d) => d.chatId));
+  } else {
+    const delivery = await prisma.surveyDelivery.findUnique({
+      where: { id: scope.deliveryId },
+      select: { chatId: true },
+    });
+    if (delivery) chatIds = new Set([delivery.chatId]);
   }
 
   const votes = await prisma.surveyVote.findMany({

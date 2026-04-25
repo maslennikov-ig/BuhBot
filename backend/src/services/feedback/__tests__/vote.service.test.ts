@@ -95,9 +95,22 @@ const mockPrisma = vi.hoisted(() => {
     }),
     surveyDelivery: {
       findUnique: vi.fn(
-        async ({ where, include }: { where: { id: string }; include?: { survey?: true } }) => {
+        async ({
+          where,
+          include,
+          select,
+        }: {
+          where: { id: string };
+          include?: { survey?: true };
+          select?: { chatId?: boolean };
+        }) => {
           const d = store.state.deliveries.find((x) => x.id === where.id);
           if (!d) return null;
+          if (select) {
+            const row: Record<string, unknown> = {};
+            if (select.chatId) row.chatId = d.chatId;
+            return row;
+          }
           return include?.survey
             ? { ...d, survey: d.survey }
             : {
@@ -658,6 +671,24 @@ describe('aggregateSurvey / aggregateDelivery', () => {
     expect(agg.count).toBe(1);
     // 2 non-accountant users in the chat; the accountant (id=99) is excluded.
     expect(agg.totalRecipientsCount).toBe(2);
+  });
+
+  // buh-9xk1: cover aggregateDelivery path — aggregateInternal with deliveryId scope
+  // should also return totalRecipientsCount for the single delivery's chat.
+  it('returns totalRecipientsCount for aggregateDelivery (deliveryId scope)', async () => {
+    const chatId = BigInt(400);
+    seedChatMessage(chatId, BigInt(20), false);
+    seedChatMessage(chatId, BigInt(21), false);
+    seedChatMessage(chatId, BigInt(22), false);
+    seedChatMessage(chatId, BigInt(99), true); // accountant, excluded
+
+    seedDelivery('delivery-400', 'survey-400', 'active', chatId);
+    await submitVote({ deliveryId: 'delivery-400', telegramUserId: BigInt(20), rating: 5 });
+
+    const agg = await aggregateDelivery('delivery-400');
+    expect(agg.count).toBe(1);
+    // 3 non-accountant users in the chat
+    expect(agg.totalRecipientsCount).toBe(3);
   });
 });
 

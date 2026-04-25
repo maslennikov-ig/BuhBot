@@ -485,7 +485,7 @@ function getNextWorkingTimeZoned(zonedDate: Date, schedule: WorkingSchedule): Da
   const jsDay = getDay(zonedDate);
   const isoDay = jsToIsoWeekday(jsDay);
   const dayInSchedule = schedule.workingDays.includes(isoDay === 7 ? 0 : isoDay);
-  const notHoliday = !isHoliday(zonedDate, schedule.holidays);
+  const notHoliday = !isHoliday(zonedDate, schedule.holidays, schedule.timezone);
 
   if (dayInSchedule && notHoliday) {
     const workStart = setTime(zonedDate, startParsed.hours, startParsed.minutes);

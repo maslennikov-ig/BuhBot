@@ -400,6 +400,30 @@ describe('calculateDelayUntilBreach', () => {
     const delay = calculateDelayUntilBreach(receivedAt, 30, SCHEDULE_24x7);
     expect(delay).toBe(0);
   });
+
+  it('7. With holiday: Friday 17:50 + 20 min threshold → skips holiday Monday, breaches Tue 09:10', () => {
+    // Mon 2025-01-13 is a holiday
+    const holiday = utc('2025-01-13T00:00:00.000Z');
+    const scheduleWithHoliday: WorkingSchedule = {
+      ...MOSCOW_SCHEDULE,
+      holidays: [holiday],
+    };
+
+    // "Now" = Fri 2025-01-10, 17:50 Moscow (14:50 UTC)
+    const now = utc('2025-01-10T14:50:00.000Z');
+    vi.setSystemTime(now);
+
+    // Request received at the same instant; 20 min threshold
+    // 10 min left on Friday (17:50 → 18:00), then Monday is holiday,
+    // remaining 10 min on Tuesday 09:00 → 09:10
+    const receivedAt = now;
+    const delay = calculateDelayUntilBreach(receivedAt, 20, scheduleWithHoliday);
+
+    // Breach at Tue 2025-01-14, 09:10 Moscow = 06:10 UTC
+    const expectedBreach = utc('2025-01-14T06:10:00.000Z');
+    const expectedDelay = expectedBreach.getTime() - now.getTime();
+    expect(delay).toBe(expectedDelay);
+  });
 });
 
 // ---------------------------------------------------------------------------

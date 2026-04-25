@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.3](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.2...buhbot-v0.34.3) (2026-04-22)
+
+
+### Bug Fixes
+
+* **survey:** performance optimization and chunked batch aggregation (H-2) ([#335](https://github.com/maslennikov-ig/BuhBot/issues/335)) ([6353b57](https://github.com/maslennikov-ig/BuhBot/commit/6353b575eff610bd7270e6df86e0eb00442ad270))
+
 ## [0.34.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.1...buhbot-v0.34.2) (2026-04-21)
 
 

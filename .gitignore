@@ -169,3 +169,5 @@ GEMINI.md
 # Environment variables
 .env
 .env.local
+.kilo/kilo.json
+.kilo/kilo.jsonc

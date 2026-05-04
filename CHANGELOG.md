@@ -5,6 +5,13 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.1](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.35.0...buhbot-v0.35.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* **deploy:** make monitoring image optional when CI skipped it ([#347](https://github.com/maslennikov-ig/BuhBot/issues/347)) ([90311ea](https://github.com/maslennikov-ig/BuhBot/commit/90311eab7e08ffe978e7ff8c05d1f547094d0383))
+
 ## [0.35.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.4...buhbot-v0.35.0) (2026-05-04)
 
 

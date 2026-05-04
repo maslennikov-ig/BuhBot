@@ -84,11 +84,12 @@ jobs:
           )
 
           # monitoring image is optional — CI may skip it when infrastructure files haven't changed
-          if docker manifest inspect "${IMAGE_PREFIX}/monitoring:latest" > /dev/null 2>&1; then
-            IMAGES+=("${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}")
-            echo "Monitoring image tag found, will verify it"
+          MON_SHA="${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}"
+          if docker manifest inspect "$MON_SHA" > /dev/null 2>&1; then
+            IMAGES+=("$MON_SHA")
+            echo "Monitoring SHA image found, will verify it"
           else
-            echo "Monitoring image not in registry, skipping verification"
+            echo "Monitoring SHA image not in registry, skipping verification"
           fi
 
           MAX_ATTEMPTS=30

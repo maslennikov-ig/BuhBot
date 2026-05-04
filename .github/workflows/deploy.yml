@@ -81,8 +81,15 @@ jobs:
           IMAGES=(
             "${IMAGE_PREFIX}/backend:${{ env.DEPLOY_SHA }}"
             "${IMAGE_PREFIX}/frontend:${{ env.DEPLOY_SHA }}"
-            "${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}"
           )
+
+          # monitoring image is optional — CI may skip it when infrastructure files haven't changed
+          if docker manifest inspect "${IMAGE_PREFIX}/monitoring:latest" > /dev/null 2>&1; then
+            IMAGES+=("${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}")
+            echo "Monitoring image tag found, will verify it"
+          else
+            echo "Monitoring image not in registry, skipping verification"
+          fi
 
           MAX_ATTEMPTS=30
           INTERVAL=10
@@ -167,12 +174,24 @@ jobs:
           echo "Pulling Docker images from ghcr.io..."
           docker pull ${IMAGE_PREFIX}/backend:${{ env.DEPLOY_SHA }}
           docker pull ${IMAGE_PREFIX}/frontend:${{ env.DEPLOY_SHA }}
-          docker pull ${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}
 
           echo "Tagging images for local use..."
           docker tag ${IMAGE_PREFIX}/backend:${{ env.DEPLOY_SHA }} buhbot-backend:${{ env.DEPLOY_SHA }}
           docker tag ${IMAGE_PREFIX}/frontend:${{ env.DEPLOY_SHA }} buhbot-frontend:${{ env.DEPLOY_SHA }}
-          docker tag ${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }} buhbot-monitoring:${{ env.DEPLOY_SHA }}
+
+          # monitoring image is optional — pull only if it was built
+          if docker manifest inspect "${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}" > /dev/null 2>&1; then
+            docker pull ${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }}
+            docker tag ${IMAGE_PREFIX}/monitoring:${{ env.DEPLOY_SHA }} buhbot-monitoring:${{ env.DEPLOY_SHA }}
+          else
+            echo "Monitoring image not found in registry, skipping pull"
+            if docker manifest inspect "${IMAGE_PREFIX}/monitoring:latest" > /dev/null 2>&1; then
+              docker pull ${IMAGE_PREFIX}/monitoring:latest
+              docker tag ${IMAGE_PREFIX}/monitoring:latest buhbot-monitoring:latest
+            else
+              echo "No monitoring image available — monitoring stack will not be updated"
+            fi
+          fi
 
           echo "Docker images pulled and tagged successfully"
           EOF

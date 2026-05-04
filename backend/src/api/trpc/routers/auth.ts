@@ -759,7 +759,25 @@ export const authRouter = router({
         });
       }
 
-      // Invalidate existing unused tokens for this user
+      // Check for existing unused, non-expired token first
+      const existingToken = await ctx.prisma.verificationToken.findFirst({
+        where: {
+          userId: user.id,
+          isUsed: false,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { expiresAt: 'desc' },
+      });
+
+      if (existingToken) {
+        const verificationLink = `https://t.me/${env.BOT_USERNAME}?start=verify_${existingToken.token}`;
+        return {
+          verificationLink,
+          expiresAt: existingToken.expiresAt.toISOString(),
+        };
+      }
+
+      // Invalidate any old expired tokens
       await ctx.prisma.verificationToken.updateMany({
         where: { userId: user.id, isUsed: false },
         data: { isUsed: true },

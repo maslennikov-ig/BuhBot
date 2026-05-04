@@ -8,7 +8,6 @@ import { UserCreateDialog } from '@/components/settings/users/UserCreateDialog';
 import { UserDeleteDialog } from '@/components/settings/users/UserDeleteDialog';
 import { UserTelegramDialog } from '@/components/settings/users/UserTelegramDialog';
 import { UserEditDialog } from '@/components/settings/users/UserEditDialog';
-import { UserVerificationDialog } from '@/components/settings/users/UserVerificationDialog';
 import { HelpButton } from '@/components/ui/HelpButton';
 import { trpc } from '@/lib/trpc';
 import { useRoleGuard } from '@/hooks/useRoleGuard';
@@ -24,12 +23,10 @@ export default function UsersPage() {
   const [editUser, setEditUser] = React.useState<UserItem | null>(null);
   const [telegramUser, setTelegramUser] = React.useState<UserItem | null>(null);
   const [deletingUser, setDeletingUser] = React.useState<UserItem | null>(null);
-  const [verificationUser, setVerificationUser] = React.useState<UserItem | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [isTelegramDialogOpen, setIsTelegramDialogOpen] = React.useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [isVerificationDialogOpen, setIsVerificationDialogOpen] = React.useState(false);
 
   const { data: currentUser } = trpc.auth.me.useQuery();
   const isAdmin = currentUser?.role === 'admin';
@@ -47,11 +44,6 @@ export default function UsersPage() {
   const handleDeleteUser = (user: UserItem) => {
     setDeletingUser(user);
     setIsDeleteDialogOpen(true);
-  };
-
-  const handleResendVerification = (user: UserItem) => {
-    setVerificationUser(user);
-    setIsVerificationDialogOpen(true);
   };
 
   const handleAddUser = () => {
@@ -77,11 +69,6 @@ export default function UsersPage() {
     setDeletingUser(null);
   };
 
-  const handleCloseVerificationDialog = () => {
-    setIsVerificationDialogOpen(false);
-    setVerificationUser(null);
-  };
-
   if (isRoleLoading || isAllowed === false) return null;
 
   return (
@@ -98,7 +85,6 @@ export default function UsersPage() {
         onEditTelegramId={handleEditTelegramId}
         onDeleteUser={handleDeleteUser}
         onAddUser={handleAddUser}
-        onResendVerification={handleResendVerification}
         isAdmin={isAdmin}
       />
 
@@ -122,14 +108,6 @@ export default function UsersPage() {
         open={isDeleteDialogOpen}
         onClose={handleCloseDeleteDialog}
         onSuccess={handleCloseDeleteDialog}
-      />
-
-      <UserVerificationDialog
-        userId={verificationUser?.id ?? ''}
-        userName={verificationUser?.fullName ?? ''}
-        open={isVerificationDialogOpen}
-        onClose={handleCloseVerificationDialog}
-        onSuccess={handleCloseVerificationDialog}
       />
     </AdminLayout>
   );

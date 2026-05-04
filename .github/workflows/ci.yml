@@ -244,6 +244,11 @@ jobs:
     if: needs.detect-release-pr.outputs.should_skip_heavy != 'true'
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
       - name: Check for monitoring changes
         id: filter
         uses: dorny/paths-filter@v3
@@ -252,10 +257,6 @@ jobs:
           filters: |
             monitoring:
               - 'infrastructure/monitoring/**'
-
-      - name: Checkout code
-        if: steps.filter.outputs.monitoring == 'true' || github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v6
 
       - name: Get version from package.json
         if: steps.filter.outputs.monitoring == 'true' || github.event_name == 'workflow_dispatch'

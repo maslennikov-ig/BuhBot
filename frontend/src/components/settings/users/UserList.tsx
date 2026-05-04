@@ -4,7 +4,16 @@ import * as React from 'react';
 import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
-import { Search, User as UserIcon, MessageCircle, Users, Trash2, Plus, Pencil } from 'lucide-react';
+import {
+  Search,
+  User as UserIcon,
+  MessageCircle,
+  Users,
+  Trash2,
+  Plus,
+  Pencil,
+  Link,
+} from 'lucide-react';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 
@@ -21,6 +30,7 @@ interface UserListProps {
   onEditTelegramId: (user: UserItem) => void;
   onDeleteUser: (user: UserItem) => void;
   onAddUser: () => void;
+  onResendVerification: (user: UserItem) => void;
   isAdmin: boolean;
 }
 
@@ -37,6 +47,7 @@ export function UserList({
   onEditTelegramId,
   onDeleteUser,
   onAddUser,
+  onResendVerification,
   isAdmin,
 }: UserListProps) {
   const [search, setSearch] = React.useState('');
@@ -226,21 +237,32 @@ export function UserList({
                   </td>
                   <td className="px-4 py-3 text-center">
                     {isAdmin ? (
-                      <button
-                        onClick={() => onEditTelegramId(user)}
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                          user.telegramId
-                            ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)] hover:bg-[var(--buh-primary)]/20'
-                            : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-surface-subtle)] hover:text-[var(--buh-foreground-muted)]'
-                        }`}
-                        title={
-                          user.telegramId
-                            ? `Telegram ID: ${user.telegramId}`
-                            : 'Установить Telegram ID'
-                        }
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onEditTelegramId(user)}
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                            user.telegramId
+                              ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)] hover:bg-[var(--buh-primary)]/20'
+                              : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-surface-subtle)] hover:text-[var(--buh-foreground-muted)]'
+                          }`}
+                          title={
+                            user.telegramId
+                              ? `Telegram ID: ${user.telegramId}`
+                              : 'Установить Telegram ID'
+                          }
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </button>
+                        {user.role === 'accountant' && !user.telegramId && (
+                          <button
+                            onClick={() => onResendVerification(user)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-accent-glow)] hover:text-[var(--buh-accent)] transition-colors"
+                            title="Создать ссылку для подключения Telegram"
+                          >
+                            <Link className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     ) : user.telegramId ? (
                       <div
                         className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]"

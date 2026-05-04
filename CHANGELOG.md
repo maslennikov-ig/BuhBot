@@ -5,6 +5,24 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.4...buhbot-v0.35.0) (2026-05-04)
+
+
+### Features
+
+* **auth:** add Telegram verification link regeneration for unverified accountants ([0a8d910](https://github.com/maslennikov-ig/BuhBot/commit/0a8d910f91bc8bed5c8f9e65f52318f686c9003d))
+* **auth:** add Telegram verification link regeneration for unverified accountants ([#341](https://github.com/maslennikov-ig/BuhBot/issues/341)) ([0a8d910](https://github.com/maslennikov-ig/BuhBot/commit/0a8d910f91bc8bed5c8f9e65f52318f686c9003d))
+
+
+### Bug Fixes
+
+* **auth:** update comment to reflect reusing existing valid token ([0a8d910](https://github.com/maslennikov-ig/BuhBot/commit/0a8d910f91bc8bed5c8f9e65f52318f686c9003d))
+* **ci:** checkout before paths-filter so it has git history ([#344](https://github.com/maslennikov-ig/BuhBot/issues/344)) ([759f2e8](https://github.com/maslennikov-ig/BuhBot/commit/759f2e8fc565b51bd810b3d937c141480bd62c7b))
+* **ci:** replace paths-filter with git diff to detect monitoring changes ([#345](https://github.com/maslennikov-ig/BuhBot/issues/345)) ([b5763e1](https://github.com/maslennikov-ig/BuhBot/commit/b5763e1185003515ceb401bf09738adace89fbaf))
+* **ci:** set paths-filter ref to HEAD for push events ([#343](https://github.com/maslennikov-ig/BuhBot/issues/343)) ([34bfa3a](https://github.com/maslennikov-ig/BuhBot/commit/34bfa3aa281134bbcdc7daa427e0adc566477678))
+* **ci:** skip monitoring Docker build when infrastructure files unchanged ([c5a6f38](https://github.com/maslennikov-ig/BuhBot/commit/c5a6f38448b5c42a9c3995e9db32236f8f29aead))
+* **ci:** skip monitoring Docker build when infrastructure files unchanged ([#342](https://github.com/maslennikov-ig/BuhBot/issues/342)) ([c5a6f38](https://github.com/maslennikov-ig/BuhBot/commit/c5a6f38448b5c42a9c3995e9db32236f8f29aead))
+
 ## [0.34.4](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.34.3...buhbot-v0.34.4) (2026-04-25)
 
 

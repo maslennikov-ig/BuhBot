@@ -19,6 +19,7 @@ const mockPrisma = vi.hoisted(() => ({
   user: {
     findUnique: vi.fn(),
     create: vi.fn(),
+    findMany: vi.fn(),
   },
   verificationToken: {
     findFirst: vi.fn(),
@@ -30,6 +31,9 @@ const mockPrisma = vi.hoisted(() => ({
     createMany: vi.fn(),
   },
 }));
+
+// $transaction passthrough: executes callback with mockPrisma as tx client
+mockPrisma.$transaction = vi.fn(async (cb) => cb(mockPrisma));
 
 vi.mock('../../../../lib/prisma.js', () => ({
   prisma: mockPrisma,
@@ -55,7 +59,7 @@ const mockEnv = vi.hoisted(() => ({
 vi.mock('../../../../config/env.js', () => mockEnv);
 
 // Supabase mock (needed for createUser)
-vi.mock('../../../../lib/supabase.js', () => ({
+const mockSupabase = vi.hoisted(() => ({
   supabase: {
     auth: {
       admin: {
@@ -66,6 +70,8 @@ vi.mock('../../../../lib/supabase.js', () => ({
     },
   },
 }));
+
+vi.mock('../../../../lib/supabase.js', () => mockSupabase);
 
 // ---------------------------------------------------------------------------
 // Imports — after mocks
@@ -216,5 +222,138 @@ describe('regenerateVerificationLink — new token creation', () => {
 
     expect(result.verificationLink).toContain('verify_');
     expect(mockPrisma.verificationToken.create).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createUser — accountant path
+// ---------------------------------------------------------------------------
+
+describe('createUser — accountant role', () => {
+  const SUPABASE_USER_ID = '00000000-0000-0000-0000-000000000003';
+
+  beforeEach(() => {
+    mockPrisma.user.findUnique.mockResolvedValue(null); // No existing user
+    mockSupabase.supabase.auth.admin.createUser.mockResolvedValue({
+      data: { user: { id: SUPABASE_USER_ID } },
+      error: null,
+    });
+    mockPrisma.user.create.mockResolvedValue({
+      id: SUPABASE_USER_ID,
+      email: 'newacct@example.com',
+      fullName: 'New Accountant',
+      role: 'accountant',
+      isOnboardingComplete: false,
+    });
+    mockPrisma.verificationToken.create.mockResolvedValue({
+      id: 'token-id',
+      token: 'new-verification-token',
+    });
+  });
+
+  it('creates accountant with Supabase auth, User record, and VerificationToken', async () => {
+    const caller = makeCaller(ADMIN_CTX);
+
+    const result = await caller.createUser({
+      email: 'newacct@example.com',
+      fullName: 'New Accountant',
+      role: 'accountant',
+    });
+
+    // Supabase auth user created (email_confirm: true for accountant)
+    expect(mockSupabase.supabase.auth.admin.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'newacct@example.com',
+        email_confirm: true,
+        user_metadata: expect.objectContaining({
+          full_name: 'New Accountant',
+          role: 'accountant',
+        }),
+      })
+    );
+
+    // User record created in our DB
+    expect(mockPrisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: 'newacct@example.com',
+          fullName: 'New Accountant',
+          role: 'accountant',
+          isOnboardingComplete: false,
+        }),
+      })
+    );
+
+    // VerificationToken created for Telegram onboarding
+    expect(mockPrisma.verificationToken.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: SUPABASE_USER_ID,
+        }),
+      })
+    );
+
+    // Returns verification link
+    expect(result.verificationLink).toContain('test_bot');
+    expect(result.verificationLink).toContain('verify_');
+    expect(result.inviteSent).toBe(false);
+  });
+
+  it('creates accountant with manager relationships when managerIds provided', async () => {
+    mockPrisma.user.findMany.mockResolvedValue([
+      { id: '00000000-0000-0000-0000-000000000011' },
+      { id: '00000000-0000-0000-0000-000000000012' },
+    ]);
+
+    const caller = makeCaller(ADMIN_CTX);
+
+    await caller.createUser({
+      email: 'newacct@example.com',
+      fullName: 'New Accountant',
+      role: 'accountant',
+      managerIds: ['00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000012'],
+    });
+
+    // UserManager records created
+    expect(mockPrisma.userManager.createMany).toHaveBeenCalledWith({
+      data: [
+        { managerId: '00000000-0000-0000-0000-000000000011', accountantId: SUPABASE_USER_ID },
+        { managerId: '00000000-0000-0000-0000-000000000012', accountantId: SUPABASE_USER_ID },
+      ],
+    });
+  });
+
+  it('returns error when user with email already exists', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'existing-user-id',
+      email: 'existing@example.com',
+    });
+
+    const caller = makeCaller(ADMIN_CTX);
+
+    await expect(
+      caller.createUser({
+        email: 'existing@example.com',
+        fullName: 'Existing User',
+        role: 'accountant',
+      })
+    ).rejects.toThrow('Пользователь с таким email уже существует');
+  });
+
+  it('rolls back Supabase user if DB transaction fails', async () => {
+    mockPrisma.user.create.mockRejectedValue(new Error('DB error'));
+
+    const caller = makeCaller(ADMIN_CTX);
+
+    await expect(
+      caller.createUser({
+        email: 'newacct@example.com',
+        fullName: 'New Accountant',
+        role: 'accountant',
+      })
+    ).rejects.toThrow('DB error');
+
+    // Supabase user should be cleaned up
+    expect(mockSupabase.supabase.auth.admin.deleteUser).toHaveBeenCalledWith(SUPABASE_USER_ID);
   });
 });

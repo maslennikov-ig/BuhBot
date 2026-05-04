@@ -377,7 +377,7 @@ async function processInvitation(
  * Links a Telegram account to a BuhBot user via verification token.
  * Token format: /start verify_<token>
  */
-async function processVerification(ctx: BotContext, token: string): Promise<void> {
+export async function processVerification(ctx: BotContext, token: string): Promise<void> {
   const telegramUser = ctx.from;
   if (!telegramUser) {
     await ctx.reply('Не удалось определить пользователя Telegram.');

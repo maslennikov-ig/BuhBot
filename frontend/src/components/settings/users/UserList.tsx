@@ -4,7 +4,18 @@ import * as React from 'react';
 import { trpc } from '@/lib/trpc';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { Button } from '@/components/ui/button';
-import { Search, User as UserIcon, MessageCircle, Users, Trash2, Plus, Pencil } from 'lucide-react';
+import {
+  Search,
+  User as UserIcon,
+  MessageCircle,
+  Users,
+  Trash2,
+  Plus,
+  Pencil,
+  Link,
+  Check,
+  Loader2,
+} from 'lucide-react';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableHeader } from '@/components/ui/SortableHeader';
 
@@ -41,8 +52,28 @@ export function UserList({
 }: UserListProps) {
   const [search, setSearch] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState<string | null>(null);
+  const [copiedUserId, setCopiedUserId] = React.useState<string | null>(null);
+  const utils = trpc.useContext();
 
   const { data: users, isLoading } = trpc.auth.listUsers.useQuery({});
+
+  const regenerateLink = trpc.auth.regenerateVerificationLink.useMutation({
+    onSuccess: async (data, { userId }) => {
+      try {
+        await navigator.clipboard.writeText(data.verificationLink);
+        setCopiedUserId(userId);
+        setTimeout(() => setCopiedUserId(null), 2000);
+        utils.auth.listUsers.invalidate();
+      } catch {
+        // Fallback: show link in alert if clipboard not available
+        alert(`Ссылка для подключения:\n\n${data.verificationLink}`);
+      }
+    },
+  });
+
+  const handleCopyVerificationLink = (user: UserItem) => {
+    regenerateLink.mutate({ userId: user.id });
+  };
 
   const filteredItems = React.useMemo(() => {
     if (!users) return [];
@@ -226,21 +257,40 @@ export function UserList({
                   </td>
                   <td className="px-4 py-3 text-center">
                     {isAdmin ? (
-                      <button
-                        onClick={() => onEditTelegramId(user)}
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                          user.telegramId
-                            ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)] hover:bg-[var(--buh-primary)]/20'
-                            : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-surface-subtle)] hover:text-[var(--buh-foreground-muted)]'
-                        }`}
-                        title={
-                          user.telegramId
-                            ? `Telegram ID: ${user.telegramId}`
-                            : 'Установить Telegram ID'
-                        }
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onEditTelegramId(user)}
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                            user.telegramId
+                              ? 'bg-[var(--buh-primary-muted)] text-[var(--buh-primary)] hover:bg-[var(--buh-primary)]/20'
+                              : 'bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-surface-subtle)] hover:text-[var(--buh-foreground-muted)]'
+                          }`}
+                          title={
+                            user.telegramId
+                              ? `Telegram ID: ${user.telegramId}`
+                              : 'Установить Telegram ID'
+                          }
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </button>
+                        {user.role === 'accountant' && !user.telegramId && (
+                          <button
+                            onClick={() => handleCopyVerificationLink(user)}
+                            disabled={regenerateLink.isPending}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-surface-elevated)] text-[var(--buh-foreground-subtle)] hover:bg-[var(--buh-accent-glow)] hover:text-[var(--buh-accent)] transition-colors"
+                            title="Сгенерировать ссылку и скопировать в буфер"
+                          >
+                            {copiedUserId === user.id ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : regenerateLink.isPending &&
+                              regenerateLink.variables?.userId === user.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Link className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     ) : user.telegramId ? (
                       <div
                         className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--buh-primary-muted)] text-[var(--buh-primary)]"

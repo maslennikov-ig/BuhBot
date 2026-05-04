@@ -9,6 +9,7 @@
  * - updateUserRole: Admin change user role
  * - setUserTelegramId: Admin set/clear user Telegram ID
  * - createUser: Admin create and invite new user
+ * - regenerateVerificationLink: Regenerate Telegram verification link for unverified accountant
  * - deleteUser: Admin delete user
  * - deactivateUser: Admin deactivate user account
  * - reactivateUser: Admin reactivate user account
@@ -702,6 +703,106 @@ export const authRouter = router({
         fullName: newUser.fullName,
         role: asUserRole(newUser.role),
         inviteSent: true,
+      };
+    }),
+
+  /**
+   * Regenerate verification link for an accountant who hasn't completed Telegram onboarding
+   *
+   * Reuses existing valid verification token or creates a new one for an accountant who hasn't completed Telegram onboarding.
+   * Returns a fresh t.me deep link that the admin can send to the accountant.
+   *
+   * @param userId - The accountant user ID
+   * @returns New verification link
+   * @authorization Admin only
+   */
+  regenerateVerificationLink: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+      })
+    )
+    .output(
+      z.object({
+        verificationLink: z.string().url(),
+        expiresAt: z.string().datetime(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, role: true, telegramId: true, fullName: true, email: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Пользователь не найден' });
+      }
+
+      if (user.role !== 'accountant') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Ссылку верификации можно перегенерировать только для бухгалтера',
+        });
+      }
+
+      if (user.telegramId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Пользователь уже верифицировал Telegram аккаунт',
+        });
+      }
+
+      if (!env.BOT_USERNAME) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'BOT_USERNAME не настроен',
+        });
+      }
+
+      // Check for existing unused, non-expired token first
+      const existingToken = await ctx.prisma.verificationToken.findFirst({
+        where: {
+          userId: user.id,
+          isUsed: false,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { expiresAt: 'desc' },
+      });
+
+      if (existingToken) {
+        const verificationLink = `https://t.me/${env.BOT_USERNAME}?start=verify_${existingToken.token}`;
+        return {
+          verificationLink,
+          expiresAt: existingToken.expiresAt.toISOString(),
+        };
+      }
+
+      // Invalidate any old expired tokens
+      await ctx.prisma.verificationToken.updateMany({
+        where: { userId: user.id, isUsed: false },
+        data: { isUsed: true },
+      });
+
+      // Create new verification token
+      const tokenValue = randomBytes(16).toString('base64url');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await ctx.prisma.verificationToken.create({
+        data: { userId: user.id, token: tokenValue, expiresAt },
+      });
+
+      const verificationLink = `https://t.me/${env.BOT_USERNAME}?start=verify_${tokenValue}`;
+
+      logger.info('Verification link regenerated', {
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+      });
+
+      return {
+        verificationLink,
+        expiresAt: expiresAt.toISOString(),
       };
     }),
 

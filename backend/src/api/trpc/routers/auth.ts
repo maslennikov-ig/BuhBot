@@ -709,7 +709,7 @@ export const authRouter = router({
   /**
    * Regenerate verification link for an accountant who hasn't completed Telegram onboarding
    *
- * Reuses existing valid verification token or creates a new one for an accountant who hasn't completed Telegram onboarding.
+   * Reuses existing valid verification token or creates a new one for an accountant who hasn't completed Telegram onboarding.
    * Returns a fresh t.me deep link that the admin can send to the accountant.
    *
    * @param userId - The accountant user ID

@@ -247,16 +247,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Check for monitoring changes
         id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          ref: ${{ github.event_name == 'push' && 'HEAD' || '' }}
-          filters: |
-            monitoring:
-              - 'infrastructure/monitoring/**'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "monitoring=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            CHANGED=$(git diff --name-only HEAD~1 HEAD -- infrastructure/monitoring/ 2>/dev/null || echo "")
+            if [ -n "$CHANGED" ]; then
+              echo "monitoring=true" >> $GITHUB_OUTPUT
+            else
+              echo "monitoring=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # PR event — compare against base
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref || 'main' }} HEAD -- infrastructure/monitoring/ 2>/dev/null || echo "")
+            if [ -n "$CHANGED" ]; then
+              echo "monitoring=true" >> $GITHUB_OUTPUT
+            else
+              echo "monitoring=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Get version from package.json
         if: steps.filter.outputs.monitoring == 'true' || github.event_name == 'workflow_dispatch'

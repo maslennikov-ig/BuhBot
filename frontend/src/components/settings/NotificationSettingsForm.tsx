@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 
 const formSchema = z.object({
   ids: z.string().describe('Comma separated IDs'),
+  fileConfirmationEnabled: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,6 +36,7 @@ export function NotificationSettingsForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ids: '',
+      fileConfirmationEnabled: true,
     },
   });
 
@@ -43,9 +45,15 @@ export function NotificationSettingsForm() {
     if (settings) {
       form.reset({
         ids: settings.leadNotificationIds.join(', '),
+        fileConfirmationEnabled: settings.fileConfirmationEnabled,
       });
     }
   }, [settings, form]);
+
+  const fileConfirmationEnabled = useWatch({
+    control: form.control,
+    name: 'fileConfirmationEnabled',
+  });
 
   const onSubmit = (data: FormValues) => {
     const ids = data.ids
@@ -55,6 +63,7 @@ export function NotificationSettingsForm() {
 
     updateSettings.mutate({
       leadNotificationIds: ids,
+      fileConfirmationEnabled: data.fileConfirmationEnabled,
     });
   };
 
@@ -96,6 +105,43 @@ export function NotificationSettingsForm() {
               <br />
               ID можно узнать через @getmyid_bot или переслав сообщение боту.
             </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-[var(--buh-border)] bg-[var(--buh-surface-overlay)] p-4">
+            <div className="space-y-1">
+              <Label
+                id="file-confirmation-enabled-label"
+                className="text-base font-medium text-[var(--buh-foreground)]"
+              >
+                Подтверждать получение файлов в клиентских чатах
+              </Label>
+              <p className="text-sm text-[var(--buh-foreground-muted)]">
+                Когда выключено, документы и фото сохраняются в истории, но бот не отвечает «Файл
+                получен».
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={fileConfirmationEnabled}
+              aria-labelledby="file-confirmation-enabled-label"
+              onClick={() =>
+                form.setValue('fileConfirmationEnabled', !fileConfirmationEnabled, {
+                  shouldDirty: true,
+                })
+              }
+              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--buh-accent)] focus:ring-offset-2 ${
+                fileConfirmationEnabled
+                  ? 'bg-[var(--buh-primary)]'
+                  : 'bg-[var(--buh-surface-elevated)]'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  fileConfirmationEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
 
           <div className="flex justify-end pt-4">

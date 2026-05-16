@@ -28,7 +28,59 @@ vi.mock('../../utils/logger.js', () => ({
   },
 }));
 
-import { getRecipientsByLevel, invalidateSettingsCache } from '../config.service.js';
+import {
+  getGlobalSettings,
+  getRecipientsByLevel,
+  invalidateSettingsCache,
+} from '../config.service.js';
+
+describe('getGlobalSettings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateSettingsCache();
+  });
+
+  it('defaults file confirmations to enabled when settings row is missing', async () => {
+    mockPrisma.globalSettings.findUnique.mockResolvedValue(null);
+
+    const settings = await getGlobalSettings();
+
+    expect(settings.fileConfirmationEnabled).toBe(true);
+  });
+
+  it('reads disabled file confirmations from GlobalSettings', async () => {
+    mockPrisma.globalSettings.findUnique.mockResolvedValue({
+      defaultTimezone: 'Europe/Moscow',
+      defaultWorkingDays: [1, 2, 3, 4, 5],
+      defaultStartTime: '09:00',
+      defaultEndTime: '18:00',
+      defaultSlaThreshold: 60,
+      maxEscalations: 5,
+      escalationIntervalMin: 30,
+      slaWarningPercent: 80,
+      globalManagerIds: [],
+      leadNotificationIds: [],
+      aiConfidenceThreshold: 0.7,
+      messagePreviewLength: 500,
+      openrouterApiKey: null,
+      openrouterModel: 'test',
+      dataRetentionYears: 3,
+      surveyValidityDays: 7,
+      surveyReminderDay: 2,
+      lowRatingThreshold: 3,
+      surveyQuarterDay: 1,
+      botToken: null,
+      botUsername: null,
+      botId: null,
+      internalChatId: null,
+      fileConfirmationEnabled: false,
+    });
+
+    const settings = await getGlobalSettings();
+
+    expect(settings.fileConfirmationEnabled).toBe(false);
+  });
+});
 
 describe('getRecipientsByLevel', () => {
   beforeEach(() => {

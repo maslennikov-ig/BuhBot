@@ -53,6 +53,9 @@ export interface CachedGlobalSettings {
 
   // Internal Chat
   internalChatId: bigint | null;
+
+  // Client chat file confirmations
+  fileConfirmationEnabled: boolean;
 }
 
 /** Hardcoded defaults matching Prisma schema defaults */
@@ -80,6 +83,7 @@ const DEFAULTS: CachedGlobalSettings = {
   botUsername: null,
   botId: null,
   internalChatId: null,
+  fileConfirmationEnabled: true,
 };
 
 /** Cache TTL in milliseconds (5 minutes) */
@@ -135,6 +139,7 @@ export async function getGlobalSettings(): Promise<CachedGlobalSettings> {
         botUsername: settings.botUsername,
         botId: settings.botId,
         internalChatId: settings.internalChatId,
+        fileConfirmationEnabled: settings.fileConfirmationEnabled,
       };
     }
 

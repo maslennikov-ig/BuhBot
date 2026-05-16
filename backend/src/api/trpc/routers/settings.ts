@@ -73,6 +73,9 @@ const UpdateGlobalSettingsInput = z.object({
     .regex(/^-?\d+$/, 'Telegram Chat ID должен быть числом')
     .nullable()
     .optional(),
+
+  // Client chat file confirmations
+  fileConfirmationEnabled: z.boolean().optional(),
 });
 
 /**
@@ -157,6 +160,9 @@ const GlobalSettingsOutput = z.object({
 
   // Internal Chat
   internalChatId: z.string().nullable(),
+
+  // File confirmations
+  fileConfirmationEnabled: z.boolean(),
 
   // Meta
   updatedAt: z.date(),
@@ -296,6 +302,7 @@ export const settingsRouter = router({
       openrouterModel: settings.openrouterModel,
       dataRetentionYears: settings.dataRetentionYears,
       internalChatId: settings.internalChatId ? String(settings.internalChatId) : null,
+      fileConfirmationEnabled: settings.fileConfirmationEnabled,
       updatedAt: settings.updatedAt,
     };
   }),
@@ -401,6 +408,7 @@ export const settingsRouter = router({
         openrouterModel: settings.openrouterModel,
         dataRetentionYears: settings.dataRetentionYears,
         internalChatId: settings.internalChatId ? String(settings.internalChatId) : null,
+        fileConfirmationEnabled: settings.fileConfirmationEnabled,
         updatedAt: settings.updatedAt,
       };
     }),

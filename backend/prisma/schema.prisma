@@ -751,6 +751,9 @@ model GlobalSettings {
   // Internal Chat for SLA notifications (instead of client chat)
   internalChatId BigInt? @map("internal_chat_id") @db.BigInt
 
+  // Client chat file confirmations
+  fileConfirmationEnabled Boolean @default(true) @map("file_confirmation_enabled")
+
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("global_settings")

@@ -246,6 +246,7 @@ const UpdateGlobalSettingsInput = z.object({
     .regex(/^-?\d+$/, 'Telegram Chat ID must be a number')
     .nullable()
     .optional(),
+  fileConfirmationEnabled: z.boolean().optional(),
 });
 
 const AddGlobalHolidayInput = z.object({
@@ -306,6 +307,7 @@ const GlobalSettingsOutput = z.object({
   openrouterModel: z.string(),
   dataRetentionYears: z.number(),
   internalChatId: z.string().nullable(),
+  fileConfirmationEnabled: z.boolean(),
   updatedAt: z.date(),
 });
 
@@ -1476,6 +1478,21 @@ describe('Settings router schemas', () => {
       );
     });
 
+    it('accepts fileConfirmationEnabled as boolean', () => {
+      expect(UpdateGlobalSettingsInput.safeParse({ fileConfirmationEnabled: true }).success).toBe(
+        true
+      );
+      expect(UpdateGlobalSettingsInput.safeParse({ fileConfirmationEnabled: false }).success).toBe(
+        true
+      );
+    });
+
+    it('rejects fileConfirmationEnabled as non-boolean', () => {
+      expect(
+        UpdateGlobalSettingsInput.safeParse({ fileConfirmationEnabled: 'false' }).success
+      ).toBe(false);
+    });
+
     it('rejects openrouterApiKey as empty string', () => {
       expect(UpdateGlobalSettingsInput.safeParse({ openrouterApiKey: '' }).success).toBe(false);
     });
@@ -1719,6 +1736,7 @@ describe('Settings router schemas', () => {
       openrouterModel: 'openai/gpt-4o',
       dataRetentionYears: 3,
       internalChatId: null,
+      fileConfirmationEnabled: true,
       updatedAt: new Date(),
     };
 

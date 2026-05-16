@@ -15,6 +15,7 @@ import logger from '../../utils/logger.js';
 import { isAccountantForChat } from './response.handler.js';
 import { replyAndLog } from '../utils/log-outgoing.js';
 import { logMediaMessage } from '../utils/log-media-message.js';
+import { getGlobalSettings } from '../../config/config.service.js';
 
 /**
  * Format file size for human-readable display
@@ -81,6 +82,20 @@ function buildConfirmationMessage(filename: string, size: string, timestamp: str
 Ваш бухгалтер получит уведомление о новом документе.`;
 }
 
+async function shouldSendFileConfirmation(chatId: number): Promise<boolean> {
+  try {
+    const settings = await getGlobalSettings();
+    return settings.fileConfirmationEnabled;
+  } catch (error) {
+    logger.warn('Failed to read file confirmation setting, using enabled default', {
+      chatId,
+      error: error instanceof Error ? error.message : String(error),
+      service: 'file-handler',
+    });
+    return true;
+  }
+}
+
 /**
  * Register the file handler for auto-confirmation
  *
@@ -144,6 +159,15 @@ export function registerFileHandler(): void {
       caption: ctx.message.caption,
       isAccountant: isAccountantResult.isAccountant,
     });
+
+    if (!(await shouldSendFileConfirmation(chatId))) {
+      logger.debug('File confirmation disabled, skipping document reply', {
+        chatId,
+        filename,
+        service: 'file-handler',
+      });
+      return;
+    }
 
     try {
       const formattedSize = formatFileSize(fileSize);
@@ -228,6 +252,15 @@ export function registerFileHandler(): void {
       caption: ctx.message.caption,
       isAccountant: isAccountantResult.isAccountant,
     });
+
+    if (!(await shouldSendFileConfirmation(chatId))) {
+      logger.debug('File confirmation disabled, skipping photo reply', {
+        chatId,
+        filename,
+        service: 'file-handler',
+      });
+      return;
+    }
 
     try {
       const formattedSize = formatFileSize(fileSize);

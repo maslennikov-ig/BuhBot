@@ -219,10 +219,297 @@ export async function isAccountantForChat(
   }
 }
 
+type AccountantResponseMessageType = 'text' | 'document' | 'photo';
+type NextFunction = () => Promise<void>;
+
+type AccountantResponseMessage = {
+  message_id: number;
+  text?: string;
+  caption?: string;
+  document?: unknown;
+  photo?: unknown;
+  reply_to_message?: {
+    message_id: number;
+  };
+};
+
+function isAccountantResponseMessageType(
+  telegramMessage: AccountantResponseMessage,
+  messageType: AccountantResponseMessageType
+): boolean {
+  switch (messageType) {
+    case 'text':
+      return 'text' in telegramMessage;
+    case 'document':
+      return 'document' in telegramMessage;
+    case 'photo':
+      return 'photo' in telegramMessage;
+  }
+}
+
+function getMessageTextPreview(
+  telegramMessage: AccountantResponseMessage,
+  messageType: AccountantResponseMessageType
+): string {
+  const text = telegramMessage.text ?? telegramMessage.caption;
+  if (text) {
+    return text;
+  }
+
+  return messageType === 'document' ? '[document response]' : '[photo response]';
+}
+
+async function handleAccountantResponse(
+  ctx: BotContext,
+  messageType: AccountantResponseMessageType
+): Promise<void> {
+  const telegramMessage = ctx.message as AccountantResponseMessage | undefined;
+
+  if (!telegramMessage || !isAccountantResponseMessageType(telegramMessage, messageType)) {
+    return;
+  }
+
+  // Only process messages from groups and supergroups
+  if (!ctx.chat || !['group', 'supergroup'].includes(ctx.chat.type)) {
+    return;
+  }
+
+  const chatId = ctx.chat.id;
+  const messageId = telegramMessage.message_id;
+  const messageText = getMessageTextPreview(telegramMessage, messageType);
+  const username = ctx.from?.username;
+  const telegramUserId = ctx.from?.id;
+  const firstName = ctx.from?.first_name;
+  const lastName = ctx.from?.last_name;
+
+  // Log all incoming messages for debugging (truncate long messages)
+  logger.debug('Processing message in response handler', {
+    chatId,
+    messageId,
+    username,
+    telegramUserId,
+    firstName,
+    lastName,
+    messageType,
+    textPreview: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
+    textLength: messageText.length,
+    service: 'response-handler',
+  });
+
+  if (!telegramUserId) {
+    logger.warn('Message without telegramUserId, skipping', {
+      chatId,
+      messageId,
+      service: 'response-handler',
+    });
+    return;
+  }
+
+  try {
+    // 1. Check if this is an accountant's message
+    const { isAccountant, accountantId } = await isAccountantForChat(
+      BigInt(chatId),
+      username,
+      telegramUserId
+    );
+
+    logger.debug('Accountant check result', {
+      chatId,
+      messageId,
+      isAccountant,
+      accountantId,
+      checkedUsername: username,
+      checkedTelegramUserId: telegramUserId,
+      service: 'response-handler',
+    });
+
+    if (!isAccountant) {
+      // Not an accountant, skip response processing
+      // (Message handler will process client messages)
+      logger.debug('Not an accountant message, skipping response processing', {
+        chatId,
+        messageId,
+        username,
+        telegramUserId,
+        service: 'response-handler',
+      });
+      return;
+    }
+
+    logger.info('Accountant message detected', {
+      chatId,
+      messageId,
+      username,
+      telegramUserId,
+      accountantId,
+      messageType,
+      textPreview: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
+      service: 'response-handler',
+    });
+
+    // 2. Check if this is a reply to a specific message
+    const replyToMessage = telegramMessage.reply_to_message;
+    let requestToResolve: ClientRequest | null = null;
+
+    if (replyToMessage) {
+      // Try to find the request being replied to
+      requestToResolve = await getRequestByMessage(
+        BigInt(chatId),
+        BigInt(replyToMessage.message_id)
+      );
+
+      if (requestToResolve) {
+        // Check if the request is still pending
+        if (requestToResolve.status === 'answered') {
+          logger.debug('Replied to already answered request, ignoring', {
+            chatId,
+            requestId: requestToResolve.id,
+            service: 'response-handler',
+          });
+          return;
+        }
+
+        logger.info('Found request from reply', {
+          chatId,
+          requestId: requestToResolve.id,
+          replyToMessageId: replyToMessage.message_id,
+          service: 'response-handler',
+        });
+      }
+    }
+
+    // 3. If no reply or reply not to a tracked message, find latest pending request (LIFO)
+    if (!requestToResolve) {
+      requestToResolve = await findLatestPendingRequest(String(chatId));
+
+      if (!requestToResolve) {
+        logger.debug('No pending requests in chat to resolve', {
+          chatId,
+          service: 'response-handler',
+        });
+        return;
+      }
+
+      logger.info('Resolving latest pending request (LIFO)', {
+        chatId,
+        requestId: requestToResolve.id,
+        service: 'response-handler',
+      });
+    }
+
+    // 4. APPEND-ONLY EXCEPTION: resolvedRequestId is the only mutable column
+    // in ChatMessage. Written once when accountant resolves a request, never
+    // changed afterwards. Idempotent: re-running with same requestId is safe.
+    try {
+      await prisma.chatMessage.updateMany({
+        where: {
+          chatId: BigInt(chatId),
+          messageId: BigInt(messageId),
+          editVersion: 0, // Target original version only
+        },
+        data: {
+          resolvedRequestId: requestToResolve.id,
+        },
+      });
+
+      logger.info('ChatMessage updated with resolvedRequestId', {
+        chatId,
+        messageId,
+        requestId: requestToResolve.id,
+        service: 'response-handler',
+      });
+    } catch (updateError) {
+      logger.warn('Failed to update ChatMessage with resolvedRequestId', {
+        chatId,
+        messageId,
+        error: updateError instanceof Error ? updateError.message : String(updateError),
+        service: 'response-handler',
+      });
+    }
+
+    // 5. Atomically claim the request to prevent race condition (gh-116)
+    // Only proceed if the request is still in a non-terminal state
+    const CLAIMABLE_STATES: RequestStatus[] = [
+      'pending',
+      'in_progress',
+      'waiting_client',
+      'transferred',
+      'escalated',
+    ];
+    const claimed = await prisma.clientRequest.updateMany({
+      where: {
+        id: requestToResolve.id,
+        status: { in: CLAIMABLE_STATES },
+      },
+      data: { status: 'answered' },
+    });
+
+    if (claimed.count === 0) {
+      logger.info('Request already resolved by another response, skipping', {
+        chatId,
+        requestId: requestToResolve.id,
+        service: 'response-handler',
+      });
+      return;
+    }
+
+    // 6. Stop the SLA timer (request is now claimed)
+    const result = await stopSlaTimer(requestToResolve.id, {
+      respondedBy: accountantId,
+      responseMessageId: messageId,
+    });
+
+    logger.info('SLA timer stopped by accountant response', {
+      chatId,
+      requestId: requestToResolve.id,
+      accountantUsername: username,
+      accountantId,
+      responseMessageId: messageId,
+      workingMinutes: result.workingMinutes,
+      breached: result.breached,
+      service: 'response-handler',
+    });
+
+    // 7. Resolve active SLA alerts and cancel pending escalations (buh-q605)
+    try {
+      const resolvedCount = await resolveAlertsForRequest(
+        requestToResolve.id,
+        'accountant_responded',
+        accountantId ?? undefined
+      );
+      // Always cancel escalations — BullMQ jobs may exist even when no DB alerts remain
+      await cancelAllEscalations(requestToResolve.id);
+      if (resolvedCount > 0) {
+        logger.info('SLA alerts resolved on accountant response', {
+          chatId,
+          requestId: requestToResolve.id,
+          resolvedCount,
+          service: 'response-handler',
+        });
+      }
+    } catch (alertError) {
+      logger.warn('Failed to resolve SLA alerts (non-critical)', {
+        chatId,
+        requestId: requestToResolve.id,
+        error: alertError instanceof Error ? alertError.message : String(alertError),
+        service: 'response-handler',
+      });
+    }
+  } catch (error) {
+    logger.error('Error in response handler', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      chatId,
+      messageId,
+      service: 'response-handler',
+    });
+  }
+}
+
 /**
  * Register the response handler for accountant replies
  *
- * Listens for text messages in groups and supergroups.
+ * Listens for text, document, and photo messages in groups and supergroups.
  * Detects accountant responses and stops SLA timers.
  *
  * Handler priority note:
@@ -239,246 +526,19 @@ export async function isAccountantForChat(
  * ```
  */
 export function registerResponseHandler(): void {
-  // Use message('text') filter for text messages only
-  bot.on(message('text'), async (ctx: BotContext) => {
-    // Type guard for text messages
-    if (!ctx.message || !('text' in ctx.message)) {
-      return;
+  bot.on(message('text'), async (ctx: BotContext) => handleAccountantResponse(ctx, 'text'));
+  // Media updates must pass through file.handler first so ChatMessage exists
+  // and file confirmations keep working for clients.
+  bot.on(
+    message('document'),
+    async (ctx: BotContext, next: NextFunction = async () => undefined) => {
+      await next();
+      await handleAccountantResponse(ctx, 'document');
     }
-
-    // Only process messages from groups and supergroups
-    if (!ctx.chat || !['group', 'supergroup'].includes(ctx.chat.type)) {
-      return;
-    }
-
-    const chatId = ctx.chat.id;
-    const messageId = ctx.message.message_id;
-    const messageText = ctx.message.text;
-    const username = ctx.from?.username;
-    const telegramUserId = ctx.from?.id;
-    const firstName = ctx.from?.first_name;
-    const lastName = ctx.from?.last_name;
-
-    // Log all incoming messages for debugging (truncate long messages)
-    logger.debug('Processing message in response handler', {
-      chatId,
-      messageId,
-      username,
-      telegramUserId,
-      firstName,
-      lastName,
-      textPreview: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
-      textLength: messageText.length,
-      service: 'response-handler',
-    });
-
-    if (!telegramUserId) {
-      logger.warn('Message without telegramUserId, skipping', {
-        chatId,
-        messageId,
-        service: 'response-handler',
-      });
-      return;
-    }
-
-    try {
-      // 1. Check if this is an accountant's message
-      const { isAccountant, accountantId } = await isAccountantForChat(
-        BigInt(chatId),
-        username,
-        telegramUserId
-      );
-
-      logger.debug('Accountant check result', {
-        chatId,
-        messageId,
-        isAccountant,
-        accountantId,
-        checkedUsername: username,
-        checkedTelegramUserId: telegramUserId,
-        service: 'response-handler',
-      });
-
-      if (!isAccountant) {
-        // Not an accountant, skip response processing
-        // (Message handler will process client messages)
-        logger.debug('Not an accountant message, skipping response processing', {
-          chatId,
-          messageId,
-          username,
-          telegramUserId,
-          service: 'response-handler',
-        });
-        return;
-      }
-
-      logger.info('Accountant message detected', {
-        chatId,
-        messageId,
-        username,
-        telegramUserId,
-        accountantId,
-        textPreview: messageText.substring(0, 50) + (messageText.length > 50 ? '...' : ''),
-        service: 'response-handler',
-      });
-
-      // 2. Check if this is a reply to a specific message
-      const replyToMessage = ctx.message.reply_to_message;
-      let requestToResolve: ClientRequest | null = null;
-
-      if (replyToMessage) {
-        // Try to find the request being replied to
-        requestToResolve = await getRequestByMessage(
-          BigInt(chatId),
-          BigInt(replyToMessage.message_id)
-        );
-
-        if (requestToResolve) {
-          // Check if the request is still pending
-          if (requestToResolve.status === 'answered') {
-            logger.debug('Replied to already answered request, ignoring', {
-              chatId,
-              requestId: requestToResolve.id,
-              service: 'response-handler',
-            });
-            return;
-          }
-
-          logger.info('Found request from reply', {
-            chatId,
-            requestId: requestToResolve.id,
-            replyToMessageId: replyToMessage.message_id,
-            service: 'response-handler',
-          });
-        }
-      }
-
-      // 3. If no reply or reply not to a tracked message, find latest pending request (LIFO)
-      if (!requestToResolve) {
-        requestToResolve = await findLatestPendingRequest(String(chatId));
-
-        if (!requestToResolve) {
-          logger.debug('No pending requests in chat to resolve', {
-            chatId,
-            service: 'response-handler',
-          });
-          return;
-        }
-
-        logger.info('Resolving latest pending request (LIFO)', {
-          chatId,
-          requestId: requestToResolve.id,
-          service: 'response-handler',
-        });
-      }
-
-      // 4. APPEND-ONLY EXCEPTION: resolvedRequestId is the only mutable column
-      // in ChatMessage. Written once when accountant resolves a request, never
-      // changed afterwards. Idempotent: re-running with same requestId is safe.
-      try {
-        await prisma.chatMessage.updateMany({
-          where: {
-            chatId: BigInt(chatId),
-            messageId: BigInt(messageId),
-            editVersion: 0, // Target original version only
-          },
-          data: {
-            resolvedRequestId: requestToResolve.id,
-          },
-        });
-
-        logger.info('ChatMessage updated with resolvedRequestId', {
-          chatId,
-          messageId,
-          requestId: requestToResolve.id,
-          service: 'response-handler',
-        });
-      } catch (updateError) {
-        logger.warn('Failed to update ChatMessage with resolvedRequestId', {
-          chatId,
-          messageId,
-          error: updateError instanceof Error ? updateError.message : String(updateError),
-          service: 'response-handler',
-        });
-      }
-
-      // 5. Atomically claim the request to prevent race condition (gh-116)
-      // Only proceed if the request is still in a non-terminal state
-      const CLAIMABLE_STATES: RequestStatus[] = [
-        'pending',
-        'in_progress',
-        'waiting_client',
-        'transferred',
-        'escalated',
-      ];
-      const claimed = await prisma.clientRequest.updateMany({
-        where: {
-          id: requestToResolve.id,
-          status: { in: CLAIMABLE_STATES },
-        },
-        data: { status: 'answered' },
-      });
-
-      if (claimed.count === 0) {
-        logger.info('Request already resolved by another response, skipping', {
-          chatId,
-          requestId: requestToResolve.id,
-          service: 'response-handler',
-        });
-        return;
-      }
-
-      // 6. Stop the SLA timer (request is now claimed)
-      const result = await stopSlaTimer(requestToResolve.id, {
-        respondedBy: accountantId,
-        responseMessageId: messageId,
-      });
-
-      logger.info('SLA timer stopped by accountant response', {
-        chatId,
-        requestId: requestToResolve.id,
-        accountantUsername: username,
-        accountantId,
-        responseMessageId: messageId,
-        workingMinutes: result.workingMinutes,
-        breached: result.breached,
-        service: 'response-handler',
-      });
-
-      // 7. Resolve active SLA alerts and cancel pending escalations (buh-q605)
-      try {
-        const resolvedCount = await resolveAlertsForRequest(
-          requestToResolve.id,
-          'accountant_responded',
-          accountantId ?? undefined
-        );
-        // Always cancel escalations — BullMQ jobs may exist even when no DB alerts remain
-        await cancelAllEscalations(requestToResolve.id);
-        if (resolvedCount > 0) {
-          logger.info('SLA alerts resolved on accountant response', {
-            chatId,
-            requestId: requestToResolve.id,
-            resolvedCount,
-            service: 'response-handler',
-          });
-        }
-      } catch (alertError) {
-        logger.warn('Failed to resolve SLA alerts (non-critical)', {
-          chatId,
-          requestId: requestToResolve.id,
-          error: alertError instanceof Error ? alertError.message : String(alertError),
-          service: 'response-handler',
-        });
-      }
-    } catch (error) {
-      logger.error('Error in response handler', {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        chatId,
-        messageId,
-        service: 'response-handler',
-      });
-    }
+  );
+  bot.on(message('photo'), async (ctx: BotContext, next: NextFunction = async () => undefined) => {
+    await next();
+    await handleAccountantResponse(ctx, 'photo');
   });
 
   logger.info('Response handler registered', { service: 'response-handler' });

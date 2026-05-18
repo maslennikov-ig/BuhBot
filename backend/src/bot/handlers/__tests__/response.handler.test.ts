@@ -692,6 +692,7 @@ import { stopSlaTimer } from '../../../services/sla/timer.service.js';
 describe('Response handler - alert resolution (step 7)', () => {
   // Capture the handler registered via bot.on(message('text'), handler)
   let responseHandler: (ctx: unknown) => Promise<void>;
+  let registeredHandlers: Array<(ctx: unknown) => Promise<void>>;
 
   /**
    * Build a minimal Telegraf-like context for a text message from an accountant.
@@ -728,12 +729,82 @@ describe('Response handler - alert resolution (step 7)', () => {
     };
   }
 
+  function buildDocumentResponseCtx(
+    overrides: {
+      chatId?: number;
+      messageId?: number;
+      telegramUserId?: number;
+      username?: string;
+      caption?: string;
+      chatType?: string;
+    } = {}
+  ) {
+    const {
+      chatId = -1009999999999,
+      messageId = 1002,
+      telegramUserId = 44444,
+      username = 'accountant_user',
+      caption = 'Елена, добрый день! К перечислению 40 020 руб.',
+      chatType = 'supergroup',
+    } = overrides;
+
+    return {
+      chat: { id: chatId, type: chatType },
+      message: {
+        message_id: messageId,
+        document: {
+          file_id: 'file-123',
+          file_name: 'Приказ премия 39_26.doc',
+          file_size: 40500,
+        },
+        caption,
+        reply_to_message: undefined,
+      },
+      from: { id: telegramUserId, username, first_name: 'Test', last_name: 'User' },
+    };
+  }
+
+  function buildPhotoResponseCtx(
+    overrides: {
+      chatId?: number;
+      messageId?: number;
+      telegramUserId?: number;
+      username?: string;
+      caption?: string;
+      chatType?: string;
+    } = {}
+  ) {
+    const {
+      chatId = -1009999999999,
+      messageId = 1003,
+      telegramUserId = 44444,
+      username = 'accountant_user',
+      caption = 'Фото документа приложила.',
+      chatType = 'supergroup',
+    } = overrides;
+
+    return {
+      chat: { id: chatId, type: chatType },
+      message: {
+        message_id: messageId,
+        photo: [{ file_id: 'photo-123', width: 640, height: 480 }],
+        caption,
+        reply_to_message: undefined,
+      },
+      from: { id: telegramUserId, username, first_name: 'Test', last_name: 'User' },
+    };
+  }
+
   beforeEach(async () => {
     vi.clearAllMocks();
+    registeredHandlers = [];
 
     // Capture the handler from bot.on() — second argument is the handler function
     mockBot.on.mockImplementation((_filter: unknown, handler: (ctx: unknown) => Promise<void>) => {
-      responseHandler = handler;
+      if (registeredHandlers.length === 0) {
+        responseHandler = handler;
+      }
+      registeredHandlers.push(handler);
     });
 
     // Make isAccountantForChat return true by default:
@@ -822,5 +893,36 @@ describe('Response handler - alert resolution (step 7)', () => {
 
     expect(resolveAlertsForRequest).not.toHaveBeenCalled();
     expect(cancelAllEscalations).not.toHaveBeenCalled();
+  });
+
+  it('closes SLA when accountant replies with a document and caption', async () => {
+    const ctx = buildDocumentResponseCtx();
+
+    for (const handler of registeredHandlers) {
+      await handler(ctx);
+    }
+
+    expect(stopSlaTimer).toHaveBeenCalledWith('req-uuid-step7', {
+      respondedBy: 'acc-uuid-123',
+      responseMessageId: 1002,
+    });
+    expect(resolveAlertsForRequest).toHaveBeenCalledWith(
+      'req-uuid-step7',
+      'accountant_responded',
+      'acc-uuid-123'
+    );
+  });
+
+  it('closes SLA when accountant replies with a photo and caption', async () => {
+    const ctx = buildPhotoResponseCtx();
+
+    for (const handler of registeredHandlers) {
+      await handler(ctx);
+    }
+
+    expect(stopSlaTimer).toHaveBeenCalledWith('req-uuid-step7', {
+      respondedBy: 'acc-uuid-123',
+      responseMessageId: 1003,
+    });
   });
 });

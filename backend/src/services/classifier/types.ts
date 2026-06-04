@@ -67,7 +67,7 @@ export interface ClassifierConfig {
   timeoutMs: number;
   /** Maximum retry attempts for API calls (default: 3) */
   maxRetries: number;
-  /** Fallback OpenRouter model when primary fails (default: google/gemini-2.0-flash-001) */
+  /** Fallback OpenRouter model when primary fails (default: deepseek/deepseek-v4-flash) */
   fallbackModel: string;
   /** Circuit breaker configuration */
   circuitBreaker?: CircuitBreakerConfig;
@@ -80,8 +80,8 @@ export const DEFAULT_CLASSIFIER_CONFIG: ClassifierConfig = {
   aiConfidenceThreshold: 0.7,
   keywordConfidenceThreshold: 0.5,
   cacheTTLHours: 24,
-  openRouterModel: 'xiaomi/mimo-v2-flash',
-  fallbackModel: 'google/gemini-2.0-flash-001',
+  openRouterModel: 'google/gemma-4-26b-a4b-it',
+  fallbackModel: 'deepseek/deepseek-v4-flash',
   timeoutMs: 30000,
   maxRetries: 3,
 };

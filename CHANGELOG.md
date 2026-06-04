@@ -5,6 +5,19 @@ All notable changes to BuhBot project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.35.2...buhbot-v0.36.0) (2026-06-04)
+
+
+### Features
+
+* **settings:** add file confirmation toggle ([57b07cf](https://github.com/maslennikov-ig/BuhBot/commit/57b07cf254cd56181007bc53b6c84a6d13abe6d4))
+
+
+### Bug Fixes
+
+* **classifier:** switch to gemma-4 primary and deepseek-v4-flash fallback ([#353](https://github.com/maslennikov-ig/BuhBot/issues/353)) ([5b65cca](https://github.com/maslennikov-ig/BuhBot/commit/5b65cca641303598b0ddbf119cc58688f4a08bf1))
+* **sla:** close timers on accountant media replies ([3c23af9](https://github.com/maslennikov-ig/BuhBot/commit/3c23af961c5222123f0cd3ee15cbc5bebd837460))
+
 ## [0.35.2](https://github.com/maslennikov-ig/BuhBot/compare/buhbot-v0.35.1...buhbot-v0.35.2) (2026-05-04)
 
 

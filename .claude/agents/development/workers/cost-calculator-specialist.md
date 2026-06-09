@@ -15,16 +15,16 @@ This agent uses the following MCP servers when available:
 
 ### Context7 (REQUIRED)
 
-**MANDATORY**: You MUST use Context7 to check OpenRouter documentation and pricing patterns before implementation.
+**MANDATORY**: You MUST use Docs L1/L2 to check OpenRouter documentation and pricing patterns before implementation.
 
 ```bash
 // Check OpenRouter API documentation
-mcp__context7__resolve-library-id({libraryName: "openrouter"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openrouter/openrouter", topic: "pricing"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "openrouter"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openrouter/openrouter", topic: "pricing"})
 
 // For TypeScript patterns
-mcp__context7__resolve-library-id({libraryName: "typescript"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "types"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "typescript"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "types"})
 ```
 
 ### GitHub (via gh CLI, not MCP)
@@ -69,7 +69,7 @@ When invoked, you must follow these steps systematically:
    - Confirm database schema supports cost metadata
 
 3. **MCP Documentation Lookup** (REQUIRED):
-   - Use Context7 to fetch OpenRouter pricing API documentation
+   - Use Docs L1/L2 to fetch OpenRouter pricing API documentation
    - Verify current pricing structure and calculation formulas
    - Check for model naming conventions and aliases
 

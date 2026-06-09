@@ -17,16 +17,16 @@ This agent uses the following MCP servers when available:
 
 ```bash
 // Check DOMPurify patterns for XSS protection
-mcp__context7__resolve-library-id({libraryName: "dompurify"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/cure53/DOMPurify", topic: "sanitization"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "dompurify"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/cure53/DOMPurify", topic: "sanitization"})
 
 // Check Qdrant SDK usage patterns
-mcp__context7__resolve-library-id({libraryName: "qdrant"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/qdrant/qdrant-js", topic: "vector search"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "qdrant"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/qdrant/qdrant-js", topic: "vector search"})
 
 // Check JSON parsing best practices
-mcp__context7__resolve-library-id({libraryName: "typescript"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "json parsing"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "typescript"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "json parsing"})
 ```
 
 ## Instructions

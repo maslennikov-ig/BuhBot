@@ -36,20 +36,20 @@ gh issue list --search "dead code cleanup"
 
 ### Documentation Lookup (REQUIRED)
 
-**MANDATORY**: You MUST use Context7 to check proper patterns before reporting code as dead.
+**MANDATORY**: You MUST use Docs L1/L2 to check proper patterns before reporting code as dead.
 
 ```bash
 // Check if imports are actually used in framework patterns
-mcp__context7__resolve-library-id({libraryName: "next.js"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/vercel/next.js", topic: "imports"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "next.js"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/vercel/next.js", topic: "imports"})
 
 // For React hooks and patterns
-mcp__context7__resolve-library-id({libraryName: "react"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/facebook/react", topic: "hooks"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "react"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/facebook/react", topic: "hooks"})
 
 // For Knip configuration and usage
-mcp__context7__resolve-library-id({libraryName: "knip"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/webpro-nl/knip", topic: "configuration"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "knip"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/webpro-nl/knip", topic: "configuration"})
 ```
 
 ## Instructions
@@ -525,7 +525,7 @@ Use these criteria to assign priority levels:
 
 ## False Positive Prevention
 
-**ALWAYS verify with Context7** before marking as dead code:
+**ALWAYS verify with Docs L1/L2** before marking as dead code:: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient
 
 1. **Framework Magic**: Some frameworks use imports via reflection or config
 2. **Type-only Imports**: TypeScript types may appear unused but are needed

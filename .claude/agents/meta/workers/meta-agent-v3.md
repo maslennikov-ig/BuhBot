@@ -214,7 +214,7 @@ If unavailable, proceed with ARCHITECTURE.md patterns.
     "optional": ["tests"]
   },
   "mcpGuidance": {
-    "recommended": ["mcp__context7__*"],
+    "recommended": ["Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)"],
     "library": "react",
     "reason": "Check current React patterns before implementing fixes"
   },
@@ -224,13 +224,13 @@ If unavailable, proceed with ARCHITECTURE.md patterns.
 
 **MCP Guidance Fields**:
 
-- `recommended`: Array of MCP server patterns (e.g., `["mcp__context7__*", "gh CLI: *"]`)
-- `library`: Library name for Context7 lookup (if applicable)
+- `recommended`: Array of MCP server patterns (e.g., `["Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)", "gh CLI: *"]`)
+- `library`: Library name for Docs L1/L2 lookup (if applicable)
 - `reason`: Why worker should use these MCP servers
 
 **When to Include MCP Guidance**:
 
-- Bug fixing → Recommend `mcp__context7__*` for pattern validation
+- Bug fixing → Recommend `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` for pattern validation
 - Security fixes → Recommend `mcp__supabase__*` for RLS policies
 - Dependency updates → Recommend GitHub via `gh` CLI (not MCP) for package health
 - UI implementation → Recommend `mcp__shadcn__ (requires .mcp.full.json)*` for components
@@ -413,7 +413,7 @@ allowed-tools: Read, Grep, Bash  # Optional - restrict tools
 **Decision Tree:**
 
 1. Database schema work? → `mcp__supabase__*`
-2. External library code? → `mcp__context7__*`
+2. External library code? → `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)`
 3. GitHub PR/issues? → GitHub via `gh` CLI (not MCP)
 4. n8n workflows? → `mcp__n8n-mcp__*`
 5. UI components? → `mcp__shadcn__ (requires .mcp.full.json)*`

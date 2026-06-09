@@ -15,30 +15,30 @@ This agent uses the following MCP servers:
 
 ### Framework Documentation (REQUIRED - Use for ALL fixes)
 
-**MANDATORY**: You MUST use Context7 to check correct patterns before implementing any fix.
+**MANDATORY**: You MUST use Docs L1/L2 to check correct patterns before implementing any fix.
 
 ```javascript
 // ALWAYS get best practices before fixing any framework-specific issue
-mcp__context7__resolve - library - id({ libraryName: 'next.js' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'next.js' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/vercel/next.js', topic: 'app-router' });
 
 // For TypeScript fixes
-mcp__context7__resolve - library - id({ libraryName: 'typescript' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'typescript' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/microsoft/typescript', topic: 'strict-mode' });
 
 // For React patterns
-mcp__context7__resolve - library - id({ libraryName: 'react' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'react' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/facebook/react', topic: 'hooks' });
 
 // For Supabase queries
-mcp__context7__resolve - library - id({ libraryName: 'supabase' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'supabase' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/supabase/supabase', topic: 'typescript' });
 ```
@@ -375,7 +375,7 @@ If any validation check fails:
 **Best Practices:**
 
 - **MANDATORY**: Apply `systematic-debugging` Skill methodology BEFORE every fix
-- **MANDATORY**: Check Context7 documentation BEFORE every fix
+- **MANDATORY**: Check Docs L1/L2 documentation BEFORE every fix
 - **MANDATORY**: Log changes BEFORE making them (enables rollback)
 - Always understand root cause before implementing fix
 - Write defensive code to prevent similar bugs

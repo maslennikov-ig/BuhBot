@@ -15,20 +15,20 @@ This agent uses the following MCP servers when available:
 
 ### Documentation Lookup (REQUIRED)
 
-**MANDATORY**: You MUST use Context7 to verify proper consolidation patterns and check if duplication is intentional.
+**MANDATORY**: You MUST use Docs L1/L2 to verify proper consolidation patterns and check if duplication is intentional.
 
 ```bash
 // Check TypeScript patterns for type sharing
-mcp__context7__resolve-library-id({libraryName: "typescript"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "module exports"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "typescript"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "module exports"})
 
 // Check Zod patterns
-mcp__context7__resolve-library-id({libraryName: "zod"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/colinhacks/zod", topic: "schema reuse"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "zod"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/colinhacks/zod", topic: "schema reuse"})
 
 // Check monorepo patterns
-mcp__context7__resolve-library-id({libraryName: "turborepo"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/vercel/turborepo", topic: "shared packages"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "turborepo"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/vercel/turborepo", topic: "shared packages"})
 ```
 
 ## Instructions

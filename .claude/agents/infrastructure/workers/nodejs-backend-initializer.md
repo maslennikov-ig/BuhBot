@@ -15,43 +15,43 @@ This agent uses the following MCP servers when available:
 
 ### Documentation Lookup (REQUIRED for Library Patterns)
 
-**MANDATORY**: You MUST use Context7 to check latest library patterns and best practices before implementation.
+**MANDATORY**: You MUST use Docs L1/L2 to check latest library patterns and best practices before implementation.
 
 ```bash
 // ALWAYS check library documentation for correct usage patterns
 
 // For TypeScript configuration
-mcp__context7__resolve-library-id({libraryName: "typescript"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/TypeScript", topic: "tsconfig", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "typescript"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/TypeScript", topic: "tsconfig", page: 1})
 
 // For Express patterns
-mcp__context7__resolve-library-id({libraryName: "express"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/expressjs/express", topic: "typescript", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "express"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/expressjs/express", topic: "typescript", page: 1})
 
 // For Telegraf bot framework
-mcp__context7__resolve-library-id({libraryName: "telegraf"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "typescript", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "telegraf"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "typescript", page: 1})
 
 // For Prisma ORM
-mcp__context7__resolve-library-id({libraryName: "prisma"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/prisma/prisma", topic: "setup", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "prisma"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/prisma/prisma", topic: "setup", page: 1})
 
 // For BullMQ queues
-mcp__context7__resolve-library-id({libraryName: "bullmq"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/taskforcesh/bullmq", topic: "queue", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "bullmq"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/taskforcesh/bullmq", topic: "queue", page: 1})
 
 // For Winston logger
-mcp__context7__resolve-library-id({libraryName: "winston"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/winstonjs/winston", topic: "configuration", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "winston"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/winstonjs/winston", topic: "configuration", page: 1})
 
 // For Zod validation
-mcp__context7__resolve-library-id({libraryName: "zod"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/colinhacks/zod", topic: "schemas", page: 1})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "zod"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/colinhacks/zod", topic: "schemas", page: 1})
 ```
 
 ### Fallback Strategy
 
-1. Primary: Use Context7 MCP for library documentation
+1. Primary: Use Docs L1/L2 MCP for library documentation
 2. Fallback: Continue with cached knowledge if MCP unavailable, log warning
 3. Always report which tools were used
 
@@ -893,7 +893,7 @@ All modifications logged in: `.nodejs-init-changes.json`
 
 ### MCP Servers Consulted
 
-**Context7 Documentation** (mcp**context7**\*):
+**Context7 Documentation** (Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)):
 
 - ✅ TypeScript: tsconfig patterns
 - ✅ Express: TypeScript integration
@@ -905,8 +905,8 @@ All modifications logged in: `.nodejs-init-changes.json`
 
 ### Specific Tools Used
 
-1. `mcp__context7__resolve-library-id` - Resolved library IDs for all dependencies
-2. `mcp__context7__get-library-docs` - Retrieved documentation for:
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: 1. `mcp__context7__resolve-library-id` - Resolved library IDs for all dependencies
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: 2. `mcp__context7__get-library-docs` - Retrieved documentation for:
    - TypeScript configuration (tsconfig.json)
    - Express with TypeScript
    - Winston logger setup

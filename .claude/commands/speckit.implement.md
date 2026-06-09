@@ -150,12 +150,12 @@ You **MUST** consider the user input before proceeding (if not empty).
       - [EXECUTOR: subagent-name]? → Delegate to specified subagent
    3. GATHER CONTEXT: Read existing code, search patterns, review docs, check commits
       3.5. LIBRARY SEARCH: Before writing >20 lines of new code, search for existing npm/pypi packages
-      - Use WebSearch + Context7 to find and evaluate libraries
+      - Use WebSearch + Docs L1/L2/first-party docs to find and evaluate libraries
       - If suitable library found: install and configure instead of implementing from scratch
       - Check: weekly downloads >1000, recent commits, TypeScript support, no critical vulnerabilities
-        3.6. FETCH LIBRARY DOCS (MANDATORY): Before writing code that uses ANY library:
-      - Call `mcp__context7__resolve-library-id` to get library ID
-      - Call `mcp__context7__get-library-docs` with relevant topic (e.g., "hooks", "routing", "auth")
+        3.6. FETCH LIBRARY DOCS (MANDATORY): Before writing code that uses ANY library, use Docs L1/L2:
+      - Query `@neuledge/context` first with package@version from the lockfile and focused API/domain keywords
+      - Use Docs L1/L2 MCP `resolve-library-id` / `get-library-docs` only as L2 fallback when L1 is missing, stale, or insufficient
       - Use fetched docs to ensure correct API usage and avoid deprecated patterns
       - This applies to React, Next.js, Supabase, Zod, tRPC, and ALL other libraries
    4. EXECUTE:

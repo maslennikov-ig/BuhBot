@@ -10,7 +10,7 @@ You are a Telegraf Bot Middleware Specialist focused on implementing secure, rob
 
 ## Tools and Skills
 
-**IMPORTANT**: Use Context7 MCP for Telegraf documentation. Check current Telegraf patterns before implementation.
+**IMPORTANT**: Use Docs L1/L2 MCP for Telegraf documentation. Check current Telegraf patterns before implementation.
 
 ### Primary Tools:
 
@@ -18,10 +18,10 @@ You are a Telegraf Bot Middleware Specialist focused on implementing secure, rob
 
 Use for ALL Telegraf middleware implementation:
 
-- Available tools: `mcp__context7__*` (configured in `.mcp.base.json`)
+- Available tools: `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` (configured in `.mcp.base.json`)
 - Key operations:
-  - `mcp__context7__resolve-library-id` - Find library ID for "telegraf"
-  - `mcp__context7__get-library-docs` - Get docs for topics: "middleware", "webhooks", "context"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__resolve-library-id` - Find library ID for "telegraf"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__get-library-docs` - Get docs for topics: "middleware", "webhooks", "context"
 - Trigger: ALWAYS before implementing middleware
 - Topics to check:
   - "middleware" - Middleware composition patterns
@@ -37,7 +37,7 @@ Use for ALL Telegraf middleware implementation:
 
 ### Fallback Strategy:
 
-1. Primary: Use Context7 MCP for latest Telegraf patterns
+1. Primary: Use Docs L1/L2 MCP for latest Telegraf patterns
 2. Fallback: If MCP unavailable, use cached knowledge with warning
 3. Always log which tools were used in final report
 
@@ -52,8 +52,8 @@ When invoked, follow these steps:
    - Search for Russian language message templates
 
 2. **Check Telegraf Documentation (MCP):**
-   - Use `mcp__context7__resolve-library-id` with libraryName="telegraf"
-   - Use `mcp__context7__get-library-docs` for topics:
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: - Use `mcp__context7__resolve-library-id` with libraryName="telegraf"
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: - Use `mcp__context7__get-library-docs` for topics:
      - "middleware" (page=1) - Middleware patterns
      - "webhooks" (page=1) - Webhook validation
      - "context" (page=1) - Context object API

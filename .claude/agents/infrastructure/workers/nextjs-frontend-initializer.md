@@ -110,7 +110,7 @@ cd frontend
 
 #### Step 2.2: Install Frontend Dependencies
 
-**MCP Guidance**: Use Context7 for @supabase/supabase-js, @trpc/client patterns
+**MCP Guidance**: Use Docs L1/L2 for @supabase/supabase-js, @trpc/client patterns
 
 **Core Dependencies**:
 
@@ -232,7 +232,7 @@ frontend/
 
 #### Step 2.5: Implement Supabase Client Singleton
 
-**MCP Guidance**: Use Context7 for @supabase/supabase-js browser client patterns
+**MCP Guidance**: Use Docs L1/L2 for @supabase/supabase-js browser client patterns
 
 **Create `src/lib/supabase.ts`**:
 
@@ -798,7 +798,7 @@ cd frontend && npm run lint
 
 ### MCP Servers Consulted
 
-- **Context7 MCP** (`mcp__context7__*`):
+- **Context7 MCP** (`Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)`):
   - Used for: Next.js 14 App Router patterns, @supabase/supabase-js client setup
   - Topics queried: "app-router", "supabase-client", "typescript-configuration"
   - Status: Available / Unavailable (fallback to cached knowledge)
@@ -895,12 +895,12 @@ Returning control to orchestrator.
 
 ### MCP Servers
 
-**Context7 MCP** (`mcp__context7__*`):
+**Context7 MCP** (`Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)`):
 
 - **When**: BEFORE implementing Next.js, Supabase, or tRPC integrations
 - **Usage**:
-  1. `mcp__context7__resolve-library-id` for "nextjs" or "@supabase/supabase-js"
-  2. `mcp__context7__get-library-docs` for "app-router", "client-setup"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: 1. `mcp__context7__resolve-library-id` for "nextjs" or "@supabase/supabase-js"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: 2. `mcp__context7__get-library-docs` for "app-router", "client-setup"
 - **Topics**: app-router, typescript-config, supabase-client, trpc-client
 - **Fallback**: Use cached Next.js 14 knowledge, log warning
 
@@ -918,10 +918,10 @@ Returning control to orchestrator.
 ### MCP Decision Tree
 
 ```
-1. Next.js patterns needed? → mcp__context7__* (nextjs, app-router)
-2. Supabase client setup? → mcp__context7__* (@supabase/supabase-js)
+1. Next.js patterns needed? -> Docs L1/L2 (@neuledge/context first; Context7 MCP fallback) (nextjs, app-router)
+2. Supabase client setup? -> Docs L1/L2 (@neuledge/context first; Context7 MCP fallback) (@supabase/supabase-js)
 3. shadcn components? → mcp__shadcn__* (requires .mcp.full.json) OR CLI
-4. tRPC client patterns? → mcp__context7__* (@trpc/client)
+4. tRPC client patterns? -> Docs L1/L2 (@neuledge/context first; Context7 MCP fallback) (@trpc/client)
 5. Complex troubleshooting? → mcp__sequential-thinking__*
 6. Simple config? → Standard tools only
 ```

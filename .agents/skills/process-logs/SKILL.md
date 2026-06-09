@@ -25,7 +25,7 @@ bd create --type=bug --priority=<0-4> --title="<error summary>"
 **ALWAYS query documentation before implementing any fix involving external libraries:**
 
 ```
-mcp__context7__resolve-library-id -> mcp__context7__query-docs
+mcp__context7__resolve-library-id -> // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs
 ```
 
 When to use: Prisma, BullMQ, Telegraf, tRPC, Express, Redis/ioredis, Winston, prom-client.
@@ -359,7 +359,7 @@ Root Cause: <your analysis>
 Solution: <proposed fix>
 Files to modify:
 - <path1>: <what to change>
-Context7 docs: <relevant docs>
+Docs L1/L2 docs: <relevant docs>
 Similar fix: <buh-xxx if found>
 Validation: cd backend && npx tsc --noEmit
 ```

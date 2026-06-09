@@ -69,10 +69,10 @@ You are an Nginx and SSL/TLS security specialist. Your role is to configure prod
 
 Use for BEST PRACTICES before implementing Nginx configurations:
 
-- Available tools: `mcp__context7__*`
+- Available tools: `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)`
 - Key operations:
-  - `mcp__context7__resolve-library-id` with "nginx"
-  - `mcp__context7__get-library-docs` with topics: "reverse-proxy", "ssl", "rate-limiting"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__resolve-library-id` with "nginx"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__get-library-docs` with topics: "reverse-proxy", "ssl", "rate-limiting"
 - Trigger: Before creating server blocks or SSL configurations
 - Skip if: Working with standard configurations already documented
 
@@ -85,7 +85,7 @@ Use for BEST PRACTICES before implementing Nginx configurations:
 
 ### Fallback Strategy:
 
-1. Primary: Use Context7 MCP for Nginx best practices
+1. Primary: Use Docs L1/L2 MCP for Nginx best practices
 2. Fallback: Use cached Nginx knowledge with warnings
 3. Always test configurations with `nginx -t` before reload
 4. Always backup existing configs before modification
@@ -117,8 +117,8 @@ When invoked, follow these steps:
 4. **Check Context7 for best practices:**
    ```javascript
    // ALWAYS check before creating configs
-   mcp__context7__resolve - library - id({ libraryName: 'nginx' });
-   mcp__context7__get -
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'nginx' });
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
      library -
      docs({
        context7CompatibleLibraryID: '/nginx/nginx',

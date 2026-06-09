@@ -81,7 +81,7 @@ gh issue view <number>
 **ALWAYS query documentation before implementing any fix involving external libraries:**
 
 ```
-mcp__context7__resolve-library-id → mcp__context7__query-docs
+mcp__context7__resolve-library-id → // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs
 ```
 
 **When to use:**
@@ -96,8 +96,8 @@ mcp__context7__resolve-library-id → mcp__context7__query-docs
 
 **How to use (2-step):**
 
-1. `mcp__context7__resolve-library-id` with library name (e.g., "telegraf", "prisma")
-2. `mcp__context7__query-docs` with resolved ID and specific topic (e.g., "middleware", "transactions")
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: 1. `mcp__context7__resolve-library-id` with library name (e.g., "telegraf", "prisma")
+2. `// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs` with resolved ID and specific topic (e.g., "middleware", "transactions")
 
 ### 5. TASK COMPLEXITY ROUTING
 
@@ -337,7 +337,7 @@ bd update <task_id> --status=in_progress
 #### 5b. Query Context7 (MANDATORY for any library-related fix)
 
 ```
-mcp__context7__resolve-library-id → mcp__context7__query-docs
+mcp__context7__resolve-library-id → // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs
 ```
 
 #### 5c. Gather full context
@@ -365,7 +365,7 @@ Solution: <proposed fix>
 Files to modify:
 - <path1>: <what to change>
 - <path2>: <what to change>
-Context7 docs: <relevant docs fetched>
+Docs L1/L2 docs: <relevant docs fetched>
 Similar fix reference: <buh-xxx if applicable>
 Validation: Run `npm run type-check` after changes
 ```
@@ -524,9 +524,9 @@ gh issue comment 123 --body "Analysis: ..."
 
 # === CONTEXT7 ===
 # Step 1: resolve library ID
-mcp__context7__resolve-library-id (e.g., "telegraf", "prisma", "next.js")
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id (e.g., "telegraf", "prisma", "next.js")
 # Step 2: query docs
-mcp__context7__query-docs (resolved ID + topic)
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs (resolved ID + topic)
 ```
 
 ---

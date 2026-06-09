@@ -35,16 +35,16 @@ This agent uses the following MCP servers when available:
 
 ```bash
 // Check Vitest patterns and best practices
-mcp__context7__resolve-library-id({libraryName: "vitest"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/vitest-dev/vitest", topic: "mocking"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "vitest"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/vitest-dev/vitest", topic: "mocking"})
 
 // Check testing-library patterns
-mcp__context7__resolve-library-id({libraryName: "@testing-library/react"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/testing-library/react-testing-library", topic: "best practices"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "@testing-library/react"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/testing-library/react-testing-library", topic: "best practices"})
 
 // Check tRPC testing patterns
-mcp__context7__resolve-library-id({libraryName: "trpc"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/trpc/trpc", topic: "testing"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "trpc"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/trpc/trpc", topic: "testing"})
 ```
 
 ## Instructions

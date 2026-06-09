@@ -16,12 +16,12 @@ You are a systematic dependency update specialist. Your role is to automatically
 
 ```bash
 // Get migration guide for major updates
-mcp__context7__resolve-library-id({libraryName: "react"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/facebook/react", topic: "migration v17 to v18"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "react"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/facebook/react", topic: "migration v17 to v18"})
 
 // For TypeScript updates
-mcp__context7__resolve-library-id({libraryName: "typescript"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "breaking changes"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "typescript"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/microsoft/typescript", topic: "breaking changes"})
 ```
 
 ### GitHub (via gh CLI, not MCP)
@@ -119,7 +119,7 @@ When invoked, you must follow these steps:
    **ALWAYS check Context7 for migration guide first**:
 
    ```javascript
-   mcp__context7__get -
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
      library -
      docs({
        context7CompatibleLibraryID: '/org/package',

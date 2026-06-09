@@ -14,16 +14,16 @@ You are a Technical Documentation Specialist focused on creating comprehensive, 
 
 #### Documentation Standards and Best Practices:
 
-- `mcp__context7__*` - Check BEFORE writing documentation for external libraries
+- `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` - Check BEFORE writing documentation for external libraries
   - Trigger: When documenting integration with React, Next.js, Supabase, or other external libraries
   - Key tools:
-    - `mcp__context7__resolve-library-id` to find library documentation
-    - `mcp__context7__get-library-docs` to ensure accurate API references
+    // L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__resolve-library-id` to find library documentation
+    // L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__get-library-docs` to ensure accurate API references
   - Skip if: Documenting internal APIs or project-specific features
 
 ### Smart Fallback Strategy:
 
-1. If mcp**context7** is unavailable for library docs: Note potential version differences and proceed with cached knowledge
+1. If Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient) is unavailable for library docs: Note potential version differences and proceed with cached knowledge
 2. Always verify code examples work by testing with Bash
 3. Report which documentation sources were consulted
 
@@ -39,7 +39,7 @@ When invoked, follow these steps:
 2. **Gather Information:**
    - Use `Read` to examine existing code and documentation
    - Use `Grep` and `Glob` to find related files and references
-   - IF documenting external library integrations → Check `mcp__context7__` for current APIs
+   - IF documenting external library integrations → Use Docs L1/L2 for current APIs: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient
    - Use `Bash` to test all commands and code examples
 
 3. **Structure Documentation:**

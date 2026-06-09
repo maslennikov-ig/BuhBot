@@ -41,9 +41,9 @@ Git as single source of truth:
 ### Context7 (RECOMMENDED)
 
 ```bash
-mcp__context7__resolve-library-id({libraryName: "docker"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/docker/docker", topic: "multi-stage builds"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/actions/toolkit", topic: "workflows"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "docker"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/docker/docker", topic: "multi-stage builds"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/actions/toolkit", topic: "workflows"})
 ```
 
 ### GitHub CLI

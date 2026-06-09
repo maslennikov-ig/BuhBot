@@ -15,24 +15,24 @@ This agent uses the following MCP servers when available:
 
 ### Context7 (REQUIRED)
 
-**MANDATORY**: You MUST use Context7 to check Telegraf, BullMQ, and date-fns patterns before implementation.
+**MANDATORY**: You MUST use Docs L1/L2 to check Telegraf, BullMQ, and date-fns patterns before implementation.
 
 ```bash
 # Telegraf documentation
-mcp__context7__resolve-library-id({libraryName: "telegraf"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "message handlers"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "inline keyboards"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "webhooks"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "telegraf"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "message handlers"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "inline keyboards"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/telegraf/telegraf", topic: "webhooks"})
 
 # BullMQ documentation
-mcp__context7__resolve-library-id({libraryName: "bullmq"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/taskforcesh/bullmq", topic: "delayed jobs"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/taskforcesh/bullmq", topic: "workers"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "bullmq"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/taskforcesh/bullmq", topic: "delayed jobs"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/taskforcesh/bullmq", topic: "workers"})
 
 # date-fns documentation
-mcp__context7__resolve-library-id({libraryName: "date-fns"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/date-fns/date-fns", topic: "timezone"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/date-fns/date-fns", topic: "business days"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "date-fns"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/date-fns/date-fns", topic: "timezone"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/date-fns/date-fns", topic: "business days"})
 ```
 
 ### Supabase MCP (Optional)
@@ -153,31 +153,31 @@ When invoked, follow these steps systematically:
 
 **If no plan file**, proceed with default configuration (all services, Moscow timezone).
 
-### Phase 1: Use Context7 for Documentation
+### Phase 1: Use Docs L1/L2 for Documentation
 
-**ALWAYS start with Context7 lookup**:
+**ALWAYS start with Docs L1/L2 lookup**:
 
 1. **Telegraf Patterns**:
 
    ```markdown
-   Use mcp**context7**resolve-library-id: "telegraf"
-   Then mcp**context7**get-library-docs with topic: "message handlers"
+   Use Docs L1/L2: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficientresolve-library-id: "telegraf"
+   Then Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)get-library-docs with topic: "message handlers"
    Validate: Context access, middleware patterns, callback queries
    ```
 
 2. **BullMQ Patterns**:
 
    ```markdown
-   Use mcp**context7**resolve-library-id: "bullmq"
-   Then mcp**context7**get-library-docs with topic: "delayed jobs"
+   Use Docs L1/L2: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficientresolve-library-id: "bullmq"
+   Then Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)get-library-docs with topic: "delayed jobs"
    Validate: Queue setup, worker patterns, job removal
    ```
 
 3. **date-fns Patterns**:
 
    ```markdown
-   Use mcp**context7**resolve-library-id: "date-fns"
-   Then mcp**context7**get-library-docs with topic: "timezone"
+   Use Docs L1/L2: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficientresolve-library-id: "date-fns"
+   Then Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)get-library-docs with topic: "timezone"
    Validate: zonedTimeToUtc, utcToZonedTime, isWithinInterval
    ```
 
@@ -1810,7 +1810,7 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 - **Queues Implemented**: {count}
 - **Workers Implemented**: {count}
 
-### Context7 Documentation Used
+### Docs L1/L2 Documentation Used
 
 - Library: telegraf
 - Topics consulted: message handlers, inline keyboards, webhooks
@@ -1958,7 +1958,7 @@ BullMQ Queues:
 
 Validation: {status}
 
-Context7 Documentation:
+Docs L1/L2 Documentation:
 
 - telegraf: message handlers, inline keyboards
 - bullmq: delayed jobs, workers
@@ -2076,7 +2076,7 @@ Always provide structured implementation reports following the template in Phase
 
 **Include**:
 
-- Context7 documentation consulted (MANDATORY)
+- Docs L1/L2 documentation consulted (MANDATORY)
 - Services implemented with code structure
 - Validation results (type-check, build)
 - Integration points (Prisma, Redis, Telegram)
@@ -2084,7 +2084,7 @@ Always provide structured implementation reports following the template in Phase
 
 **Never**:
 
-- Skip Context7 documentation lookup
+- Skip Docs L1/L2 documentation lookup
 - Report success without validation
 - Omit changes logging
 - Forget environment variable requirements

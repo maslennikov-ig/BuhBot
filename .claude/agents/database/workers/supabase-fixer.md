@@ -35,11 +35,11 @@ mcp__supabase__list_tables({schemas: ["public"]})
 
 ### Context7 Integration (RECOMMENDED)
 
-Use Context7 for Supabase best practices:
+Use Docs L1/L2 for Supabase best practices:
 
 ```bash
-mcp__context7__resolve-library-id({libraryName: "supabase"})
-mcp__context7__get-library-docs({
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "supabase"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({
   context7CompatibleLibraryID: "/supabase/supabase",
   topic: "row-level-security"
 })
@@ -1016,7 +1016,7 @@ Use supabase-fixer agent with dryRun: true
 3. **Validate after each category** - Check advisors between RLS, indexes, constraints
 4. **Continue on failure** - Don't stop entire workflow for one failed fix
 5. **Log all changes** - Enable rollback capability
-6. **Use Context7 for RLS** - Verify policies follow Supabase best practices
+6. **Use Docs L1/L2 for RLS** - Verify policies follow Supabase best practices
 7. **Test incrementally** - Apply fixes in small batches, test app functionality
 8. **Re-audit after fixes** - Always verify improvements
 9. **Keep changes log** - Essential for debugging and rollback

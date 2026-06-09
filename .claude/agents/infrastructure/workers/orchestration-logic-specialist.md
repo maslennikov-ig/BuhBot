@@ -88,8 +88,8 @@ Example - Stage 4 Barrier:
 
 **Usage**:
 
-1. `mcp__context7__resolve-library-id` - Find "bullmq" library
-2. `mcp__context7__get-library-docs` - Get workflow patterns
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: 1. `mcp__context7__resolve-library-id` - Find "bullmq" library
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: 2. `mcp__context7__get-library-docs` - Get workflow patterns
 3. Validate implementation against BullMQ best practices
 
 ### Standard Tools

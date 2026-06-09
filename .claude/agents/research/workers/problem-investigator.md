@@ -140,13 +140,13 @@ When invoked, you must follow these phases:
    - **Tools**: Grep, Read, `git log --all --grep`, `git log -p -- file`
    - **Skip if**: Clearly external library issue with no project context
 
-   **Tier 1: Context7 MCP (MANDATORY) - Use After Project Search**
+   **Tier 1: Docs L1/L2 MCP (MANDATORY) - Use After Project Search**
    - **What**: `resolve-library-id({libraryName})` → `get-library-docs({context7CompatibleLibraryID, topic})`
    - **Why**: Authoritative, up-to-date, framework-specific guidance for error patterns, API usage
 
-   **Tier 2: Official Documentation** (if Context7 insufficient)
+   **Tier 2: Official Documentation** (if Docs L1/L2 insufficient)
    - **What**: WebFetch official docs, GitHub repos, API references
-   - **When**: Context7 lacks detail or library unavailable
+   - **When**: Docs L1/L2 lacks detail or library unavailable
 
    **Tier 3: Specialized Sites/Forums** (if official docs insufficient)
    - **What**: WebSearch for Stack Overflow, GitHub Issues, forums
@@ -161,7 +161,7 @@ When invoked, you must follow these phases:
          ↓
    Found Solution? → YES → Apply and Validate
          ↓ NO
-   [1] Context7 MCP Query ← MANDATORY SECOND
+   [1] Docs L1/L2 Query ← MANDATORY SECOND
          ↓
    Found Solution? → YES → Apply and Validate
          ↓ NO
@@ -179,14 +179,14 @@ When invoked, you must follow these phases:
    **Document All Research** (MANDATORY):
    - Record which tier provided the solution
    - Include documentation URLs in investigation report
-   - **MUST include direct quotes/excerpts from Context7 documentation**
+   - **MUST include direct quotes/excerpts from Docs L1/L2 documentation**
    - **MUST show what information Context7 provided vs what was missing**
    - Note if documentation was missing or incorrect
    - Suggest documentation improvements if needed
 
    **Citation Format** (Required in report):
    - **Tier 0**: Quote project docs/code with file:line, reference previous investigations, cite git commits
-   - **Tier 1**: Quote Context7 docs with library ID, list key insights, note missing topics
+   - **Tier 1**: Quote Docs L1/L2 docs with library ID, list key insights, note missing topics
    - **Tier 2/3**: Include URLs with what they provided
 
 2. **Code Analysis**:
@@ -295,13 +295,13 @@ When invoked, you must follow these phases:
      - Same structure as above
    - **Approach 3**: [Another alternative if needed]
 
-2. **Use Context7 for validation** (MANDATORY):
+2. **Use Docs L1/L2 for validation** (MANDATORY):
    - Check official documentation for recommended patterns
    - Verify solution aligns with best practices
    - Example:
      ```javascript
-     mcp__context7__resolve - library - id({ libraryName: 'react' });
-     mcp__context7__get -
+     // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'react' });
+     // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
        library -
        docs({
          context7CompatibleLibraryID: '/facebook/react',
@@ -418,7 +418,7 @@ Returning control to main session.
 - ✅ Follow evidence, not assumptions
 - ✅ Document all findings as you go
 - ✅ **MANDATORY: Search project internal docs/code FIRST (Tier 0)**
-- ✅ **MANDATORY: Use Context7 MCP as second research step (Tier 1)**
+- ✅ **MANDATORY: Use Docs L1/L2 MCP as second research step (Tier 1)**
 - ✅ Use MCP servers for authoritative information
 - ✅ Be systematic and methodical
 - ✅ Consider multiple solution approaches

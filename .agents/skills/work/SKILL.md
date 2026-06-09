@@ -1,12 +1,12 @@
 ---
 name: work
-description: 'Work with tasks: view ready, pick, execute with Context7 docs, close. Full lifecycle with MCP documentation lookup.'
+description: 'Work with tasks: view ready, pick, execute with Docs L1/L2, close. Full lifecycle with Docs L1/L2 MCP documentation routing.'
 version: 1.0.0
 ---
 
 # Work with Tasks
 
-Skill для работы с задачами: просмотр, выбор, выполнение с обязательным использованием Context7 для актуальной документации.
+Skill для работы с задачами: просмотр, выбор, выполнение с обязательным использованием Docs L1/L2 для актуальной документации.
 
 ## Usage
 
@@ -23,20 +23,20 @@ Optional arguments:
 
 ---
 
-## CRITICAL: Context7 MCP — MANDATORY
+## CRITICAL: Docs L1/L2 — MANDATORY
 
-**Before implementing ANY task, query Context7 for up-to-date documentation on involved libraries.**
+**Before implementing ANY task, query @neuledge/context first with lockfile-routed package/version and API/domain keywords; use Context7 MCP only for L1 miss/stale/insufficient.**
 
 Skip only for trivial changes that don't touch library APIs (typos, comments, config values).
 
 ### How to use (2-step)
 
 ```
-1. mcp__context7__resolve-library-id  — resolve library name to ID
-2. mcp__context7__query-docs          — query docs by resolved ID + topic
+1. @neuledge/context query       — use package@version from lockfile + API/domain keywords
+2. // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs          — query docs by resolved ID + topic
 ```
 
-When delegating to subagents — fetch docs first, include in delegation context.
+When delegating to subagents — fetch L1 docs first; include Context7 fallback evidence only when L1 is missing, stale, or insufficient.
 
 ---
 
@@ -111,7 +111,7 @@ fi
 1. **Read task description** before starting
 2. **Query Context7** for any libraries involved (MANDATORY)
 3. **Gather context** — read related files, understand scope
-4. **Delegate to subagent** if complex (see AGENTS.md), include Context7 docs in delegation
+4. **Delegate to subagent** if complex (see AGENTS.md), include Docs L1/L2 docs in delegation
 5. **Verify changes** — type-check, build
 6. **Close task** when done
 
@@ -119,7 +119,7 @@ fi
 
 ```
 1. bd show buh-xxx                — read full description
-2. Context7: resolve + query      — get docs for involved libraries (MANDATORY)
+2. Docs L1/L2: @neuledge/context query first; Context7 fallback only for L1 miss/stale/insufficient      — get docs for involved libraries (MANDATORY)
 3. Gather context                 — read files, search codebase
 4. Implement                      — delegate or execute directly
 5. Verify                         — npm run type-check && npm run build
@@ -127,16 +127,16 @@ fi
 7. git commit && git push         — commit changes
 ```
 
-### Context7 in delegation (MANDATORY)
+### Docs L1/L2 in delegation (MANDATORY)
 
-When delegating to subagents, ALWAYS include Context7 docs:
+When delegating to subagents, ALWAYS include Docs L1/L2 docs:
 
 ```
 Task: Fix/implement <description>
 Issue: <title>
 
-Context7 Documentation:
-<paste relevant docs fetched from Context7 here>
+Docs L1/L2 Documentation:
+<paste relevant @neuledge/context docs; include Context7 fallback docs only for L1 miss/stale/insufficient>
 
 Files to modify:
 - <path1>: <what to change>
@@ -274,8 +274,8 @@ bd update buh-xxx --defer ""          # Снять defer
 bd ready --include-deferred           # Показать отложенные
 
 # Context7 (MANDATORY before implementation)
-# Step 1: mcp__context7__resolve-library-id
-# Step 2: mcp__context7__query-docs
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: # Step 1: mcp__context7__resolve-library-id
+# Step 2: // L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__query -docs
 ```
 
 ---

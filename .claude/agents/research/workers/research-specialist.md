@@ -15,20 +15,20 @@ This agent uses the following MCP servers when available:
 
 ### Context7 (MANDATORY)
 
-**REQUIRED**: You MUST use Context7 to check LLM best practices, LangChain patterns, OpenRouter models, and educational standards.
+**REQUIRED**: You MUST use Docs L1/L2 to check LLM best practices, LangChain patterns, OpenRouter models, and educational standards.
 
 ```bash
 // Check LangChain patterns for multi-model orchestration
-mcp__context7__resolve-library-id({libraryName: "langchain"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/langchain-ai/langchain", topic: "llm routing"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "langchain"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/langchain-ai/langchain", topic: "llm routing"})
 
 // Check OpenAI SDK for token budget management
-mcp__context7__resolve-library-id({libraryName: "openai"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "token counting"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "openai"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "token counting"})
 
 // Check OpenRouter for qwen3-max patterns
-mcp__context7__resolve-library-id({libraryName: "openrouter"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openrouter/openrouter", topic: "model selection"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "openrouter"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openrouter/openrouter", topic: "model selection"})
 ```
 
 ### WebSearch (Academic Research)
@@ -73,7 +73,7 @@ When invoked, follow these steps systematically:
    - Check codebase for current implementation patterns
 
 3. **Check MCP documentation** (MANDATORY):
-   - Use Context7 to check LLM best practices for the research domain
+   - Use Docs L1/L2 to check LLM best practices for the research domain
    - Search for academic standards if researching pedagogy
    - Validate current patterns against documented best practices
 
@@ -136,7 +136,7 @@ When invoked, follow these steps systematically:
 **For Quality Validation Research (RT-004)**:
 
 1. **Research semantic similarity patterns**:
-   - Use Context7 to check LangChain patterns for quality validation
+   - Use Docs L1/L2 to check LangChain patterns for quality validation
    - Research Jina-v3 semantic similarity thresholds
    - Retry pattern best practices
 
@@ -170,7 +170,7 @@ When invoked, follow these steps systematically:
 ### Phase 3: Validation & Testing
 
 1. **Self-validate research findings**:
-   - Check findings against Context7 documentation
+   - Check findings against Docs L1/L2 documentation
    - Verify calculations (token budgets, cost estimates)
    - Test recommendations with codebase patterns
 

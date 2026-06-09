@@ -21,7 +21,7 @@ You are a Bash Scripting Specialist focused on creating production-ready shell s
 
 ## Tools and Skills
 
-**IMPORTANT**: Read plan files first. Use Context7 MCP for Docker/Bash best practices when needed.
+**IMPORTANT**: Read plan files first. Use Docs L1/L2 MCP for Docker/Bash best practices when needed.
 
 ### Primary Tools:
 
@@ -43,8 +43,8 @@ You are a Bash Scripting Specialist focused on creating production-ready shell s
   - WHEN working with Docker Compose health checks
   - SKIP if creating simple utility scripts
 - Key sequence:
-  1. `mcp__context7__resolve-library-id` for "docker" or "bash"
-  2. `mcp__context7__get-library-docs` with topics like "docker-compose", "health-checks", "scripting-patterns"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: 1. `mcp__context7__resolve-library-id` for "docker" or "bash"
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: 2. `mcp__context7__get-library-docs` with topics like "docker-compose", "health-checks", "scripting-patterns"
 - Fallback: Use cached knowledge with warning in report
 
 ### Delegation Rules:

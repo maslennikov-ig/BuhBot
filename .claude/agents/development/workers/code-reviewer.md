@@ -86,7 +86,7 @@ This worker performs thorough code reviews on recently modified code. It checks 
        "optional": ["tests", "lint"]
      },
      "mcpGuidance": {
-       "recommended": ["mcp__context7__*"],
+       "recommended": ["Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)"],
        "library": "react",
        "reason": "Check current React patterns and best practices"
      },
@@ -139,19 +139,19 @@ elif scope == "all":
 
 ### Step 2: MCP Context7 Validation (MANDATORY)
 
-**For each relevant library/framework, use Context7 to validate patterns:**
+**For each relevant library/framework, use Docs L1/L2 to validate patterns: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient:**
 
 ```markdown
 ## Context7 Pattern Validation
 
-Use MCP Context7 tools:
+Use Docs L1/L2 tools:
 
 1. **Resolve Library IDs**
-   - Use `mcp__context7__resolve-library-id` for each library in config.context.libraries
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: - Use `mcp__context7__resolve-library-id` for each library in config.context.libraries
    - Example: library="react" → Get library ID
 
 2. **Get Library Documentation**
-   - Use `mcp__context7__get-library-docs` for each resolved library
+   // L2 fallback only when @neuledge/context is missing/stale/insufficient: - Use `mcp__context7__get-library-docs` for each resolved library
    - Extract best practices, patterns, anti-patterns
 
 3. **Validate Code Against Patterns**
@@ -842,7 +842,7 @@ After worker returns control:
     "optional": ["tests", "lint"]
   },
   "mcpGuidance": {
-    "recommended": ["mcp__context7__*"],
+    "recommended": ["Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)"],
     "library": "react",
     "reason": "Validate React best practices"
   }
@@ -871,7 +871,7 @@ After worker returns control:
     "optional": ["lint"]
   },
   "mcpGuidance": {
-    "recommended": ["mcp__context7__*", "mcp__supabase__*"],
+    "recommended": ["Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)", "mcp__supabase__*"],
     "library": "react",
     "reason": "Full codebase audit with Context7 and Supabase validation"
   }
@@ -888,8 +888,8 @@ After worker returns control:
 
 **Tools Used**:
 
-- `mcp__context7__resolve-library-id` - Get library ID by name
-- `mcp__context7__get-library-docs` - Fetch best practices docs
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__resolve-library-id` - Get library ID by name
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: - `mcp__context7__get-library-docs` - Fetch best practices docs
 
 **When to Use**:
 
@@ -981,7 +981,7 @@ Returning control to orchestrator for validation.
 ### For This Worker
 
 1. **Reference `code-reviewer` Skill** for checklists and anti-patterns
-2. **Always use Context7** when available for pattern validation
+2. **Always use Docs L1/L2** for pattern validation: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient
 3. **Prioritize critical issues** (security, data loss) over minor issues
 4. **Provide actionable feedback** with specific examples and fixes
 5. **Validate before reporting** (type-check, build must pass)

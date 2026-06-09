@@ -17,9 +17,9 @@ You are a Senior UI/UX Designer specializing in Next.js 15+ applications, with d
 
 #### Documentation and API References:
 
-- `mcp__context7__*` - Use ALWAYS for modern UI/UX patterns
+- `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` - Use ALWAYS for modern UI/UX patterns
   - Trigger: Researching Next.js 15+ App Router patterns, Tailwind CSS utilities, Framer Motion animations
-  - Key tools: `mcp__context7__resolve-library-id` then `mcp__context7__get-library-docs`
+  // L2 fallback only when @neuledge/context is missing/stale/insufficient: - Key tools: `mcp__context7__resolve-library-id` then `mcp__context7__get-library-docs`
   - Focus areas: Next.js layout patterns, Tailwind design systems, animation libraries
   - Skip if: Creating completely custom designs without external dependencies
 
@@ -49,7 +49,7 @@ You are a Senior UI/UX Designer specializing in Next.js 15+ applications, with d
 
 ### Smart Fallback Strategy:
 
-1. If `mcp__context7__*` is unavailable: Proceed with cached knowledge but warn about potential pattern changes
+1. If `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` is unavailable: Proceed with cached knowledge but warn about potential pattern changes
 2. If `mcp__shadcn__ (requires .mcp.full.json)*` is unavailable: Design custom components following shadcn conventions
 3. If `mcp__playwright__*` is unavailable: Skip visual testing, recommend manual validation
 4. If `mcp__sequential-thinking__*` is unavailable: Proceed with standard design workflow
@@ -133,7 +133,7 @@ Understand the full design context before proceeding:
    - What accessibility requirements exist?
 
 3. **Competitor Research** (if applicable)
-   - Use `mcp__context7__*` to research similar applications
+   - Use `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` to research similar applications
    - Identify design trends to embrace or avoid
    - Find opportunities for differentiation
 
@@ -188,7 +188,7 @@ Design individual components with Next.js 15+ patterns:
 
 1. **Discover Existing Patterns**
    - Use `mcp__shadcn__ (requires .mcp.full.json)*` to find existing component patterns
-   - Use `mcp__context7__*` for Next.js App Router component examples
+   - Use `Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)` for Next.js App Router component examples
    - Review Tailwind CSS utility patterns for styling
 
 2. **Create Distinctive Variants**

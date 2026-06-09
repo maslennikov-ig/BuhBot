@@ -15,18 +15,18 @@ This agent uses the following MCP servers when available:
 
 ### Context7 (REQUIRED)
 
-**MANDATORY**: You MUST use Context7 to check OpenAI SDK patterns and LLM best practices before implementation.
+**MANDATORY**: You MUST use Docs L1/L2 to check OpenAI SDK patterns and LLM best practices before implementation.
 
 ```bash
 # OpenAI SDK documentation
-mcp__context7__resolve-library-id({libraryName: "openai"})
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "chat completions"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "openai"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "chat completions"})
 
 # Retry logic patterns
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "error handling"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "error handling"})
 
 # Streaming responses (for future)
-mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "streaming"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get-library-docs({context7CompatibleLibraryID: "/openai/openai-node", topic: "streaming"})
 ```
 
 ### Supabase MCP (Optional)
@@ -132,22 +132,22 @@ When invoked, follow these steps systematically:
 
 **If no plan file**, proceed with default configuration (hierarchical strategy, gpt-4o-mini model).
 
-### Phase 1: Use Context7 for Documentation
+### Phase 1: Use Docs L1/L2 for Documentation
 
-**ALWAYS start with Context7 lookup**:
+**ALWAYS start with Docs L1/L2 lookup**:
 
 1. **OpenAI SDK Patterns**:
 
    ```markdown
-   Use mcp**context7**resolve-library-id: "openai"
-   Then mcp**context7**get-library-docs with topic: "chat completions"
+   Use Docs L1/L2: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficientresolve-library-id: "openai"
+   Then Docs L1/L2 (@neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient)get-library-docs with topic: "chat completions"
    Validate: API structure, retry logic, error handling
    ```
 
 2. **Error Handling**:
 
    ```markdown
-   Use mcp**context7**get-library-docs with topic: "error handling"
+   Use Docs L1/L2: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficientget-library-docs with topic: "error handling"
    Validate: Rate limit handling, timeout strategies, retry exponential backoff
    ```
 
@@ -608,7 +608,7 @@ Use `generate-report-header` Skill for header, then follow standard report forma
 - **Test Pass Rate**: {percentage}
 - **Token Estimation Accuracy**: {percentage}
 
-### Context7 Documentation Used
+### Docs L1/L2 Documentation Used
 
 - Library: openai-node
 - Topics consulted: {list topics}
@@ -920,7 +920,7 @@ Unit Tests: 18/18 passed (100%)
 Validation: ✅ PASSED
 Token Accuracy: ±10% (met threshold)
 
-Context7 Documentation:
+Docs L1/L2 Documentation:
 - openai-node: chat completions, error handling, retry logic
 
 Report: `.tmp/current/reports/llm-service-implementation-report.md`
@@ -932,7 +932,7 @@ Returning control to main session.
 
 ### OpenAI SDK Integration
 
-- ALWAYS use Context7 to validate SDK patterns before implementation
+- ALWAYS use Docs L1/L2 to validate SDK patterns before implementation: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient
 - Use OpenRouter base URL: `https://openrouter.ai/api/v1`
 - Add custom headers for attribution (`HTTP-Referer`, `X-Title`)
 - Implement retry logic with exponential backoff (1s, 2s, 4s)
@@ -1053,7 +1053,7 @@ Always provide structured implementation reports following the template in Phase
 
 **Include**:
 
-- Context7 documentation consulted (MANDATORY)
+- Docs L1/L2 documentation consulted (MANDATORY)
 - Services implemented with code structure
 - Unit test results (100% pass rate target)
 - Validation against quality gates
@@ -1062,7 +1062,7 @@ Always provide structured implementation reports following the template in Phase
 
 **Never**:
 
-- Skip Context7 documentation lookup
+- Skip Docs L1/L2 documentation lookup
 - Report success without unit tests
 - Omit changes logging
 - Forget environment variable requirements

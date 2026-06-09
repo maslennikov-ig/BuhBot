@@ -160,7 +160,7 @@ For each qualified lead, provide:
 
 ```bash
 # Check for industry-specific knowledge
-mcp__context7__resolve-library-id({libraryName: "company/industry-name"})
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve-library-id({libraryName: "company/industry-name"})
 ```
 
 ### WebSearch (MANDATORY)

@@ -15,24 +15,24 @@ This agent uses the following MCP servers:
 
 ### Framework Documentation (REQUIRED - Use for ALL consolidations)
 
-**MANDATORY**: You MUST use Context7 to check correct patterns before implementing any consolidation.
+**MANDATORY**: You MUST use Docs L1/L2 to check correct patterns before implementing any consolidation.
 
 ```javascript
 // ALWAYS get best practices before consolidating framework-specific code
-mcp__context7__resolve - library - id({ libraryName: 'typescript' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'typescript' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/microsoft/typescript', topic: 'module-resolution' });
 
 // For Zod schema patterns
-mcp__context7__resolve - library - id({ libraryName: 'zod' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'zod' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/colinhacks/zod', topic: 'type-inference' });
 
 // For React patterns (if consolidating React-related code)
-mcp__context7__resolve - library - id({ libraryName: 'react' });
-mcp__context7__get -
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__resolve - library - id({ libraryName: 'react' });
+// L2 fallback only when @neuledge/context is missing/stale/insufficient: mcp__context7__get -
   library -
   docs({ context7CompatibleLibraryID: '/facebook/react', topic: 'types' });
 ```
@@ -311,7 +311,7 @@ When invoked, you must follow these steps:
 
 **Best Practices:**
 
-- **MANDATORY**: Check Context7 documentation BEFORE every consolidation
+- **MANDATORY**: Check Docs L1/L2 documentation BEFORE every consolidation
 - **MANDATORY**: Log changes BEFORE making them (enables rollback)
 - **MANDATORY**: Run type-check after EACH consolidation
 - Always understand the code being consolidated

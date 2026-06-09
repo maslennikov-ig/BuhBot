@@ -106,14 +106,14 @@ Based on findings, implement optimizations in order of impact:
 
 ### 7. Framework-Specific Optimizations with Context7
 
-- **Next.js Performance** (use Context7 for latest docs):
+- **Next.js Performance** (use Docs L1/L2: @neuledge/context first; Context7 MCP fallback only for L1 miss/stale/insufficient):
   - Analyze App Router vs Pages Router performance
   - Implement proper Image component usage
   - Optimize dynamic imports and code splitting
   - Configure next.config.js for performance
   - Review Server Components vs Client Components balance
 - **React Optimization Patterns**:
-  - Use Context7 to fetch latest React performance patterns
+  - Use Docs L1/L2 to fetch latest React performance patterns
   - Implement React.memo, useMemo, useCallback correctly
   - Optimize Context usage to prevent unnecessary re-renders
   - Review Suspense boundaries for optimal loading states

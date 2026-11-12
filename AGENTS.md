@@ -12,42 +12,23 @@ bd close <id>         # Complete work
 bd bootstrap --yes    # Recover/setup local Beads DB safely
 bd import             # Restore from .beads/issues.jsonl if DB is empty after clone/upgrade
 bd export -o .beads/issues.jsonl  # Refresh the tracked JSONL snapshot if this repo commits it
-bd hooks install      # Reinstall git hook shims after a bd upgrade if hooks fail
 ```
 
-## Landing the Plane (Session Completion)
+## Task Closeout
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+When a cohesive task is complete:
 
-**MANDATORY WORKFLOW:**
+1. File issues only for real deferred work.
+2. Run one risk-selected final acceptance set; do not repeat unchanged passing
+   checks for freshness.
+3. Update the issue status and handoff with the current result.
+4. Commit and push only under the repository's current delivery authority.
+   Before an ordinary push, fetch and stop if the remote is ahead or diverged.
+5. Do not clear stashes, prune branches, force-push, or perform other
+   destructive cleanup without explicit current authorization.
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   - **Commit before pushing**: Stage with `git add`, then run `git commit -m "..."`. **Always check the command output and exit code.** If `git commit` fails, the output contains the reason (lint, format, or commit message). Fix those issues and run `git commit` again. Do not use `git commit --no-verify` unless the user explicitly requests it.
-   ```bash
-   git pull --rebase
-   # If the local Beads DB looks empty or broken after clone/upgrade:
-   bd bootstrap --yes
-   # If .beads/issues.jsonl has data but the local DB is empty:
-   bd import
-   # If git hooks still point at old subcommands after a bd upgrade:
-   bd hooks install
-   # If this repo commits .beads/issues.jsonl, refresh it before push:
-   bd export -o .beads/issues.jsonl
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-- If **commit** fails (e.g. pre-commit or commit-msg hook), read the terminal output, fix the reported issues (ESLint, Prettier, or commit message format), and retry `git commit`. Do not assume the commit succeeded without checking.
-- Beads 1.0.0 requires explicit `bd bootstrap`, `bd import`, `bd export`, and `bd hooks install` steps as needed
+If a commit fails, read and resolve the actual hook or validation error; do not
+bypass hooks unless the user explicitly requests it. Use `bd bootstrap`,
+`bd import`, and `bd export` only when local workspace state requires them.
+Install Beads git hooks only when this repo's current contract explicitly
+authorizes them.
